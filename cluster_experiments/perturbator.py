@@ -60,7 +60,7 @@ class BinaryPerturbator:
         n_transformed = abs(
             int(self.average_effect * len(df.query(self.treated_query)))
         )
-        idx = (
+        idx = list(
             # Sample of negative cases in group B
             df.query(f"{self.target} == {from_target} & {self.treated_query}")
             .pipe(self._sample_max, n=n_transformed)
