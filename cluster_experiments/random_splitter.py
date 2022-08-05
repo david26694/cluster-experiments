@@ -30,6 +30,8 @@ class RandomSplitter(ABC):
     def sample_treatment(self, *args, **kwargs) -> List[str]:
         pass
 
+    # TODO: Add method to join outout from perturbator with dataframe
+
 
 class ClusteredSplitter(RandomSplitter):
     def treatment_assignment(self, sampled_treatments: List[str]) -> Dict:
