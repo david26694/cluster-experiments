@@ -1,6 +1,7 @@
 # Import ABC
 import random
 from abc import ABC, abstractmethod
+from itertools import product
 from math import remainder
 from typing import Dict, List, Optional
 
@@ -18,12 +19,14 @@ class RandomSplitter(ABC):
         self.dates = dates or []
         self.random_seed = random_seed
 
-    def split(self) -> Dict:
+    def split(self) -> List[Dict[str, str]]:
         sampled_treatments = self.sample_treatment()
         return self.treatment_assignment(sampled_treatments)
 
     @abstractmethod
-    def treatment_assignment(self, sampled_treatments: List[str]) -> Dict:
+    def treatment_assignment(
+        self, sampled_treatments: List[str]
+    ) -> List[Dict[str, str]]:
         pass
 
     @abstractmethod
@@ -34,9 +37,14 @@ class RandomSplitter(ABC):
 
 
 class ClusteredSplitter(RandomSplitter):
-    def treatment_assignment(self, sampled_treatments: List[str]) -> Dict:
+    def treatment_assignment(
+        self, sampled_treatments: List[str]
+    ) -> List[Dict[str, str]]:
         """Assign a treatment to a cluster"""
-        return dict(zip(self.clusters, sampled_treatments))
+        return [
+            {"treatment": treatment, "cluster": cluster}
+            for treatment, cluster in zip(sampled_treatments, self.clusters)
+        ]
 
     def sample_treatment(self, *args, **kwargs) -> List[str]:
         """Choose randomly a treatment for eachcluster"""
@@ -44,15 +52,16 @@ class ClusteredSplitter(RandomSplitter):
 
 
 class SwitchbackSplitter(RandomSplitter):
-    def treatment_assignment(self, sampled_treatments: List[str]) -> Dict:
+    def treatment_assignment(
+        self, sampled_treatments: List[str]
+    ) -> List[Dict[str, str]]:
         """For each date, we get, on each cluster, the treatment assigned to it"""
         sampled_treatments = sampled_treatments.copy()
-        output_dict = {}
-        for date in self.dates:
-            output_dict[date] = {}
-            for cluster in self.clusters:
-                output_dict[date][cluster] = sampled_treatments.pop()
-        return output_dict
+        output = []
+        for date, cluster in product(self.dates, self.clusters):
+            treatment = sampled_treatments.pop(0)
+            output.append({"date": date, "cluster": cluster, "treatment": treatment})
+        return output
 
     def sample_treatment(self, *args, **kwargs) -> List[str]:
         """Randomly assign a treatment to a cluster"""
