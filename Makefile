@@ -13,10 +13,12 @@ install:
 	python -m pip install -e .
 
 install-dev:
+	pip install --upgrade pip setuptools wheel
 	python -m pip install -e ".[dev]"
 	pre-commit install
 
 install-test:
+	pip install --upgrade pip setuptools wheel
 	python -m pip install -e ".[test]"
 
 pypi:

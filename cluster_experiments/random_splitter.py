@@ -11,15 +11,15 @@ import pandas as pd
 class RandomSplitter(ABC):
     def __init__(
         self,
-        treatments: List[str],
         clusters: List[str],
+        treatments: Optional[List[str]] = None,
         dates: Optional[List[str]] = None,
-        random_seed: int = 42,
+        cluster_mapping: Optional[Dict[str, str]] = None,
     ) -> None:
-        self.treatments = treatments
+        self.treatments = treatments or ["A", "B"]
         self.clusters = clusters
         self.dates = dates or []
-        self.random_seed = random_seed
+        self.cluster_mapping = cluster_mapping
 
     def split(self) -> List[Dict[str, str]]:
         sampled_treatments = self.sample_treatment()
@@ -37,21 +37,47 @@ class RandomSplitter(ABC):
 
     def assign_treatment_df(
         self,
-        sampled_treatments: List[str],
         df: pd.DataFrame,
-        cluster_columns: Dict[str, str] = {"cluster": "cluster"},
+        *args,
+        **kwargs,
     ) -> pd.DataFrame:
-        """For clustered splitter, cluster_columns could be {"cluster": "city"}
-        for SwitchbackSplitter, cluster_columns could be {"cluster": "city", "date": "date"}"""
+        """For clustered splitter, cluster_mapping could be {"cluster": "city"}
+        for SwitchbackSplitter, cluster_mapping could be {"cluster": "city", "date": "date"}"""
         df = df.copy()
+        sampled_treatments = self.sample_treatment(*args, **kwargs)
         treatments_df = pd.DataFrame(
             self.treatment_assignment(sampled_treatments)
-        ).rename(columns=cluster_columns)
-        join_columns = list(cluster_columns.values())
+        ).rename(columns=self.cluster_mapping)
+        join_columns = list(self.cluster_mapping)
         return df.merge(treatments_df, how="left", on=join_columns)
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            clusters=config.clusters,
+            treatments=config.treatments,
+            dates=config.dates,
+            cluster_mapping=config.cluster_mapping,
+        )
 
 
 class ClusteredSplitter(RandomSplitter):
+    def __init__(
+        self,
+        clusters: List[str],
+        treatments: Optional[List[str]] = None,
+        dates: Optional[List[str]] = None,
+        cluster_mapping: Optional[Dict[str, str]] = None,
+    ) -> None:
+        super().__init__(
+            clusters=clusters,
+            treatments=treatments,
+            dates=dates,
+            cluster_mapping=cluster_mapping,
+        )
+        if self.cluster_mapping is None:
+            self.cluster_mapping = {"cluster": "cluster"}
+
     def treatment_assignment(
         self, sampled_treatments: List[str]
     ) -> List[Dict[str, str]]:
@@ -67,6 +93,22 @@ class ClusteredSplitter(RandomSplitter):
 
 
 class SwitchbackSplitter(RandomSplitter):
+    def __init__(
+        self,
+        clusters: List[str],
+        treatments: Optional[List[str]] = None,
+        dates: Optional[List[str]] = None,
+        cluster_mapping: Optional[Dict[str, str]] = None,
+    ) -> None:
+        super().__init__(
+            clusters=clusters,
+            treatments=treatments,
+            dates=dates,
+            cluster_mapping=cluster_mapping,
+        )
+        if self.cluster_mapping is None:
+            self.cluster_mapping = {"cluster": "cluster", "date": "date"}
+
     def treatment_assignment(
         self, sampled_treatments: List[str]
     ) -> List[Dict[str, str]]:
