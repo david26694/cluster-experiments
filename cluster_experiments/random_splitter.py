@@ -5,6 +5,8 @@ from itertools import product
 from math import remainder
 from typing import Dict, List, Optional
 
+import pandas as pd
+
 
 class RandomSplitter(ABC):
     def __init__(
@@ -33,7 +35,20 @@ class RandomSplitter(ABC):
     def sample_treatment(self, *args, **kwargs) -> List[str]:
         pass
 
-    # TODO: Add method to join outout from perturbator with dataframe
+    def assign_treatment_df(
+        self,
+        sampled_treatments: List[str],
+        df: pd.DataFrame,
+        cluster_columns: Dict[str, str] = {"cluster": "cluster"},
+    ) -> pd.DataFrame:
+        """For clustered splitter, cluster_columns could be {"cluster": "city"}
+        for SwitchbackSplitter, cluster_columns could be {"cluster": "city", "date": "date"}"""
+        df = df.copy()
+        treatments_df = pd.DataFrame(
+            self.treatment_assignment(sampled_treatments)
+        ).rename(columns=cluster_columns)
+        join_columns = list(cluster_columns.values())
+        return df.merge(treatments_df, how="left", on=join_columns)
 
 
 class ClusteredSplitter(RandomSplitter):
@@ -69,6 +84,9 @@ class SwitchbackSplitter(RandomSplitter):
 
 
 class BalancedClusteredSplitter(ClusteredSplitter):
+    """Like ClusteredSplitter, but ensures that treatments are balanced among clusters. That is, if we have
+    25 clusters and 2 treatments, 13 clusters should have treatment A and 12 clusters should have treatment B."""
+
     def get_balanced_sample(
         self, clusters_per_treatment: int, remainder_clusters: int
     ) -> List[str]:

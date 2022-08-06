@@ -1,14 +1,8 @@
 import pandas as pd
 
+from cluster_experiments.experiment_analysis import ExperimentAnalysis
 from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.random_splitter import RandomSplitter
-
-
-def analysis(
-    df: pd.DataFrame, target: str, treatment: str, treatment_col: str
-) -> float:
-    df = df.copy()
-    return 0.05
 
 
 class PowerAnalysis:
@@ -16,6 +10,7 @@ class PowerAnalysis:
         self,
         perturbator: Perturbator,
         splitter: RandomSplitter,
+        analysis: ExperimentAnalysis,
         target: str,
         treatment: str,
         treatment_col: str,
@@ -24,6 +19,7 @@ class PowerAnalysis:
     ):
         self.perturbator = perturbator
         self.splitter = splitter
+        self.analysis = analysis
         self.n_simulations = n_simulations
         self.target = target
         self.treatment = treatment
@@ -34,6 +30,6 @@ class PowerAnalysis:
         n_detected_mde = 0
         for _ in range(self.n_simulations):
             df = self.perturbator.perturbate(df)
-            p_value = analysis(df, self.target, self.treatment, self.treatment_col)
+            p_value = self.analysis.get_pvalue()
             n_detected_mde += p_value < self.alpha
         return n_detected_mde / self.n_simulations
