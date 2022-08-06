@@ -43,11 +43,26 @@ class PowerAnalysis:
             n_detected_mde += p_value < self.alpha
         return n_detected_mde / self.n_simulations
 
+    @staticmethod
+    def _get_mapping_key(mapping, key):
+        try:
+            return mapping[key]
+        except KeyError:
+            raise KeyError(
+                f"Could not find {key = } in mapping. All options are the following: {list(mapping.keys())}"
+            )
+
     @classmethod
     def from_config(cls, config: PowerConfig):
-        perturbator = perturbator_mapping[config.perturbator].from_config(config)
-        splitter = splitter_mapping[config.splitter].from_config(config)
-        analysis = analysis_mapping[config.analysis].from_config(config)
+        perturbator = cls._get_mapping_key(
+            perturbator_mapping, config.perturbator
+        ).from_config(config)
+        splitter = cls._get_mapping_key(splitter_mapping, config.splitter).from_config(
+            config
+        )
+        analysis = cls._get_mapping_key(analysis_mapping, config.analysis).from_config(
+            config
+        )
         return cls(
             perturbator=perturbator,
             splitter=splitter,
