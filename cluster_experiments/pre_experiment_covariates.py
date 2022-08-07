@@ -56,6 +56,7 @@ class TargetAggregation:
                     / (x["count"] + self.smoothing_factor),
                 }
             )
+            .drop(columns=["count", self.target_col])
         )
 
     def add_pre_experiment_agg(self, df: pd.DataFrame) -> pd.DataFrame:
