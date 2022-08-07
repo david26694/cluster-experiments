@@ -1,38 +1,57 @@
 import pandas as pd
 
 
+class EmptyAggregator:
+    def __init__(
+        self,
+        agg_col: str = "",
+        target_col: str = "target",
+        smoothing_factor: int = 20,
+    ):
+        self.agg_col = agg_col
+        self.target_col = target_col
+        self.smoothing_factor = smoothing_factor
+        self.is_empty = True
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            agg_col=config.agg_col,
+            target_col=config.target_col,
+            smoothing_factor=config.smoothing_factor,
+        )
+
+
 class TargetAggregation:
     def __init__(
         self,
-        experiment_start_date: str,
         agg_col: str,
         target_col: str,
-        date_col: str,
         smoothing_factor: int = 20,
     ):
-        self.experiment_start_date = experiment_start_date
         self.agg_col = agg_col
         self.target_col = target_col
-        self.date_col = date_col
         self.smoothing_factor = smoothing_factor
+        self.is_empty = False
         self.mean_target_col = f"{self.target_col}_mean"
         self.smooth_mean_target_col = f"{self.target_col}_smooth_mean"
+        self.pre_experiment_agg_df = pd.DataFrame()
 
-    def _get_pre_experiment_mean(self, df: pd.DataFrame) -> float:
-        return df[self.target_col].mean()
+    def _get_pre_experiment_mean(self, pre_experiment_df: pd.DataFrame) -> float:
+        return pre_experiment_df[self.target_col].mean()
 
-    def pre_experiment_agg(
-        self, df: pd.DataFrame, pre_experiment_mean: float
-    ) -> pd.DataFrame:
-        return (
-            df.assign(count=1)
+    def set_pre_experiment_agg(self, pre_experiment_df: pd.DataFrame) -> None:
+        self.pre_experiment_mean = pre_experiment_df[self.target_col].mean()
+        self.pre_experiment_agg_df = (
+            pre_experiment_df.assign(count=1)
             .groupby(self.agg_col, as_index=False)
             .agg({self.target_col: "sum", "count": "sum"})
             .assign(
                 **{
                     self.mean_target_col: lambda x: x[self.target_col] / x["count"],
                     self.smooth_mean_target_col: lambda x: (
-                        x[self.target_col] + self.smoothing_factor * pre_experiment_mean
+                        x[self.target_col]
+                        + self.smoothing_factor * self.pre_experiment_mean
                     )
                     / (x["count"] + self.smoothing_factor),
                 }
@@ -40,23 +59,13 @@ class TargetAggregation:
         )
 
     def add_pre_experiment_agg(self, df: pd.DataFrame) -> pd.DataFrame:
-        pre_experiment_df = df.query(
-            f"'{self.date_col}' <= '{self.experiment_start_date}'"
-        )
-        experiment_df = df.query(f"'{self.date_col}' > '{self.experiment_start_date}'")
-        pre_experiment_mean = self._get_pre_experiment_mean(pre_experiment_df)
-        pre_experiment_agg_df = self.pre_experiment_agg(
-            pre_experiment_df, pre_experiment_mean
-        )
-        return experiment_df.merge(
-            pre_experiment_agg_df, how="left", on=self.agg_col
-        ).assign(
+        return df.merge(self.pre_experiment_agg_df, how="left", on=self.agg_col).assign(
             **{
                 self.mean_target_col: lambda x: x[self.mean_target_col].fillna(
-                    pre_experiment_mean
+                    self.pre_experiment_mean
                 ),
                 self.smooth_mean_target_col: lambda x: x[
                     self.smooth_mean_target_col
-                ].fillna(pre_experiment_mean),
+                ].fillna(self.pre_experiment_mean),
             }
         )

@@ -1,8 +1,15 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+from cluster_experiments.experiment_analysis import (
+    GeeExperimentAnalysis,
+    GeeExperimentAnalysisAggMean,
+)
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
+from cluster_experiments.pre_experiment_covariates import (
+    EmptyAggregator,
+    TargetAggregation,
+)
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
@@ -22,6 +29,9 @@ class PowerConfig:
     # Needed
     clusters: List[str]
     cluster_cols: List[str]
+
+    # optional mappings
+    aggregator: str = ""
 
     # Shared
     target_col: str = "target"
@@ -43,6 +53,10 @@ class PowerConfig:
     n_simulations: int = 100
     alpha: float = 0.05
 
+    # Aggregator
+    agg_col: str = ""
+    smoothing_factor: float = 20
+
 
 perturbator_mapping = {
     "binary": BinaryPerturbator,
@@ -56,4 +70,9 @@ splitter_mapping = {
     "switchback_balance": BalancedSwitchbackSplitter,
 }
 
-analysis_mapping = {"gee": GeeExperimentAnalysis}
+analysis_mapping = {
+    "gee": GeeExperimentAnalysis,
+    "gee_mean": GeeExperimentAnalysisAggMean,
+}
+
+aggregator_mapping = {"": EmptyAggregator, "mean_aggregator": TargetAggregation}

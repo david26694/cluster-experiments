@@ -81,3 +81,23 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
             cov_struct=self.va,
         ).fit()
         return results_gee.pvalues[self.treatment_col]
+
+
+class GeeExperimentAnalysisAggMean(ExperimentAnalysis):
+    def __init__(
+        self,
+        cluster_cols: List[str],
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        covariates: Optional[List[str]] = None,
+    ):
+        covariates = covariates or []
+        covariates = covariates.copy() + [f"{self.target_col}_smooth_mean"]
+        super().__init__(
+            target_col=target_col,
+            treatment_col=treatment_col,
+            cluster_cols=cluster_cols,
+            treatment=treatment,
+            covariates=covariates,
+        )
