@@ -26,7 +26,7 @@ class TargetAggregation:
     def __init__(
         self,
         agg_col: str,
-        target_col: str,
+        target_col: str = "target",
         smoothing_factor: int = 20,
     ):
         self.agg_col = agg_col
