@@ -104,7 +104,6 @@ def test_switchback_balanced_splitter(clusters, treatments, dates):
 
 @pytest.mark.unit
 def test_switchback_balanced_splitter_abc(clusters, dates):
-    # TODO: This fails often, balanced switchback not correct
     treatments = ["A", "B", "C"]
     for _ in range(100):
         splitter = BalancedSwitchbackSplitter(clusters, treatments, dates)

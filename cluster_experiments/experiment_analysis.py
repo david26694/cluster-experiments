@@ -9,8 +9,8 @@ class ExperimentAnalysis(ABC):
     def __init__(
         self,
         cluster_cols: List[str],
-        target_col: str,
-        treatment_col: str,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
     ):
@@ -19,6 +19,11 @@ class ExperimentAnalysis(ABC):
         self.treatment_col = treatment_col
         self.cluster_cols = cluster_cols
         self.covariates = covariates or []
+
+    def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
+        """Paste all strings of cluster_cols in one single column"""
+        df = df.copy()
+        return df[self.cluster_cols].sum(axis=1)
 
     def _create_binary_treatment(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
@@ -64,11 +69,6 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         self.fam = sm.families.Gaussian()
         self.va = sm.cov_struct.Exchangeable()
 
-    def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
-        """Paste all strings of cluster_cols in one single column"""
-        df = df.copy()
-        return df[self.cluster_cols].sum(axis=1)
-
     def get_pvalue(self, df: pd.DataFrame) -> float:
         df = df.copy()
         df = self._create_binary_treatment(df)
@@ -83,7 +83,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         return results_gee.pvalues[self.treatment_col]
 
 
-class GeeExperimentAnalysisAggMean(ExperimentAnalysis):
+class GeeExperimentAnalysisAggMean(GeeExperimentAnalysis):
     def __init__(
         self,
         cluster_cols: List[str],
@@ -93,7 +93,7 @@ class GeeExperimentAnalysisAggMean(ExperimentAnalysis):
         covariates: Optional[List[str]] = None,
     ):
         covariates = covariates or []
-        covariates = covariates.copy() + [f"{self.target_col}_smooth_mean"]
+        covariates = covariates.copy() + [f"{target_col}_smooth_mean"]
         super().__init__(
             target_col=target_col,
             treatment_col=treatment_col,
