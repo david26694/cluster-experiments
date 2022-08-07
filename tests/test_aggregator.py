@@ -35,7 +35,7 @@ def test_smoothing_non_0():
         != ta.pre_experiment_agg_df["target_smooth_mean"]
     ).all()
     assert (
-        ta.pre_experiment_agg_df["target_smooth_mean"][[0, 1]] == [0.25, 0.75]
+        ta.pre_experiment_agg_df["target_smooth_mean"].loc[[0, 1]] == [0.25, 0.75]
     ).all()
 
 

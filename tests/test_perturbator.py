@@ -25,7 +25,8 @@ def test_binary_perturbator_10(average_effect, output_values):
     assert (
         bp.perturbate(binary_df_repeated)
         .query("treatment == 'B'")["target"]
-        .value_counts()[[0, 1]]
+        .value_counts()
+        .loc[[0, 1]]
         == output_values
     ).all()
 

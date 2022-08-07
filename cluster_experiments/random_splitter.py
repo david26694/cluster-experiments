@@ -2,7 +2,6 @@
 import random
 from abc import ABC, abstractmethod
 from itertools import product
-from math import remainder
 from typing import Dict, List, Optional
 
 import pandas as pd
@@ -136,7 +135,7 @@ class BalancedClusteredSplitter(ClusteredSplitter):
         of the integer division between the number of clusters and the number of treatments),
         obtain, in the most balanced way, a list of treatments such that the difference between
         the number of clusters per treatment is minimal among clusters"""
-        remainder_treatments = random.choices(self.treatments, k=remainder_clusters)
+        remainder_treatments = random.sample(self.treatments, k=remainder_clusters)
 
         sampled_treatments = []
         for treatment in self.treatments:
@@ -149,8 +148,8 @@ class BalancedClusteredSplitter(ClusteredSplitter):
         """Randomly assign a treatment to a cluster"""
         if len(self.clusters) < len(self.treatments):
             raise ValueError("There are more treatments than clusters")
-        clusters_per_treatment = int(len(self.clusters) / len(self.treatments))
-        remainder_clusters = int(remainder(len(self.clusters), len(self.treatments)))
+        clusters_per_treatment = len(self.clusters) // len(self.treatments)
+        remainder_clusters = len(self.clusters) % len(self.treatments)
         return self.get_balanced_sample(clusters_per_treatment, remainder_clusters)
 
 
@@ -160,6 +159,6 @@ class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
             raise ValueError("There are more treatments than clusters and dates")
 
         total_switches = len(self.clusters) * len(self.dates)
-        clusters_per_treatment = int(total_switches / len(self.treatments))
-        remainder_clusters = int(remainder(total_switches, len(self.treatments)))
+        clusters_per_treatment = total_switches // len(self.treatments)
+        remainder_clusters = total_switches % len(self.treatments)
         return self.get_balanced_sample(clusters_per_treatment, remainder_clusters)
