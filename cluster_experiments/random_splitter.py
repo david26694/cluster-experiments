@@ -19,7 +19,7 @@ class RandomSplitter(ABC):
         self.treatments = treatments or ["A", "B"]
         self.clusters = clusters
         self.dates = dates or []
-        self.cluster_mapping = cluster_mapping
+        self.cluster_mapping = cluster_mapping or {}
 
     def split(self) -> List[Dict[str, str]]:
         sampled_treatments = self.sample_treatment()
@@ -75,7 +75,7 @@ class ClusteredSplitter(RandomSplitter):
             dates=dates,
             cluster_mapping=cluster_mapping,
         )
-        if self.cluster_mapping is None:
+        if not self.cluster_mapping:
             self.cluster_mapping = {"cluster": "cluster"}
 
     def treatment_assignment(
@@ -106,7 +106,7 @@ class SwitchbackSplitter(RandomSplitter):
             dates=dates,
             cluster_mapping=cluster_mapping,
         )
-        if self.cluster_mapping is None:
+        if not self.cluster_mapping:
             self.cluster_mapping = {"cluster": "cluster", "date": "date"}
 
     def treatment_assignment(

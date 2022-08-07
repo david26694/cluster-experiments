@@ -33,7 +33,7 @@ class Perturbator:
 
 class UniformPerturbator(Perturbator):
     def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
+        df = df.copy().reset_index(drop=True)
         df.loc[
             df[self.treatment_col] == self.treatment, self.target_col
         ] += self.average_effect
@@ -50,7 +50,7 @@ class BinaryPerturbator(Perturbator):
         return df.sample(n=n)
 
     def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
+        df = df.copy().reset_index(drop=True)
         from_target, to_target = 1, 0
         if self.average_effect > 0:
             from_target, to_target = 0, 1
