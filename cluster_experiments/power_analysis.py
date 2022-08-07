@@ -11,7 +11,7 @@ from cluster_experiments.power_config import (
     perturbator_mapping,
     splitter_mapping,
 )
-from cluster_experiments.pre_experiment_covariates import TargetAggregation
+from cluster_experiments.pre_experiment_covariates import Aggregator
 from cluster_experiments.random_splitter import RandomSplitter
 
 
@@ -21,7 +21,8 @@ class PowerAnalysis:
         perturbator: Perturbator,
         splitter: RandomSplitter,
         analysis: ExperimentAnalysis,
-        aggregator: TargetAggregation,
+        # TODO: Not passing an aggregator should be an option
+        aggregator: Aggregator,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",

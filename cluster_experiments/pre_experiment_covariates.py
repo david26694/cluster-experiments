@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class EmptyAggregator:
+class Aggregator:
     def __init__(
         self,
         agg_col: str = "",
@@ -22,7 +22,7 @@ class EmptyAggregator:
         )
 
 
-class TargetAggregation:
+class TargetAggregation(Aggregator):
     def __init__(
         self,
         agg_col: str,

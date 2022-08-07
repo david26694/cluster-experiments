@@ -7,7 +7,7 @@ from cluster_experiments.experiment_analysis import (
 )
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
 from cluster_experiments.pre_experiment_covariates import (
-    EmptyAggregator,
+    Aggregator,
     TargetAggregation,
 )
 from cluster_experiments.random_splitter import (
@@ -75,4 +75,4 @@ analysis_mapping = {
     "gee_mean": GeeExperimentAnalysisAggMean,
 }
 
-aggregator_mapping = {"": EmptyAggregator, "mean_aggregator": TargetAggregation}
+aggregator_mapping = {"": Aggregator, "mean_aggregator": TargetAggregation}
