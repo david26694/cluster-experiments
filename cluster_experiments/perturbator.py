@@ -22,10 +22,6 @@ class Perturbator:
         pass
 
     @classmethod
-    def from_dict(cls, config: dict) -> "Perturbator":
-        return cls(**config)
-
-    @classmethod
     def from_config(cls, config):
         return cls(
             average_effect=config.average_effect,
