@@ -8,7 +8,7 @@ test_packages = [
     "flake8>=3.8.3",
 ] + base_packages
 
-util_packages = ["pre-commit>=2.6.0", "ipykernel>=6.15.1"] + base_packages
+util_packages = ["pre-commit>=2.6.0", "ipykernel>=6.15.1", "twine"] + base_packages
 
 docs_packages = [
     "mkdocs==1.1",
