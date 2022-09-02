@@ -7,7 +7,7 @@ from cluster_experiments.experiment_analysis import (
 )
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
 from cluster_experiments.pre_experiment_covariates import (
-    Aggregator,
+    PreExperimentFeaturizer,
     TargetAggregation,
 )
 from cluster_experiments.random_splitter import (
@@ -31,7 +31,7 @@ class PowerConfig:
     cluster_cols: List[str]
 
     # optional mappings
-    aggregator: str = ""
+    featurizer: str = ""
 
     # Shared
     target_col: str = "target"
@@ -53,7 +53,7 @@ class PowerConfig:
     n_simulations: int = 100
     alpha: float = 0.05
 
-    # Aggregator
+    # PreExperimentFeaturizer
     agg_col: str = ""
     smoothing_factor: float = 20
 
@@ -75,4 +75,4 @@ analysis_mapping = {
     "gee_mean": GeeExperimentAnalysisAggMean,
 }
 
-aggregator_mapping = {"": Aggregator, "mean_aggregator": TargetAggregation}
+featurizer_mapping = {"": PreExperimentFeaturizer, "mean_featurizer": TargetAggregation}

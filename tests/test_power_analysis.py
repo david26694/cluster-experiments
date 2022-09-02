@@ -5,7 +5,7 @@ from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import UniformPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.power_config import PowerConfig
-from cluster_experiments.pre_experiment_covariates import Aggregator
+from cluster_experiments.pre_experiment_covariates import PreExperimentFeaturizer
 from cluster_experiments.random_splitter import SwitchbackSplitter
 
 from tests.examples import generate_random_data
@@ -47,13 +47,13 @@ def test_power_analysis(df, clusters, experiment_dates):
         cluster_cols=["cluster", "date"],
     )
 
-    aggregator = Aggregator()
+    featurizer = PreExperimentFeaturizer()
 
     pw = PowerAnalysis(
         perturbator=perturbator,
         splitter=sw,
         analysis=analysis,
-        aggregator=aggregator,
+        featurizer=featurizer,
         n_simulations=3,
     )
 

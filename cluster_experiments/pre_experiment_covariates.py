@@ -1,25 +1,13 @@
 import pandas as pd
 
 
-class Aggregator:
-    def __init__(
-        self,
-        agg_col: str = "",
-        target_col: str = "target",
-        smoothing_factor: int = 20,
-    ):
-        self.agg_col = agg_col
-        self.target_col = target_col
-        self.smoothing_factor = smoothing_factor
+class PreExperimentFeaturizer:
+    def __init__(self):
         self.is_empty = True
 
     @classmethod
     def from_config(cls, config):
-        return cls(
-            agg_col=config.agg_col,
-            target_col=config.target_col,
-            smoothing_factor=config.smoothing_factor,
-        )
+        return cls()
 
     def set_pre_experiment_agg(self, pre_experiment_df: pd.DataFrame) -> None:
         raise NotImplementedError("Implement this method in a subclass")
@@ -28,7 +16,7 @@ class Aggregator:
         raise NotImplementedError("Implement this method in a subclass")
 
 
-class TargetAggregation(Aggregator):
+class TargetAggregation(PreExperimentFeaturizer):
     def __init__(
         self,
         agg_col: str,
@@ -75,4 +63,12 @@ class TargetAggregation(Aggregator):
                     self.smooth_mean_target_col
                 ].fillna(self.pre_experiment_mean),
             }
+        )
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            agg_col=config.agg_col,
+            target_col=config.target_col,
+            smoothing_factor=config.smoothing_factor,
         )

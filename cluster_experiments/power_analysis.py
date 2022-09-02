@@ -6,12 +6,12 @@ from cluster_experiments.experiment_analysis import ExperimentAnalysis
 from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.power_config import (
     PowerConfig,
-    aggregator_mapping,
+    featurizer_mapping,
     analysis_mapping,
     perturbator_mapping,
     splitter_mapping,
 )
-from cluster_experiments.pre_experiment_covariates import Aggregator
+from cluster_experiments.pre_experiment_covariates import PreExperimentFeaturizer
 from cluster_experiments.random_splitter import RandomSplitter
 
 
@@ -21,7 +21,7 @@ class PowerAnalysis:
         perturbator: Perturbator,
         splitter: RandomSplitter,
         analysis: ExperimentAnalysis,
-        aggregator: Optional[Aggregator] = None,
+        featurizer: Optional[PreExperimentFeaturizer] = None,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
@@ -31,7 +31,9 @@ class PowerAnalysis:
         self.perturbator = perturbator
         self.splitter = splitter
         self.analysis = analysis
-        self.aggregator: Aggregator = aggregator or Aggregator()
+        self.featurizer: PreExperimentFeaturizer = (
+            featurizer or PreExperimentFeaturizer()
+        )
         self.n_simulations = n_simulations
         self.target_col = target_col
         self.treatment = treatment
@@ -43,14 +45,14 @@ class PowerAnalysis:
     ) -> float:
         df = df.copy()
         n_detected_mde = 0
-        if pre_experiment_df is not None and not self.aggregator.is_empty:
-            self.aggregator.set_pre_experiment_agg(pre_experiment_df)
+        if pre_experiment_df is not None and not self.featurizer.is_empty:
+            self.featurizer.set_pre_experiment_agg(pre_experiment_df)
         for _ in range(self.n_simulations):
             treatment_df = self.splitter.assign_treatment_df(df)
             treatment_df = treatment_df.query(f"{self.treatment_col}.notnull()")
             treatment_df = self.perturbator.perturbate(treatment_df)
-            if not self.aggregator.is_empty:
-                treatment_df = self.aggregator.add_pre_experiment_agg(treatment_df)
+            if not self.featurizer.is_empty:
+                treatment_df = self.featurizer.add_pre_experiment_agg(treatment_df)
 
             p_value = self.analysis.get_pvalue(treatment_df)
             n_detected_mde += p_value < self.alpha
@@ -81,14 +83,14 @@ class PowerAnalysis:
         analysis = cls._get_mapping_key(analysis_mapping, config.analysis).from_config(
             config
         )
-        aggregator = cls._get_mapping_key(
-            aggregator_mapping, config.aggregator
+        featurizer = cls._get_mapping_key(
+            featurizer_mapping, config.featurizer
         ).from_config(config)
         return cls(
             perturbator=perturbator,
             splitter=splitter,
             analysis=analysis,
-            aggregator=aggregator,
+            featurizer=featurizer,
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
