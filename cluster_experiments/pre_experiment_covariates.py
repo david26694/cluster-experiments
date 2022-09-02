@@ -21,6 +21,12 @@ class Aggregator:
             smoothing_factor=config.smoothing_factor,
         )
 
+    def set_pre_experiment_agg(self, pre_experiment_df: pd.DataFrame) -> None:
+        raise NotImplementedError("Implement this method in a subclass")
+
+    def add_pre_experiment_agg(self, df: pd.DataFrame) -> pd.DataFrame:
+        raise NotImplementedError("Implement this method in a subclass")
+
 
 class TargetAggregation(Aggregator):
     def __init__(

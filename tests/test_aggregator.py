@@ -1,10 +1,8 @@
-import pytest
 from cluster_experiments.pre_experiment_covariates import TargetAggregation
 
 from tests.examples import binary_df
 
 
-@pytest.mark.unit
 def test_set_target_aggs():
     binary_df["user"] = [1, 1, 1, 1]
     ta = TargetAggregation(agg_col="user")
@@ -14,7 +12,6 @@ def test_set_target_aggs():
     assert ta.pre_experiment_mean == 0.5
 
 
-@pytest.mark.unit
 def test_smoothing_0():
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=0)
@@ -25,7 +22,6 @@ def test_smoothing_0():
     ).all()
 
 
-@pytest.mark.unit
 def test_smoothing_non_0():
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=2)
@@ -39,7 +35,6 @@ def test_smoothing_non_0():
     ).all()
 
 
-@pytest.mark.unit
 def test_add_aggs():
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=2)

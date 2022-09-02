@@ -33,7 +33,6 @@ def df(clusters, dates):
     return generate_random_data(clusters, dates, N)
 
 
-@pytest.mark.unit
 def test_power_analysis(df, clusters, experiment_dates):
     sw = SwitchbackSplitter(
         clusters=clusters,
@@ -63,7 +62,6 @@ def test_power_analysis(df, clusters, experiment_dates):
     assert power <= 1
 
 
-@pytest.mark.unit
 def test_power_analysis_config(df, clusters, experiment_dates):
     config = PowerConfig(
         clusters=clusters,
@@ -75,6 +73,22 @@ def test_power_analysis_config(df, clusters, experiment_dates):
         n_simulations=4,
     )
     pw = PowerAnalysis.from_config(config)
+    power = pw.power_analysis(df)
+    assert power >= 0
+    assert power <= 1
+
+
+def test_power_analysis_dict(df, clusters, experiment_dates):
+    config = dict(
+        clusters=clusters,
+        cluster_cols=["cluster", "date"],
+        analysis="gee",
+        perturbator="uniform",
+        splitter="switchback",
+        dates=experiment_dates,
+        n_simulations=4,
+    )
+    pw = PowerAnalysis.from_dict(config)
     power = pw.power_analysis(df)
     assert power >= 0
     assert power <= 1

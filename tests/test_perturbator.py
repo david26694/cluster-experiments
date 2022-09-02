@@ -5,7 +5,6 @@ from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbato
 from tests.examples import binary_df, continuous_df
 
 
-@pytest.mark.unit
 @pytest.mark.parametrize("average_effect, output_value", [(-1, 0), (1, 1)])
 def test_binary_perturbator_all_1(average_effect, output_value):
     bp = BinaryPerturbator(average_effect=average_effect)
@@ -15,7 +14,6 @@ def test_binary_perturbator_all_1(average_effect, output_value):
     ).all()
 
 
-@pytest.mark.unit
 @pytest.mark.parametrize(
     "average_effect, output_values", [(-0.1, [60, 40]), (0.1, [40, 60])]
 )
@@ -31,7 +29,6 @@ def test_binary_perturbator_10(average_effect, output_values):
     ).all()
 
 
-@pytest.mark.unit
 @pytest.mark.parametrize("average_effect, avg_target", [(-0.1, 0.4), (0.1, 0.6)])
 def test_uniform_perturbator(average_effect, avg_target):
     up = UniformPerturbator(average_effect=average_effect)

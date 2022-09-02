@@ -21,8 +21,7 @@ class PowerAnalysis:
         perturbator: Perturbator,
         splitter: RandomSplitter,
         analysis: ExperimentAnalysis,
-        # TODO: Not passing an aggregator should be an option
-        aggregator: Aggregator,
+        aggregator: Optional[Aggregator] = None,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
@@ -32,7 +31,7 @@ class PowerAnalysis:
         self.perturbator = perturbator
         self.splitter = splitter
         self.analysis = analysis
-        self.aggregator = aggregator
+        self.aggregator: Aggregator = aggregator or Aggregator()
         self.n_simulations = n_simulations
         self.target_col = target_col
         self.treatment = treatment
@@ -65,6 +64,11 @@ class PowerAnalysis:
             raise KeyError(
                 f"Could not find {key = } in mapping. All options are the following: {list(mapping.keys())}"
             )
+
+    @classmethod
+    def from_dict(cls, config_dict: dict):
+        config = PowerConfig(**config_dict)
+        return cls.from_config(config)
 
     @classmethod
     def from_config(cls, config: PowerConfig):

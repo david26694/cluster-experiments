@@ -39,7 +39,6 @@ def df_switchback(clusters, dates):
     return pd.DataFrame({"cluster": sorted(clusters * 2), "date": dates * 4})
 
 
-@pytest.mark.unit
 def test_clustered_splitter(clusters, treatments):
 
     splitter = ClusteredSplitter(clusters, treatments)
@@ -57,14 +56,12 @@ def test_clustered_splitter(clusters, treatments):
     ) == sorted(sampled_treatment)
 
 
-@pytest.mark.unit
 def test_balanced_splitter(clusters, treatments):
     splitter = BalancedClusteredSplitter(clusters, treatments)
     sampled_treatment = splitter.sample_treatment()
     assert sorted(sampled_treatment) == ["A", "A", "B", "B"]
 
 
-@pytest.mark.unit
 def test_balanced_splitter_abc(clusters):
     treatments = ["A", "B", "C"]
     splitter = BalancedClusteredSplitter(clusters, treatments)
@@ -72,7 +69,6 @@ def test_balanced_splitter_abc(clusters):
     assert max(Counter(sampled_treatment).values()) == 2
 
 
-@pytest.mark.unit
 def test_switchback_splitter(clusters, treatments, dates):
     splitter = SwitchbackSplitter(clusters, treatments, dates)
     sampled_treatment = splitter.sample_treatment()
@@ -93,7 +89,6 @@ def test_switchback_splitter(clusters, treatments, dates):
     ).all()
 
 
-@pytest.mark.unit
 def test_switchback_balanced_splitter(clusters, treatments, dates):
     splitter = BalancedSwitchbackSplitter(clusters, treatments, dates)
 
@@ -102,7 +97,6 @@ def test_switchback_balanced_splitter(clusters, treatments, dates):
     assert set(Counter(sampled_treatment).keys()) == set(["A", "B"])
 
 
-@pytest.mark.unit
 def test_switchback_balanced_splitter_abc(clusters, dates):
     treatments = ["A", "B", "C"]
     for _ in range(100):
@@ -112,14 +106,12 @@ def test_switchback_balanced_splitter_abc(clusters, dates):
         assert min(Counter(sampled_treatment).values()) == 2
 
 
-@pytest.mark.unit
 def test_agg_df(clusters, treatments, df_cluster):
     splitter = ClusteredSplitter(clusters, treatments)
     treatment_df = splitter.assign_treatment_df(df_cluster)
     assert (treatment_df["cluster"] == pd.Series(clusters)).all()
 
 
-@pytest.mark.unit
 def test_agg_df_switchback(clusters, treatments, dates, df_switchback):
     splitter = SwitchbackSplitter(clusters, treatments, dates)
     treatment_df = splitter.assign_treatment_df(df_switchback)

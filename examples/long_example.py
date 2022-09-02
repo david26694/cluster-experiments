@@ -13,7 +13,7 @@ def generate_random_data(clusters, dates, N):
     users = [f"User {i}" for i in range(1000)]
     df = pd.DataFrame(
         {
-            "cluster": np.random.choice(clusters, size=10000),
+            "cluster": np.random.choice(clusters, size=N),
             "target": np.random.normal(0, 1, size=N),
             "user": np.random.choice(users, size=N),
             "date": np.random.choice(dates, size=N),
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         treatments=["A", "B"],
         clusters=clusters,
         dates=experiment_dates,
-        cluster_columns={"cluster": "cluster", "date": "date"},
+        cluster_mapping={"cluster": "cluster", "date": "date"},
     )
 
     treatments_sample = sw.sample_treatment()
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     perturbator = UniformPerturbator(
         average_effect=0.01,
-        target="target",
+        target_col="target",
         treatment_col="treatment",
     )
 
@@ -54,14 +54,14 @@ if __name__ == "__main__":
     analysis = GeeExperimentAnalysis(
         target_col="target",
         treatment_col="treatment",
-        clusters=["cluster", "date"],
+        cluster_cols=["cluster", "date"],
     )
 
     p_val = analysis.get_pvalue(perturbated_df.query("treatment.notnull()"))
     print(f"{p_val = }")
 
     pw = PowerAnalysis(
-        target="target",
+        target_col="target",
         treatment_col="treatment",
         treatment="B",
         perturbator=perturbator,
