@@ -26,5 +26,6 @@ setup(
     extras_require={
         "dev": dev_packages,
         "test": test_packages,
+        "docs": docs_packages,
     },
 )
