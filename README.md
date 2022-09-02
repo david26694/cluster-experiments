@@ -56,6 +56,7 @@ print(f"{power = }")
 ## Features
 
 The library offers the following classes:
+
 * Regarding power analysis:
     * `PowerAnalysis`: to run power analysis on a clustered/switchback design
     * `UniformPerturbator`: to artificially perturb treated group with uniform perturbations
