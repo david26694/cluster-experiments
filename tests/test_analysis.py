@@ -29,7 +29,7 @@ def test_get_pvalue():
     analyser = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
     )
-    assert analyser.get_pvalue(analysis_df_full) > 0
+    assert analyser.get_pvalue(analysis_df_full) >= 0
 
 
 def test_agg_mean_covariates():
