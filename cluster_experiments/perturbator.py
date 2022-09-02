@@ -1,9 +1,15 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 import pandas as pd
 
 
-class Perturbator:
+class Perturbator(ABC):
+    """Abstract perturbator. Perturbators are used to simulate a fictitious effect when running a power analysis.
+
+    The idea is that, when running a power analysis, we split our instances according to a RandomSplitter, and the
+    instances that got the treatment, are perturbated with a fictional effect via the Perturbator.
+    """
+
     def __init__(
         self,
         average_effect: float,
@@ -11,6 +17,13 @@ class Perturbator:
         treatment_col: str = "treatment",
         treatment: str = "B",
     ):
+        """
+        Arguments:
+            average_effect: The average effect of the treatment
+            treatment: name of the treatment to use as the treated group
+            treatment_col: The name of the column that contains the treatment
+            treatment: name of the treatment to use as the treated group
+        """
         self.average_effect = average_effect
         self.target_col = target_col
         self.treatment_col = treatment_col
@@ -19,10 +32,12 @@ class Perturbator:
 
     @abstractmethod
     def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Method to perturbate a dataframe"""
         pass
 
     @classmethod
     def from_config(cls, config):
+        """Creates a Perturbator object from a PowerConfig object"""
         return cls(
             average_effect=config.average_effect,
             target_col=config.target_col,
@@ -32,7 +47,20 @@ class Perturbator:
 
 
 class UniformPerturbator(Perturbator):
+    """UniformPerturbator is a Perturbator that adds a uniform effect to the target column of the treated instances."""
+
     def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Usage:
+
+        ```python
+        from cluster_experiments.perturbator import UniformPerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = UniformPerturbator(average_effect=1)
+        perturbator.perturbate(df)
+        ```
+        """
         df = df.copy().reset_index(drop=True)
         df.loc[
             df[self.treatment_col] == self.treatment, self.target_col
@@ -41,6 +69,9 @@ class UniformPerturbator(Perturbator):
 
 
 class BinaryPerturbator(Perturbator):
+    """BinaryPerturbator is a Perturbator that adds is used to deal with binary outcome variables.
+    It randomly selects some treated instances and flips their outcome from 0 to 1 or 1 to 0, depending on the effect being positive or negative"""
+
     def _sample_max(self, df: pd.DataFrame, n: int) -> pd.DataFrame:
         """Like sample without replacement,
         but if you are to sample more than 100% of the data,
@@ -50,6 +81,18 @@ class BinaryPerturbator(Perturbator):
         return df.sample(n=n)
 
     def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Usage:
+
+        ```python
+        from cluster_experiments.perturbator import BinaryPerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 0, 1], "treatment": ["A", "B", "A"]})
+        perturbator = BinaryPerturbator(average_effect=0.1)
+        perturbator.perturbate(df)
+        ```
+        """
+
         df = df.copy().reset_index(drop=True)
         from_target, to_target = 1, 0
         if self.average_effect > 0:

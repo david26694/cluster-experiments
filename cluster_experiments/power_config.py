@@ -20,6 +20,26 @@ from cluster_experiments.random_splitter import (
 
 @dataclass
 class PowerConfig:
+    """
+    Dataclass to create a power analysis from.
+    Usage:
+
+    ```python
+    from cluster_experiments.power_config import PowerConfig
+    from cluster_experiments.power_analysis import PowerAnalysis
+
+    p = PowerConfig(
+        analysis="gee",
+        splitter="clustered_balance",
+        perturbator="uniform",
+        clusters=["A", "B", "C"],
+        cluster_cols=["city"],
+        n_simulations=100,
+        alpha=0.05,
+    )
+    power_analysis = PowerAnalysis.from_config(p)
+    ```
+    """
 
     # mappings
     perturbator: str

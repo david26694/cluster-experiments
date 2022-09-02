@@ -6,7 +6,7 @@ from tests.examples import binary_df
 def test_set_target_aggs():
     binary_df["user"] = [1, 1, 1, 1]
     ta = TargetAggregation(agg_col="user")
-    ta.set_pre_experiment_agg(binary_df)
+    ta.fit_pre_experiment_data(binary_df)
 
     assert len(ta.pre_experiment_agg_df) == 1
     assert ta.pre_experiment_mean == 0.5
@@ -15,7 +15,7 @@ def test_set_target_aggs():
 def test_smoothing_0():
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=0)
-    ta.set_pre_experiment_agg(binary_df)
+    ta.fit_pre_experiment_data(binary_df)
     assert (
         ta.pre_experiment_agg_df["target_mean"]
         == ta.pre_experiment_agg_df["target_smooth_mean"]
@@ -25,7 +25,7 @@ def test_smoothing_0():
 def test_smoothing_non_0():
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=2)
-    ta.set_pre_experiment_agg(binary_df)
+    ta.fit_pre_experiment_data(binary_df)
     assert (
         ta.pre_experiment_agg_df["target_mean"]
         != ta.pre_experiment_agg_df["target_smooth_mean"]
@@ -38,8 +38,8 @@ def test_smoothing_non_0():
 def test_add_aggs():
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=2)
-    ta.set_pre_experiment_agg(binary_df)
+    ta.fit_pre_experiment_data(binary_df)
     assert (
-        ta.add_pre_experiment_agg(binary_df).query("user == 0")["target_smooth_mean"]
+        ta.add_pre_experiment_data(binary_df).query("user == 0")["target_smooth_mean"]
         == 0.25
     ).all()

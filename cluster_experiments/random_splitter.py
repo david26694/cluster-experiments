@@ -1,4 +1,3 @@
-# Import ABC
 import random
 from abc import ABC, abstractmethod
 from itertools import product
@@ -8,6 +7,9 @@ import pandas as pd
 
 
 class RandomSplitter(ABC):
+    """Abstract class to split instances in a switchback or clustered way. It can be used to create a calendar/split of clusters
+    or to run a power analysis"""
+
     def __init__(
         self,
         clusters: List[str],
@@ -15,23 +17,29 @@ class RandomSplitter(ABC):
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
     ) -> None:
+        """Constructor for RandomSplitter
+
+        Arguments:
+            clusters: list of clusters to split
+            treatments: list of treatments
+            dates: list of dates (switches)
+            cluster_mapping: dictionary to map the keys cluster and date to the actual names of the columns of the dataframe. For clustered splitter, cluster_mapping could be {"cluster": "city"}. for SwitchbackSplitter, cluster_mapping could be {"cluster": "city", "date": "date"}
+        """
         self.treatments = treatments or ["A", "B"]
         self.clusters = clusters
         self.dates = dates or []
         self.cluster_mapping = cluster_mapping or {}
 
-    def split(self) -> List[Dict[str, str]]:
-        sampled_treatments = self.sample_treatment()
-        return self.treatment_assignment(sampled_treatments)
-
     @abstractmethod
     def treatment_assignment(
         self, sampled_treatments: List[str]
     ) -> List[Dict[str, str]]:
+        """Prepares the data of the treatment assignment for the dataframe"""
         pass
 
     @abstractmethod
     def sample_treatment(self, *args, **kwargs) -> List[str]:
+        """Randomly samples treatments for each cluster"""
         pass
 
     def assign_treatment_df(
@@ -40,18 +48,25 @@ class RandomSplitter(ABC):
         *args,
         **kwargs,
     ) -> pd.DataFrame:
-        """For clustered splitter, cluster_mapping could be {"cluster": "city"}
-        for SwitchbackSplitter, cluster_mapping could be {"cluster": "city", "date": "date"}"""
+        """
+        Takes a df, randomizes treatments and adds the treatment column to the dataframe
+
+        Arguments:
+            df: dataframe to assign treatments to
+            args: arguments to pass to sample_treatment
+            kwargs: keyword arguments to pass to sample_treatment
+        """
         df = df.copy()
         sampled_treatments = self.sample_treatment(*args, **kwargs)
         treatments_df = pd.DataFrame(
             self.treatment_assignment(sampled_treatments)
         ).rename(columns=self.cluster_mapping)
-        join_columns = list(self.cluster_mapping)
+        join_columns = list(self.cluster_mapping.values())
         return df.merge(treatments_df, how="left", on=join_columns)
 
     @classmethod
     def from_config(cls, config):
+        """Creates a RandomSplitter from a PowerConfig"""
         return cls(
             clusters=config.clusters,
             treatments=config.treatments,
@@ -61,6 +76,8 @@ class RandomSplitter(ABC):
 
 
 class ClusteredSplitter(RandomSplitter):
+    """Splits randomly using clusters"""
+
     def __init__(
         self,
         clusters: List[str],
@@ -68,6 +85,22 @@ class ClusteredSplitter(RandomSplitter):
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
     ) -> None:
+        """Constructor for ClusteredSplitter
+
+        Usage:
+        ```python
+        import pandas as pd
+        from cluster_experiments.random_splitter import ClusteredSplitter
+        splitter = ClusteredSplitter(
+            clusters=["A", "B", "C"],
+            treatments=["A", "B"],
+            cluster_mapping={"cluster": "city"},
+        )
+        df = pd.DataFrame({"city": ["A", "B", "C"]})
+        df = splitter.assign_treatment_df(df)
+        print(df)
+        ```
+        """
         super().__init__(
             clusters=clusters,
             treatments=treatments,
@@ -80,18 +113,20 @@ class ClusteredSplitter(RandomSplitter):
     def treatment_assignment(
         self, sampled_treatments: List[str]
     ) -> List[Dict[str, str]]:
-        """Assign a treatment to a cluster"""
+        """Assign each sampled treatment to a cluster"""
         return [
             {"treatment": treatment, "cluster": cluster}
             for treatment, cluster in zip(sampled_treatments, self.clusters)
         ]
 
     def sample_treatment(self, *args, **kwargs) -> List[str]:
-        """Choose randomly a treatment for eachcluster"""
+        """Choose randomly a treatment for each cluster"""
         return random.choices(self.treatments, k=len(self.clusters))
 
 
 class SwitchbackSplitter(RandomSplitter):
+    """Splits randomly using clusters and dates"""
+
     def __init__(
         self,
         clusters: List[str],
@@ -99,6 +134,23 @@ class SwitchbackSplitter(RandomSplitter):
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
     ) -> None:
+        """Constructor for SwitchbackSplitter
+
+        Usage:
+        ```python
+        import pandas as pd
+        from cluster_experiments.random_splitter import SwitchbackSplitter
+        splitter = SwitchbackSplitter(
+            clusters=["A", "B", "C"],
+            treatments=["A", "B"],
+            dates=["2020-01-01", "2020-01-02"],
+            cluster_mapping={"cluster": "city", "date": "date"},
+        )
+        df = pd.DataFrame({"city": ["A", "B", "C"], "date": ["2020-01-01", "2020-01-02", "2020-01-01"]})
+        df = splitter.assign_treatment_df(df)
+        print(df)
+        ```
+        """
         super().__init__(
             clusters=clusters,
             treatments=treatments,
@@ -154,6 +206,8 @@ class BalancedClusteredSplitter(ClusteredSplitter):
 
 
 class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
+    """Like SwitchbackSplitter, but ensures that treatments are balanced among clusters."""
+
     def sample_treatment(self, *args, **kwargs) -> List[str]:
         if len(self.clusters) * len(self.dates) < len(self.treatments):
             raise ValueError("There are more treatments than clusters and dates")

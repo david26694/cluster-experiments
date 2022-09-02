@@ -13,7 +13,7 @@ def generate_random_data(clusters, dates, N):
     users = [f"User {i}" for i in range(1000)]
     df = pd.DataFrame(
         {
-            "cluster": np.random.choice(clusters, size=10000),
+            "cluster": np.random.choice(clusters, size=N),
             "target": np.random.normal(0, 1, size=N),
             "user": np.random.choice(users, size=N),
             "date": np.random.choice(dates, size=N),
