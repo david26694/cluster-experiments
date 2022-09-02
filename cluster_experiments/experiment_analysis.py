@@ -6,6 +6,8 @@ import statsmodels.api as sm
 
 
 class ExperimentAnalysis(ABC):
+    """Abstract class to run the analysis of a given experiment"""
+
     def __init__(
         self,
         cluster_cols: List[str],

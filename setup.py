@@ -11,9 +11,10 @@ test_packages = [
 util_packages = ["pre-commit>=2.6.0", "ipykernel>=6.15.1"] + base_packages
 
 docs_packages = [
-    "mkdocs>=1.1",
-    "mkdocs-material>=4.6.3",
-    "mkdocstrings>=0.8.0",
+    "mkdocs==1.1",
+    "mkdocs-material==4.6.3",
+    "mkdocstrings==0.8.0",
+    "jinja2<3.1.0",
 ]
 
 dev_packages = test_packages + util_packages + docs_packages

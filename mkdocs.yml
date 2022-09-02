@@ -1,0 +1,37 @@
+site_name: Kungfu pandas Docs
+extra_css: [style.css]
+repo_url: https://github.com/david26694/cluster_experiments
+site_url: https://david26694.github.io/cluster_experiments/
+site_description: Functions to design and run clustered experiments
+site_author: David Masip
+use_directory_urls: false
+nav:
+  - Home:
+    - Index: index.md
+  - API:
+      - Kungfu pandas: api/cluster_experiments.md
+plugins:
+  - mkdocstrings:
+      watch:
+        - cluster_experiments
+  - search
+copyright: Copyright &copy; 2022 Maintained by David Masip.
+theme:
+  name: material
+  font:
+    text: Ubuntu
+    code: Ubuntu Mono
+  feature:
+    tabs: true
+  palette:
+    primary: indigo
+    accent: blue
+markdown_extensions:
+  - codehilite
+  - pymdownx.inlinehilite
+  - pymdownx.details
+  - pymdownx.tabbed
+  - pymdownx.highlight:
+      use_pygments: true
+  - toc:
+      permalink: true
