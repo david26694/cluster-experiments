@@ -126,6 +126,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
 
 
 class GeeExperimentAnalysisAggMean(GeeExperimentAnalysis):
+    # TODO: Should we drop this class?
     """Class to run GEE analysis with aggregated mean as a covariate"""
 
     def __init__(
