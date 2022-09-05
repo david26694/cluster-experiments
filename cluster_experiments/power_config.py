@@ -67,7 +67,7 @@ class PowerConfig:
     n_simulations: int = 100
     alpha: float = 0.05
 
-    # EmptyRegressor
+    # Cupac
     agg_col: str = ""
     smoothing_factor: float = 20
     features_cupac_model: Optional[List[str]] = None
