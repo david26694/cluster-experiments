@@ -2,7 +2,6 @@ from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
     ExperimentAnalysis,
     GeeExperimentAnalysis,
-    GeeExperimentAnalysisAggMean,
 )
 from cluster_experiments.perturbator import (
     BinaryPerturbator,
@@ -22,7 +21,6 @@ from cluster_experiments.random_splitter import (
 __all__ = [
     "ExperimentAnalysis",
     "GeeExperimentAnalysis",
-    "GeeExperimentAnalysisAggMean",
     "BinaryPerturbator",
     "Perturbator",
     "UniformPerturbator",

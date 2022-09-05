@@ -2,10 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
-from cluster_experiments.experiment_analysis import (
-    GeeExperimentAnalysis,
-    GeeExperimentAnalysisAggMean,
-)
+from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
@@ -90,7 +87,6 @@ splitter_mapping = {
 
 analysis_mapping = {
     "gee": GeeExperimentAnalysis,
-    "gee_mean": GeeExperimentAnalysisAggMean,
 }
 
 cupac_model_mapping = {"": EmptyRegressor, "mean_cupac_model": TargetAggregation}

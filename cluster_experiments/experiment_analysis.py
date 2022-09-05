@@ -6,15 +6,22 @@ import statsmodels.api as sm
 
 
 class ExperimentAnalysis(ABC):
-    """Abstract class to run the analysis of a given experiment"""
+    """
+    Abstract class to run the analysis of a given experiment
+
+    In order to create your own ExperimentAnalysis,
+    you should create a derived class that implements the get_pvalue method.
+    """
 
     def __init__(
         self,
         cluster_cols: List[str],
+        *args,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
+        **kwargs,
     ):
         """
         Creates an object to run the analysis of a given experiment, after the data is collected.
@@ -22,16 +29,20 @@ class ExperimentAnalysis(ABC):
 
         Arguments:
             cluster_cols: list of columns to use as clusters
+            args: Specific positional arguments for the derived analysis class
             target_col: name of the column containing the variable to measure
             treatment_col: name of the column containing the treatment variable
             treatment: name of the treatment to use as the treated group
             covariates: list of columns to use as covariates
+            kwargs: Specific keyword arguments for the derived analysis class
         """
         self.target_col = target_col
         self.treatment = treatment
         self.treatment_col = treatment_col
         self.cluster_cols = cluster_cols
         self.covariates = covariates or []
+        self.args = args
+        self.kwargs = kwargs
 
     def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
         """Paste all strings of cluster_cols in one single column"""
@@ -123,26 +134,3 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
             cov_struct=self.va,
         ).fit()
         return results_gee.pvalues[self.treatment_col]
-
-
-class GeeExperimentAnalysisAggMean(GeeExperimentAnalysis):
-    # TODO: Should we drop this class?
-    """Class to run GEE analysis with aggregated mean as a covariate"""
-
-    def __init__(
-        self,
-        cluster_cols: List[str],
-        target_col: str = "target",
-        treatment_col: str = "treatment",
-        treatment: str = "B",
-        covariates: Optional[List[str]] = None,
-    ):
-        covariates = covariates or []
-        covariates = covariates.copy() + [f"{target_col}_smooth_mean"]
-        super().__init__(
-            target_col=target_col,
-            treatment_col=treatment_col,
-            cluster_cols=cluster_cols,
-            treatment=treatment,
-            covariates=covariates,
-        )

@@ -1,5 +1,5 @@
-import numpy as np
 import pandas as pd
+from numpy.typing import ArrayLike
 from sklearn.base import BaseEstimator, RegressorMixin
 
 
@@ -83,7 +83,7 @@ class TargetAggregation(BaseEstimator, RegressorMixin):
         )
         return self
 
-    def predict(self, X: pd.DataFrame) -> np.array:
+    def predict(self, X: pd.DataFrame) -> ArrayLike:
         """Adds average target of pre-experiment data to experiment data"""
         return (
             X.merge(self.pre_experiment_agg_df, how="left", on=self.agg_col)[
