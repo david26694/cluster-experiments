@@ -1,12 +1,20 @@
-from cluster_experiments.pre_experiment_covariates import TargetAggregation
+from typing import Tuple
+
+import pandas as pd
+from cluster_experiments.cupac import TargetAggregation
 
 from tests.examples import binary_df
+
+
+def split_x_y(binary_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    return binary_df.drop("target", axis=1), binary_df["target"]
 
 
 def test_set_target_aggs():
     binary_df["user"] = [1, 1, 1, 1]
     ta = TargetAggregation(agg_col="user")
-    ta.fit_pre_experiment_data(binary_df)
+    X, y = split_x_y(binary_df)
+    ta.fit(X, y)
 
     assert len(ta.pre_experiment_agg_df) == 1
     assert ta.pre_experiment_mean == 0.5
@@ -15,7 +23,8 @@ def test_set_target_aggs():
 def test_smoothing_0():
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=0)
-    ta.fit_pre_experiment_data(binary_df)
+    X, y = split_x_y(binary_df)
+    ta.fit(X, y)
     assert (
         ta.pre_experiment_agg_df["target_mean"]
         == ta.pre_experiment_agg_df["target_smooth_mean"]
@@ -25,7 +34,8 @@ def test_smoothing_0():
 def test_smoothing_non_0():
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=2)
-    ta.fit_pre_experiment_data(binary_df)
+    X, y = split_x_y(binary_df)
+    ta.fit(X, y)
     assert (
         ta.pre_experiment_agg_df["target_mean"]
         != ta.pre_experiment_agg_df["target_smooth_mean"]
@@ -38,8 +48,7 @@ def test_smoothing_non_0():
 def test_add_aggs():
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=2)
-    ta.fit_pre_experiment_data(binary_df)
-    assert (
-        ta.add_pre_experiment_data(binary_df).query("user == 0")["target_smooth_mean"]
-        == 0.25
-    ).all()
+    X, y = split_x_y(binary_df)
+    ta.fit(X, y)
+    binary_df["target_smooth_mean"] = ta.predict(binary_df)
+    assert (binary_df.query("user == 0")["target_smooth_mean"] == 0.25).all()

@@ -4,31 +4,42 @@ import pandas as pd
 
 
 class Perturbator(ABC):
-    """Abstract perturbator. Perturbators are used to simulate a fictitious effect when running a power analysis.
+    """
+    Abstract perturbator. Perturbators are used to simulate a fictitious effect when running a power analysis.
 
     The idea is that, when running a power analysis, we split our instances according to a RandomSplitter, and the
     instances that got the treatment, are perturbated with a fictional effect via the Perturbator.
+
+    In order to create your own perturbator, you should create a derived class that implements the perturbate method.
+    The perturbate method should add the average effect in the desired way and return the dataframe with the extra average effect,
+    without affecting the initial dataframe. Keep in mind to use `df = df.copy()` in the first line of the perturbate method.
     """
 
     def __init__(
         self,
         average_effect: float,
+        *args,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
+        **kwargs,
     ):
         """
         Arguments:
             average_effect: The average effect of the treatment
+            args: Specific positional arguments for the derived perturbator
             treatment: name of the treatment to use as the treated group
             treatment_col: The name of the column that contains the treatment
             treatment: name of the treatment to use as the treated group
+            kwargs: Specific keyword arguments for the derived perturbator
         """
         self.average_effect = average_effect
         self.target_col = target_col
         self.treatment_col = treatment_col
         self.treatment = treatment
         self.treated_query = f"{self.treatment_col} == '{self.treatment}'"
+        self.args = args
+        self.kwargs = kwargs
 
     @abstractmethod
     def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -69,7 +80,8 @@ class UniformPerturbator(Perturbator):
 
 
 class BinaryPerturbator(Perturbator):
-    """BinaryPerturbator is a Perturbator that adds is used to deal with binary outcome variables.
+    """
+    BinaryPerturbator is a Perturbator that adds is used to deal with binary outcome variables.
     It randomly selects some treated instances and flips their outcome from 0 to 1 or 1 to 0, depending on the effect being positive or negative"""
 
     def _sample_max(self, df: pd.DataFrame, n: int) -> pd.DataFrame:

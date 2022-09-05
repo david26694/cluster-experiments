@@ -1,15 +1,9 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from cluster_experiments.experiment_analysis import (
-    GeeExperimentAnalysis,
-    GeeExperimentAnalysisAggMean,
-)
+from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
+from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
-from cluster_experiments.pre_experiment_covariates import (
-    PreExperimentFeaturizer,
-    TargetAggregation,
-)
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
@@ -51,7 +45,7 @@ class PowerConfig:
     cluster_cols: List[str]
 
     # optional mappings
-    featurizer: str = ""
+    cupac_model: str = ""
 
     # Shared
     target_col: str = "target"
@@ -73,9 +67,10 @@ class PowerConfig:
     n_simulations: int = 100
     alpha: float = 0.05
 
-    # PreExperimentFeaturizer
+    # Cupac
     agg_col: str = ""
     smoothing_factor: float = 20
+    features_cupac_model: Optional[List[str]] = None
 
 
 perturbator_mapping = {
@@ -92,7 +87,6 @@ splitter_mapping = {
 
 analysis_mapping = {
     "gee": GeeExperimentAnalysis,
-    "gee_mean": GeeExperimentAnalysisAggMean,
 }
 
-featurizer_mapping = {"": PreExperimentFeaturizer, "mean_featurizer": TargetAggregation}
+cupac_model_mapping = {"": EmptyRegressor, "mean_cupac_model": TargetAggregation}

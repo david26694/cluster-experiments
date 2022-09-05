@@ -1,6 +1,11 @@
 from setuptools import find_packages, setup
 
-base_packages = ["pip>=22.2.2", "statsmodels>=0.13.2", "pandas>=1.0.0"]
+base_packages = [
+    "pip>=22.2.2",
+    "statsmodels>=0.13.2",
+    "pandas>=1.0.0",
+    "scikit-learn>=1.0.0",
+]
 
 test_packages = [
     "pytest>=5.4.3",
@@ -21,7 +26,7 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.1.0",
+    version="0.1.1",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,

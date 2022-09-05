@@ -1,8 +1,5 @@
 import pandas as pd
-from cluster_experiments.experiment_analysis import (
-    GeeExperimentAnalysis,
-    GeeExperimentAnalysisAggMean,
-)
+from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 
 from tests.examples import analysis_df
 
@@ -30,9 +27,3 @@ def test_get_pvalue():
         cluster_cols=["cluster", "date"],
     )
     assert analyser.get_pvalue(analysis_df_full) >= 0
-
-
-def test_agg_mean_covariates():
-    analyser = GeeExperimentAnalysisAggMean(cluster_cols=["cluster", "date"])
-
-    assert analyser.covariates == ["target_smooth_mean"]
