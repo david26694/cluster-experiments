@@ -1,3 +1,4 @@
+from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
     ExperimentAnalysis,
     GeeExperimentAnalysis,
@@ -10,10 +11,6 @@ from cluster_experiments.perturbator import (
 )
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.power_config import PowerConfig
-from cluster_experiments.pre_experiment_covariates import (
-    PreExperimentFeaturizer,
-    TargetAggregation,
-)
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
@@ -31,7 +28,7 @@ __all__ = [
     "UniformPerturbator",
     "PowerAnalysis",
     "PowerConfig",
-    "PreExperimentFeaturizer",
+    "EmptyRegressor",
     "TargetAggregation",
     "BalancedClusteredSplitter",
     "BalancedSwitchbackSplitter",

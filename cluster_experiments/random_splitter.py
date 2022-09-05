@@ -7,7 +7,8 @@ import pandas as pd
 
 
 class RandomSplitter(ABC):
-    """Abstract class to split instances in a switchback or clustered way. It can be used to create a calendar/split of clusters
+    """
+    Abstract class to split instances in a switchback or clustered way. It can be used to create a calendar/split of clusters
     or to run a power analysis"""
 
     def __init__(

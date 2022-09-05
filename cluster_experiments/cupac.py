@@ -1,32 +1,25 @@
+import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, RegressorMixin
 
 
-class PreExperimentFeaturizer:
-    """Empty featurizer class. Used to glue the code of TargetAggregation with PowerAnalysis.
+class EmptyRegressor(BaseEstimator, RegressorMixin):
+    """
+    Empty regressor class. It does not do anything, used to glue the code of other estimators and PowerAnalysis
 
-    Each PreExperimentFeaturizer should have:
-    - fit_pre_experiment_data method: Uses pre experiment data to fit some kind of model to be used as a covariate and reduce variance.
-    - add_pre_experiment_data method: Uses the fitted model to add the covariate on the experiment data.
+    Each Regressor should have:
+    - fit method: Uses pre experiment data to fit some kind of model to be used as a covariate and reduce variance.
+    - predict method: Uses the fitted model to add the covariate on the experiment data.
 
     It can add aggregates of the target in older data as a covariate, or a model (cupac) to predict the target.
-
     """
-
-    def __init__(self):
-        self.is_empty = True
 
     @classmethod
     def from_config(cls, config):
         return cls()
 
-    def fit_pre_experiment_data(self, pre_experiment_df: pd.DataFrame) -> None:
-        raise NotImplementedError("Implement this method in a subclass")
 
-    def add_pre_experiment_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        raise NotImplementedError("Implement this method in a subclass")
-
-
-class TargetAggregation(PreExperimentFeaturizer):
+class TargetAggregation(BaseEstimator, RegressorMixin):
     """Adds average of target using pre-experiment data"""
 
     def __init__(
@@ -44,13 +37,13 @@ class TargetAggregation(PreExperimentFeaturizer):
         Usage:
         ```python
         import pandas as pd
-        from cluster_experiments.pre_experiment_covariates import TargetAggregation
+        from cluster_experiments.cupac import TargetAggregation
 
         df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"], "target_col": [1, 2, 3, 4, 5, 6]})
         new_df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"]})
         target_agg = TargetAggregation("agg_col", "target_col")
-        target_agg.fit_pre_experiment_data(df)
-        df_with_target_agg = target_agg.add_pre_experiment_data(new_df)
+        target_agg.fit(df)
+        df_with_target_agg = target_agg.predict(new_df)
         print(df_with_target_agg)
         ```
 
@@ -66,8 +59,11 @@ class TargetAggregation(PreExperimentFeaturizer):
     def _get_pre_experiment_mean(self, pre_experiment_df: pd.DataFrame) -> float:
         return pre_experiment_df[self.target_col].mean()
 
-    def fit_pre_experiment_data(self, pre_experiment_df: pd.DataFrame) -> None:
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> "TargetAggregation":
         """Fits "target encoder" model to pre-experiment data"""
+        pre_experiment_df = X.copy()
+        pre_experiment_df[self.target_col] = y
+
         self.pre_experiment_mean = pre_experiment_df[self.target_col].mean()
         self.pre_experiment_agg_df = (
             pre_experiment_df.assign(count=1)
@@ -85,18 +81,16 @@ class TargetAggregation(PreExperimentFeaturizer):
             )
             .drop(columns=["count", self.target_col])
         )
+        return self
 
-    def add_pre_experiment_data(self, df: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, X: pd.DataFrame) -> np.array:
         """Adds average target of pre-experiment data to experiment data"""
-        return df.merge(self.pre_experiment_agg_df, how="left", on=self.agg_col).assign(
-            **{
-                self.mean_target_col: lambda x: x[self.mean_target_col].fillna(
-                    self.pre_experiment_mean
-                ),
-                self.smooth_mean_target_col: lambda x: x[
-                    self.smooth_mean_target_col
-                ].fillna(self.pre_experiment_mean),
-            }
+        return (
+            X.merge(self.pre_experiment_agg_df, how="left", on=self.agg_col)[
+                self.smooth_mean_target_col
+            ]
+            .fillna(self.pre_experiment_mean)
+            .values
         )
 
     @classmethod

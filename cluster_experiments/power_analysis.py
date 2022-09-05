@@ -1,22 +1,24 @@
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import pandas as pd
+from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 
+from cluster_experiments.cupac import EmptyRegressor
 from cluster_experiments.experiment_analysis import ExperimentAnalysis
 from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.power_config import (
     PowerConfig,
     analysis_mapping,
-    featurizer_mapping,
+    cupac_model_mapping,
     perturbator_mapping,
     splitter_mapping,
 )
-from cluster_experiments.pre_experiment_covariates import PreExperimentFeaturizer
 from cluster_experiments.random_splitter import RandomSplitter
 
 
 class PowerAnalysis:
-    """Class used to run Power analysis. It does so by running simulations. In each simulation:
+    """
+    Class used to run Power analysis. It does so by running simulations. In each simulation:
     1. Assign treatment to dataframe randomly
     2. Perturbate dataframe
     3. Add pre-experiment data if needed
@@ -30,12 +32,13 @@ class PowerAnalysis:
         perturbator: Perturbator,
         splitter: RandomSplitter,
         analysis: ExperimentAnalysis,
-        featurizer: Optional[PreExperimentFeaturizer] = None,
+        cupac_model: Optional[BaseEstimator] = None,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
         n_simulations: int = 100,
         alpha: float = 0.05,
+        features_cupac_model: Optional[List[str]] = None,
     ):
         """
         Initilize PowerAnalysis class.
@@ -43,12 +46,13 @@ class PowerAnalysis:
             perturbator: Perturbator class to perturbate dataframe with treatment assigned.
             splitter: RandomSplitter class to randomly assign treatment to dataframe.
             analysis: ExperimentAnalysis class to use for analysis.
-            featurizer: PreExperimentFeaturizer class to add pre-experiment data to dataframe. If None, no pre-experiment data will be added.
+            cupac_model: Sklearn estimator class to add pre-experiment data to dataframe. If None, no pre-experiment data will be added.
             target_col: Name of the column with the outcome variable.
             treatment_col: Name of the column with the treatment variable.
             treatment: value of treatment_col considered to be treatment (not control)
             n_simulations: Number of simulations to run.
             alpha: Significance level.
+            features_cupac_model: Covariates to be used in cupac model
 
         Usage:
         ```python
@@ -100,14 +104,76 @@ class PowerAnalysis:
         self.perturbator = perturbator
         self.splitter = splitter
         self.analysis = analysis
-        self.featurizer: PreExperimentFeaturizer = (
-            featurizer or PreExperimentFeaturizer()
-        )
+        self.cupac_model: BaseEstimator = cupac_model or EmptyRegressor()
         self.n_simulations = n_simulations
         self.target_col = target_col
+        self.cupac_outcome_name = f"estimate_{self.target_col}"
         self.treatment = treatment
         self.treatment_col = treatment_col
         self.alpha = alpha
+        self.features_cupac_model: List[str] = features_cupac_model or []
+
+    def _prep_data_cupac(
+        self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+        """Prepares data for training and prediction"""
+        df = df.copy()
+        pre_experiment_df = pre_experiment_df.copy()
+        df_predict = df.drop(columns=[self.target_col])
+        # Split data into X and y
+        pre_experiment_x = pre_experiment_df.drop(columns=[self.target_col])
+        pre_experiment_y = pre_experiment_df[self.target_col]
+
+        # Keep only cupac features
+        if self.features_cupac_model:
+            pre_experiment_x = pre_experiment_x[self.features_cupac_model]
+            df_predict = df_predict[self.features_cupac_model]
+
+        return df_predict, pre_experiment_x, pre_experiment_y
+
+    def add_covariates(
+        self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        Train model to predict outcome variable (based on pre-experiment data)
+        and  add the prediction to the experiment dataframe
+        Args:
+            pre_experiment_df: Dataframe with pre-experiment data.
+            df: Dataframe with outcome and treatment variables.
+
+        """
+        df = df.copy()
+        pre_experiment_df = pre_experiment_df.copy()
+        df_predict, pre_experiment_x, pre_experiment_y = self._prep_data_cupac(
+            df=df, pre_experiment_df=pre_experiment_df
+        )
+
+        # Fit model
+        self.cupac_model.fit(pre_experiment_x, pre_experiment_y)
+
+        # Predict
+        if isinstance(self.cupac_model, RegressorMixin):
+            estimated_target = self.cupac_model.predict(df_predict)
+        elif isinstance(self.cupac_model, ClassifierMixin):
+            estimated_target = self.cupac_model.predict_proba(df_predict)[:, 1]
+        else:
+            raise ValueError(
+                "cupac_model should be an instance of RegressorMixin or ClassifierMixin"
+            )
+
+        # Add cupac outcome name to df and self.analysis
+
+        df[self.cupac_outcome_name] = estimated_target
+        if self.cupac_outcome_name not in self.analysis.covariates:
+            print("adding covariates to analyser")
+            self.analysis.covariates.append(self.cupac_outcome_name)
+        return df
+
+    def log_nulls(self, df: pd.DataFrame) -> None:
+        """Warns about dropping nulls in treatment column"""
+        n_nulls = len(df.query(f"{self.treatment_col}.isnull()"))
+        if n_nulls > 0:
+            print(f"There are {n_nulls} null values in treatment, dropping them")
 
     def power_analysis(
         self, df: pd.DataFrame, pre_experiment_df: Optional[pd.DataFrame] = None
@@ -119,18 +185,21 @@ class PowerAnalysis:
             pre_experiment_df: Dataframe with pre-experiment data.
         """
         df = df.copy()
+
+        if pre_experiment_df is not None and not isinstance(
+            self.cupac_model, EmptyRegressor
+        ):
+            df = self.add_covariates(df, pre_experiment_df)
+
         n_detected_mde = 0
-        if pre_experiment_df is not None and not self.featurizer.is_empty:
-            self.featurizer.fit_pre_experiment_data(pre_experiment_df)
         for _ in range(self.n_simulations):
             treatment_df = self.splitter.assign_treatment_df(df)
+            self.log_nulls(treatment_df)
             treatment_df = treatment_df.query(f"{self.treatment_col}.notnull()")
             treatment_df = self.perturbator.perturbate(treatment_df)
-            if not self.featurizer.is_empty:
-                treatment_df = self.featurizer.add_pre_experiment_data(treatment_df)
-
             p_value = self.analysis.get_pvalue(treatment_df)
             n_detected_mde += p_value < self.alpha
+
         return n_detected_mde / self.n_simulations
 
     @staticmethod
@@ -160,14 +229,14 @@ class PowerAnalysis:
         analysis = cls._get_mapping_key(analysis_mapping, config.analysis).from_config(
             config
         )
-        featurizer = cls._get_mapping_key(
-            featurizer_mapping, config.featurizer
+        cupac_model = cls._get_mapping_key(
+            cupac_model_mapping, config.cupac_model
         ).from_config(config)
         return cls(
             perturbator=perturbator,
             splitter=splitter,
             analysis=analysis,
-            featurizer=featurizer,
+            cupac_model=cupac_model,
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,

@@ -12,7 +12,7 @@ nav:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
       - Splitter: api/random_splitter.md
-      - Pre experiment featurizer: api/featurizer.md
+      - Pre experiment outcome model: api/cupac_model.md
       - Power config: api/power_config.md
       - Power analysis: api/power_analysis.md
 plugins:

@@ -1,6 +1,11 @@
 from setuptools import find_packages, setup
 
-base_packages = ["pip>=22.2.2", "statsmodels>=0.13.2", "pandas>=1.0.0"]
+base_packages = [
+    "pip>=22.2.2",
+    "statsmodels>=0.13.2",
+    "pandas>=1.0.0",
+    "scikit-learn>=1.0.0",
+]
 
 test_packages = [
     "pytest>=5.4.3",
