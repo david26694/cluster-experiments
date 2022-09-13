@@ -230,6 +230,38 @@ class BalancedClusteredSplitter(ClusteredSplitter):
 class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
     """Like SwitchbackSplitter, but ensures that treatments are balanced among clusters."""
 
+    def __init__(
+        self,
+        clusters: List[str],
+        treatments: Optional[List[str]] = None,
+        dates: Optional[List[str]] = None,
+        cluster_mapping: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Constructor for SwitchbackSplitter
+
+        Usage:
+        ```python
+        import pandas as pd
+        from cluster_experiments.random_splitter import BalancedSwitchbackSplitter
+        splitter = BalancedSwitchbackSplitter(
+            clusters=["A", "B", "C"],
+            treatments=["A", "B"],
+            dates=["2020-01-01", "2020-01-02"],
+            cluster_mapping={"cluster": "city", "date": "date"},
+        )
+        df = pd.DataFrame({"city": ["A", "B", "C"], "date": ["2020-01-01", "2020-01-02", "2020-01-01"]})
+        df = splitter.assign_treatment_df(df)
+        print(df)
+        ```
+        """
+        self.treatments = treatments or ["A", "B"]
+        self.clusters = clusters
+        self.dates = dates or []
+        self.cluster_mapping = cluster_mapping or {}
+
+        if not self.cluster_mapping:
+            self.cluster_mapping = {"cluster": "cluster", "date": "date"}
+
     def sample_treatment(self, *args, **kwargs) -> List[str]:
         if len(self.clusters) * len(self.dates) < len(self.treatments):
             raise ValueError("There are more treatments than clusters and dates")

@@ -112,10 +112,13 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
             treatment=treatment,
             covariates=covariates,
         )
-        self.regressors = [self.treatment_col] + self.covariates
-        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
         self.fam = sm.families.Gaussian()
         self.va = sm.cov_struct.Exchangeable()
+
+    def set_formula(self):
+        """Returns the formula used in the analysis"""
+        self.regressors = [self.treatment_col] + self.covariates
+        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
 
     def get_pvalue(self, df: pd.DataFrame) -> float:
         """Returns the p-value of the analysis
@@ -125,6 +128,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         """
         df = df.copy()
         df = self._create_binary_treatment(df)
+        self.set_formula()
 
         results_gee = sm.GEE.from_formula(
             self.formula,
