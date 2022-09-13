@@ -233,11 +233,9 @@ class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
     def __init__(
         self,
         clusters: List[str],
-        *args,
         treatments: Optional[List[str]] = None,
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
-        **kwargs,
     ) -> None:
         """Constructor for SwitchbackSplitter
 
@@ -260,8 +258,6 @@ class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
         self.clusters = clusters
         self.dates = dates or []
         self.cluster_mapping = cluster_mapping or {}
-        self.args = args
-        self.kwargs = kwargs
 
         if not self.cluster_mapping:
             self.cluster_mapping = {"cluster": "cluster", "date": "date"}
