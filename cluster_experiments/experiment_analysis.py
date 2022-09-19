@@ -10,7 +10,7 @@ class ExperimentAnalysis(ABC):
     Abstract class to run the analysis of a given experiment
 
     In order to create your own ExperimentAnalysis,
-    you should create a derived class that implements the get_pvalue method.
+    you should create a derived class that implements the analysis_pvalue method.
     """
 
     def __init__(
@@ -56,12 +56,22 @@ class ExperimentAnalysis(ABC):
         return df
 
     @abstractmethod
-    def get_pvalue(
+    def analysis_pvalue(
         self,
         df: pd.DataFrame,
     ) -> float:
-        """Returns the p-value of the analysis"""
+        """Returns the p-value of the analysis. Expects treatment to be 0-1 variable"""
         pass
+
+    def get_pvalue(self, df: pd.DataFrame) -> float:
+        """Returns the p-value of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        return self.analysis_pvalue(df)
 
     @classmethod
     def from_config(cls, config):
@@ -112,24 +122,17 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
             treatment=treatment,
             covariates=covariates,
         )
+        self.regressors = [self.treatment_col] + self.covariates
+        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
         self.fam = sm.families.Gaussian()
         self.va = sm.cov_struct.Exchangeable()
 
-    def set_formula(self):
-        """Returns the formula used in the analysis"""
-        self.regressors = [self.treatment_col] + self.covariates
-        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
-
-    def get_pvalue(self, df: pd.DataFrame) -> float:
+    def analysis_pvalue(self, df: pd.DataFrame) -> float:
         """Returns the p-value of the analysis
 
         Arguments:
             df: dataframe containing the data to analyze
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self.set_formula()
-
         results_gee = sm.GEE.from_formula(
             self.formula,
             data=df,

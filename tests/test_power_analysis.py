@@ -56,6 +56,7 @@ def cupac_power_analysis(clusters, experiment_dates):
 
     analysis = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
+        covariates=["estimate_target"],
     )
 
     target_agg = TargetAggregation(
