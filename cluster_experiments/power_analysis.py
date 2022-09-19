@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional, Tuple
 
 import pandas as pd
@@ -112,6 +113,17 @@ class PowerAnalysis:
         self.treatment_col = treatment_col
         self.alpha = alpha
         self.features_cupac_model: List[str] = features_cupac_model or []
+        self.is_cupac = not isinstance(self.cupac_model, EmptyRegressor)
+
+        cupac_not_in_covariates = (
+            self.cupac_outcome_name not in self.analysis.covariates
+        )
+
+        if self.is_cupac and cupac_not_in_covariates:
+            raise ValueError(
+                f"covariates in analysis must contain {self.cupac_outcome_name} if cupac_model is not None",
+                "If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis",
+            )
 
     def _prep_data_cupac(
         self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
@@ -161,19 +173,15 @@ class PowerAnalysis:
                 "cupac_model should be an instance of RegressorMixin or ClassifierMixin"
             )
 
-        # Add cupac outcome name to df and self.analysis
-
+        # Add cupac outcome name to df
         df[self.cupac_outcome_name] = estimated_target
-        if self.cupac_outcome_name not in self.analysis.covariates:
-            print("adding covariates to analyser")
-            self.analysis.covariates.append(self.cupac_outcome_name)
         return df
 
     def log_nulls(self, df: pd.DataFrame) -> None:
         """Warns about dropping nulls in treatment column"""
         n_nulls = len(df.query(f"{self.treatment_col}.isnull()"))
         if n_nulls > 0:
-            print(f"There are {n_nulls} null values in treatment, dropping them")
+            logging.info(f"There are {n_nulls} null values in treatment, dropping them")
 
     def power_analysis(
         self, df: pd.DataFrame, pre_experiment_df: Optional[pd.DataFrame] = None
@@ -186,9 +194,7 @@ class PowerAnalysis:
         """
         df = df.copy()
 
-        if pre_experiment_df is not None and not isinstance(
-            self.cupac_model, EmptyRegressor
-        ):
+        if pre_experiment_df is not None and self.is_cupac:
             df = self.add_covariates(df, pre_experiment_df)
 
         n_detected_mde = 0

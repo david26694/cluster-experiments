@@ -97,6 +97,11 @@ def test_switchback_balanced_splitter(clusters, treatments, dates):
     assert set(Counter(sampled_treatment).keys()) == set(["A", "B"])
 
 
+def test_raises_no_date(clusters, treatments):
+    with pytest.raises(ValueError):
+        BalancedSwitchbackSplitter(clusters, treatments)
+
+
 def test_switchback_balanced_splitter_abc(clusters, dates):
     treatments = ["A", "B", "C"]
     for _ in range(100):

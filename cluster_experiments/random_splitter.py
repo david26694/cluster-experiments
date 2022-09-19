@@ -182,6 +182,9 @@ class SwitchbackSplitter(RandomSplitter):
         if not self.cluster_mapping:
             self.cluster_mapping = {"cluster": "cluster", "date": "date"}
 
+        if len(self.dates) == 0:
+            raise ValueError("SwitchbackSplitter requires dates")
+
     def treatment_assignment(
         self, sampled_treatments: List[str]
     ) -> List[Dict[str, str]]:
@@ -261,6 +264,9 @@ class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
 
         if not self.cluster_mapping:
             self.cluster_mapping = {"cluster": "cluster", "date": "date"}
+
+        if len(self.dates) == 0:
+            raise ValueError("SwitchbackSplitter requires dates")
 
     def sample_treatment(self, *args, **kwargs) -> List[str]:
         if len(self.clusters) * len(self.dates) < len(self.treatments):

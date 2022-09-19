@@ -56,6 +56,7 @@ def cupac_power_analysis(clusters, experiment_dates):
 
     analysis = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
+        covariates=["estimate_target"],
     )
 
     target_agg = TargetAggregation(
@@ -175,3 +176,18 @@ def test_power_analysis_dict(df, clusters, experiment_dates):
     power = pw.power_analysis(df)
     assert power >= 0
     assert power <= 1
+
+
+def test_raises_cupac(clusters, experiment_dates):
+    config = dict(
+        clusters=clusters,
+        cluster_cols=["cluster", "date"],
+        analysis="gee",
+        perturbator="uniform",
+        splitter="switchback",
+        dates=experiment_dates,
+        cupac_model="mean_cupac_model",
+        n_simulations=4,
+    )
+    with pytest.raises(ValueError):
+        PowerAnalysis.from_dict(config)
