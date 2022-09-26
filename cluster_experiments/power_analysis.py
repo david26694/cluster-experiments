@@ -220,13 +220,8 @@ class PowerAnalysis:
             df = self.add_covariates(df, pre_experiment_df)
 
         n_detected_mde = 0
-        if verbose:
-            logging.info("Running simulations...")
-            iterator = tqdm(range(self.n_simulations))
-        else:
-            iterator = range(self.n_simulations)
 
-        for _ in iterator:
+        for _ in tqdm(range(self.n_simulations), disable=not verbose):
             treatment_df = self.splitter.assign_treatment_df(df)
             self.log_nulls(treatment_df)
             treatment_df = treatment_df.query(f"{self.treatment_col}.notnull()")
