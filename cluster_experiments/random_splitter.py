@@ -17,6 +17,12 @@ class RandomSplitter(ABC):
     * sample_treatment: This is what needs to be implemented. It should return a list of same length as the number of clusters, with the treatment
     received to each cluster.
 
+    Arguments:
+        clusters: list of clusters to split
+        treatments: list of treatments
+        dates: list of dates (switches)
+        cluster_mapping: dictionary to map the keys cluster and date to the actual names of the columns of the dataframe. For clustered splitter, cluster_mapping could be {"cluster": "city"}. for SwitchbackSplitter, cluster_mapping could be {"cluster": "city", "date": "date"}
+
     """
 
     def __init__(
@@ -26,15 +32,6 @@ class RandomSplitter(ABC):
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
     ) -> None:
-        """
-        Constructor for RandomSplitter
-
-        Arguments:
-            clusters: list of clusters to split
-            treatments: list of treatments
-            dates: list of dates (switches)
-            cluster_mapping: dictionary to map the keys cluster and date to the actual names of the columns of the dataframe. For clustered splitter, cluster_mapping could be {"cluster": "city"}. for SwitchbackSplitter, cluster_mapping could be {"cluster": "city", "date": "date"}
-        """
         self.treatments = treatments or ["A", "B"]
         self.clusters = clusters
         self.dates = dates or []
@@ -91,7 +88,22 @@ class RandomSplitter(ABC):
 
 
 class ClusteredSplitter(RandomSplitter):
-    """Splits randomly using clusters"""
+    """
+    Splits randomly using clusters
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.random_splitter import ClusteredSplitter
+    splitter = ClusteredSplitter(
+        clusters=["A", "B", "C"],
+        treatments=["A", "B"],
+        cluster_mapping={"cluster": "city"},
+    )
+    df = pd.DataFrame({"city": ["A", "B", "C"]})
+    df = splitter.assign_treatment_df(df)
+    print(df)
+    ```
+    """
 
     def __init__(
         self,
@@ -100,22 +112,6 @@ class ClusteredSplitter(RandomSplitter):
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
     ) -> None:
-        """Constructor for ClusteredSplitter
-
-        Usage:
-        ```python
-        import pandas as pd
-        from cluster_experiments.random_splitter import ClusteredSplitter
-        splitter = ClusteredSplitter(
-            clusters=["A", "B", "C"],
-            treatments=["A", "B"],
-            cluster_mapping={"cluster": "city"},
-        )
-        df = pd.DataFrame({"city": ["A", "B", "C"]})
-        df = splitter.assign_treatment_df(df)
-        print(df)
-        ```
-        """
         super().__init__(
             clusters=clusters,
             treatments=treatments,
@@ -140,7 +136,24 @@ class ClusteredSplitter(RandomSplitter):
 
 
 class SwitchbackSplitter(RandomSplitter):
-    """Splits randomly using clusters and dates"""
+    """
+    Splits randomly using clusters and dates
+
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.random_splitter import SwitchbackSplitter
+    splitter = SwitchbackSplitter(
+        clusters=["A", "B", "C"],
+        treatments=["A", "B"],
+        dates=["2020-01-01", "2020-01-02"],
+        cluster_mapping={"cluster": "city", "date": "date"},
+    )
+    df = pd.DataFrame({"city": ["A", "B", "C"], "date": ["2020-01-01", "2020-01-02", "2020-01-01"]})
+    df = splitter.assign_treatment_df(df)
+    print(df)
+    ```
+    """
 
     def __init__(
         self,
@@ -149,23 +162,6 @@ class SwitchbackSplitter(RandomSplitter):
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
     ) -> None:
-        """Constructor for SwitchbackSplitter
-
-        Usage:
-        ```python
-        import pandas as pd
-        from cluster_experiments.random_splitter import SwitchbackSplitter
-        splitter = SwitchbackSplitter(
-            clusters=["A", "B", "C"],
-            treatments=["A", "B"],
-            dates=["2020-01-01", "2020-01-02"],
-            cluster_mapping={"cluster": "city", "date": "date"},
-        )
-        df = pd.DataFrame({"city": ["A", "B", "C"], "date": ["2020-01-01", "2020-01-02", "2020-01-01"]})
-        df = splitter.assign_treatment_df(df)
-        print(df)
-        ```
-        """
         super().__init__(
             clusters=clusters,
             treatments=treatments,
@@ -224,7 +220,24 @@ class BalancedClusteredSplitter(ClusteredSplitter):
 
 
 class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
-    """Like SwitchbackSplitter, but ensures that treatments are balanced among clusters."""
+    """
+    Like SwitchbackSplitter, but ensures that treatments are balanced among clusters.
+
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.random_splitter import BalancedSwitchbackSplitter
+    splitter = BalancedSwitchbackSplitter(
+        clusters=["A", "B", "C"],
+        treatments=["A", "B"],
+        dates=["2020-01-01", "2020-01-02"],
+        cluster_mapping={"cluster": "city", "date": "date"},
+    )
+    df = pd.DataFrame({"city": ["A", "B", "C"], "date": ["2020-01-01", "2020-01-02", "2020-01-01"]})
+    df = splitter.assign_treatment_df(df)
+    print(df)
+    ```
+    """
 
     def __init__(
         self,
@@ -233,23 +246,6 @@ class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
     ) -> None:
-        """Constructor for SwitchbackSplitter
-
-        Usage:
-        ```python
-        import pandas as pd
-        from cluster_experiments.random_splitter import BalancedSwitchbackSplitter
-        splitter = BalancedSwitchbackSplitter(
-            clusters=["A", "B", "C"],
-            treatments=["A", "B"],
-            dates=["2020-01-01", "2020-01-02"],
-            cluster_mapping={"cluster": "city", "date": "date"},
-        )
-        df = pd.DataFrame({"city": ["A", "B", "C"], "date": ["2020-01-01", "2020-01-02", "2020-01-01"]})
-        df = splitter.assign_treatment_df(df)
-        print(df)
-        ```
-        """
         self.treatments = treatments or ["A", "B"]
         self.clusters = clusters
         self.dates = dates or []

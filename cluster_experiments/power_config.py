@@ -16,6 +16,28 @@ from cluster_experiments.random_splitter import (
 class PowerConfig:
     """
     Dataclass to create a power analysis from.
+
+    Arguments:
+        splitter: Splitter object to use
+        perturbator: Perturbator object to use
+        analysis: ExperimentAnalysis object to use
+        cupac_model: CUPAC model to use
+        n_simulations: number of simulations to run
+        cluster_cols: list of columns to use as clusters
+        target_col: column to use as target
+        treatment_col: column to use as treatment
+        treatment: what value of treatment_col should be considered as treatment
+        covariates: list of columns to use as covariates
+        clusters: list of clusters to use
+        dates: list of dates to use
+        average_effect: average effect to use in the perturbator
+        treatments: list of treatments to use
+        cluster_mapping: mapping of clusters and columns
+        alpha: alpha value to use in the power analysis
+        agg_col: column to use for aggregation in the CUPAC model
+        smoothing_factor: smoothing value to use in the CUPAC model
+        features_cupac_model: list of features to use in the CUPAC model
+
     Usage:
 
     ```python

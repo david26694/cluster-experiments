@@ -11,6 +11,16 @@ class ExperimentAnalysis(ABC):
 
     In order to create your own ExperimentAnalysis,
     you should create a derived class that implements the analysis_pvalue method.
+
+    It can also be used as a component of the PowerAnalysis class.
+
+    Arguments:
+        cluster_cols: list of columns to use as clusters
+        target_col: name of the column containing the variable to measure
+        treatment_col: name of the column containing the treatment variable
+        treatment: name of the treatment to use as the treated group
+        covariates: list of columns to use as covariates
+
     """
 
     def __init__(
@@ -21,17 +31,6 @@ class ExperimentAnalysis(ABC):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
     ):
-        """
-        Creates an object to run the analysis of a given experiment, after the data is collected.
-        It can also be used as a component of the PowerAnalysis class.
-
-        Arguments:
-            cluster_cols: list of columns to use as clusters
-            target_col: name of the column containing the variable to measure
-            treatment_col: name of the column containing the treatment variable
-            treatment: name of the treatment to use as the treated group
-            covariates: list of columns to use as covariates
-        """
         self.target_col = target_col
         self.treatment = treatment
         self.treatment_col = treatment_col
@@ -80,7 +79,27 @@ class ExperimentAnalysis(ABC):
 
 
 class GeeExperimentAnalysis(ExperimentAnalysis):
-    """Class to run GEE analysis"""
+    """
+    Class to run GEE analysis
+
+    Usage:
+
+    ```python
+    from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+    import pandas as pd
+
+    df = pd.DataFrame({
+        'x': [1, 2, 3, 0, 0, 1],
+        'treatment': ["A"] * 3 + ["B"] * 3,
+        'cluster': [1] * 6,
+    })
+
+    GeeExperimentAnalysis(
+        cluster_cols=['cluster'],
+        target_col='x',
+    ).get_pvalue(df)
+    ```
+    """
 
     def __init__(
         self,
@@ -90,25 +109,6 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
     ):
-        """
-        Usage:
-
-        ```python
-        from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-        import pandas as pd
-
-        df = pd.DataFrame({
-            'x': [1, 2, 3, 0, 0, 1],
-            'treatment': ["A"] * 3 + ["B"] * 3,
-            'cluster': [1] * 6,
-        })
-
-        GeeExperimentAnalysis(
-            cluster_cols=['cluster'],
-            target_col='x',
-        ).get_pvalue(df)
-        ```
-        """
         super().__init__(
             target_col=target_col,
             treatment_col=treatment_col,

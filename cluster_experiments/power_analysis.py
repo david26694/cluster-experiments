@@ -28,6 +28,64 @@ class PowerAnalysis:
     4. Run analysis
 
     Finally it returns the power of the analysis by counting how many times the effect was detected.
+
+    Args:
+        perturbator: Perturbator class to perturbate dataframe with treatment assigned.
+        splitter: RandomSplitter class to randomly assign treatment to dataframe.
+        analysis: ExperimentAnalysis class to use for analysis.
+        cupac_model: Sklearn estimator class to add pre-experiment data to dataframe. If None, no pre-experiment data will be added.
+        target_col: Name of the column with the outcome variable.
+        treatment_col: Name of the column with the treatment variable.
+        treatment: value of treatment_col considered to be treatment (not control)
+        n_simulations: Number of simulations to run.
+        alpha: Significance level.
+        features_cupac_model: Covariates to be used in cupac model
+
+    Usage:
+    ```python
+    from datetime import date
+
+    import numpy as np
+    import pandas as pd
+    from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+    from cluster_experiments.perturbator import UniformPerturbator
+    from cluster_experiments.power_analysis import PowerAnalysis
+    from cluster_experiments.random_splitter import SwitchbackSplitter
+
+    N = 1_000
+    users = [f"User {i}" for i in range(1000)]
+    clusters = [f"Cluster {i}" for i in range(100)]
+    dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
+    df = pd.DataFrame(
+        {
+            "cluster": np.random.choice(clusters, size=N),
+            "target": np.random.normal(0, 1, size=N),
+            "user": np.random.choice(users, size=N),
+            "date": np.random.choice(dates, size=N),
+        }
+    )
+
+    experiment_dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(15, 32)]
+    sw = SwitchbackSplitter(
+        clusters=clusters,
+        dates=experiment_dates,
+    )
+
+    perturbator = UniformPerturbator(
+        average_effect=0.1,
+    )
+
+    analysis = GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+    pw = PowerAnalysis(
+        perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50
+    )
+
+    power = pw.power_analysis(df)
+    print(f"{power = }")
+    ```
     """
 
     def __init__(
@@ -43,67 +101,6 @@ class PowerAnalysis:
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
     ):
-        """
-        Initilize PowerAnalysis class.
-        Args:
-            perturbator: Perturbator class to perturbate dataframe with treatment assigned.
-            splitter: RandomSplitter class to randomly assign treatment to dataframe.
-            analysis: ExperimentAnalysis class to use for analysis.
-            cupac_model: Sklearn estimator class to add pre-experiment data to dataframe. If None, no pre-experiment data will be added.
-            target_col: Name of the column with the outcome variable.
-            treatment_col: Name of the column with the treatment variable.
-            treatment: value of treatment_col considered to be treatment (not control)
-            n_simulations: Number of simulations to run.
-            alpha: Significance level.
-            features_cupac_model: Covariates to be used in cupac model
-
-        Usage:
-        ```python
-        from datetime import date
-
-        import numpy as np
-        import pandas as pd
-        from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-        from cluster_experiments.perturbator import UniformPerturbator
-        from cluster_experiments.power_analysis import PowerAnalysis
-        from cluster_experiments.random_splitter import SwitchbackSplitter
-
-        N = 1_000
-        users = [f"User {i}" for i in range(1000)]
-        clusters = [f"Cluster {i}" for i in range(100)]
-        dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
-        df = pd.DataFrame(
-            {
-                "cluster": np.random.choice(clusters, size=N),
-                "target": np.random.normal(0, 1, size=N),
-                "user": np.random.choice(users, size=N),
-                "date": np.random.choice(dates, size=N),
-            }
-        )
-
-        experiment_dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(15, 32)]
-        sw = SwitchbackSplitter(
-            clusters=clusters,
-            dates=experiment_dates,
-        )
-
-        perturbator = UniformPerturbator(
-            average_effect=0.1,
-        )
-
-        analysis = GeeExperimentAnalysis(
-            cluster_cols=["cluster", "date"],
-        )
-
-        pw = PowerAnalysis(
-            perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50
-        )
-
-        power = pw.power_analysis(df)
-        print(f"{power = }")
-        ```
-
-        """
         self.perturbator = perturbator
         self.splitter = splitter
         self.analysis = analysis
