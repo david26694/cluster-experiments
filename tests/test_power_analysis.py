@@ -177,6 +177,10 @@ def test_power_analysis_dict(df, clusters, experiment_dates):
     assert power >= 0
     assert power <= 1
 
+    power_verbose = pw.power_analysis(df, verbose=True)
+    assert power_verbose >= 0
+    assert power_verbose <= 1
+
 
 def test_raises_cupac(clusters, experiment_dates):
     config = dict(
@@ -191,3 +195,19 @@ def test_raises_cupac(clusters, experiment_dates):
     )
     with pytest.raises(ValueError):
         PowerAnalysis.from_dict(config)
+
+
+def test_data_checks(df, clusters, experiment_dates):
+    config = dict(
+        clusters=clusters,
+        cluster_cols=["cluster", "date"],
+        analysis="gee",
+        perturbator="uniform",
+        splitter="switchback",
+        dates=experiment_dates,
+        n_simulations=4,
+    )
+    pw = PowerAnalysis.from_dict(config)
+    df["target"] = df["target"] == 1
+    with pytest.raises(ValueError):
+        pw.power_analysis(df)

@@ -5,6 +5,7 @@ base_packages = [
     "statsmodels>=0.13.2",
     "pandas>=1.0.0",
     "scikit-learn>=1.0.0",
+    "tqdm>=4.0.0",
 ]
 
 test_packages = [
@@ -26,7 +27,7 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.1.3",
+    version="0.1.4",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,
