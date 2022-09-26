@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
+from tqdm import tqdm
 
 from cluster_experiments.cupac import EmptyRegressor
 from cluster_experiments.experiment_analysis import ExperimentAnalysis
@@ -123,7 +124,8 @@ class PowerAnalysis:
         if self.is_cupac and cupac_not_in_covariates:
             raise ValueError(
                 f"covariates in analysis must contain {self.cupac_outcome_name} if cupac_model is not None. "
-                "If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis"
+                "If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
+                "You may want to do covariates=['estimate_target'] in your analysis method or your config"
             )
 
     def _prep_data_cupac(
@@ -182,7 +184,9 @@ class PowerAnalysis:
         """Warns about dropping nulls in treatment column"""
         n_nulls = len(df.query(f"{self.treatment_col}.isnull()"))
         if n_nulls > 0:
-            logging.info(f"There are {n_nulls} null values in treatment, dropping them")
+            logging.warning(
+                f"There are {n_nulls} null values in treatment, dropping them"
+            )
 
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
@@ -197,7 +201,10 @@ class PowerAnalysis:
             )
 
     def power_analysis(
-        self, df: pd.DataFrame, pre_experiment_df: Optional[pd.DataFrame] = None
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
     ) -> float:
         """
         Run power analysis by simulation
@@ -211,7 +218,13 @@ class PowerAnalysis:
             df = self.add_covariates(df, pre_experiment_df)
 
         n_detected_mde = 0
-        for _ in range(self.n_simulations):
+        if verbose:
+            logging.info("Running simulations...")
+            iterator = tqdm(range(self.n_simulations))
+        else:
+            iterator = range(self.n_simulations)
+
+        for _ in iterator:
             treatment_df = self.splitter.assign_treatment_df(df)
             self.log_nulls(treatment_df)
             treatment_df = treatment_df.query(f"{self.treatment_col}.notnull()")

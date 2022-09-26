@@ -177,6 +177,10 @@ def test_power_analysis_dict(df, clusters, experiment_dates):
     assert power >= 0
     assert power <= 1
 
+    power_verbose = pw.power_analysis(df, verbose=True)
+    assert power_verbose >= 0
+    assert power_verbose <= 1
+
 
 def test_raises_cupac(clusters, experiment_dates):
     config = dict(
