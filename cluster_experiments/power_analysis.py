@@ -124,8 +124,8 @@ class PowerAnalysis:
         if self.is_cupac and cupac_not_in_covariates:
             raise ValueError(
                 f"covariates in analysis must contain {self.cupac_outcome_name} if cupac_model is not None. "
-                "If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
-                "You may want to do covariates=['estimate_target'] in your analysis method or your config"
+                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
+                f"You may want to do covariates=['{self.cupac_outcome_name}'] in your analysis method or your config"
             )
 
     def _prep_data_cupac(
