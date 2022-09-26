@@ -20,7 +20,26 @@ class EmptyRegressor(BaseEstimator, RegressorMixin):
 
 
 class TargetAggregation(BaseEstimator, RegressorMixin):
-    """Adds average of target using pre-experiment data"""
+    """
+    Adds average of target using pre-experiment data
+
+    Args:
+        agg_col: Column to group by to aggregate target
+        target_col: Column to aggregate
+        smoothing_factor: Smoothing factor for the smoothed mean
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.cupac import TargetAggregation
+
+    df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"], "target_col": [1, 2, 3, 4, 5, 6]})
+    new_df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"]})
+    target_agg = TargetAggregation("agg_col", "target_col")
+    target_agg.fit(df)
+    df_with_target_agg = target_agg.predict(new_df)
+    print(df_with_target_agg)
+    ```
+    """
 
     def __init__(
         self,
@@ -28,26 +47,6 @@ class TargetAggregation(BaseEstimator, RegressorMixin):
         target_col: str = "target",
         smoothing_factor: int = 20,
     ):
-        """Constructor for TargetAggregation
-
-        Args:
-            agg_col: Column to group by to aggregate target
-            target_col: Column to aggregate
-            smoothing_factor: Smoothing factor for the smoothed mean
-        Usage:
-        ```python
-        import pandas as pd
-        from cluster_experiments.cupac import TargetAggregation
-
-        df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"], "target_col": [1, 2, 3, 4, 5, 6]})
-        new_df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"]})
-        target_agg = TargetAggregation("agg_col", "target_col")
-        target_agg.fit(df)
-        df_with_target_agg = target_agg.predict(new_df)
-        print(df_with_target_agg)
-        ```
-
-        """
         self.agg_col = agg_col
         self.target_col = target_col
         self.smoothing_factor = smoothing_factor
