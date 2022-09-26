@@ -214,6 +214,8 @@ class PowerAnalysis:
         """
         df = df.copy()
 
+        self._data_checks(df=df)
+
         if pre_experiment_df is not None and self.is_cupac:
             df = self.add_covariates(df, pre_experiment_df)
 
