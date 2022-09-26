@@ -2,6 +2,7 @@ import logging
 from typing import List, Optional, Tuple
 
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 
 from cluster_experiments.cupac import EmptyRegressor
@@ -121,8 +122,8 @@ class PowerAnalysis:
 
         if self.is_cupac and cupac_not_in_covariates:
             raise ValueError(
-                f"covariates in analysis must contain {self.cupac_outcome_name} if cupac_model is not None",
-                "If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis",
+                f"covariates in analysis must contain {self.cupac_outcome_name} if cupac_model is not None. "
+                "If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis"
             )
 
     def _prep_data_cupac(
@@ -182,6 +183,18 @@ class PowerAnalysis:
         n_nulls = len(df.query(f"{self.treatment_col}.isnull()"))
         if n_nulls > 0:
             logging.info(f"There are {n_nulls} null values in treatment, dropping them")
+
+    def _data_checks(self, df: pd.DataFrame) -> None:
+        """Checks that the data is correct"""
+        if df[self.target_col].isnull().any():
+            raise ValueError(
+                f"There are null values in outcome column {self.treatment_col}"
+            )
+
+        if not is_numeric_dtype(df[self.target_col]):
+            raise ValueError(
+                f"Outcome column {self.target_col} should be numeric and not {df[self.target_col].dtype}"
+            )
 
     def power_analysis(
         self, df: pd.DataFrame, pre_experiment_df: Optional[pd.DataFrame] = None

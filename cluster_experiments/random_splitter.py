@@ -17,35 +17,28 @@ class RandomSplitter(ABC):
     * sample_treatment: This is what needs to be implemented. It should return a list of same length as the number of clusters, with the treatment
     received to each cluster.
 
-    Args and kwargs can be passed in the constructor to help tweaking the derived splitter
     """
 
     def __init__(
         self,
         clusters: List[str],
-        *args,
         treatments: Optional[List[str]] = None,
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
-        **kwargs,
     ) -> None:
         """
         Constructor for RandomSplitter
 
         Arguments:
             clusters: list of clusters to split
-            args: Specific positional arguments for the derived splitter
             treatments: list of treatments
             dates: list of dates (switches)
             cluster_mapping: dictionary to map the keys cluster and date to the actual names of the columns of the dataframe. For clustered splitter, cluster_mapping could be {"cluster": "city"}. for SwitchbackSplitter, cluster_mapping could be {"cluster": "city", "date": "date"}
-            kwargs: Specific keyword arguments for the derived splitter
         """
         self.treatments = treatments or ["A", "B"]
         self.clusters = clusters
         self.dates = dates or []
         self.cluster_mapping = cluster_mapping or {}
-        self.args = args
-        self.kwargs = kwargs
 
     @abstractmethod
     def treatment_assignment(
