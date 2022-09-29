@@ -50,9 +50,9 @@ class ExperimentAnalysis(ABC):
 
     @abstractmethod
     def analysis_pvalue(
-            self,
-            df: pd.DataFrame,
-            verbose: bool = False,
+        self,
+        df: pd.DataFrame,
+        verbose: bool = False,
     ) -> float:
         """
         Returns the p-value of the analysis. Expects treatment to be 0-1 variable
@@ -127,8 +127,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         self.fam = sm.families.Gaussian()
         self.va = sm.cov_struct.Exchangeable()
 
-    def analysis_pvalue(self, df: pd.DataFrame,
-                        verbose: bool = False) -> float:
+    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
         Arguments:
             df: dataframe containing the data to analyze
