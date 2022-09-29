@@ -52,6 +52,7 @@ class ExperimentAnalysis(ABC):
     def analysis_pvalue(
         self,
         df: pd.DataFrame,
+        verbose=False,
     ) -> float:
         """Returns the p-value of the analysis. Expects treatment to be 0-1 variable"""
         pass
@@ -121,7 +122,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         self.fam = sm.families.Gaussian()
         self.va = sm.cov_struct.Exchangeable()
 
-    def analysis_pvalue(self, df: pd.DataFrame) -> float:
+    def analysis_pvalue(self, df: pd.DataFrame, verbose=False) -> float:
         """Returns the p-value of the analysis
 
         Arguments:
@@ -134,4 +135,6 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
             family=self.fam,
             cov_struct=self.va,
         ).fit()
+        if verbose:
+            print(results_gee.summary())
         return results_gee.pvalues[self.treatment_col]
