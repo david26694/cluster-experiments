@@ -132,7 +132,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         """Returns the p-value of the analysis
         Arguments:
             df: dataframe containing the data to analyze
-            verbose (Optional): True/False, prints the regression summary if True
+            verbose (Optional): bool, prints the regression summary if True
         """
         results_gee = sm.GEE.from_formula(
             self.formula,
