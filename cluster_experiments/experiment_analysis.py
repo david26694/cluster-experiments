@@ -58,7 +58,7 @@ class ExperimentAnalysis(ABC):
         Returns the p-value of the analysis. Expects treatment to be 0-1 variable
         Arguments:
             df: dataframe containing the data to analyze
-            verbose (Optional): True/False, prints the regression summary if True
+            verbose (Optional): bool, prints the regression summary if True
         """
         pass
 
