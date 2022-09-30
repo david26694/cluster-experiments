@@ -1,6 +1,6 @@
 # cluster_experiments
 
-A library to run power analysis and analyse clustered and switchback experiments.
+A library to run simulation-based power analysis, including clustered data. Also useful to design and analyse clustered and switchback experiments.
 
 ## Example
 
@@ -66,8 +66,10 @@ The library offers the following classes:
     * `SwitchbackSplitter`: to split data based using switchback method
     * `BalancedClusteredSplitter`: to split data based on clusters in a balanced way
     * `BalancedSwitchbackSplitter`: to split data based using switchback method in a balanced way
+    * `NonClusteredSplitter`: Regular data splitting, no clusters
 * Regarding analysis:
     * `GeeExperimentAnalysis`: to run GEE analysis on a the results of a clustered design
+    * `OLSAnalysis`: to run OLS analysis for non-clustered data
     * `TargetAggregation`: to add pre-experimental data of the outcome to reduce variance
 * Other:
     * `PowerConfig`: to conviently configure `PowerAnalysis` class
