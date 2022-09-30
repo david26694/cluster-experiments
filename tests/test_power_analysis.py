@@ -182,6 +182,36 @@ def test_power_analysis_dict(df, clusters, experiment_dates):
     assert power_verbose <= 1
 
 
+def test_different_names(df, clusters, experiment_dates):
+    df = df.rename(
+        columns={
+            "cluster": "cluster_0",
+            "target": "target_0",
+            "date": "date_0",
+        }
+    )
+    config = dict(
+        clusters=clusters,
+        cluster_cols=["cluster_0", "date_0"],
+        cluster_mapping={"cluster": "cluster_0", "date": "date_0"},
+        analysis="gee",
+        perturbator="uniform",
+        splitter="switchback",
+        dates=experiment_dates,
+        n_simulations=4,
+        treatment_col="treatment_0",
+        target_col="target_0",
+    )
+    pw = PowerAnalysis.from_dict(config)
+    power = pw.power_analysis(df)
+    assert power >= 0
+    assert power <= 1
+
+    power_verbose = pw.power_analysis(df, verbose=True)
+    assert power_verbose >= 0
+    assert power_verbose <= 1
+
+
 def test_raises_cupac(clusters, experiment_dates):
     config = dict(
         clusters=clusters,

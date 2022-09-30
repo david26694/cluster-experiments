@@ -3,6 +3,7 @@ from typing import List, Optional
 
 import pandas as pd
 import statsmodels.api as sm
+from pandas.api.types import is_numeric_dtype
 
 
 class ExperimentAnalysis(ABC):
@@ -62,6 +63,18 @@ class ExperimentAnalysis(ABC):
         """
         pass
 
+    def _data_checks(self, df: pd.DataFrame) -> None:
+        """Checks that the data is correct"""
+        if df[self.target_col].isnull().any():
+            raise ValueError(
+                f"There are null values in outcome column {self.treatment_col}"
+            )
+
+        if not is_numeric_dtype(df[self.target_col]):
+            raise ValueError(
+                f"Outcome column {self.target_col} should be numeric and not {df[self.target_col].dtype}"
+            )
+
     def get_pvalue(self, df: pd.DataFrame) -> float:
         """Returns the p-value of the analysis
 
@@ -70,6 +83,7 @@ class ExperimentAnalysis(ABC):
         """
         df = df.copy()
         df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
         return self.analysis_pvalue(df)
 
     @classmethod
@@ -87,6 +101,13 @@ class ExperimentAnalysis(ABC):
 class GeeExperimentAnalysis(ExperimentAnalysis):
     """
     Class to run GEE analysis
+
+    Arguments:
+        cluster_cols: list of columns to use as clusters
+        target_col: name of the column containing the variable to measure
+        treatment_col: name of the column containing the treatment variable
+        treatment: name of the treatment to use as the treated group
+        covariates: list of columns to use as covariates
 
     Usage:
 
@@ -143,3 +164,66 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         if verbose:
             print(results_gee.summary())
         return results_gee.pvalues[self.treatment_col]
+
+
+class OLSAnalysis(ExperimentAnalysis):
+    """
+    Class to run OLS analysis
+
+    Arguments:
+        target_col: name of the column containing the variable to measure
+        treatment_col: name of the column containing the treatment variable
+        treatment: name of the treatment to use as the treated group
+        covariates: list of columns to use as covariates
+
+    Usage:
+
+    ```python
+    from cluster_experiments.experiment_analysis import OLSAnalysis
+    import pandas as pd
+
+    df = pd.DataFrame({
+        'x': [1, 2, 3, 0, 0, 1],
+        'treatment': ["A"] * 3 + ["B"] * 3,
+    })
+
+    OLSAnalysis(
+        target_col='x',
+    ).get_pvalue(df)
+    ```
+    """
+
+    def __init__(
+        self,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        covariates: Optional[List[str]] = None,
+    ):
+        self.target_col = target_col
+        self.treatment = treatment
+        self.treatment_col = treatment_col
+        self.covariates = covariates or []
+        self.regressors = [self.treatment_col] + self.covariates
+        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
+
+    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the p-value of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = sm.OLS.from_formula(self.formula, data=df).fit()
+        if verbose:
+            print(results_ols.summary())
+        return results_ols.pvalues[self.treatment_col]
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates an OLSAnalysis object from a PowerConfig object"""
+        return cls(
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            covariates=config.covariates,
+        )
