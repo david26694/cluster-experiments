@@ -2,12 +2,13 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
-from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+from cluster_experiments.experiment_analysis import GeeExperimentAnalysis, OLSAnalysis
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
+    NonClusteredSplitter,
     SwitchbackSplitter,
 )
 
@@ -63,8 +64,8 @@ class PowerConfig:
     analysis: str
 
     # Needed
-    clusters: List[str]
-    cluster_cols: List[str]
+    clusters: Optional[List[str]] = None
+    cluster_cols: Optional[List[str]] = None
 
     # optional mappings
     cupac_model: str = ""
@@ -105,10 +106,9 @@ splitter_mapping = {
     "clustered_balance": BalancedClusteredSplitter,
     "switchback": SwitchbackSplitter,
     "switchback_balance": BalancedSwitchbackSplitter,
+    "non_clustered": NonClusteredSplitter,
 }
 
-analysis_mapping = {
-    "gee": GeeExperimentAnalysis,
-}
+analysis_mapping = {"gee": GeeExperimentAnalysis, "ols_non_clustered": OLSAnalysis}
 
 cupac_model_mapping = {"": EmptyRegressor, "mean_cupac_model": TargetAggregation}

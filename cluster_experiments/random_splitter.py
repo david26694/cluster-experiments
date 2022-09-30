@@ -1,5 +1,5 @@
 import random
-from abc import ABC, abstractmethod
+from abc import ABC
 from itertools import product
 from typing import Dict, List, Optional
 
@@ -11,17 +11,20 @@ class RandomSplitter(ABC):
     Abstract class to split instances in a switchback or clustered way. It can be used to create a calendar/split of clusters
     or to run a power analysis.
 
-    In order to create your own RandomSplitter, you need to write two methods:
+    In order to create your own RandomSplitter, you either write the following two methods:
     * treatment_assignment: If you are deriving from clustered or switchback splitters, no need for this. The goal of this is, given the output of sample_treatment,
     prepare such that it can be added to the dataframe by building a list of dictionaries with clusters and treatments.
     * sample_treatment: This is what needs to be implemented. It should return a list of same length as the number of clusters, with the treatment
     received to each cluster.
+
+    Or write your own assign_treatment_df method, that takes a dataframe as an input and returns the same dataframe with the treatment_col column.
 
     Arguments:
         clusters: list of clusters to split
         treatments: list of treatments
         dates: list of dates (switches)
         cluster_mapping: dictionary to map the keys cluster and date to the actual names of the columns of the dataframe. For clustered splitter, cluster_mapping could be {"cluster": "city"}. for SwitchbackSplitter, cluster_mapping could be {"cluster": "city", "date": "date"}
+        treatment_col: Name of the column with the treatment variable.
 
     """
 
@@ -31,13 +34,14 @@ class RandomSplitter(ABC):
         treatments: Optional[List[str]] = None,
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
+        treatment_col: str = "treatment",
     ) -> None:
         self.treatments = treatments or ["A", "B"]
         self.clusters = clusters
         self.dates = dates or []
         self.cluster_mapping = cluster_mapping or {}
+        self.treatment_col = treatment_col
 
-    @abstractmethod
     def treatment_assignment(
         self, sampled_treatments: List[str]
     ) -> List[Dict[str, str]]:
@@ -45,14 +49,13 @@ class RandomSplitter(ABC):
         Prepares the data of the treatment assignment for the dataframe. It should take as input some list of treatments ["A", "B", "B", "A"] and return a list of dictionaries,
         where each element has information about the cluster and treatment, like {"cluster": "Cluster 1", "treatment": "A"}.
         """
-        pass
+        raise NotImplementedError()
 
-    @abstractmethod
     def sample_treatment(self, *args, **kwargs) -> List[str]:
         """
         Randomly samples treatments for each cluster.
         """
-        pass
+        raise NotImplementedError()
 
     def assign_treatment_df(
         self,
@@ -84,6 +87,7 @@ class RandomSplitter(ABC):
             treatments=config.treatments,
             dates=config.dates,
             cluster_mapping=config.cluster_mapping,
+            treatment_col=config.treatment_col,
         )
 
 
@@ -111,12 +115,14 @@ class ClusteredSplitter(RandomSplitter):
         treatments: Optional[List[str]] = None,
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
+        treatment_col: str = "treatment",
     ) -> None:
         super().__init__(
             clusters=clusters,
             treatments=treatments,
             dates=dates,
             cluster_mapping=cluster_mapping,
+            treatment_col=treatment_col,
         )
         if not self.cluster_mapping:
             self.cluster_mapping = {"cluster": "cluster"}
@@ -126,7 +132,7 @@ class ClusteredSplitter(RandomSplitter):
     ) -> List[Dict[str, str]]:
         """Assign each sampled treatment to a cluster"""
         return [
-            {"treatment": treatment, "cluster": cluster}
+            {self.treatment_col: treatment, "cluster": cluster}
             for treatment, cluster in zip(sampled_treatments, self.clusters)
         ]
 
@@ -161,12 +167,14 @@ class SwitchbackSplitter(RandomSplitter):
         treatments: Optional[List[str]] = None,
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
+        treatment_col: str = "treatment",
     ) -> None:
         super().__init__(
             clusters=clusters,
             treatments=treatments,
             dates=dates,
             cluster_mapping=cluster_mapping,
+            treatment_col=treatment_col,
         )
         if not self.cluster_mapping:
             self.cluster_mapping = {"cluster": "cluster", "date": "date"}
@@ -182,7 +190,9 @@ class SwitchbackSplitter(RandomSplitter):
         output = []
         for date, cluster in product(self.dates, self.clusters):
             treatment = sampled_treatments.pop(0)
-            output.append({"date": date, "cluster": cluster, "treatment": treatment})
+            output.append(
+                {"date": date, "cluster": cluster, self.treatment_col: treatment}
+            )
         return output
 
     def sample_treatment(self, *args, **kwargs) -> List[str]:
@@ -245,11 +255,13 @@ class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
         treatments: Optional[List[str]] = None,
         dates: Optional[List[str]] = None,
         cluster_mapping: Optional[Dict[str, str]] = None,
+        treatment_col: str = "treatment",
     ) -> None:
         self.treatments = treatments or ["A", "B"]
         self.clusters = clusters
         self.dates = dates or []
         self.cluster_mapping = cluster_mapping or {}
+        self.treatment_col = treatment_col
 
         if not self.cluster_mapping:
             self.cluster_mapping = {"cluster": "cluster", "date": "date"}
@@ -265,3 +277,50 @@ class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
         clusters_per_treatment = total_switches // len(self.treatments)
         remainder_clusters = total_switches % len(self.treatments)
         return self.get_balanced_sample(clusters_per_treatment, remainder_clusters)
+
+
+class NonClusteredSplitter(RandomSplitter):
+    """
+    Splits randomly without clusters
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.random_splitter import NonClusteredSplitter
+    splitter = NonClusteredSplitter(
+        treatments=["A", "B"],
+    )
+    df = pd.DataFrame({"city": ["A", "B", "C"]})
+    df = splitter.assign_treatment_df(df)
+    print(df)
+    ```
+    """
+
+    def __init__(
+        self,
+        treatments: Optional[List[str]] = None,
+        treatment_col: str = "treatment",
+    ) -> None:
+        self.treatments = treatments or ["A", "B"]
+        self.treatment_col = treatment_col
+
+    def assign_treatment_df(
+        self,
+        df: pd.DataFrame,
+        *args,
+        **kwargs,
+    ) -> pd.DataFrame:
+
+        """
+        Takes a df, randomizes treatments and adds the treatment column to the dataframe
+
+        Arguments:
+            df: dataframe to assign treatments to
+        """
+        df = df.copy()
+        df[self.treatment_col] = random.choices(self.treatments, k=len(df))
+        return df
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a NonClusteredSplitter from a PowerConfig"""
+        return cls(treatments=config.treatments, treatment_col=config.treatment_col)

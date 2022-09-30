@@ -17,6 +17,17 @@ def generate_random_data(clusters, dates, N):
     return df
 
 
+def generate_non_clustered_data(N, n_users):
+    users = [f"User {i}" for i in range(n_users)]
+    df = pd.DataFrame(
+        {
+            "target": np.random.normal(0, 1, size=N),
+            "user": np.random.choice(users, size=N),
+        }
+    )
+    return df
+
+
 binary_df = pd.DataFrame(
     {
         "target": [0, 1, 0, 1],

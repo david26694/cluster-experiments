@@ -2,6 +2,7 @@ from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
     ExperimentAnalysis,
     GeeExperimentAnalysis,
+    OLSAnalysis,
 )
 from cluster_experiments.perturbator import (
     BinaryPerturbator,
@@ -14,6 +15,7 @@ from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
+    NonClusteredSplitter,
     RandomSplitter,
     SwitchbackSplitter,
 )
@@ -21,6 +23,7 @@ from cluster_experiments.random_splitter import (
 __all__ = [
     "ExperimentAnalysis",
     "GeeExperimentAnalysis",
+    "OLSAnalysis",
     "BinaryPerturbator",
     "Perturbator",
     "UniformPerturbator",
@@ -33,4 +36,5 @@ __all__ = [
     "ClusteredSplitter",
     "RandomSplitter",
     "SwitchbackSplitter",
+    "NonClusteredSplitter",
 ]

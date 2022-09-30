@@ -2,7 +2,6 @@ import logging
 from typing import List, Optional, Tuple
 
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from tqdm import tqdm
 
@@ -185,18 +184,6 @@ class PowerAnalysis:
                 f"There are {n_nulls} null values in treatment, dropping them"
             )
 
-    def _data_checks(self, df: pd.DataFrame) -> None:
-        """Checks that the data is correct"""
-        if df[self.target_col].isnull().any():
-            raise ValueError(
-                f"There are null values in outcome column {self.treatment_col}"
-            )
-
-        if not is_numeric_dtype(df[self.target_col]):
-            raise ValueError(
-                f"Outcome column {self.target_col} should be numeric and not {df[self.target_col].dtype}"
-            )
-
     def power_analysis(
         self,
         df: pd.DataFrame,
@@ -210,8 +197,6 @@ class PowerAnalysis:
             pre_experiment_df: Dataframe with pre-experiment data.
         """
         df = df.copy()
-
-        self._data_checks(df=df)
 
         if pre_experiment_df is not None and self.is_cupac:
             df = self.add_covariates(df, pre_experiment_df)
