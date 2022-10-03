@@ -1,15 +1,13 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis, OLSAnalysis
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
-    BalancedSwitchbackSplitter,
     ClusteredSplitter,
     NonClusteredSplitter,
-    SwitchbackSplitter,
 )
 
 
@@ -29,11 +27,8 @@ class PowerConfig:
         treatment_col: column to use as treatment
         treatment: what value of treatment_col should be considered as treatment
         covariates: list of columns to use as covariates
-        clusters: list of clusters to use
-        dates: list of dates to use
         average_effect: average effect to use in the perturbator
         treatments: list of treatments to use
-        cluster_mapping: mapping of clusters and columns
         alpha: alpha value to use in the power analysis
         agg_col: column to use for aggregation in the CUPAC model
         smoothing_factor: smoothing value to use in the CUPAC model
@@ -49,7 +44,6 @@ class PowerConfig:
         analysis="gee",
         splitter="clustered_balance",
         perturbator="uniform",
-        clusters=["A", "B", "C"],
         cluster_cols=["city"],
         n_simulations=100,
         alpha=0.05,
@@ -64,7 +58,6 @@ class PowerConfig:
     analysis: str
 
     # Needed
-    clusters: Optional[List[str]] = None
     cluster_cols: Optional[List[str]] = None
 
     # optional mappings
@@ -80,8 +73,6 @@ class PowerConfig:
 
     # Splitter
     treatments: Optional[List[str]] = None
-    dates: Optional[List[str]] = None
-    cluster_mapping: Optional[Dict[str, str]] = None
 
     # Analysis
     covariates: Optional[List[str]] = None
@@ -104,8 +95,6 @@ perturbator_mapping = {
 splitter_mapping = {
     "clustered": ClusteredSplitter,
     "clustered_balance": BalancedClusteredSplitter,
-    "switchback": SwitchbackSplitter,
-    "switchback_balance": BalancedSwitchbackSplitter,
     "non_clustered": NonClusteredSplitter,
 }
 

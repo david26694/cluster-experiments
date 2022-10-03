@@ -2,7 +2,53 @@
 
 A library to run simulation-based power analysis, including clustered data. Also useful to design and analyse clustered and switchback experiments.
 
-## Example
+## Examples
+
+### Base example
+
+Hello world of this library:
+
+```python
+
+from datetime import date
+
+import numpy as np
+import pandas as pd
+from cluster_experiments.power_analysis import PowerAnalysis
+
+# Create fake data
+N = 1_000
+clusters = [f"Cluster {i}" for i in range(100)]
+dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
+df = pd.DataFrame(
+    {
+        "cluster": np.random.choice(clusters, size=N),
+        "target": np.random.normal(0, 1, size=N),
+        "date": np.random.choice(dates, size=N),
+    }
+)
+
+clusters = [f"Cluster {i}" for i in range(100)]
+dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
+N = 1_000
+df = generate_random_data(clusters, dates, N)
+config = {
+    "cluster_cols": ["cluster", "date"],
+    "analysis": "gee",
+    "perturbator": "uniform",
+    "splitter": "clustered",
+    "average_effect": 0.1,
+    "n_simulations": 50,
+}
+pw = PowerAnalysis.from_dict(config)
+
+print(df)
+power = pw.power_analysis(df)
+print(f"{power = }")
+
+```
+
+### Long example
 
 This is a comprehensive example of how to use this library. There are simpler ways to run power analysis but this shows all the building blocks of the library.
 
@@ -14,7 +60,7 @@ import pandas as pd
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import UniformPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.random_splitter import SwitchbackSplitter
+from cluster_experiments.random_splitter import ClusteredSplitter
 
 # Create fake data
 N = 1_000
@@ -29,9 +75,8 @@ df = pd.DataFrame(
 )
 
 # A switchback experiment is going to be run, prepare the switchback splitter for the analysis
-sw = SwitchbackSplitter(
-    clusters=clusters,
-    dates=dates,
+sw = ClusteredSplitter(
+    cluster_cols=["cluster", "date"],
 )
 
 # We use a uniform perturbator to add artificial effect on the treated on the power analysis
@@ -63,9 +108,7 @@ The library offers the following classes:
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
 * Regarding splitting data:
     * `ClusteredSplitter`: to split data based on clusters
-    * `SwitchbackSplitter`: to split data based using switchback method
     * `BalancedClusteredSplitter`: to split data based on clusters in a balanced way
-    * `BalancedSwitchbackSplitter`: to split data based using switchback method in a balanced way
     * `NonClusteredSplitter`: Regular data splitting, no clusters
 * Regarding analysis:
     * `GeeExperimentAnalysis`: to run GEE analysis on a the results of a clustered design

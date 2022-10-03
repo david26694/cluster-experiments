@@ -49,7 +49,7 @@ class PowerAnalysis:
     from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
     from cluster_experiments.perturbator import UniformPerturbator
     from cluster_experiments.power_analysis import PowerAnalysis
-    from cluster_experiments.random_splitter import SwitchbackSplitter
+    from cluster_experiments.random_splitter import ClusteredSplitter
 
     N = 1_000
     users = [f"User {i}" for i in range(1000)]
@@ -65,9 +65,8 @@ class PowerAnalysis:
     )
 
     experiment_dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(15, 32)]
-    sw = SwitchbackSplitter(
-        clusters=clusters,
-        dates=experiment_dates,
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
     )
 
     perturbator = UniformPerturbator(
