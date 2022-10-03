@@ -11,13 +11,13 @@ class RandomSplitter(ABC):
     Abstract class to split instances in a switchback or clustered way. It can be used to create a calendar/split of clusters
     or to run a power analysis.
 
-    In order to create your own RandomSplitter, you either write the following two methods:
+    In order to create your own RandomSplitter, you should write your own assign_treatment_df method, that takes a dataframe as an input and returns the same dataframe with the treatment_col column.
+
+    An alternative is to write the two following mehotds, but this is not always sufficient:
     * treatment_assignment: If you are deriving from clustered or switchback splitters, no need for this. The goal of this is, given the output of sample_treatment,
     prepare such that it can be added to the dataframe by building a list of dictionaries with clusters and treatments.
     * sample_treatment: This is what needs to be implemented. It should return a list of same length as the number of clusters, with the treatment
     received to each cluster.
-
-    Or write your own assign_treatment_df method, that takes a dataframe as an input and returns the same dataframe with the treatment_col column.
 
     Arguments:
         clusters: list of clusters to split
@@ -51,7 +51,7 @@ class RandomSplitter(ABC):
         """
         raise NotImplementedError()
 
-    def sample_treatment(self, *args, **kwargs) -> List[str]:
+    def sample_treatment(self) -> List[str]:
         """
         Randomly samples treatments for each cluster.
         """
@@ -60,8 +60,6 @@ class RandomSplitter(ABC):
     def assign_treatment_df(
         self,
         df: pd.DataFrame,
-        *args,
-        **kwargs,
     ) -> pd.DataFrame:
         """
         Takes a df, randomizes treatments and adds the treatment column to the dataframe
@@ -72,7 +70,7 @@ class RandomSplitter(ABC):
             kwargs: keyword arguments to pass to sample_treatment
         """
         df = df.copy()
-        sampled_treatments = self.sample_treatment(*args, **kwargs)
+        sampled_treatments = self.sample_treatment()
         treatments_df = pd.DataFrame(
             self.treatment_assignment(sampled_treatments)
         ).rename(columns=self.cluster_mapping)
@@ -136,7 +134,7 @@ class ClusteredSplitter(RandomSplitter):
             for treatment, cluster in zip(sampled_treatments, self.clusters)
         ]
 
-    def sample_treatment(self, *args, **kwargs) -> List[str]:
+    def sample_treatment(self) -> List[str]:
         """Choose randomly a treatment for each cluster"""
         return random.choices(self.treatments, k=len(self.clusters))
 
@@ -195,7 +193,7 @@ class SwitchbackSplitter(RandomSplitter):
             )
         return output
 
-    def sample_treatment(self, *args, **kwargs) -> List[str]:
+    def sample_treatment(self) -> List[str]:
         """Randomly assign a treatment to a cluster"""
         return random.choices(self.treatments, k=len(self.clusters) * len(self.dates))
 
@@ -220,7 +218,7 @@ class BalancedClusteredSplitter(ClusteredSplitter):
         random.shuffle(sampled_treatments)
         return sampled_treatments
 
-    def sample_treatment(self, *args, **kwargs) -> List[str]:
+    def sample_treatment(self) -> List[str]:
         """Randomly assign a treatment to a cluster"""
         if len(self.clusters) < len(self.treatments):
             raise ValueError("There are more treatments than clusters")
@@ -269,7 +267,7 @@ class BalancedSwitchbackSplitter(SwitchbackSplitter, BalancedClusteredSplitter):
         if len(self.dates) == 0:
             raise ValueError("SwitchbackSplitter requires dates")
 
-    def sample_treatment(self, *args, **kwargs) -> List[str]:
+    def sample_treatment(self) -> List[str]:
         if len(self.clusters) * len(self.dates) < len(self.treatments):
             raise ValueError("There are more treatments than clusters and dates")
 
@@ -306,8 +304,6 @@ class NonClusteredSplitter(RandomSplitter):
     def assign_treatment_df(
         self,
         df: pd.DataFrame,
-        *args,
-        **kwargs,
     ) -> pd.DataFrame:
 
         """
@@ -324,3 +320,44 @@ class NonClusteredSplitter(RandomSplitter):
     def from_config(cls, config):
         """Creates a NonClusteredSplitter from a PowerConfig"""
         return cls(treatments=config.treatments, treatment_col=config.treatment_col)
+
+
+class StratifiedClusteredSplitter(RandomSplitter):
+    def __init__(
+        self,
+        clusters: List[str],
+        treatments: Optional[List[str]] = None,
+        dates: Optional[List[str]] = None,
+        cluster_mapping: Optional[Dict[str, str]] = None,
+        treatment_col: str = "treatment",
+        strata_cols: Optional[List[str]] = None,
+    ) -> None:
+        super().__init__(
+            clusters=clusters,
+            treatments=treatments,
+            dates=dates,
+            cluster_mapping=cluster_mapping,
+            treatment_col=treatment_col,
+        )
+        if not self.cluster_mapping:
+            self.cluster_mapping = {"cluster": "cluster"}
+        self.cluster_cols = list(self.cluster_mapping.values())
+        self.strata_cols = strata_cols or ["strata"]
+
+    def assign_treatment_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df_unique = df.loc[:, self.cluster_cols + self.strata_cols].drop_duplicates()
+
+        # TODO: check that, for a given cluster, there is only 1 strata
+
+        # TODO: random shuffling
+        random_sorted_treatments = self.treatments
+        df[self.treatment_col] = (
+            df_unique.sample(frac=1)
+            .groupby(self.strata_cols, as_index=False)
+            .cumcount()
+            .mod(len(random_sorted_treatments))
+            .map(dict(enumerate(random_sorted_treatments)))
+        )
+
+        return df

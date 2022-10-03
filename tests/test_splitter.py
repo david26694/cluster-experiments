@@ -6,6 +6,7 @@ from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
+    StratifiedClusteredSplitter,
     SwitchbackSplitter,
 )
 
@@ -30,6 +31,16 @@ def df_cluster(clusters):
     return pd.DataFrame(
         {
             "cluster": clusters,
+        }
+    )
+
+
+@pytest.fixture
+def df_strata(clusters):
+    return pd.DataFrame(
+        {
+            "cluster": [f"Cluster {i}" for i in range(100)],
+            "segment": ["good"] * 50 + ["bad"] * 50,
         }
     )
 
@@ -121,3 +132,17 @@ def test_agg_df_switchback(clusters, treatments, dates, df_switchback):
     splitter = SwitchbackSplitter(clusters, treatments, dates)
     treatment_df = splitter.assign_treatment_df(df_switchback)
     assert (treatment_df.drop(columns=["treatment"]) == df_switchback).all().all()
+
+
+def test_stratified(clusters, treatments, df_strata):
+    splitter = StratifiedClusteredSplitter(
+        clusters, treatments, strata_cols=["segment"]
+    )
+    treatment_df = splitter.assign_treatment_df(df_strata)
+    for treatment in ["A", "B"]:
+        for segment in ["good", "bad"]:
+            assert (
+                treatment_df.query(f"treatment == '{treatment}'")["segment"]
+                .value_counts(normalize=True)[segment]
+                .squeeze()
+            ) == 0.5
