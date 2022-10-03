@@ -5,7 +5,7 @@ import pandas as pd
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import UniformPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.random_splitter import SwitchbackSplitter
+from cluster_experiments.random_splitter import ClusteredSplitter
 
 
 def generate_random_data(clusters, dates, N):
@@ -26,12 +26,10 @@ def generate_random_data(clusters, dates, N):
 if __name__ == "__main__":
     clusters = [f"Cluster {i}" for i in range(100)]
     dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
-    experiment_dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(15, 32)]
     N = 10_000
     df = generate_random_data(clusters, dates, N)
-    sw = SwitchbackSplitter(
-        clusters=clusters,
-        dates=experiment_dates,
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
     )
 
     perturbator = UniformPerturbator(
