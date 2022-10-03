@@ -27,11 +27,12 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.1.6",
+    version="0.1.7",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,
         "test": test_packages,
         "docs": docs_packages,
     },
+    install_requires=base_packages,
 )
