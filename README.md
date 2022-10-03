@@ -2,9 +2,11 @@
 
 A library to run simulation-based power analysis, including clustered data. Also useful to design and analyse clustered and switchback experiments.
 
-## Example
+## Examples
 
 ### Base example
+
+Hello world of this library:
 
 ```python
 
