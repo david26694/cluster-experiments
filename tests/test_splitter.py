@@ -4,9 +4,7 @@ import pandas as pd
 import pytest
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
-    BalancedSwitchbackSplitter,
     ClusteredSplitter,
-    SwitchbackSplitter,
 )
 
 
@@ -39,85 +37,72 @@ def df_switchback(clusters, dates):
     return pd.DataFrame({"cluster": sorted(clusters * 2), "date": dates * 4})
 
 
-def test_clustered_splitter(clusters, treatments):
+def test_clustered_splitter(clusters, treatments, df_cluster):
 
-    splitter = ClusteredSplitter(clusters, treatments)
-    sampled_treatment = splitter.sample_treatment()
-    assert len(sampled_treatment) == len(clusters)
-
-    treatment_assignment = splitter.treatment_assignment(sampled_treatment)
-
-    assert set(assignment["cluster"] for assignment in treatment_assignment) == set(
-        clusters
-    )
-
-    assert sorted(
-        [assignment["treatment"] for assignment in treatment_assignment]
-    ) == sorted(sampled_treatment)
+    splitter = ClusteredSplitter(cluster_cols=["cluster"], treatments=treatments)
+    df_cluster = pd.concat([df_cluster for _ in range(100)])
+    sampled_treatment = splitter.assign_treatment_df(df_cluster)
+    assert len(sampled_treatment) == len(df_cluster)
+    assert set(sampled_treatment["treatment"]) == set(treatments)
 
 
-def test_balanced_splitter(clusters, treatments):
+def test_balanced_splitter(clusters, treatments, df_cluster):
     splitter = BalancedClusteredSplitter(clusters, treatments)
-    sampled_treatment = splitter.sample_treatment()
+    sampled_treatment = splitter.sample_treatment(df_cluster)
     assert sorted(sampled_treatment) == ["A", "A", "B", "B"]
 
 
-def test_balanced_splitter_abc(clusters):
+def test_balanced_splitter_abc(clusters, df_cluster):
     treatments = ["A", "B", "C"]
     splitter = BalancedClusteredSplitter(clusters, treatments)
-    sampled_treatment = splitter.sample_treatment()
+    sampled_treatment = splitter.sample_treatment(df_cluster)
     assert max(Counter(sampled_treatment).values()) == 2
 
 
-def test_switchback_splitter(clusters, treatments, dates):
-    splitter = SwitchbackSplitter(clusters, treatments, dates)
-    sampled_treatment = splitter.sample_treatment()
-    assignments = splitter.treatment_assignment(sampled_treatment)
+def test_switchback_splitter(treatments, df_switchback):
+    splitter = ClusteredSplitter(
+        cluster_cols=["cluster", "date"], treatments=treatments
+    )
+    df_switchback_large = pd.concat([df_switchback, df_switchback, df_switchback])
+    assignments = splitter.assign_treatment_df(df_switchback_large)
     assert len(assignments) > 0
-    assert len(assignments) == len(dates) * len(clusters)
+    assert len(assignments) == len(df_switchback_large)
 
-    for assignment in assignments:
-        assert assignment["date"] in dates
-        assert assignment["cluster"] in clusters
-        assert assignment["treatment"] in treatments
-
-    assert (
-        pd.DataFrame(assignments)
-        .groupby(["date", "cluster"], as_index=False)
-        .value_counts()["count"]
-        == 1
-    ).all()
+    # check that each cluster has the same treatment on each date
+    assert (assignments.groupby(["date", "cluster"])["treatment"].nunique() == 1).all()
 
 
-def test_switchback_balanced_splitter(clusters, treatments, dates):
-    splitter = BalancedSwitchbackSplitter(clusters, treatments, dates)
+def test_switchback_balanced_splitter(treatments, df_switchback):
+    splitter = BalancedClusteredSplitter(
+        cluster_cols=["cluster", "date"], treatments=treatments
+    )
 
-    sampled_treatment = splitter.sample_treatment()
-    assert list(Counter(sampled_treatment).values()) == [4, 4]
-    assert set(Counter(sampled_treatment).keys()) == set(["A", "B"])
+    df_switchback_large = pd.concat([df_switchback, df_switchback])
+    assignments = splitter.assign_treatment_df(df_switchback_large)
+
+    # check that each cluster has the same treatment on each date
+    assert (assignments.groupby(["date", "cluster"])["treatment"].nunique() == 1).all()
+
+    # check for treatment balance
+    assert (assignments.treatment.value_counts() == 8).all()
+
+    # all treatments are A and B
+    assert set(assignments["treatment"]) == set(treatments)
 
 
-def test_raises_no_date(clusters, treatments):
-    with pytest.raises(ValueError):
-        BalancedSwitchbackSplitter(clusters, treatments)
-
-
-def test_switchback_balanced_splitter_abc(clusters, dates):
+def test_switchback_balanced_splitter_abc():
+    df = pd.DataFrame(
+        {
+            "date": ["2022-01-01", "2022-01-02", "2022-01-03", "2022-01-04"],
+        }
+    )
     treatments = ["A", "B", "C"]
     for _ in range(100):
-        splitter = BalancedSwitchbackSplitter(clusters, treatments, dates)
-        sampled_treatment = splitter.sample_treatment()
-        assert max(Counter(sampled_treatment).values()) == 3
-        assert min(Counter(sampled_treatment).values()) == 2
+        splitter = BalancedClusteredSplitter(
+            cluster_cols=["date"], treatments=treatments
+        )
+        sampled_treatment = splitter.assign_treatment_df(df)
 
-
-def test_agg_df(clusters, treatments, df_cluster):
-    splitter = ClusteredSplitter(clusters, treatments)
-    treatment_df = splitter.assign_treatment_df(df_cluster)
-    assert (treatment_df["cluster"] == pd.Series(clusters)).all()
-
-
-def test_agg_df_switchback(clusters, treatments, dates, df_switchback):
-    splitter = SwitchbackSplitter(clusters, treatments, dates)
-    treatment_df = splitter.assign_treatment_df(df_switchback)
-    assert (treatment_df.drop(columns=["treatment"]) == df_switchback).all().all()
+        counts = sampled_treatment.treatment.value_counts()
+        assert counts.max() == 2
+        assert counts.min() == 1

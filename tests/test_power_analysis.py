@@ -7,7 +7,7 @@ from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import UniformPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.power_config import PowerConfig
-from cluster_experiments.random_splitter import SwitchbackSplitter
+from cluster_experiments.random_splitter import ClusteredSplitter
 from sklearn.ensemble import HistGradientBoostingRegressor
 
 from tests.examples import generate_random_data
@@ -44,10 +44,9 @@ def df_feats(clusters, dates):
 
 
 @pytest.fixture
-def cupac_power_analysis(clusters, experiment_dates):
-    sw = SwitchbackSplitter(
-        clusters=clusters,
-        dates=experiment_dates,
+def cupac_power_analysis():
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
     )
 
     perturbator = UniformPerturbator(
@@ -73,9 +72,8 @@ def cupac_power_analysis(clusters, experiment_dates):
 
 
 def test_power_analysis(df, clusters, experiment_dates):
-    sw = SwitchbackSplitter(
-        clusters=clusters,
-        dates=experiment_dates,
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
     )
 
     perturbator = UniformPerturbator(
@@ -146,14 +144,12 @@ def test_cupac_gbm(df_feats, experiment_dates, cupac_power_analysis):
     assert power <= 1
 
 
-def test_power_analysis_config(df, clusters, experiment_dates):
+def test_power_analysis_config(df):
     config = PowerConfig(
-        clusters=clusters,
         cluster_cols=["cluster", "date"],
         analysis="gee",
         perturbator="uniform",
-        splitter="switchback",
-        dates=experiment_dates,
+        splitter="clustered",
         n_simulations=4,
     )
     pw = PowerAnalysis.from_config(config)
@@ -162,14 +158,12 @@ def test_power_analysis_config(df, clusters, experiment_dates):
     assert power <= 1
 
 
-def test_power_analysis_dict(df, clusters, experiment_dates):
+def test_power_analysis_dict(df):
     config = dict(
-        clusters=clusters,
         cluster_cols=["cluster", "date"],
         analysis="gee",
         perturbator="uniform",
-        splitter="switchback",
-        dates=experiment_dates,
+        splitter="clustered",
         n_simulations=4,
     )
     pw = PowerAnalysis.from_dict(config)
@@ -182,7 +176,7 @@ def test_power_analysis_dict(df, clusters, experiment_dates):
     assert power_verbose <= 1
 
 
-def test_different_names(df, clusters, experiment_dates):
+def test_different_names(df):
     df = df.rename(
         columns={
             "cluster": "cluster_0",
@@ -191,13 +185,10 @@ def test_different_names(df, clusters, experiment_dates):
         }
     )
     config = dict(
-        clusters=clusters,
         cluster_cols=["cluster_0", "date_0"],
-        cluster_mapping={"cluster": "cluster_0", "date": "date_0"},
         analysis="gee",
         perturbator="uniform",
-        splitter="switchback",
-        dates=experiment_dates,
+        splitter="clustered",
         n_simulations=4,
         treatment_col="treatment_0",
         target_col="target_0",
@@ -212,14 +203,12 @@ def test_different_names(df, clusters, experiment_dates):
     assert power_verbose <= 1
 
 
-def test_raises_cupac(clusters, experiment_dates):
+def test_raises_cupac():
     config = dict(
-        clusters=clusters,
         cluster_cols=["cluster", "date"],
         analysis="gee",
         perturbator="uniform",
-        splitter="switchback",
-        dates=experiment_dates,
+        splitter="clustered",
         cupac_model="mean_cupac_model",
         n_simulations=4,
     )
@@ -227,14 +216,12 @@ def test_raises_cupac(clusters, experiment_dates):
         PowerAnalysis.from_dict(config)
 
 
-def test_data_checks(df, clusters, experiment_dates):
+def test_data_checks(df):
     config = dict(
-        clusters=clusters,
         cluster_cols=["cluster", "date"],
         analysis="gee",
         perturbator="uniform",
-        splitter="switchback",
-        dates=experiment_dates,
+        splitter="clustered",
         n_simulations=4,
     )
     pw = PowerAnalysis.from_dict(config)
