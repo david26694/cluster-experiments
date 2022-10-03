@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import pandas as pd
+import numpy as np
 
 
 class Perturbator(ABC):
@@ -72,6 +73,32 @@ class UniformPerturbator(Perturbator):
         df.loc[
             df[self.treatment_col] == self.treatment, self.target_col
         ] += self.average_effect
+        return df
+
+
+class GaussianPerturbator(Perturbator):
+    """
+    GaussianPerturbator is a Perturbator that adds heterogeneous gaussian noise to the target column.
+    """
+
+    def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Usage:
+
+        ```python
+        from cluster_experiments.perturbator import GaussianPerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = GaussianPerturbator(average_effect=1)
+        perturbator.perturbate(df)
+        ```
+        """
+
+        df = df.copy().reset_index(drop=True)
+        n = (df[self.treatment_col] == self.treatment).sum()
+        df.loc[
+            df[self.treatment_col] == self.treatment, self.target_col
+        ] += np.random.normal(self.average_effect, df[self.target_col].std(), size=n)
         return df
 
 
