@@ -12,12 +12,6 @@ class RandomSplitter(ABC):
 
     In order to create your own RandomSplitter, you should write your own assign_treatment_df method, that takes a dataframe as an input and returns the same dataframe with the treatment_col column.
 
-    An alternative is to write the two following mehotds, but this is not always sufficient:
-    * treatment_assignment: If you are deriving from clustered or switchback splitters, no need for this. The goal of this is, given the output of sample_treatment,
-    prepare such that it can be added to the dataframe by building a list of dictionaries with clusters and treatments.
-    * sample_treatment: This is what needs to be implemented. It should return a list of same length as the number of clusters, with the treatment
-    received to each cluster.
-
     Arguments:
         cluster_cols: List of columns to use as clusters
         treatments: list of treatments
