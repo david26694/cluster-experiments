@@ -64,6 +64,18 @@ def df_strata_multiple_values():
 
 
 @pytest.fixture
+def df_strata_two_strata_cols_two_clusters_cols():
+    return pd.DataFrame(
+        {
+            "cluster_1": [f"City {i}" for i in range(4)] * 2,
+            "cluster_2": [f"Courier {i}" for i in range(8)],
+            "segment": ["good"] * 4 + ["bad"] * 4,
+            "size": (["big"] * 2 + ["small"] * 2) * 2,
+        }
+    )
+
+
+@pytest.fixture
 def df_switchback(clusters, dates):
     return pd.DataFrame({"cluster": sorted(clusters * 2), "date": dates * 4})
 
@@ -154,6 +166,24 @@ def test_stratified(df_strata):
             ) == 0.5
 
 
+def test_stratified_shuffled_input(df_strata):
+    splitter = StratifiedClusteredSplitter(
+        strata_cols=["segment"], cluster_cols=["cluster"]
+    )
+
+    df_strata_shuffled = df_strata.sample(frac=1).reset_index(drop=True)
+
+    treatment_df = splitter.assign_treatment_df(df_strata_shuffled)
+
+    for treatment in ["A", "B"]:
+        for segment in ["good", "bad"]:
+            assert (
+                treatment_df.query(f"treatment == '{treatment}'")["segment"]
+                .value_counts(normalize=True)[segment]
+                .squeeze()
+            ) == 0.5
+
+
 def test_stratified_complete(df_strata_complete):
     splitter = StratifiedClusteredSplitter(
         strata_cols=["segment"], cluster_cols=["cluster"]
@@ -167,6 +197,49 @@ def test_stratified_complete(df_strata_complete):
                 .value_counts(normalize=True)[segment]
                 .squeeze()
             ) == 0.5
+
+
+def test_stratified_two_strata_two_clusters_each_strata(
+    df_strata_two_strata_cols_two_clusters_cols,
+):
+    splitter = StratifiedClusteredSplitter(
+        strata_cols=["segment", "size"], cluster_cols=["cluster_1", "cluster_2"]
+    )
+    treatment_df = splitter.assign_treatment_df(
+        df_strata_two_strata_cols_two_clusters_cols
+    )
+
+    for treatment in ["A", "B"]:
+        for segment in ["good", "bad"]:
+            assert (
+                treatment_df.query(f"treatment == '{treatment}'")["segment"]
+                .value_counts(normalize=True)[segment]
+                .squeeze()
+            ) == 0.5
+
+
+def test_stratified_two_strata_two_clusters_overall_strata(
+    df_strata_two_strata_cols_two_clusters_cols,
+):
+    splitter = StratifiedClusteredSplitter(
+        strata_cols=["segment", "size"], cluster_cols=["cluster_1", "cluster_2"]
+    )
+    treatment_df = splitter.assign_treatment_df(
+        df_strata_two_strata_cols_two_clusters_cols
+    )
+
+    treatment_df["strata"] = treatment_df["segment"] + "+" + treatment_df["size"]
+    treatment_df["clusters"] = (
+        treatment_df["cluster_1"] + "+" + treatment_df["cluster_2"]
+    )
+
+    for treatment in ["A", "B"]:
+        for stratus in treatment_df["strata"].unique():
+            assert (
+                treatment_df.query(f"treatment == '{treatment}'")["strata"]
+                .value_counts(normalize=True)[stratus]
+                .squeeze()
+            ) == 0.25
 
 
 def test_stratified_strata_uniqueness(df_strata_multiple_values):
