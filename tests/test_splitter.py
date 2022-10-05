@@ -44,6 +44,26 @@ def df_strata():
 
 
 @pytest.fixture
+def df_strata_complete():
+    return pd.DataFrame(
+        {
+            "cluster": [f"Cluster {i}" for i in range(100)] * 2,
+            "segment": (["good"] * 50 + ["bad"] * 50) * 2,
+        }
+    )
+
+
+@pytest.fixture
+def df_strata_multiple_values():
+    return pd.DataFrame(
+        {
+            "cluster": [f"Cluster {i}" for i in range(4)] * 2 + ["Cluster 1"],
+            "segment": (["good"] * 2 + ["bad"] * 2) * 2 + ["bad"],
+        }
+    )
+
+
+@pytest.fixture
 def df_switchback(clusters, dates):
     return pd.DataFrame({"cluster": sorted(clusters * 2), "date": dates * 4})
 
@@ -124,7 +144,7 @@ def test_stratified(df_strata):
         strata_cols=["segment"], cluster_cols=["cluster"]
     )
     treatment_df = splitter.assign_treatment_df(df_strata)
-    print(treatment_df)
+
     for treatment in ["A", "B"]:
         for segment in ["good", "bad"]:
             assert (
@@ -132,3 +152,27 @@ def test_stratified(df_strata):
                 .value_counts(normalize=True)[segment]
                 .squeeze()
             ) == 0.5
+
+
+def test_stratified_complete(df_strata_complete):
+    splitter = StratifiedClusteredSplitter(
+        strata_cols=["segment"], cluster_cols=["cluster"]
+    )
+    treatment_df = splitter.assign_treatment_df(df_strata_complete)
+
+    for treatment in ["A", "B"]:
+        for segment in ["good", "bad"]:
+            assert (
+                treatment_df.query(f"treatment == '{treatment}'")["segment"]
+                .value_counts(normalize=True)[segment]
+                .squeeze()
+            ) == 0.5
+
+
+def test_stratified_strata_uniqueness(df_strata_multiple_values):
+    splitter = StratifiedClusteredSplitter(
+        strata_cols=["segment"], cluster_cols=["cluster"]
+    )
+
+    with pytest.raises(ValueError):
+        splitter.assign_treatment_df(df_strata_multiple_values)

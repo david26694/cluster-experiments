@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 import pandas as pd
+import numpy as np
 
 
 class RandomSplitter(ABC):
@@ -213,16 +214,38 @@ class StratifiedClusteredSplitter(RandomSplitter):
         df = df.copy()
         df_unique = df.loc[:, self.cluster_cols + self.strata_cols].drop_duplicates()
 
-        # TODO: check that, for a given cluster, there is only 1 strata
+        # check that, for a given cluster, there is only 1 strata
+        for strata_col in self.strata_cols:
+            if df_unique.groupby(self.cluster_cols)[strata_col].nunique().max() > 1:
+                raise ValueError(
+                    f"There are multiple values in {strata_col} for the same cluster item"
+                    "You cannot stratify on this column"
+                )
 
-        # TODO: random shuffling
-        random_sorted_treatments = self.treatments
-        df[self.treatment_col] = (
-            df_unique.sample(frac=1)
-            .groupby(self.strata_cols, as_index=False)
+        # random shuffling
+        random_sorted_treatments = list(np.random.permutation(self.treatments))
+
+        df_unique_shuffled = df_unique.sample(frac=1)
+
+        df_unique_shuffled[self.treatment_col] = (
+            df_unique_shuffled.groupby(self.strata_cols, as_index=False)
             .cumcount()
             .mod(len(random_sorted_treatments))
             .map(dict(enumerate(random_sorted_treatments)))
         )
 
+        df = df.merge(
+            df_unique_shuffled, on=self.cluster_cols + self.strata_cols, how="left"
+        )
+
         return df
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a StratifiedClusteredSplitter from a PowerConfig"""
+        return cls(
+            treatments=config.treatments,
+            cluster_cols=config.cluster_cols,
+            strata_cols=config.strata_cols,
+            treatment_col=config.treatment_col,
+        )
