@@ -8,6 +8,8 @@ use_directory_urls: false
 nav:
   - Home:
     - Index: index.md
+  - Notebook page: a.ipynb
+  - Python file: short_example.py
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
@@ -19,6 +21,7 @@ plugins:
   - mkdocstrings:
       watch:
         - cluster_experiments
+  - mkdocs-jupyter
   - search
 copyright: Copyright &copy; 2022 Maintained by David Masip.
 theme:
