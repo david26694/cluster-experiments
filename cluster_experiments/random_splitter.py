@@ -196,6 +196,28 @@ class NonClusteredSplitter(RandomSplitter):
 
 
 class StratifiedClusteredSplitter(RandomSplitter):
+    """
+    Splits randomly with clusters, ensuring a balanced allocation of treatment groups across clusters and strata.
+    To be used, for example, when having days as clusters and days of the week as stratus. This splitter will make sure
+    that we won't have all Sundays in treatment and no Sundays in control.
+
+    Arguments:
+        cluster_cols: List of columns to use as clusters
+        treatments: list of treatments
+        treatment_col: Name of the column with the treatment variable.
+        strata_cols: List of columns to use as strata
+
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.random_splitter import StratifiedClusteredSplitter
+    splitter = StratifiedClusteredSplitter(cluster_cols=["city"],strata_cols=["country"])
+    df = pd.DataFrame({"city": ["A", "B", "C","D"], "country":["C1","C2","C2","C1"]})
+    df = splitter.assign_treatment_df(df)
+    print(df)
+    ```
+    """
+
     def __init__(
         self,
         cluster_cols: Optional[List[str]] = None,
