@@ -1,4 +1,4 @@
-from typing import Counter
+from typing import Counter, List
 
 import pandas as pd
 import pytest
@@ -71,6 +71,26 @@ def df_strata_two_strata_cols_two_clusters_cols():
             "cluster_2": [f"Courier {i}" for i in range(8)],
             "segment": ["good"] * 4 + ["bad"] * 4,
             "size": (["big"] * 2 + ["small"] * 2) * 2,
+        }
+    )
+
+
+@pytest.fixture
+def df_strata_different_cardinality():
+    return pd.DataFrame(
+        {
+            "cluster": ["C1", "C2", "C3", "C4", "C5", "C6", "C6", "C6", "C6"],
+            "segment": [
+                "good",
+                "bad",
+                "good",
+                "good",
+                "bad",
+                "good",
+                "good",
+                "good",
+                "good",
+            ],
         }
     )
 
@@ -150,57 +170,91 @@ def test_switchback_balanced_splitter_abc():
         assert counts.min() == 1
 
 
-def test_stratified(df_strata):
-    splitter = StratifiedClusteredSplitter(
-        strata_cols=["segment"], cluster_cols=["cluster"]
-    )
-    treatment_df = splitter.assign_treatment_df(df_strata)
+def assert_balanced_strata(
+    df, strata_cols: List[str], cluster_cols: List[str], treatments: List[str]
+):
 
-    for treatment in ["A", "B"]:
-        for segment in ["good", "bad"]:
+    splitter = StratifiedClusteredSplitter(
+        strata_cols=strata_cols, cluster_cols=cluster_cols
+    )
+
+    treatment_df = splitter.assign_treatment_df(df)
+
+    ##
+    if len(cluster_cols) > 1:
+        treatment_df["clusters_test"] = treatment_df[cluster_cols].agg("-".join, axis=1)
+    else:
+        treatment_df["clusters_test"] = treatment_df[cluster_cols]
+
+    if len(strata_cols) > 1:
+        treatment_df["strata_test"] = treatment_df[strata_cols].agg("-".join, axis=1)
+    else:
+        treatment_df["strata_test"] = treatment_df[strata_cols]
+    ##
+
+    for treatment in treatments:
+        for stratus in treatment_df["strata_test"].unique():
             assert (
-                treatment_df.query(f"treatment == '{treatment}'")["segment"]
-                .value_counts(normalize=True)[segment]
+                treatment_df.query(f"strata_test == '{stratus}'")["treatment"]
+                .value_counts(normalize=True)[treatment]
                 .squeeze()
-            ) == 0.5
+            ) == 1 / len(treatments)
+
+
+def test_stratified(df_strata):
+
+    # base test for balance of treatments across strata
+
+    assert_balanced_strata(
+        df_strata,
+        strata_cols=["segment"],
+        cluster_cols=["cluster"],
+        treatments=["A", "B"],
+    )
 
 
 def test_stratified_shuffled_input(df_strata):
-    splitter = StratifiedClusteredSplitter(
-        strata_cols=["segment"], cluster_cols=["cluster"]
+
+    # balance test after shuffling the order of the rows in the input dataframe
+
+    assert_balanced_strata(
+        df_strata.sample(frac=1).reset_index(drop=True),
+        strata_cols=["segment"],
+        cluster_cols=["cluster"],
+        treatments=["A", "B"],
     )
-
-    df_strata_shuffled = df_strata.sample(frac=1).reset_index(drop=True)
-
-    treatment_df = splitter.assign_treatment_df(df_strata_shuffled)
-
-    for treatment in ["A", "B"]:
-        for segment in ["good", "bad"]:
-            assert (
-                treatment_df.query(f"treatment == '{treatment}'")["segment"]
-                .value_counts(normalize=True)[segment]
-                .squeeze()
-            ) == 0.5
 
 
 def test_stratified_complete(df_strata_complete):
-    splitter = StratifiedClusteredSplitter(
-        strata_cols=["segment"], cluster_cols=["cluster"]
-    )
-    treatment_df = splitter.assign_treatment_df(df_strata_complete)
 
-    for treatment in ["A", "B"]:
-        for segment in ["good", "bad"]:
-            assert (
-                treatment_df.query(f"treatment == '{treatment}'")["segment"]
-                .value_counts(normalize=True)[segment]
-                .squeeze()
-            ) == 0.5
+    # when we have more than 1 row per cluster in the data frame
+
+    assert_balanced_strata(
+        df_strata_complete,
+        strata_cols=["segment"],
+        cluster_cols=["cluster"],
+        treatments=["A", "B"],
+    )
+
+
+def test_stratified_different_cardinality(df_strata_different_cardinality):
+
+    # when strata are associated to different number of clusters
+
+    assert_balanced_strata(
+        df_strata_different_cardinality,
+        strata_cols=["segment"],
+        cluster_cols=["cluster"],
+        treatments=["A", "B"],
+    )
 
 
 def test_stratified_two_strata_two_clusters_each_strata(
     df_strata_two_strata_cols_two_clusters_cols,
 ):
+
+    # testing the balance among each strata column when more than one are provided
+
     splitter = StratifiedClusteredSplitter(
         strata_cols=["segment", "size"], cluster_cols=["cluster_1", "cluster_2"]
     )
@@ -211,8 +265,8 @@ def test_stratified_two_strata_two_clusters_each_strata(
     for treatment in ["A", "B"]:
         for segment in ["good", "bad"]:
             assert (
-                treatment_df.query(f"treatment == '{treatment}'")["segment"]
-                .value_counts(normalize=True)[segment]
+                treatment_df.query(f"segment == '{segment}'")["treatment"]
+                .value_counts(normalize=True)[treatment]
                 .squeeze()
             ) == 0.5
 
@@ -220,28 +274,21 @@ def test_stratified_two_strata_two_clusters_each_strata(
 def test_stratified_two_strata_two_clusters_overall_strata(
     df_strata_two_strata_cols_two_clusters_cols,
 ):
-    splitter = StratifiedClusteredSplitter(
-        strata_cols=["segment", "size"], cluster_cols=["cluster_1", "cluster_2"]
-    )
-    treatment_df = splitter.assign_treatment_df(
-        df_strata_two_strata_cols_two_clusters_cols
-    )
 
-    treatment_df["strata"] = treatment_df["segment"] + "+" + treatment_df["size"]
-    treatment_df["clusters"] = (
-        treatment_df["cluster_1"] + "+" + treatment_df["cluster_2"]
-    )
+    # testing the balance among strata when more than one strata columns are provided
 
-    for treatment in ["A", "B"]:
-        for stratus in treatment_df["strata"].unique():
-            assert (
-                treatment_df.query(f"treatment == '{treatment}'")["strata"]
-                .value_counts(normalize=True)[stratus]
-                .squeeze()
-            ) == 0.25
+    assert_balanced_strata(
+        df_strata_two_strata_cols_two_clusters_cols,
+        strata_cols=["segment", "size"],
+        cluster_cols=["cluster_1", "cluster_2"],
+        treatments=["A", "B"],
+    )
 
 
 def test_stratified_strata_uniqueness(df_strata_multiple_values):
+
+    # testing that the value error is raised when two strata have the same cluster
+
     splitter = StratifiedClusteredSplitter(
         strata_cols=["segment"], cluster_cols=["cluster"]
     )
