@@ -86,7 +86,6 @@ def test_clustered_splitter(clusters, treatments, df_cluster):
     df_cluster = pd.concat([df_cluster for _ in range(100)])
     sampled_treatment = splitter.assign_treatment_df(df_cluster)
     assert len(sampled_treatment) == len(df_cluster)
-    assert set(sampled_treatment["treatment"]) == set(treatments)
 
 
 def test_balanced_splitter(clusters, treatments, df_cluster):
