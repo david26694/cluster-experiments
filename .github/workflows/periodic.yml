@@ -28,4 +28,5 @@ jobs:
         pip freeze
     - name: Test with pytest
       run: |
+        make install-test
         make test
