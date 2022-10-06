@@ -28,10 +28,6 @@ df = pd.DataFrame(
     }
 )
 
-clusters = [f"Cluster {i}" for i in range(100)]
-dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
-N = 1_000
-df = generate_random_data(clusters, dates, N)
 config = {
     "cluster_cols": ["cluster", "date"],
     "analysis": "gee",
