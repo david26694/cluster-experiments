@@ -212,11 +212,21 @@ class StratifiedClusteredSplitter(RandomSplitter):
 
     def assign_treatment_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
-        df_unique = df.loc[:, self.cluster_cols + self.strata_cols].drop_duplicates()
+        df_unique_shuffled = (
+            df.loc[:, self.cluster_cols + self.strata_cols]
+            .drop_duplicates()
+            .sample(frac=1)
+            .reset_index(drop=True)
+        )
 
         # check that, for a given cluster, there is only 1 strata
         for strata_col in self.strata_cols:
-            if df_unique.groupby(self.cluster_cols)[strata_col].nunique().max() > 1:
+            if (
+                df_unique_shuffled.groupby(self.cluster_cols)[strata_col]
+                .nunique()
+                .max()
+                > 1
+            ):
                 raise ValueError(
                     f"There are multiple values in {strata_col} for the same cluster item"
                     "You cannot stratify on this column"
@@ -224,8 +234,6 @@ class StratifiedClusteredSplitter(RandomSplitter):
 
         # random shuffling
         random_sorted_treatments = list(np.random.permutation(self.treatments))
-
-        df_unique_shuffled = df_unique.sample(frac=1)
 
         df_unique_shuffled[self.treatment_col] = (
             df_unique_shuffled.groupby(self.strata_cols, as_index=False)
