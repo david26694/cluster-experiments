@@ -106,6 +106,7 @@ The library offers the following classes:
     * `ClusteredSplitter`: to split data based on clusters
     * `BalancedClusteredSplitter`: to split data based on clusters in a balanced way
     * `NonClusteredSplitter`: Regular data splitting, no clusters
+    * `StratifiedClusteredSplitter`: to split based on clusters and strata, balancing the number of clusters in each stratus
 * Regarding analysis:
     * `GeeExperimentAnalysis`: to run GEE analysis on a the results of a clustered design
     * `OLSAnalysis`: to run OLS analysis for non-clustered data

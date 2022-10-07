@@ -16,6 +16,7 @@ from cluster_experiments.random_splitter import (
     ClusteredSplitter,
     NonClusteredSplitter,
     RandomSplitter,
+    StratifiedClusteredSplitter,
 )
 
 __all__ = [
@@ -33,4 +34,5 @@ __all__ = [
     "ClusteredSplitter",
     "RandomSplitter",
     "NonClusteredSplitter",
+    "StratifiedClusteredSplitter",
 ]
