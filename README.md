@@ -136,6 +136,7 @@ python -m venv venv
 source venv/bin/activate
 ```
 
+After creating the virtual environment (or not), run:
 ```bash
 git clone git@github.com:david26694/cluster-experiments.git
 cd cluster-experiments
