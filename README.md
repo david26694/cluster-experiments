@@ -118,19 +118,25 @@ The library offers the following classes:
 
 You can install this package via `pip`.
 
-```
+```bash
 pip install cluster-experiments
 ```
 
 It may be safer to install via;
 
-```
+```bash
 python -m pip install cluster-experiments
 ```
 
 ## Contributing
 
+In case you want to use venv as a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate
 ```
+
+```bash
 git clone git@github.com:david26694/cluster-experiments.git
 cd cluster-experiments
 make install-dev
