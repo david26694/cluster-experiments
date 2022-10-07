@@ -169,10 +169,18 @@ def test_switchback_balanced_splitter_abc():
         assert counts.min() == 1
 
 
+def combine_columns(df, cols_list):
+    # combines columns for testing the stratified splitter in case of multiple strata or clusters
+    if len(cols_list) > 1:
+        return df[cols_list].agg("-".join, axis=1)
+    else:
+        return df[cols_list]
+
+
 def assert_balanced_strata(
     df, strata_cols: List[str], cluster_cols: List[str], treatments: List[str]
 ):
-
+    # asserts the balance of the stratified splitter for a given input data frame
     splitter = StratifiedClusteredSplitter(
         strata_cols=strata_cols, cluster_cols=cluster_cols
     )
@@ -183,19 +191,12 @@ def assert_balanced_strata(
         strata_cols + cluster_cols + ["treatment"]
     ].drop_duplicates()
 
-    if len(cluster_cols) > 1:
-        treatment_df_unique["clusters_test"] = treatment_df_unique[cluster_cols].agg(
-            "-".join, axis=1
-        )
-    else:
-        treatment_df_unique["clusters_test"] = treatment_df_unique[cluster_cols]
-
-    if len(strata_cols) > 1:
-        treatment_df_unique["strata_test"] = treatment_df_unique[strata_cols].agg(
-            "-".join, axis=1
-        )
-    else:
-        treatment_df_unique["strata_test"] = treatment_df_unique[strata_cols]
+    treatment_df_unique["clusters_test"] = combine_columns(
+        treatment_df_unique, cluster_cols
+    )
+    treatment_df_unique["strata_test"] = combine_columns(
+        treatment_df_unique, strata_cols
+    )
 
     for treatment in treatments:
         for stratus in treatment_df_unique["strata_test"].unique():
