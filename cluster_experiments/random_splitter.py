@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 import pandas as pd
+import numpy as np
 
 
 class RandomSplitter(ABC):
@@ -10,13 +11,7 @@ class RandomSplitter(ABC):
     Abstract class to split instances in a switchback or clustered way. It can be used to create a calendar/split of clusters
     or to run a power analysis.
 
-    In order to create your own RandomSplitter, you either write the following two methods:
-    * treatment_assignment: If you are deriving from clustered or switchback splitters, no need for this. The goal of this is, given the output of sample_treatment,
-    prepare such that it can be added to the dataframe by building a list of dictionaries with clusters and treatments.
-    * sample_treatment: This is what needs to be implemented. It should return a list of same length as the number of clusters, with the treatment
-    received to each cluster.
-
-    Or write your own assign_treatment_df method, that takes a dataframe as an input and returns the same dataframe with the treatment_col column.
+    In order to create your own RandomSplitter, you should write your own assign_treatment_df method, that takes a dataframe as an input and returns the same dataframe with the treatment_col column.
 
     Arguments:
         cluster_cols: List of columns to use as clusters
@@ -198,3 +193,89 @@ class NonClusteredSplitter(RandomSplitter):
     def from_config(cls, config):
         """Creates a NonClusteredSplitter from a PowerConfig"""
         return cls(treatments=config.treatments, treatment_col=config.treatment_col)
+
+
+class StratifiedClusteredSplitter(RandomSplitter):
+    """
+    Splits randomly with clusters, ensuring a balanced allocation of treatment groups across clusters and strata.
+    To be used, for example, when having days as clusters and days of the week as stratus. This splitter will make sure
+    that we won't have all Sundays in treatment and no Sundays in control.
+
+    Arguments:
+        cluster_cols: List of columns to use as clusters
+        treatments: list of treatments
+        treatment_col: Name of the column with the treatment variable.
+        strata_cols: List of columns to use as strata
+
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.random_splitter import StratifiedClusteredSplitter
+    splitter = StratifiedClusteredSplitter(cluster_cols=["city"],strata_cols=["country"])
+    df = pd.DataFrame({"city": ["A", "B", "C","D"], "country":["C1","C2","C2","C1"]})
+    df = splitter.assign_treatment_df(df)
+    print(df)
+    ```
+    """
+
+    def __init__(
+        self,
+        cluster_cols: Optional[List[str]] = None,
+        treatments: Optional[List[str]] = None,
+        treatment_col: str = "treatment",
+        strata_cols: Optional[List[str]] = None,
+    ) -> None:
+        super().__init__(
+            cluster_cols=cluster_cols,
+            treatments=treatments,
+            treatment_col=treatment_col,
+        )
+        self.strata_cols = strata_cols or ["strata"]
+
+    def assign_treatment_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df_unique_shuffled = (
+            df.loc[:, self.cluster_cols + self.strata_cols]
+            .drop_duplicates()
+            .sample(frac=1)
+            .reset_index(drop=True)
+        )
+
+        # check that, for a given cluster, there is only 1 strata
+        for strata_col in self.strata_cols:
+            if (
+                df_unique_shuffled.groupby(self.cluster_cols)[strata_col]
+                .nunique()
+                .max()
+                > 1
+            ):
+                raise ValueError(
+                    f"There are multiple values in {strata_col} for the same cluster item"
+                    "You cannot stratify on this column"
+                )
+
+        # random shuffling
+        random_sorted_treatments = list(np.random.permutation(self.treatments))
+
+        df_unique_shuffled[self.treatment_col] = (
+            df_unique_shuffled.groupby(self.strata_cols, as_index=False)
+            .cumcount()
+            .mod(len(random_sorted_treatments))
+            .map(dict(enumerate(random_sorted_treatments)))
+        )
+
+        df = df.merge(
+            df_unique_shuffled, on=self.cluster_cols + self.strata_cols, how="left"
+        )
+
+        return df
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a StratifiedClusteredSplitter from a PowerConfig"""
+        return cls(
+            treatments=config.treatments,
+            cluster_cols=config.cluster_cols,
+            strata_cols=config.strata_cols,
+            treatment_col=config.treatment_col,
+        )
