@@ -184,7 +184,6 @@ def assert_balanced_strata(
         strata_cols + cluster_cols + ["treatment"]
     ].drop_duplicates()
 
-    ##
     if len(cluster_cols) > 1:
         treatment_df_unique["clusters_test"] = treatment_df_unique[cluster_cols].agg(
             "-".join, axis=1
@@ -198,7 +197,6 @@ def assert_balanced_strata(
         )
     else:
         treatment_df_unique["strata_test"] = treatment_df_unique[strata_cols]
-    ##
 
     for treatment in treatments:
         for stratus in treatment_df_unique["strata_test"].unique():
