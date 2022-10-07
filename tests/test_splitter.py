@@ -180,22 +180,30 @@ def assert_balanced_strata(
 
     treatment_df = splitter.assign_treatment_df(df)
 
+    treatment_df_unique = treatment_df[
+        strata_cols + cluster_cols + ["treatment"]
+    ].drop_duplicates()
+
     ##
     if len(cluster_cols) > 1:
-        treatment_df["clusters_test"] = treatment_df[cluster_cols].agg("-".join, axis=1)
+        treatment_df_unique["clusters_test"] = treatment_df_unique[cluster_cols].agg(
+            "-".join, axis=1
+        )
     else:
-        treatment_df["clusters_test"] = treatment_df[cluster_cols]
+        treatment_df_unique["clusters_test"] = treatment_df_unique[cluster_cols]
 
     if len(strata_cols) > 1:
-        treatment_df["strata_test"] = treatment_df[strata_cols].agg("-".join, axis=1)
+        treatment_df_unique["strata_test"] = treatment_df_unique[strata_cols].agg(
+            "-".join, axis=1
+        )
     else:
-        treatment_df["strata_test"] = treatment_df[strata_cols]
+        treatment_df_unique["strata_test"] = treatment_df_unique[strata_cols]
     ##
 
     for treatment in treatments:
-        for stratus in treatment_df["strata_test"].unique():
+        for stratus in treatment_df_unique["strata_test"].unique():
             assert (
-                treatment_df.query(f"strata_test == '{stratus}'")["treatment"]
+                treatment_df_unique.query(f"strata_test == '{stratus}'")["treatment"]
                 .value_counts(normalize=True)[treatment]
                 .squeeze()
             ) == 1 / len(treatments)
