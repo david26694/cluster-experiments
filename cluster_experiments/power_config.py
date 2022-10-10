@@ -2,12 +2,18 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
-from cluster_experiments.experiment_analysis import GeeExperimentAnalysis, OLSAnalysis
+from cluster_experiments.experiment_analysis import (
+    GeeExperimentAnalysis,
+    OLSAnalysis,
+    ClusteredOLSAnalysis,
+    TTestClusteredAnalysis,
+)
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     ClusteredSplitter,
     NonClusteredSplitter,
+    StratifiedClusteredSplitter,
 )
 
 
@@ -26,6 +32,7 @@ class PowerConfig:
         target_col: column to use as target
         treatment_col: column to use as treatment
         treatment: what value of treatment_col should be considered as treatment
+        strata_cols: columns to stratify with
         covariates: list of columns to use as covariates
         average_effect: average effect to use in the perturbator
         treatments: list of treatments to use
@@ -73,6 +80,7 @@ class PowerConfig:
 
     # Splitter
     treatments: Optional[List[str]] = None
+    strata_cols: Optional[List[str]] = None
 
     # Analysis
     covariates: Optional[List[str]] = None
@@ -96,8 +104,14 @@ splitter_mapping = {
     "clustered": ClusteredSplitter,
     "clustered_balance": BalancedClusteredSplitter,
     "non_clustered": NonClusteredSplitter,
+    "clustered_stratified": StratifiedClusteredSplitter,
 }
 
-analysis_mapping = {"gee": GeeExperimentAnalysis, "ols_non_clustered": OLSAnalysis}
+analysis_mapping = {
+    "gee": GeeExperimentAnalysis,
+    "ols_non_clustered": OLSAnalysis,
+    "ols_clustered": ClusteredOLSAnalysis,
+    "ttest_clustered": TTestClusteredAnalysis,
+}
 
 cupac_model_mapping = {"": EmptyRegressor, "mean_cupac_model": TargetAggregation}

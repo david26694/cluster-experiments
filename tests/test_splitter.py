@@ -1,12 +1,15 @@
-from typing import Counter, List
+from typing import Counter
 
 import pandas as pd
 import pytest
+from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     ClusteredSplitter,
     StratifiedClusteredSplitter,
 )
+
+from tests.utils import assert_balanced_strata
 
 
 @pytest.fixture
@@ -100,6 +103,13 @@ def df_switchback(clusters, dates):
     return pd.DataFrame({"cluster": sorted(clusters * 2), "date": dates * 4})
 
 
+@pytest.fixture
+def stratified_splitter(strata_cols, cluster_cols):
+    return StratifiedClusteredSplitter(
+        cluster_cols=cluster_cols, strata_cols=strata_cols
+    )
+
+
 def test_clustered_splitter(clusters, treatments, df_cluster):
     splitter = ClusteredSplitter(cluster_cols=["cluster"], treatments=treatments)
     df_cluster = pd.concat([df_cluster for _ in range(100)])
@@ -169,80 +179,81 @@ def test_switchback_balanced_splitter_abc():
         assert counts.min() == 1
 
 
-def combine_columns(df, cols_list):
-    # combines columns for testing the stratified splitter in case of multiple strata or clusters
-    if len(cols_list) > 1:
-        return df[cols_list].agg("-".join, axis=1)
-    else:
-        return df[cols_list]
+@pytest.fixture
+def strata_cols():
+    return ["segment"]
 
 
-def assert_balanced_strata(
-    df, strata_cols: List[str], cluster_cols: List[str], treatments: List[str]
-):
-    # asserts the balance of the stratified splitter for a given input data frame
-    splitter = StratifiedClusteredSplitter(
-        strata_cols=strata_cols, cluster_cols=cluster_cols
-    )
-
-    treatment_df = splitter.assign_treatment_df(df)
-
-    treatment_df_unique = treatment_df[
-        strata_cols + cluster_cols + ["treatment"]
-    ].drop_duplicates()
-
-    treatment_df_unique["clusters_test"] = combine_columns(
-        treatment_df_unique, cluster_cols
-    )
-    treatment_df_unique["strata_test"] = combine_columns(
-        treatment_df_unique, strata_cols
-    )
-
-    for treatment in treatments:
-        for stratus in treatment_df_unique["strata_test"].unique():
-            assert (
-                treatment_df_unique.query(f"strata_test == '{stratus}'")["treatment"]
-                .value_counts(normalize=True)[treatment]
-                .squeeze()
-            ) == 1 / len(treatments)
+@pytest.fixture
+def cluster_cols():
+    return ["cluster"]
 
 
-def test_stratified(df_strata):
+def test_stratified(stratified_splitter, df_strata, strata_cols, cluster_cols):
     # base test for balance of treatments across strata
     assert_balanced_strata(
+        stratified_splitter,
         df_strata,
-        strata_cols=["segment"],
-        cluster_cols=["cluster"],
+        strata_cols=strata_cols,
+        cluster_cols=cluster_cols,
         treatments=["A", "B"],
     )
 
 
-def test_stratified_shuffled_input(df_strata):
+def test_stratified_config(df_strata, strata_cols, cluster_cols):
+    config = PowerConfig(
+        cluster_cols=cluster_cols,
+        strata_cols=strata_cols,
+        splitter="clustered_stratified",
+        analysis="gee",
+        perturbator="uniform",
+    )
+    splitter = StratifiedClusteredSplitter.from_config(config)
+    # base test for balance of treatments across strata
+    assert_balanced_strata(
+        splitter,
+        df_strata,
+        strata_cols=strata_cols,
+        cluster_cols=cluster_cols,
+        treatments=["A", "B"],
+    )
+
+
+def test_stratified_shuffled_input(
+    stratified_splitter, df_strata, strata_cols, cluster_cols
+):
     # balance test after shuffling the order of the rows in the input dataframe
     assert_balanced_strata(
+        stratified_splitter,
         df_strata.sample(frac=1).reset_index(drop=True),
-        strata_cols=["segment"],
-        cluster_cols=["cluster"],
+        strata_cols=strata_cols,
+        cluster_cols=cluster_cols,
         treatments=["A", "B"],
     )
 
 
-def test_stratified_complete(df_strata_complete):
+def test_stratified_complete(
+    stratified_splitter, df_strata_complete, strata_cols, cluster_cols
+):
     # when we have more than 1 row per cluster in the data frame
     assert_balanced_strata(
+        stratified_splitter,
         df_strata_complete,
-        strata_cols=["segment"],
-        cluster_cols=["cluster"],
+        strata_cols=strata_cols,
+        cluster_cols=cluster_cols,
         treatments=["A", "B"],
     )
 
 
-def test_stratified_different_cardinality(df_strata_different_cardinality):
+def test_stratified_different_cardinality(
+    stratified_splitter, df_strata_different_cardinality, strata_cols, cluster_cols
+):
     # when strata are associated to different number of clusters
     assert_balanced_strata(
+        stratified_splitter,
         df_strata_different_cardinality,
-        strata_cols=["segment"],
-        cluster_cols=["cluster"],
+        strata_cols=strata_cols,
+        cluster_cols=cluster_cols,
         treatments=["A", "B"],
     )
 
@@ -271,7 +282,12 @@ def test_stratified_two_strata_two_clusters_overall_strata(
     df_strata_two_strata_cols_two_clusters_cols,
 ):
     # testing the balance among strata when more than one strata columns are provided
+
+    splitter = StratifiedClusteredSplitter(
+        strata_cols=["segment", "size"], cluster_cols=["cluster_1", "cluster_2"]
+    )
     assert_balanced_strata(
+        splitter,
         df_strata_two_strata_cols_two_clusters_cols,
         strata_cols=["segment", "size"],
         cluster_cols=["cluster_1", "cluster_2"],
