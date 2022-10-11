@@ -1,8 +1,10 @@
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
+    ClusteredOLSAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     OLSAnalysis,
+    TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import (
     BinaryPerturbator,
@@ -35,4 +37,6 @@ __all__ = [
     "RandomSplitter",
     "NonClusteredSplitter",
     "StratifiedClusteredSplitter",
+    "ClusteredOLSAnalysis",
+    "TTestClusteredAnalysis",
 ]
