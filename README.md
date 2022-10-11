@@ -108,7 +108,9 @@ The library offers the following classes:
     * `NonClusteredSplitter`: Regular data splitting, no clusters
     * `StratifiedClusteredSplitter`: to split based on clusters and strata, balancing the number of clusters in each stratus
 * Regarding analysis:
-    * `GeeExperimentAnalysis`: to run GEE analysis on a the results of a clustered design
+    * `GeeExperimentAnalysis`: to run GEE analysis on the results of a clustered design
+    * `TTestClusteredAnalysis`: to run a t-test on aggregated data for clusters
+    * `ClusteredOLSAnalysis`: to run OLS analysis on the results of a clustered design
     * `OLSAnalysis`: to run OLS analysis for non-clustered data
     * `TargetAggregation`: to add pre-experimental data of the outcome to reduce variance
 * Other:
