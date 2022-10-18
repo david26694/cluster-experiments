@@ -1,3 +1,6 @@
+<img src="theme/icon-cluster.svg" width=150 height=200 align="right">
+
+
 # cluster_experiments
 
 A library to run simulation-based power analysis, including clustered data. Also useful to design and analyse clustered and switchback experiments.
