@@ -14,5 +14,6 @@ jobs:
         with:
           python-version: 3.8
       - run: cp README.md docs/index.md
+      - run: cp -r theme docs/theme
       - run: make install-dev
       - run: mkdocs gh-deploy --force
