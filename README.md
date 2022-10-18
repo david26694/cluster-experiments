@@ -1,4 +1,4 @@
-<img src="theme/icon-cluster.svg" width=150 height=200 align="right">
+<img src="theme/icon-cluster.png" width=200 height=200 align="right">
 
 
 # cluster_experiments
