@@ -16,4 +16,5 @@ jobs:
       - run: cp README.md docs/index.md
       - run: cp -r theme docs/theme
       - run: make install-dev
+      - run: cp README.md docs/index.md
       - run: mkdocs gh-deploy --force

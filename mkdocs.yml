@@ -9,6 +9,7 @@ edit_uri: blob/main/docs/
 nav:
   - Home:
     - Index: index.md
+  - Cupac example: cupac_example.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
@@ -20,6 +21,7 @@ plugins:
   - mkdocstrings:
       watch:
         - cluster_experiments
+  - mkdocs-jupyter
   - search
 copyright: Copyright &copy; 2022 Maintained by David Masip.
 theme:

@@ -35,7 +35,7 @@ class TargetAggregation(BaseEstimator, RegressorMixin):
     df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"], "target_col": [1, 2, 3, 4, 5, 6]})
     new_df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"]})
     target_agg = TargetAggregation("agg_col", "target_col")
-    target_agg.fit(df)
+    target_agg.fit(df.drop(columns="target_col"), df["target_col"])
     df_with_target_agg = target_agg.predict(new_df)
     print(df_with_target_agg)
     ```
