@@ -9,7 +9,7 @@ from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import UniformPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.power_config import PowerConfig
-from cluster_experiments.random_splitter import ClusteredSplitter
+from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
 from tests.examples import generate_random_data
 
 N = 1_000
@@ -257,6 +257,27 @@ def test_raise_cluster_cols():
     sw = ClusteredSplitter(
         cluster_cols=["cluster"],
     )
+
+    perturbator = UniformPerturbator(
+        average_effect=0.1,
+        target_col="another_target",
+    )
+
+    analysis = GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+    with pytest.raises(ValueError):
+        PowerAnalysis(
+            perturbator=perturbator,
+            splitter=sw,
+            analysis=analysis,
+            n_simulations=3,
+        )
+
+
+def test_raise_clustering_mismatch():
+    sw = NonClusteredSplitter()
 
     perturbator = UniformPerturbator(
         average_effect=0.1,
