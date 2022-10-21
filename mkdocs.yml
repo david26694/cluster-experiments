@@ -9,8 +9,7 @@ edit_uri: blob/main/docs/
 nav:
   - Home:
     - Index: index.md
-  - Notebook page: a.ipynb
-  - Python file: short_example.py
+  - Cupac example: cupac_example.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
