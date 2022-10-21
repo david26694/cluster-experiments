@@ -112,16 +112,36 @@ class PowerAnalysis:
         self.features_cupac_model: List[str] = features_cupac_model or []
         self.is_cupac = not isinstance(self.cupac_model, EmptyRegressor)
 
-        cupac_not_in_covariates = (
-            self.cupac_outcome_name not in self.analysis.covariates
-        )
+        self.check_inputs()
 
-        if self.is_cupac and cupac_not_in_covariates:
-            raise ValueError(
-                f"covariates in analysis must contain {self.cupac_outcome_name} if cupac_model is not None. "
-                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
-                f"You may want to do covariates=['{self.cupac_outcome_name}'] in your analysis method or your config"
-            )
+    def power_analysis(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+    ) -> float:
+        """
+        Run power analysis by simulation
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+        """
+        df = df.copy()
+
+        if pre_experiment_df is not None and self.is_cupac:
+            df = self.add_covariates(df, pre_experiment_df)
+
+        n_detected_mde = 0
+
+        for _ in tqdm(range(self.n_simulations), disable=not verbose):
+            treatment_df = self.splitter.assign_treatment_df(df)
+            self.log_nulls(treatment_df)
+            treatment_df = treatment_df.query(f"{self.treatment_col}.notnull()")
+            treatment_df = self.perturbator.perturbate(treatment_df)
+            p_value = self.analysis.get_pvalue(treatment_df)
+            n_detected_mde += p_value < self.alpha
+
+        return n_detected_mde / self.n_simulations
 
     def _prep_data_cupac(
         self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
@@ -183,35 +203,6 @@ class PowerAnalysis:
                 f"There are {n_nulls} null values in treatment, dropping them"
             )
 
-    def power_analysis(
-        self,
-        df: pd.DataFrame,
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        verbose: bool = False,
-    ) -> float:
-        """
-        Run power analysis by simulation
-        Args:
-            df: Dataframe with outcome and treatment variables.
-            pre_experiment_df: Dataframe with pre-experiment data.
-        """
-        df = df.copy()
-
-        if pre_experiment_df is not None and self.is_cupac:
-            df = self.add_covariates(df, pre_experiment_df)
-
-        n_detected_mde = 0
-
-        for _ in tqdm(range(self.n_simulations), disable=not verbose):
-            treatment_df = self.splitter.assign_treatment_df(df)
-            self.log_nulls(treatment_df)
-            treatment_df = treatment_df.query(f"{self.treatment_col}.notnull()")
-            treatment_df = self.perturbator.perturbate(treatment_df)
-            p_value = self.analysis.get_pvalue(treatment_df)
-            n_detected_mde += p_value < self.alpha
-
-        return n_detected_mde / self.n_simulations
-
     @staticmethod
     def _get_mapping_key(mapping, key):
         try:
@@ -253,3 +244,52 @@ class PowerAnalysis:
             n_simulations=config.n_simulations,
             alpha=config.alpha,
         )
+
+    def check_inputs(self):
+        cupac_not_in_covariates = (
+            self.cupac_outcome_name not in self.analysis.covariates
+        )
+
+        if self.is_cupac and cupac_not_in_covariates:
+            raise ValueError(
+                f"covariates in analysis must contain {self.cupac_outcome_name} if cupac_model is not None. "
+                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
+                f"You may want to do covariates=['{self.cupac_outcome_name}'] in your analysis method or your config"
+            )
+
+        if self.analysis.target_col != self.perturbator.target_col:
+            raise ValueError(
+                f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in perturbator ({self.perturbator.target_col})"
+            )
+
+        if self.analysis.treatment_col != self.perturbator.treatment_col:
+            raise ValueError(
+                f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in perturbator ({self.perturbator.treatment_col})"
+            )
+
+        if self.analysis.treatment != self.perturbator.treatment:
+            raise ValueError(
+                f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in perturbator ({self.perturbator.treatment})"
+            )
+
+        if self.analysis.treatment_col != self.splitter.treatment_col:
+            raise ValueError(
+                f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in splitter ({self.splitter.treatment_col})"
+            )
+
+        has_analysis_clusters = hasattr(self.analysis, "cluster_cols")
+        has_splitter_clusters = hasattr(self.splitter, "cluster_cols")
+        cluster_cols_cond = has_analysis_clusters and has_splitter_clusters
+        if (
+            cluster_cols_cond
+            and self.analysis.cluster_cols != self.splitter.cluster_cols
+        ):
+            raise ValueError(
+                f"cluster_cols in analysis ({self.analysis.cluster_cols}) must be the same as cluster_cols in splitter ({self.splitter.cluster_cols})"
+            )
+
+        if has_analysis_clusters and not has_splitter_clusters:
+            raise ValueError("analysis has cluster_cols but splitter does not.")
+
+        if not has_analysis_clusters and has_splitter_clusters:
+            raise ValueError("splitter has cluster_cols but analysis does not.")
