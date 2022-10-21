@@ -12,6 +12,7 @@ only_test_packages = [
     "pytest>=5.4.3",
     "black>=19.10b0",
     "flake8>=3.8.3",
+    "mktestdocs>=0.2.0",
 ]
 test_packages = only_test_packages + base_packages
 

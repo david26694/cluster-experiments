@@ -181,7 +181,7 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+    from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
     import pandas as pd
 
     df = pd.DataFrame({
