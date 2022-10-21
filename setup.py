@@ -8,11 +8,12 @@ base_packages = [
     "tqdm>=4.0.0",
 ]
 
-test_packages = [
+only_test_packages = [
     "pytest>=5.4.3",
     "black>=19.10b0",
     "flake8>=3.8.3",
-] + base_packages
+]
+test_packages = only_test_packages + base_packages
 
 util_packages = ["pre-commit>=2.6.0", "ipykernel>=6.15.1", "twine"] + base_packages
 
@@ -28,11 +29,12 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.2.0",
+    version="0.2.2",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,
         "test": test_packages,
+        "only-test": only_test_packages,
         "docs": docs_packages,
     },
     install_requires=base_packages,

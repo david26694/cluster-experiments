@@ -5,6 +5,7 @@ site_url: https://david26694.github.io/cluster-experiments/
 site_description: Functions to design and run clustered experiments
 site_author: David Masip
 use_directory_urls: false
+edit_uri: blob/main/docs/
 nav:
   - Home:
     - Index: index.md
