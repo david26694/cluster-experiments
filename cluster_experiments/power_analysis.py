@@ -288,8 +288,16 @@ class PowerAnalysis:
                 f"cluster_cols in analysis ({self.analysis.cluster_cols}) must be the same as cluster_cols in splitter ({self.splitter.cluster_cols})"
             )
 
-        if has_analysis_clusters and not has_splitter_clusters:
+        if (
+            has_analysis_clusters
+            and not has_splitter_clusters
+            and self.analysis.cluster_cols
+        ):
             raise ValueError("analysis has cluster_cols but splitter does not.")
 
-        if not has_analysis_clusters and has_splitter_clusters:
+        if (
+            not has_analysis_clusters
+            and has_splitter_clusters
+            and self.splitter.cluster_cols
+        ):
             raise ValueError("splitter has cluster_cols but analysis does not.")
