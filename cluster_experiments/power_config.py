@@ -3,9 +3,9 @@ from typing import List, Optional
 
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
+    ClusteredOLSAnalysis,
     GeeExperimentAnalysis,
     OLSAnalysis,
-    ClusteredOLSAnalysis,
     TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
@@ -76,7 +76,7 @@ class PowerConfig:
     treatment: str = "B"
 
     # Perturbator
-    average_effect: float = 0.0
+    average_effect: Optional[float] = None
 
     # Splitter
     treatments: Optional[List[str]] = None
