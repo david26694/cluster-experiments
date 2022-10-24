@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import pandas as pd
 
@@ -24,7 +25,7 @@ class Perturbator(ABC):
 
     def __init__(
         self,
-        average_effect: float,
+        average_effect: Optional[float] = None,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
@@ -35,8 +36,20 @@ class Perturbator(ABC):
         self.treatment = treatment
         self.treated_query = f"{self.treatment_col} == '{self.treatment}'"
 
+    def get_average_effect(self, average_effect: Optional[float] = None) -> float:
+        average_effect = (
+            average_effect if average_effect is not None else self.average_effect
+        )
+        if average_effect is None:
+            raise ValueError(
+                "average_effect must be provided, either in the constructor or in the method call"
+            )
+        return average_effect
+
     @abstractmethod
-    def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
         """Method to perturbate a dataframe"""
         pass
 
@@ -56,7 +69,9 @@ class UniformPerturbator(Perturbator):
     UniformPerturbator is a Perturbator that adds a uniform effect to the target column of the treated instances.
     """
 
-    def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
         """
         Usage:
 
@@ -64,14 +79,15 @@ class UniformPerturbator(Perturbator):
         from cluster_experiments.perturbator import UniformPerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
-        perturbator = UniformPerturbator(average_effect=1)
-        perturbator.perturbate(df)
+        perturbator = UniformPerturbator()
+        perturbator.perturbate(df, average_effect=1)
         ```
         """
         df = df.copy().reset_index(drop=True)
+        average_effect = self.get_average_effect(average_effect)
         df.loc[
             df[self.treatment_col] == self.treatment, self.target_col
-        ] += self.average_effect
+        ] += average_effect
         return df
 
 
@@ -89,7 +105,9 @@ class BinaryPerturbator(Perturbator):
             return df
         return df.sample(n=n)
 
-    def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
         """
         Usage:
 
@@ -97,19 +115,19 @@ class BinaryPerturbator(Perturbator):
         from cluster_experiments.perturbator import BinaryPerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 0, 1], "treatment": ["A", "B", "A"]})
-        perturbator = BinaryPerturbator(average_effect=0.1)
-        perturbator.perturbate(df)
+        perturbator = BinaryPerturbator()
+        perturbator.perturbate(df, average_effect=0.1)
         ```
         """
 
         df = df.copy().reset_index(drop=True)
+        average_effect = self.get_average_effect(average_effect)
+
         from_target, to_target = 1, 0
-        if self.average_effect > 0:
+        if average_effect > 0:
             from_target, to_target = 0, 1
 
-        n_transformed = abs(
-            int(self.average_effect * len(df.query(self.treated_query)))
-        )
+        n_transformed = abs(int(average_effect * len(df.query(self.treated_query))))
         idx = list(
             # Sample of negative cases in group B
             df.query(f"{self.target_col} == {from_target} & {self.treated_query}")

@@ -151,9 +151,24 @@ def test_power_analysis_config(df):
         perturbator="uniform",
         splitter="clustered",
         n_simulations=4,
+        average_effect=0.0,
     )
     pw = PowerAnalysis.from_config(config)
     power = pw.power_analysis(df)
+    assert power >= 0
+    assert power <= 1
+
+
+def test_power_analysis_config_avg_effect(df):
+    config = PowerConfig(
+        cluster_cols=["cluster", "date"],
+        analysis="gee",
+        perturbator="uniform",
+        splitter="clustered",
+        n_simulations=4,
+    )
+    pw = PowerAnalysis.from_config(config)
+    power = pw.power_analysis(df, average_effect=0.0)
     assert power >= 0
     assert power <= 1
 
@@ -167,11 +182,11 @@ def test_power_analysis_dict(df):
         n_simulations=4,
     )
     pw = PowerAnalysis.from_dict(config)
-    power = pw.power_analysis(df)
+    power = pw.power_analysis(df, average_effect=0.0)
     assert power >= 0
     assert power <= 1
 
-    power_verbose = pw.power_analysis(df, verbose=True)
+    power_verbose = pw.power_analysis(df, verbose=True, average_effect=0.0)
     assert power_verbose >= 0
     assert power_verbose <= 1
 
@@ -194,11 +209,11 @@ def test_different_names(df):
         target_col="target_0",
     )
     pw = PowerAnalysis.from_dict(config)
-    power = pw.power_analysis(df)
+    power = pw.power_analysis(df, average_effect=0.0)
     assert power >= 0
     assert power <= 1
 
-    power_verbose = pw.power_analysis(df, verbose=True)
+    power_verbose = pw.power_analysis(df, verbose=True, average_effect=0.0)
     assert power_verbose >= 0
     assert power_verbose <= 1
 
@@ -227,7 +242,7 @@ def test_data_checks(df):
     pw = PowerAnalysis.from_dict(config)
     df["target"] = df["target"] == 1
     with pytest.raises(ValueError):
-        pw.power_analysis(df)
+        pw.power_analysis(df, average_effect=0.0)
 
 
 def test_raise_target():
