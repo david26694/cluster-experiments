@@ -69,9 +69,7 @@ class PowerAnalysis:
         cluster_cols=["cluster", "date"],
     )
 
-    perturbator = UniformPerturbator(
-        average_effect=0.1,
-    )
+    perturbator = UniformPerturbator()
 
     analysis = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
@@ -81,7 +79,7 @@ class PowerAnalysis:
         perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50
     )
 
-    power = pw.power_analysis(df)
+    power = pw.power_analysis(df, average_effect=0.1)
     print(f"{power = }")
     ```
     """
@@ -119,12 +117,15 @@ class PowerAnalysis:
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
         verbose: bool = False,
+        average_effect: Optional[float] = None,
     ) -> float:
         """
         Run power analysis by simulation
         Args:
             df: Dataframe with outcome and treatment variables.
             pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
         """
         df = df.copy()
 
@@ -137,7 +138,9 @@ class PowerAnalysis:
             treatment_df = self.splitter.assign_treatment_df(df)
             self.log_nulls(treatment_df)
             treatment_df = treatment_df.query(f"{self.treatment_col}.notnull()")
-            treatment_df = self.perturbator.perturbate(treatment_df)
+            treatment_df = self.perturbator.perturbate(
+                treatment_df, average_effect=average_effect
+            )
             p_value = self.analysis.get_pvalue(treatment_df)
             n_detected_mde += p_value < self.alpha
 
@@ -262,9 +265,19 @@ class PowerAnalysis:
                 f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in perturbator ({self.perturbator.target_col})"
             )
 
+        if self.analysis.target_col != self.target_col:
+            raise ValueError(
+                f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in PowerAnalysis ({self.target_col})"
+            )
+
         if self.analysis.treatment_col != self.perturbator.treatment_col:
             raise ValueError(
                 f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in perturbator ({self.perturbator.treatment_col})"
+            )
+
+        if self.analysis.treatment_col != self.treatment_col:
+            raise ValueError(
+                f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in PowerAnalysis ({self.treatment_col})"
             )
 
         if self.analysis.treatment != self.perturbator.treatment:

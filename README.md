@@ -36,13 +36,12 @@ config = {
     "analysis": "gee",
     "perturbator": "uniform",
     "splitter": "clustered",
-    "average_effect": 0.1,
     "n_simulations": 50,
 }
 pw = PowerAnalysis.from_dict(config)
 
 print(df)
-power = pw.power_analysis(df)
+power = pw.power_analysis(df, average_effect=0.1)
 print(f"{power = }")
 
 ```
@@ -79,9 +78,7 @@ sw = ClusteredSplitter(
 )
 
 # We use a uniform perturbator to add artificial effect on the treated on the power analysis
-perturbator = UniformPerturbator(
-    average_effect=0.1,
-)
+perturbator = UniformPerturbator()
 
 # Use gee to run the analysis
 analysis = GeeExperimentAnalysis(
@@ -93,7 +90,7 @@ pw = PowerAnalysis(
     perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50
 )
 
-power = pw.power_analysis(df)
+power = pw.power_analysis(df, average_effect=0.1)
 print(f"{power = }")
 ```
 
