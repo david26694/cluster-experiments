@@ -1,15 +1,18 @@
+import random
 from typing import Counter
 
 import pandas as pd
 import pytest
+
 from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     ClusteredSplitter,
     StratifiedClusteredSplitter,
 )
-
 from tests.utils import assert_balanced_strata
+
+random.seed(421)
 
 
 @pytest.fixture
@@ -110,22 +113,39 @@ def stratified_splitter(strata_cols, cluster_cols):
     )
 
 
-def test_clustered_splitter(clusters, treatments, df_cluster):
+def test_weighted_splitter(df_cluster):
+    splitter = ClusteredSplitter(
+        cluster_cols=["cluster"], treatments=["A", "B"], splitter_weights=[0.75, 0.25]
+    )
+    df_cluster = pd.concat([df_cluster for _ in range(100)])
+    sampled_treatment = splitter.assign_treatment_df(df_cluster)
+    # Check that A are 75% of the time and B are 25% of the time
+    assert (
+        sampled_treatment["treatment"].value_counts()["A"]
+        / sampled_treatment["treatment"].value_counts()["B"]
+    ) == 3
+
+
+def test_clustered_splitter(treatments, df_cluster):
     splitter = ClusteredSplitter(cluster_cols=["cluster"], treatments=treatments)
     df_cluster = pd.concat([df_cluster for _ in range(100)])
     sampled_treatment = splitter.assign_treatment_df(df_cluster)
     assert len(sampled_treatment) == len(df_cluster)
 
 
-def test_balanced_splitter(clusters, treatments, df_cluster):
-    splitter = BalancedClusteredSplitter(clusters, treatments)
+def test_balanced_splitter(treatments, df_cluster):
+    splitter = BalancedClusteredSplitter(
+        cluster_cols=["cluster"], treatments=treatments
+    )
     sampled_treatment = splitter.sample_treatment(df_cluster)
     assert sorted(sampled_treatment) == ["A", "A", "B", "B"]
 
 
-def test_balanced_splitter_abc(clusters, df_cluster):
+def test_balanced_splitter_abc(df_cluster):
     treatments = ["A", "B", "C"]
-    splitter = BalancedClusteredSplitter(clusters, treatments)
+    splitter = BalancedClusteredSplitter(
+        cluster_cols=["cluster"], treatments=treatments
+    )
     sampled_treatment = splitter.sample_treatment(df_cluster)
     assert max(Counter(sampled_treatment).values()) == 2
 
