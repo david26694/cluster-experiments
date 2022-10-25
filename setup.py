@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 base_packages = [
     "pip>=22.2.2",
     "statsmodels>=0.13.2",
-    "pandas>=1.0.0",
+    "pandas>=1.2.0",
     "scikit-learn>=1.0.0",
     "tqdm>=4.0.0",
 ]
@@ -30,7 +30,7 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.2.5",
+    version="0.2.6",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,
