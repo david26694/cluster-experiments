@@ -1,6 +1,7 @@
 import random
 from typing import Counter
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -13,6 +14,7 @@ from cluster_experiments.random_splitter import (
 from tests.utils import assert_balanced_strata
 
 random.seed(421)
+np.random.seed(421)
 
 
 @pytest.fixture
@@ -117,13 +119,12 @@ def test_weighted_splitter(df_cluster):
     splitter = ClusteredSplitter(
         cluster_cols=["cluster"], treatments=["A", "B"], splitter_weights=[0.75, 0.25]
     )
-    df_cluster = pd.concat([df_cluster for _ in range(100)])
+    df_cluster = pd.DataFrame({"cluster": np.random.randint(0, 1000, size=10000)})
     sampled_treatment = splitter.assign_treatment_df(df_cluster)
     # Check that A are 75% of the time and B are 25% of the time
     assert (
-        sampled_treatment["treatment"].value_counts()["A"]
-        / sampled_treatment["treatment"].value_counts()["B"]
-    ) == 3
+        0.8 >= sampled_treatment["treatment"].value_counts(normalize=True)["A"] >= 0.7
+    )
 
 
 def test_clustered_splitter(treatments, df_cluster):
