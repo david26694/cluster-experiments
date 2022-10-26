@@ -2,8 +2,8 @@ import random
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 class RandomSplitter(ABC):
@@ -17,6 +17,7 @@ class RandomSplitter(ABC):
         cluster_cols: List of columns to use as clusters
         treatments: list of treatments
         treatment_col: Name of the column with the treatment variable.
+        splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments
 
     """
 
@@ -25,10 +26,12 @@ class RandomSplitter(ABC):
         cluster_cols: Optional[List[str]] = None,
         treatments: Optional[List[str]] = None,
         treatment_col: str = "treatment",
+        splitter_weights: Optional[List[float]] = None,
     ) -> None:
         self.treatments = treatments or ["A", "B"]
         self.cluster_cols = cluster_cols or []
         self.treatment_col = treatment_col
+        self.splitter_weights = splitter_weights
 
     @abstractmethod
     def assign_treatment_df(
@@ -50,6 +53,7 @@ class RandomSplitter(ABC):
             treatments=config.treatments,
             cluster_cols=config.cluster_cols,
             treatment_col=config.treatment_col,
+            splitter_weights=config.splitter_weights,
         )
 
 
@@ -61,6 +65,7 @@ class ClusteredSplitter(RandomSplitter):
         cluster_cols: List of columns to use as clusters
         treatments: list of treatments
         treatment_col: Name of the column with the treatment variable.
+        splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments
 
     Usage:
     ```python
@@ -78,10 +83,12 @@ class ClusteredSplitter(RandomSplitter):
         cluster_cols: List[str],
         treatments: Optional[List[str]] = None,
         treatment_col: str = "treatment",
+        splitter_weights: Optional[List[float]] = None,
     ) -> None:
         self.treatments = treatments or ["A", "B"]
         self.cluster_cols = cluster_cols
         self.treatment_col = treatment_col
+        self.splitter_weights = splitter_weights
 
     def assign_treatment_df(
         self,
@@ -117,7 +124,9 @@ class ClusteredSplitter(RandomSplitter):
         Arguments:
             cluster_df: dataframe to assign treatments to
         """
-        return random.choices(self.treatments, k=len(cluster_df))
+        return random.choices(
+            self.treatments, k=len(cluster_df), weights=self.splitter_weights
+        )
 
 
 class BalancedClusteredSplitter(ClusteredSplitter):
@@ -170,9 +179,11 @@ class NonClusteredSplitter(RandomSplitter):
         self,
         treatments: Optional[List[str]] = None,
         treatment_col: str = "treatment",
+        splitter_weights: Optional[List[float]] = None,
     ) -> None:
         self.treatments = treatments or ["A", "B"]
         self.treatment_col = treatment_col
+        self.splitter_weights = splitter_weights
 
     def assign_treatment_df(
         self,
@@ -186,13 +197,19 @@ class NonClusteredSplitter(RandomSplitter):
             df: dataframe to assign treatments to
         """
         df = df.copy()
-        df[self.treatment_col] = random.choices(self.treatments, k=len(df))
+        df[self.treatment_col] = random.choices(
+            self.treatments, k=len(df), weights=self.splitter_weights
+        )
         return df
 
     @classmethod
     def from_config(cls, config):
         """Creates a NonClusteredSplitter from a PowerConfig"""
-        return cls(treatments=config.treatments, treatment_col=config.treatment_col)
+        return cls(
+            treatments=config.treatments,
+            treatment_col=config.treatment_col,
+            splitter_weights=config.splitter_weights,
+        )
 
 
 class StratifiedClusteredSplitter(RandomSplitter):
