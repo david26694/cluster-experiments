@@ -185,9 +185,9 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
     import pandas as pd
 
     df = pd.DataFrame({
-        'x': [1, 2, 3, 0, 0, 1],
-        'treatment': ["A"] * 3 + ["B"] * 3,
-        'cluster': [1] * 6,
+        'x': [1, 2, 3, 0, 0, 1, 2, 0],
+        'treatment': ["A"] * 2 + ["B"] * 2 + ["A"] * 2 + ["B"] * 2,
+        'cluster': [1, 1, 2, 2, 3, 3, 4, 4],
     })
 
     ClusteredOLSAnalysis(
@@ -214,8 +214,7 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
         )
         self.regressors = [self.treatment_col] + self.covariates
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
-        self.fam = sm.families.Gaussian()
-        self.va = sm.cov_struct.Exchangeable()
+        self.cov_type = "cluster"
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
@@ -223,16 +222,13 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        results_gee = sm.OLS.from_formula(
-            self.formula,
-            data=df,
-            groups=self._get_cluster_column(df),
-            family=self.fam,
-            cov_struct=self.va,
-        ).fit()
+        results_ols = sm.OLS.from_formula(self.formula, data=df,).fit(
+            cov_type=self.cov_type,
+            cov_kwds={"groups": self._get_cluster_column(df)},
+        )
         if verbose:
-            print(results_gee.summary())
-        return results_gee.pvalues[self.treatment_col]
+            print(results_ols.summary())
+        return results_ols.pvalues[self.treatment_col]
 
 
 class TTestClusteredAnalysis(ExperimentAnalysis):
