@@ -137,7 +137,9 @@ class PowerAnalysis:
         for _ in tqdm(range(self.n_simulations), disable=not verbose):
             treatment_df = self.splitter.assign_treatment_df(df)
             self.log_nulls(treatment_df)
-            treatment_df = treatment_df.query(f"{self.treatment_col}.notnull()")
+            treatment_df = treatment_df.query(
+                f"{self.treatment_col}.notnull()", engine="python"
+            )
             treatment_df = self.perturbator.perturbate(
                 treatment_df, average_effect=average_effect
             )
@@ -200,7 +202,7 @@ class PowerAnalysis:
 
     def log_nulls(self, df: pd.DataFrame) -> None:
         """Warns about dropping nulls in treatment column"""
-        n_nulls = len(df.query(f"{self.treatment_col}.isnull()"))
+        n_nulls = len(df.query(f"{self.treatment_col}.isnull()", engine="python"))
         if n_nulls > 0:
             logging.warning(
                 f"There are {n_nulls} null values in treatment, dropping them"
