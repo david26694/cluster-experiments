@@ -5,11 +5,42 @@
 
 A library to run simulation-based power analysis, including clustered data. Also useful to design and analyse clustered and switchback experiments.
 
+
+<img src="theme/flow.png">
+
 ## Examples
+
+### Hello world
+
+Hello worlds of this library:
+
+```python
+import numpy as np
+import pandas as pd
+from cluster_experiments import PowerAnalysis
+
+# Create fake data
+N = 1_000
+df = pd.DataFrame(
+    {
+        "target": np.random.normal(0, 1, size=N),
+    }
+)
+
+config = {
+    "analysis": "ols_non_clustered",
+    "perturbator": "uniform",
+    "splitter": "non_clustered",
+    "n_simulations": 50,
+}
+pw = PowerAnalysis.from_dict(config)
+
+power = pw.power_analysis(df, average_effect=0.1)
+```
 
 ### Base example
 
-Hello world of this library:
+Hello world of this library (clustered version):
 
 ```python
 
