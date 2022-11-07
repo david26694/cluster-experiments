@@ -143,16 +143,22 @@ class CupacHandler:
         return df_predict, pre_experiment_x, pre_experiment_y
 
     def add_covariates(
-        self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
+        self, df: pd.DataFrame, pre_experiment_df: Optional[pd.DataFrame] = None
     ) -> pd.DataFrame:
         """
         Train model to predict outcome variable (based on pre-experiment data)
-        and  add the prediction to the experiment dataframe
+        and  add the prediction to the experiment dataframe. Only do this if
+        we use cupac
         Args:
             pre_experiment_df: Dataframe with pre-experiment data.
             df: Dataframe with outcome and treatment variables.
-
         """
+        self.check_cupac_inputs(pre_experiment_df)
+
+        # Early return if no need to add covariates
+        if not self.need_covariates(pre_experiment_df):
+            return df
+
         df = df.copy()
         pre_experiment_df = pre_experiment_df.copy()
         df_predict, pre_experiment_x, pre_experiment_y = self._prep_data_cupac(
@@ -178,3 +184,7 @@ class CupacHandler:
 
     def need_covariates(self, pre_experiment_df: Optional[pd.DataFrame] = None) -> bool:
         return pre_experiment_df is not None and self.is_cupac
+
+    def check_cupac_inputs(self, pre_experiment_df: Optional[pd.DataFrame] = None):
+        if self.is_cupac and pre_experiment_df is None:
+            raise ValueError("If cupac is used, pre_experiment_df should be provided.")

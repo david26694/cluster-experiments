@@ -131,8 +131,7 @@ class PowerAnalysis:
         """
         df = df.copy()
 
-        if self.cupac_handler.need_covariates(pre_experiment_df):
-            df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
 
         n_detected_mde = 0
 
