@@ -1,11 +1,11 @@
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import pandas as pd
-from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
+from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
-from cluster_experiments.cupac import EmptyRegressor
+from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.experiment_analysis import ExperimentAnalysis
 from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.power_config import (
@@ -100,15 +100,17 @@ class PowerAnalysis:
         self.perturbator = perturbator
         self.splitter = splitter
         self.analysis = analysis
-        self.cupac_model: BaseEstimator = cupac_model or EmptyRegressor()
         self.n_simulations = n_simulations
         self.target_col = target_col
-        self.cupac_outcome_name = f"estimate_{self.target_col}"
         self.treatment = treatment
         self.treatment_col = treatment_col
         self.alpha = alpha
-        self.features_cupac_model: List[str] = features_cupac_model or []
-        self.is_cupac = not isinstance(self.cupac_model, EmptyRegressor)
+
+        self.cupac_handler = CupacHandler(
+            cupac_model=cupac_model,
+            target_col=target_col,
+            features_cupac_model=features_cupac_model,
+        )
 
         self.check_inputs()
 
@@ -129,8 +131,8 @@ class PowerAnalysis:
         """
         df = df.copy()
 
-        if pre_experiment_df is not None and self.is_cupac:
-            df = self.add_covariates(df, pre_experiment_df)
+        if self.cupac_handler.need_covariates(pre_experiment_df):
+            df = self.cupac_handler.add_covariates(df, pre_experiment_df)
 
         n_detected_mde = 0
 
@@ -147,58 +149,6 @@ class PowerAnalysis:
             n_detected_mde += p_value < self.alpha
 
         return n_detected_mde / self.n_simulations
-
-    def _prep_data_cupac(
-        self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
-        """Prepares data for training and prediction"""
-        df = df.copy()
-        pre_experiment_df = pre_experiment_df.copy()
-        df_predict = df.drop(columns=[self.target_col])
-        # Split data into X and y
-        pre_experiment_x = pre_experiment_df.drop(columns=[self.target_col])
-        pre_experiment_y = pre_experiment_df[self.target_col]
-
-        # Keep only cupac features
-        if self.features_cupac_model:
-            pre_experiment_x = pre_experiment_x[self.features_cupac_model]
-            df_predict = df_predict[self.features_cupac_model]
-
-        return df_predict, pre_experiment_x, pre_experiment_y
-
-    def add_covariates(
-        self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
-    ) -> pd.DataFrame:
-        """
-        Train model to predict outcome variable (based on pre-experiment data)
-        and  add the prediction to the experiment dataframe
-        Args:
-            pre_experiment_df: Dataframe with pre-experiment data.
-            df: Dataframe with outcome and treatment variables.
-
-        """
-        df = df.copy()
-        pre_experiment_df = pre_experiment_df.copy()
-        df_predict, pre_experiment_x, pre_experiment_y = self._prep_data_cupac(
-            df=df, pre_experiment_df=pre_experiment_df
-        )
-
-        # Fit model
-        self.cupac_model.fit(pre_experiment_x, pre_experiment_y)
-
-        # Predict
-        if isinstance(self.cupac_model, RegressorMixin):
-            estimated_target = self.cupac_model.predict(df_predict)
-        elif isinstance(self.cupac_model, ClassifierMixin):
-            estimated_target = self.cupac_model.predict_proba(df_predict)[:, 1]
-        else:
-            raise ValueError(
-                "cupac_model should be an instance of RegressorMixin or ClassifierMixin"
-            )
-
-        # Add cupac outcome name to df
-        df[self.cupac_outcome_name] = estimated_target
-        return df
 
     def log_nulls(self, df: pd.DataFrame) -> None:
         """Warns about dropping nulls in treatment column"""
@@ -252,14 +202,15 @@ class PowerAnalysis:
 
     def check_inputs(self):
         cupac_not_in_covariates = (
-            self.cupac_outcome_name not in self.analysis.covariates
+            self.cupac_handler.cupac_outcome_name not in self.analysis.covariates
         )
 
-        if self.is_cupac and cupac_not_in_covariates:
+        if self.cupac_handler.is_cupac and cupac_not_in_covariates:
+            print(self.analysis.covariates)
             raise ValueError(
-                f"covariates in analysis must contain {self.cupac_outcome_name} if cupac_model is not None. "
+                f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
                 f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
-                f"You may want to do covariates=['{self.cupac_outcome_name}'] in your analysis method or your config"
+                f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
             )
 
         if self.analysis.target_col != self.perturbator.target_col:
