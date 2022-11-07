@@ -1,6 +1,8 @@
+from typing import List, Optional, Tuple
+
 import pandas as pd
 from numpy.typing import ArrayLike
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 
 
 class EmptyRegressor(BaseEstimator, RegressorMixin):
@@ -100,3 +102,89 @@ class TargetAggregation(BaseEstimator, RegressorMixin):
             target_col=config.target_col,
             smoothing_factor=config.smoothing_factor,
         )
+
+
+class CupacHandler:
+    """
+    CupacHandler class. It handles operations related to the cupac model.
+
+    Its main goal is to call the add_covariates method, where it will add the ouptut from the cupac model,
+    and this should be used as covariates in the regression method for the hypothesis test.
+    """
+
+    def __init__(
+        self,
+        cupac_model: Optional[BaseEstimator] = None,
+        target_col: str = "target",
+        features_cupac_model: Optional[List[str]] = None,
+    ):
+        self.cupac_model: BaseEstimator = cupac_model or EmptyRegressor()
+        self.target_col = target_col
+        self.cupac_outcome_name = f"estimate_{target_col}"
+        self.features_cupac_model: List[str] = features_cupac_model or []
+        self.is_cupac = not isinstance(self.cupac_model, EmptyRegressor)
+
+    def _prep_data_cupac(
+        self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+        """Prepares data for training and prediction"""
+        df = df.copy()
+        pre_experiment_df = pre_experiment_df.copy()
+        df_predict = df.drop(columns=[self.target_col])
+        # Split data into X and y
+        pre_experiment_x = pre_experiment_df.drop(columns=[self.target_col])
+        pre_experiment_y = pre_experiment_df[self.target_col]
+
+        # Keep only cupac features
+        if self.features_cupac_model:
+            pre_experiment_x = pre_experiment_x[self.features_cupac_model]
+            df_predict = df_predict[self.features_cupac_model]
+
+        return df_predict, pre_experiment_x, pre_experiment_y
+
+    def add_covariates(
+        self, df: pd.DataFrame, pre_experiment_df: Optional[pd.DataFrame] = None
+    ) -> pd.DataFrame:
+        """
+        Train model to predict outcome variable (based on pre-experiment data)
+        and  add the prediction to the experiment dataframe. Only do this if
+        we use cupac
+        Args:
+            pre_experiment_df: Dataframe with pre-experiment data.
+            df: Dataframe with outcome and treatment variables.
+        """
+        self.check_cupac_inputs(pre_experiment_df)
+
+        # Early return if no need to add covariates
+        if not self.need_covariates(pre_experiment_df):
+            return df
+
+        df = df.copy()
+        pre_experiment_df = pre_experiment_df.copy()
+        df_predict, pre_experiment_x, pre_experiment_y = self._prep_data_cupac(
+            df=df, pre_experiment_df=pre_experiment_df
+        )
+
+        # Fit model
+        self.cupac_model.fit(pre_experiment_x, pre_experiment_y)
+
+        # Predict
+        if isinstance(self.cupac_model, RegressorMixin):
+            estimated_target = self.cupac_model.predict(df_predict)
+        elif isinstance(self.cupac_model, ClassifierMixin):
+            estimated_target = self.cupac_model.predict_proba(df_predict)[:, 1]
+        else:
+            raise ValueError(
+                "cupac_model should be an instance of RegressorMixin or ClassifierMixin"
+            )
+
+        # Add cupac outcome name to df
+        df[self.cupac_outcome_name] = estimated_target
+        return df
+
+    def need_covariates(self, pre_experiment_df: Optional[pd.DataFrame] = None) -> bool:
+        return pre_experiment_df is not None and self.is_cupac
+
+    def check_cupac_inputs(self, pre_experiment_df: Optional[pd.DataFrame] = None):
+        if self.is_cupac and pre_experiment_df is None:
+            raise ValueError("If cupac is used, pre_experiment_df should be provided.")
