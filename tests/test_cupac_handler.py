@@ -76,6 +76,8 @@ def test_add_covariates(cupac_handler, df_feats, request):
     cupac_handler = request.getfixturevalue(cupac_handler)
     df = cupac_handler.add_covariates(df_feats, df_feats.head(10))
     assert df["estimate_target"].isna().sum() == 0
+    assert (df["estimate_target"] <= df["target"].max()).all()
+    assert (df["estimate_target"] >= df["target"].min()).all()
 
 
 def test_no_target(missing_cupac, df_feats):
