@@ -205,7 +205,6 @@ class PowerAnalysis:
         )
 
         if self.cupac_handler.is_cupac and cupac_not_in_covariates:
-            print(self.analysis.covariates)
             raise ValueError(
                 f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
                 f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
