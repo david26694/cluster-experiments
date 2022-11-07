@@ -107,6 +107,9 @@ class TargetAggregation(BaseEstimator, RegressorMixin):
 class CupacHandler:
     """
     CupacHandler class. It handles operations related to the cupac model.
+
+    Its main goal is to call the add_covariates method, where it will add the ouptut from the cupac model,
+    and this should be used as covariates in the regression method for the hypothesis test.
     """
 
     def __init__(
