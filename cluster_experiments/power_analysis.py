@@ -200,16 +200,18 @@ class PowerAnalysis:
         )
 
     def check_inputs(self):
-        cupac_not_in_covariates = (
-            self.cupac_handler.cupac_outcome_name not in self.analysis.covariates
-        )
 
-        if self.cupac_handler.is_cupac and cupac_not_in_covariates:
-            raise ValueError(
-                f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
-                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
-                f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
+        if hasattr(self.analysis, "covariates"):
+            cupac_not_in_covariates = (
+                self.cupac_handler.cupac_outcome_name not in self.analysis.covariates
             )
+
+            if self.cupac_handler.is_cupac and cupac_not_in_covariates:
+                raise ValueError(
+                    f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
+                    f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
+                    f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
+                )
 
         if self.analysis.target_col != self.perturbator.target_col:
             raise ValueError(
