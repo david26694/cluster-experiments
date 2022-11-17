@@ -199,8 +199,42 @@ class PowerAnalysis:
             alpha=config.alpha,
         )
 
-    def check_inputs(self):
+    def check_treatment_col(self):
+        assert (
+            self.analysis.treatment_col == self.perturbator.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in perturbator ({self.perturbator.treatment_col})"
 
+        assert (
+            self.analysis.treatment_col == self.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in PowerAnalysis ({self.treatment_col})"
+
+        assert (
+            self.analysis.treatment_col == self.splitter.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in splitter ({self.splitter.treatment_col})"
+
+    def check_target_col(self):
+        assert (
+            self.analysis.target_col == self.perturbator.target_col
+        ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in perturbator ({self.perturbator.target_col})"
+
+        assert (
+            self.analysis.target_col == self.target_col
+        ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in PowerAnalysis ({self.target_col})"
+
+    def check_treatment(self):
+        assert (
+            self.analysis.treatment == self.perturbator.treatment
+        ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in perturbator ({self.perturbator.treatment})"
+
+        assert (
+            self.analysis.treatment == self.treatment
+        ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in PowerAnalysis ({self.treatment})"
+
+        assert (
+            self.analysis.treatment in self.splitter.treatments
+        ), f"treatment in analysis ({self.analysis.treatment}) must be in treatments in splitter ({self.splitter.treatments})"
+
+    def check_covariates(self):
         if hasattr(self.analysis, "covariates"):
             cupac_in_covariates = (
                 self.cupac_handler.cupac_outcome_name in self.analysis.covariates
@@ -212,30 +246,7 @@ class PowerAnalysis:
                 f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
             )
 
-        assert (
-            self.analysis.target_col == self.perturbator.target_col
-        ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in perturbator ({self.perturbator.target_col})"
-
-        assert (
-            self.analysis.target_col == self.target_col
-        ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in PowerAnalysis ({self.target_col})"
-
-        assert (
-            self.analysis.treatment_col == self.perturbator.treatment_col
-        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in perturbator ({self.perturbator.treatment_col})"
-
-        assert (
-            self.analysis.treatment_col == self.treatment_col
-        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in PowerAnalysis ({self.treatment_col})"
-
-        assert (
-            self.analysis.treatment == self.perturbator.treatment
-        ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in perturbator ({self.perturbator.treatment})"
-
-        assert (
-            self.analysis.treatment_col == self.splitter.treatment_col
-        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in splitter ({self.splitter.treatment_col})"
-
+    def check_clusters(self):
         has_analysis_clusters = hasattr(self.analysis, "cluster_cols")
         has_splitter_clusters = hasattr(self.splitter, "cluster_cols")
         not_cluster_cols_cond = not has_analysis_clusters or not has_splitter_clusters
@@ -255,3 +266,11 @@ class PowerAnalysis:
             or not has_splitter_clusters
             or not self.splitter.cluster_cols
         ), "splitter has cluster_cols but analysis does not."
+
+    def check_inputs(self):
+        # TODO: Add tests for any of these missing
+        self.check_covariates()
+        self.check_treatment_col()
+        self.check_target_col()
+        self.check_treatment()
+        self.check_clusters()
