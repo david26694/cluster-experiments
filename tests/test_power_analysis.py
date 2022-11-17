@@ -245,7 +245,7 @@ def test_raises_cupac():
         cupac_model="mean_cupac_model",
         n_simulations=4,
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         PowerAnalysis.from_dict(config)
 
 
@@ -277,7 +277,7 @@ def test_raise_target():
         cluster_cols=["cluster", "date"],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         PowerAnalysis(
             perturbator=perturbator,
             splitter=sw,
@@ -300,7 +300,7 @@ def test_raise_cluster_cols():
         cluster_cols=["cluster", "date"],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         PowerAnalysis(
             perturbator=perturbator,
             splitter=sw,
@@ -321,7 +321,7 @@ def test_raise_clustering_mismatch():
         cluster_cols=["cluster", "date"],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         PowerAnalysis(
             perturbator=perturbator,
             splitter=sw,

@@ -202,68 +202,56 @@ class PowerAnalysis:
     def check_inputs(self):
 
         if hasattr(self.analysis, "covariates"):
-            cupac_not_in_covariates = (
-                self.cupac_handler.cupac_outcome_name not in self.analysis.covariates
+            cupac_in_covariates = (
+                self.cupac_handler.cupac_outcome_name in self.analysis.covariates
             )
 
-            if self.cupac_handler.is_cupac and cupac_not_in_covariates:
-                raise ValueError(
-                    f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
-                    f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
-                    f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
-                )
-
-        if self.analysis.target_col != self.perturbator.target_col:
-            raise ValueError(
-                f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in perturbator ({self.perturbator.target_col})"
+            assert cupac_in_covariates or not self.cupac_handler.is_cupac, (
+                f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
+                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
+                f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
             )
 
-        if self.analysis.target_col != self.target_col:
-            raise ValueError(
-                f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in PowerAnalysis ({self.target_col})"
-            )
+        assert (
+            self.analysis.target_col == self.perturbator.target_col
+        ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in perturbator ({self.perturbator.target_col})"
 
-        if self.analysis.treatment_col != self.perturbator.treatment_col:
-            raise ValueError(
-                f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in perturbator ({self.perturbator.treatment_col})"
-            )
+        assert (
+            self.analysis.target_col == self.target_col
+        ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in PowerAnalysis ({self.target_col})"
 
-        if self.analysis.treatment_col != self.treatment_col:
-            raise ValueError(
-                f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in PowerAnalysis ({self.treatment_col})"
-            )
+        assert (
+            self.analysis.treatment_col == self.perturbator.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in perturbator ({self.perturbator.treatment_col})"
 
-        if self.analysis.treatment != self.perturbator.treatment:
-            raise ValueError(
-                f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in perturbator ({self.perturbator.treatment})"
-            )
+        assert (
+            self.analysis.treatment_col == self.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in PowerAnalysis ({self.treatment_col})"
 
-        if self.analysis.treatment_col != self.splitter.treatment_col:
-            raise ValueError(
-                f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in splitter ({self.splitter.treatment_col})"
-            )
+        assert (
+            self.analysis.treatment == self.perturbator.treatment
+        ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in perturbator ({self.perturbator.treatment})"
+
+        assert (
+            self.analysis.treatment_col == self.splitter.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in splitter ({self.splitter.treatment_col})"
 
         has_analysis_clusters = hasattr(self.analysis, "cluster_cols")
         has_splitter_clusters = hasattr(self.splitter, "cluster_cols")
-        cluster_cols_cond = has_analysis_clusters and has_splitter_clusters
-        if (
-            cluster_cols_cond
-            and self.analysis.cluster_cols != self.splitter.cluster_cols
-        ):
-            raise ValueError(
-                f"cluster_cols in analysis ({self.analysis.cluster_cols}) must be the same as cluster_cols in splitter ({self.splitter.cluster_cols})"
-            )
+        not_cluster_cols_cond = not has_analysis_clusters or not has_splitter_clusters
+        assert (
+            not_cluster_cols_cond
+            or self.analysis.cluster_cols == self.splitter.cluster_cols
+        ), f"cluster_cols in analysis ({self.analysis.cluster_cols}) must be the same as cluster_cols in splitter ({self.splitter.cluster_cols})"
 
-        if (
+        assert (
+            has_splitter_clusters
+            or not has_analysis_clusters
+            or not self.analysis.cluster_cols
+        ), "analysis has cluster_cols but splitter does not."
+
+        assert (
             has_analysis_clusters
-            and not has_splitter_clusters
-            and self.analysis.cluster_cols
-        ):
-            raise ValueError("analysis has cluster_cols but splitter does not.")
-
-        if (
-            not has_analysis_clusters
-            and has_splitter_clusters
-            and self.splitter.cluster_cols
-        ):
-            raise ValueError("splitter has cluster_cols but analysis does not.")
+            or not has_splitter_clusters
+            or not self.splitter.cluster_cols
+        ), "splitter has cluster_cols but analysis does not."
