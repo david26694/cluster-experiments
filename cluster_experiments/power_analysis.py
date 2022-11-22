@@ -268,7 +268,6 @@ class PowerAnalysis:
         ), "splitter has cluster_cols but analysis does not."
 
     def check_inputs(self):
-        # TODO: Add tests for any of these missing
         self.check_covariates()
         self.check_treatment_col()
         self.check_target_col()

@@ -286,6 +286,72 @@ def test_raise_target():
         )
 
 
+def test_raise_treatment():
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
+    )
+
+    perturbator = UniformPerturbator(average_effect=0.1, treatment="C")
+
+    analysis = GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+    with pytest.raises(AssertionError):
+        PowerAnalysis(
+            perturbator=perturbator,
+            splitter=sw,
+            analysis=analysis,
+            n_simulations=3,
+        )
+
+
+def test_raise_treatment_col():
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
+    )
+
+    perturbator = UniformPerturbator(
+        average_effect=0.1,
+        treatment_col="another_treatment",
+    )
+
+    analysis = GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+    with pytest.raises(AssertionError):
+        PowerAnalysis(
+            perturbator=perturbator,
+            splitter=sw,
+            analysis=analysis,
+            n_simulations=3,
+        )
+
+
+def test_raise_treatment_col_2():
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
+    )
+
+    perturbator = UniformPerturbator(
+        average_effect=0.1,
+    )
+
+    analysis = GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+        treatment_col="another_treatment",
+    )
+
+    with pytest.raises(AssertionError):
+        PowerAnalysis(
+            perturbator=perturbator,
+            splitter=sw,
+            analysis=analysis,
+            n_simulations=3,
+        )
+
+
 def test_raise_cluster_cols():
     sw = ClusteredSplitter(
         cluster_cols=["cluster"],
