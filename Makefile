@@ -7,7 +7,7 @@ flake:
 	flake8 cluster_experiments tests setup.py
 
 test:
-	pytest
+	pytest --cov=./cluster_experiments
 
 check: black flake test
 

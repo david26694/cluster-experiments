@@ -245,7 +245,7 @@ def test_raises_cupac():
         cupac_model="mean_cupac_model",
         n_simulations=4,
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         PowerAnalysis.from_dict(config)
 
 
@@ -277,7 +277,73 @@ def test_raise_target():
         cluster_cols=["cluster", "date"],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
+        PowerAnalysis(
+            perturbator=perturbator,
+            splitter=sw,
+            analysis=analysis,
+            n_simulations=3,
+        )
+
+
+def test_raise_treatment():
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
+    )
+
+    perturbator = UniformPerturbator(average_effect=0.1, treatment="C")
+
+    analysis = GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+    with pytest.raises(AssertionError):
+        PowerAnalysis(
+            perturbator=perturbator,
+            splitter=sw,
+            analysis=analysis,
+            n_simulations=3,
+        )
+
+
+def test_raise_treatment_col():
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
+    )
+
+    perturbator = UniformPerturbator(
+        average_effect=0.1,
+        treatment_col="another_treatment",
+    )
+
+    analysis = GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+    with pytest.raises(AssertionError):
+        PowerAnalysis(
+            perturbator=perturbator,
+            splitter=sw,
+            analysis=analysis,
+            n_simulations=3,
+        )
+
+
+def test_raise_treatment_col_2():
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
+    )
+
+    perturbator = UniformPerturbator(
+        average_effect=0.1,
+    )
+
+    analysis = GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+        treatment_col="another_treatment",
+    )
+
+    with pytest.raises(AssertionError):
         PowerAnalysis(
             perturbator=perturbator,
             splitter=sw,
@@ -300,7 +366,7 @@ def test_raise_cluster_cols():
         cluster_cols=["cluster", "date"],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         PowerAnalysis(
             perturbator=perturbator,
             splitter=sw,
@@ -321,7 +387,7 @@ def test_raise_clustering_mismatch():
         cluster_cols=["cluster", "date"],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         PowerAnalysis(
             perturbator=perturbator,
             splitter=sw,

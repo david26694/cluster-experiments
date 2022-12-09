@@ -53,6 +53,7 @@ all_members = flatten([get_codeblock_members(o) for o in all_objects])
 
 
 @pytest.mark.parametrize("func", all_members, ids=lambda d: d.__qualname__)
+@pytest.mark.slow
 def test_function_docstrings(func):
     """Test the python example in each method in each object."""
     check_docstring(obj=func)
@@ -64,6 +65,7 @@ def test_function_docstrings(func):
         "README.md",
     ],
 )
+@pytest.mark.slow
 def test_quickstart_docs_file(fpath):
     """Test the quickstart files."""
     check_md_file(fpath, memory=True)
