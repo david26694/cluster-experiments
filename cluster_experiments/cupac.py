@@ -65,7 +65,7 @@ class TargetAggregation(BaseEstimator, RegressorMixin):
         pre_experiment_df = X.copy()
         pre_experiment_df[self.target_col] = y
 
-        self.pre_experiment_mean = pre_experiment_df[self.target_col].mean()
+        self.pre_experiment_mean = self._get_pre_experiment_mean(pre_experiment_df)
         self.pre_experiment_agg_df = (
             pre_experiment_df.assign(count=1)
             .groupby(self.agg_col, as_index=False)

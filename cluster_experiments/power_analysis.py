@@ -200,6 +200,7 @@ class PowerAnalysis:
         )
 
     def check_treatment_col(self):
+        """Checks consistency of treatment column"""
         assert (
             self.analysis.treatment_col == self.perturbator.treatment_col
         ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in perturbator ({self.perturbator.treatment_col})"

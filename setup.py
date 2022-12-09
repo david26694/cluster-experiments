@@ -14,6 +14,8 @@ only_test_packages = [
     "black>=19.10b0",
     "flake8>=3.8.3",
     "mktestdocs>=0.2.0",
+    "pytest-cov>=2.10.1",
+    "pytest-sugar>=0.9.4",
 ]
 test_packages = only_test_packages + base_packages
 
