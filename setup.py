@@ -16,7 +16,7 @@ only_test_packages = [
     "mktestdocs>=0.2.0",
     "pytest-cov>=2.10.1",
     "pytest-sugar>=0.9.4",
-    "pytest-slow-last>=0.1.0",
+    "pytest-slow-last>=0.1.3",
 ]
 test_packages = only_test_packages + base_packages
 
