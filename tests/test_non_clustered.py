@@ -89,8 +89,8 @@ def test_splitter(df):
     # Check counts A and B are 50/50
     treatment_assignment = splitter.assign_treatment_df(df)
     n_a = treatment_assignment.treatment.value_counts()["A"]
-    assert n_a >= -100 + len(treatment_assignment) / 2
-    assert n_a <= 100 + len(treatment_assignment) / 2
+    assert n_a >= -200 + len(treatment_assignment) / 2
+    assert n_a <= 200 + len(treatment_assignment) / 2
 
 
 def test_splitter_weighted(df):
