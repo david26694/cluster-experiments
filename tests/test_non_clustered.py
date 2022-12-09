@@ -11,8 +11,8 @@ from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import NonClusteredSplitter
 from tests.examples import generate_non_clustered_data
 
-N = 1_000
-n_users = 100
+N = 10_000
+n_users = 1000
 random.seed(41)
 
 
@@ -89,8 +89,8 @@ def test_splitter(df):
     # Check counts A and B are 50/50
     treatment_assignment = splitter.assign_treatment_df(df)
     n_a = treatment_assignment.treatment.value_counts()["A"]
-    assert n_a >= -20 + len(treatment_assignment) / 2
-    assert n_a <= 20 + len(treatment_assignment) / 2
+    assert n_a >= -200 + len(treatment_assignment) / 2
+    assert n_a <= 200 + len(treatment_assignment) / 2
 
 
 def test_splitter_weighted(df):
@@ -98,5 +98,5 @@ def test_splitter_weighted(df):
     # Check counts A and B are 10/90
     treatment_assignment = splitter.assign_treatment_df(df)
     n_a = treatment_assignment.treatment.value_counts()["A"]
-    assert n_a >= -20 + len(treatment_assignment) * 0.1
-    assert n_a <= 20 + len(treatment_assignment) * 0.1
+    assert n_a >= -100 + len(treatment_assignment) * 0.1
+    assert n_a <= 100 + len(treatment_assignment) * 0.1
