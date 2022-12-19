@@ -157,15 +157,6 @@ class PowerAnalysis:
                 f"There are {n_nulls} null values in treatment, dropping them"
             )
 
-    @staticmethod
-    def _get_mapping_key(mapping, key):
-        try:
-            return mapping[key]
-        except KeyError:
-            raise KeyError(
-                f"Could not find {key = } in mapping. All options are the following: {list(mapping.keys())}"
-            )
-
     @classmethod
     def from_dict(cls, config_dict: dict):
         """Constructs PowerAnalysis from dictionary"""
@@ -175,23 +166,15 @@ class PowerAnalysis:
     @classmethod
     def from_config(cls, config: PowerConfig):
         """Constructs PowerAnalysis from PowerConfig"""
-        perturbator = cls._get_mapping_key(
-            perturbator_mapping, config.perturbator
-        ).from_config(config)
-        splitter = cls._get_mapping_key(splitter_mapping, config.splitter).from_config(
-            config
-        )
-        analysis = cls._get_mapping_key(analysis_mapping, config.analysis).from_config(
-            config
-        )
-        cupac_model = cls._get_mapping_key(
-            cupac_model_mapping, config.cupac_model
-        ).from_config(config)
+        perturbator_cls = _get_mapping_key(perturbator_mapping, config.perturbator)
+        splitter_cls = _get_mapping_key(splitter_mapping, config.splitter)
+        analysis_cls = _get_mapping_key(analysis_mapping, config.analysis)
+        cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
         return cls(
-            perturbator=perturbator,
-            splitter=splitter,
-            analysis=analysis,
-            cupac_model=cupac_model,
+            perturbator=perturbator_cls.from_config(config),
+            splitter=splitter_cls.from_config(config),
+            analysis=analysis_cls.from_config(config),
+            cupac_model=cupac_cls.from_config(config),
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
@@ -274,3 +257,12 @@ class PowerAnalysis:
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+
+
+def _get_mapping_key(mapping, key):
+    try:
+        return mapping[key]
+    except KeyError:
+        raise KeyError(
+            f"Could not find {key = } in mapping. All options are the following: {list(mapping.keys())}"
+        )
