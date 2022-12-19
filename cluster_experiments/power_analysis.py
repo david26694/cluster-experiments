@@ -158,13 +158,13 @@ class PowerAnalysis:
             )
 
     @classmethod
-    def from_dict(cls, config_dict: dict):
+    def from_dict(cls, config_dict: dict) -> "PowerAnalysis":
         """Constructs PowerAnalysis from dictionary"""
         config = PowerConfig(**config_dict)
         return cls.from_config(config)
 
     @classmethod
-    def from_config(cls, config: PowerConfig):
+    def from_config(cls, config: PowerConfig) -> "PowerAnalysis":
         """Constructs PowerAnalysis from PowerConfig"""
         perturbator_cls = _get_mapping_key(perturbator_mapping, config.perturbator)
         splitter_cls = _get_mapping_key(splitter_mapping, config.splitter)
