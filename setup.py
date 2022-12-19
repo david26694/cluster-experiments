@@ -11,7 +11,7 @@ base_packages = [
 
 only_test_packages = [
     "pytest>=5.4.3",
-    "black>=19.10b0",
+    "black==22.12.0",
     "flake8>=3.8.3",
     "mktestdocs>=0.2.0",
     "pytest-cov>=2.10.1",
