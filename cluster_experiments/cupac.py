@@ -10,8 +10,8 @@ class EmptyRegressor(BaseEstimator, RegressorMixin):
     Empty regressor class. It does not do anything, used to glue the code of other estimators and PowerAnalysis
 
     Each Regressor should have:
-    - fit method: Uses pre experiment data to fit some kind of model to be used as a covariate and reduce variance.
-    - predict method: Uses the fitted model to add the covariate on the experiment data.
+    - a fit method: Uses pre experiment data to fit some kind of model to be used as a covariate and reduce variance.
+    - a predict method: Uses the fitted model to add the covariate on the experiment data.
 
     It can add aggregates of the target in older data as a covariate, or a model (cupac) to predict the target.
     """
