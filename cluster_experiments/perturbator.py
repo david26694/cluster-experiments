@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import pandas as pd
+import numpy as np
 
 
 class Perturbator(ABC):
@@ -17,7 +18,7 @@ class Perturbator(ABC):
 
     Arguments:
         average_effect: The average effect of the treatment
-        treatment: name of the treatment to use as the treated group
+        target col: name of the column containing the target variable
         treatment_col: The name of the column that contains the treatment
         treatment: name of the treatment to use as the treated group
 
@@ -88,6 +89,60 @@ class UniformPerturbator(Perturbator):
         df.loc[
             df[self.treatment_col] == self.treatment, self.target_col
         ] += average_effect
+        return df
+
+
+class GaussianPerturbator(Perturbator):
+    """
+    GaussianPerturbator is a Perturbator that adds heterogeneous gaussian perturbations to the target column.
+
+    Increases the simulated variability in the treatment group. Main use cases are power analyses
+    for experiments where it may be reasonable to assume the treatment will lead to increased variability
+    in observations of the treatment group. A choice of scale that is too big will lead to underestimating
+    power, whereas one that is too small will overestimate it.
+
+    Arguments:
+        average_effect: The average effect of the treatment
+        scale: standard deviation of the perturbations produced
+        target col: name of the column containing the target variable
+        treatment_col: The name of the column that contains the treatment
+        treatment: name of the treatment to use as the treated group
+
+    """
+
+    def __init__(
+        self,
+        average_effect: float,
+        scale: float,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+    ):
+        super().__init__(
+            average_effect=average_effect,
+            target_col=target_col,
+            treatment_col=treatment_col,
+            treatment=treatment,
+        )
+        self.scale = scale
+
+    def perturbate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Usage:
+
+        ```python
+        from cluster_experiments.perturbator import GaussianPerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = GaussianPerturbator(average_effect=1)
+        perturbator.perturbate(df)
+        ```
+        """
+        df = df.copy().reset_index(drop=True)
+        n = (df[self.treatment_col] == self.treatment).sum()
+        df.loc[
+            df[self.treatment_col] == self.treatment, self.target_col
+        ] += np.random.normal(self.average_effect, self.scale, size=n)
         return df
 
 
