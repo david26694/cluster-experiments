@@ -3,6 +3,10 @@
 
 # cluster_experiments
 
+![Downloads](https://pepy.tech/badge/cluster-experiments)
+![PyPI](https://img.shields.io/pypi/v/cluster-experiments)
+![Unit tests](https://github.com/david26694/cluster-experiments/workflows/Release%20unit%20Tests/badge.svg)
+
 A library to run simulation-based power analysis, including clustered data. Also useful to design and analyse clustered and switchback experiments.
 
 
