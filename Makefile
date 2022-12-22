@@ -9,7 +9,10 @@ flake:
 test:
 	pytest --cov=./cluster_experiments
 
-check: black flake test
+coverage_xml:
+	coverage xml
+
+check: black flake test coverage_xml
 
 install:
 	python -m pip install -e .

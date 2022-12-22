@@ -17,10 +17,16 @@ only_test_packages = [
     "pytest-cov>=2.10.1",
     "pytest-sugar>=0.9.4",
     "pytest-slow-last>=0.1.3",
+    "coverage",
 ]
 test_packages = only_test_packages + base_packages
 
-util_packages = ["pre-commit>=2.6.0", "ipykernel>=6.15.1", "twine"] + base_packages
+util_packages = [
+    "pre-commit>=2.6.0",
+    "ipykernel>=6.15.1",
+    "twine",
+    "tox",
+] + base_packages
 
 docs_packages = [
     "mkdocs==1.2.3",
