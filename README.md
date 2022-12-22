@@ -21,9 +21,9 @@ A library to run simulation-based power analysis, including clustered data. Also
 
 ### Hello world
 
-Hello worlds of this library:
+Hello world of the library, non-clustered version. There is an outcome variable analyzed with a linear regression. The perturbator is a uniform distribution, and the splitter is random.
 
-```python
+```python title="Non-clustered"
 import numpy as np
 import pandas as pd
 from cluster_experiments import PowerAnalysis
@@ -47,11 +47,11 @@ pw = PowerAnalysis.from_dict(config)
 power = pw.power_analysis(df, average_effect=0.1)
 ```
 
-### Base example
+### Switchback
 
-Hello world of this library (clustered version):
+Hello world of this library, clustered version. Since it uses dates as clusters, we consider it a switchback experiment. However, if you want to run a clustered experiment, you can use the same code without the dates.
 
-```python
+```python title="Switchback - config-based"
 
 from datetime import date
 
@@ -88,9 +88,9 @@ print(f"{power = }")
 
 ### Long example
 
-This is a comprehensive example of how to use this library. There are simpler ways to run power analysis but this shows all the building blocks of the library.
+This is a comprehensive example of how to use this library. There are simpler ways to run this power analysis above but this shows all the building blocks of the library.
 
-```python
+```python title="Switchback - using classes"
 from datetime import date
 
 import numpy as np
