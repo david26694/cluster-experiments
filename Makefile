@@ -34,6 +34,9 @@ docs-deploy:
 	mkdocs gh-deploy
 
 docs-serve:
+	cp README.md docs/index.md
+	rm -rf docs/theme
+	cp -r theme docs/theme/
 	mkdocs serve
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts

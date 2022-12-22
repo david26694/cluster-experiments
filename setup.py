@@ -29,8 +29,8 @@ util_packages = [
 ] + base_packages
 
 docs_packages = [
-    "mkdocs==1.2.3",
-    "mkdocs-material==8.0.0",
+    "mkdocs==1.3.0",
+    "mkdocs-material==8.5.0",
     "mkdocstrings==0.18.0",
     "jinja2<3.1.0",
     "mkdocs-jupyter==0.22.0",

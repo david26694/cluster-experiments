@@ -38,8 +38,10 @@ theme:
 markdown_extensions:
   - codehilite
   - pymdownx.inlinehilite
+  - pymdownx.superfences
   - pymdownx.details
   - pymdownx.tabbed
+  - pymdownx.snippets
   - pymdownx.highlight:
       use_pygments: true
   - toc:
