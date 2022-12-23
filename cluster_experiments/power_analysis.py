@@ -36,6 +36,7 @@ class PowerAnalysis:
         target_col: Name of the column with the outcome variable.
         treatment_col: Name of the column with the treatment variable.
         treatment: value of treatment_col considered to be treatment (not control)
+        control: value of treatment_col considered to be control (not treatment)
         n_simulations: Number of simulations to run.
         alpha: Significance level.
         features_cupac_model: Covariates to be used in cupac model
@@ -140,6 +141,9 @@ class PowerAnalysis:
         for _ in tqdm(range(self.n_simulations), disable=not verbose):
             treatment_df = self.splitter.assign_treatment_df(df)
             self.log_nulls(treatment_df)
+            # The second query allows as to do power analysis for multivariate testing
+            # It assumes that we give, to each treatment value, the same number of samples
+            # If this is not the case, several PowerAnalysis should be run with different weights
             treatment_df = treatment_df.query(
                 f"{self.treatment_col}.notnull()", engine="python"
             ).query(
