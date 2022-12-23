@@ -15,10 +15,13 @@ from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
+    BalancedSwitchbackSplitter,
     ClusteredSplitter,
     NonClusteredSplitter,
     RandomSplitter,
     StratifiedClusteredSplitter,
+    StratifiedSwitchbackSplitter,
+    SwitchbackSplitter,
 )
 
 __all__ = [
@@ -37,6 +40,9 @@ __all__ = [
     "RandomSplitter",
     "NonClusteredSplitter",
     "StratifiedClusteredSplitter",
+    "SwitchbackSplitter",
+    "BalancedSwitchbackSplitter",
+    "StratifiedSwitchbackSplitter",
     "ClusteredOLSAnalysis",
     "TTestClusteredAnalysis",
 ]

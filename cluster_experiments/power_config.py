@@ -11,9 +11,12 @@ from cluster_experiments.experiment_analysis import (
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
+    BalancedSwitchbackSplitter,
     ClusteredSplitter,
     NonClusteredSplitter,
     StratifiedClusteredSplitter,
+    StratifiedSwitchbackSplitter,
+    SwitchbackSplitter,
 )
 
 
@@ -84,6 +87,8 @@ class PowerConfig:
     treatments: Optional[List[str]] = None
     strata_cols: Optional[List[str]] = None
     splitter_weights: Optional[List[float]] = None
+    switch_frequency: Optional[str] = None
+    time_col: Optional[str] = None
 
     # Analysis
     covariates: Optional[List[str]] = None
@@ -109,6 +114,9 @@ splitter_mapping = {
     "clustered_balance": BalancedClusteredSplitter,
     "non_clustered": NonClusteredSplitter,
     "clustered_stratified": StratifiedClusteredSplitter,
+    "switchback": SwitchbackSplitter,
+    "switchback_balance": BalancedSwitchbackSplitter,
+    "switchback_stratified": StratifiedSwitchbackSplitter,
 }
 
 analysis_mapping = {
