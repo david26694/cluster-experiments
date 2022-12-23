@@ -42,7 +42,7 @@ class ExperimentAnalysis(ABC):
     def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
         """Paste all strings of cluster_cols in one single column"""
         df = df.copy()
-        return df[self.cluster_cols].sum(axis=1)
+        return df[self.cluster_cols].astype(str).sum(axis=1)
 
     def _create_binary_treatment(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transforms treatment column into 0 - 1 column"""

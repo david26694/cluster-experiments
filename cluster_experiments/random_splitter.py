@@ -130,6 +130,29 @@ class ClusteredSplitter(RandomSplitter):
 
 
 class SwitchbackSplitter(ClusteredSplitter):
+    """
+    Splits randomly using clusters and time column
+
+    It is a clustered splitter but one of the cluster columns is obtained by truncating the time column to the switch frequency.
+
+    Arguments:
+        time_col: Name of the column with the time variable.
+        switch_frequency: Frequency to switch treatments. Uses pandas frequency aliases: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+        cluster_cols: List of columns to use as clusters
+        treatments: list of treatments
+        treatment_col: Name of the column with the treatment variable.
+        splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments
+
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.random_splitter import SwitchbackSplitter
+    splitter = SwitchbackSplitter(time_col="date", switch_frequency="1D")
+    df = pd.DataFrame({"date": pd.date_range("2020-01-01", "2020-01-03")})
+    df = splitter.assign_treatment_df(df)
+    print(df)
+    """
+
     def __init__(
         self,
         time_col: Optional[str] = None,
@@ -155,7 +178,7 @@ class SwitchbackSplitter(ClusteredSplitter):
             return df[self.time_col].dt.to_period(self.switch_frequency).dt.start_time
         return df[self.time_col].dt.floor(self.switch_frequency, ambiguous="infer")
 
-    def prepare_switchback_df(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _prepare_switchback_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         # Build time_col switchback column
         df[self.time_col] = self._get_time_col(df)
@@ -169,15 +192,13 @@ class SwitchbackSplitter(ClusteredSplitter):
         df: pd.DataFrame,
     ) -> pd.DataFrame:
         """
-        Takes a df, randomizes treatments and adds the treatment column to the dataframe
+        Creates the switchback column, adds it to cluster_cols and then calls ClusteredSplitter assign_treatment_df
 
         Arguments:
             df: dataframe to assign treatments to
         """
         df = df.copy()
-
-        df = self.prepare_switchback_df(df)
-
+        df = self._prepare_switchback_df(df)
         return super().assign_treatment_df(df)
 
     @classmethod
@@ -218,6 +239,11 @@ class BalancedClusteredSplitter(ClusteredSplitter):
 
 
 class BalancedSwitchbackSplitter(BalancedClusteredSplitter, SwitchbackSplitter):
+    """
+    Like SwitchbackSplitter, but ensures that treatments are balanced among clusters. That is, if we have
+    25 clusters and 2 treatments, 13 clusters should have treatment A and 12 clusters should have treatment B.
+    """
+
     pass
 
 
@@ -366,6 +392,32 @@ class StratifiedClusteredSplitter(RandomSplitter):
 
 
 class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitter):
+    """
+    Splits randomly with clusters, ensuring a balanced allocation of treatment groups across clusters and strata.
+    To be used, for example, when having days as clusters and days of the week as stratus. This splitter will make sure
+    that we won't have all Sundays in treatment and no Sundays in control.
+
+    It can be created using the time_col and switch_frequency arguments, just like the SwitchbackSplitter.
+
+    Arguments:
+        time_col: Name of the column with the time variable.
+        switch_frequency: Frequency of the switchback. Must be a string (e.g. "1D")
+        cluster_cols: List of columns to use as clusters
+        treatments: list of treatments
+        treatment_col: Name of the column with the treatment variable.
+        splitter_weights: List of weights for the treatments. If None, all treatments will have the same weight.
+        strata_cols: List of columns to use as strata
+
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.random_splitter import StratifiedSwitchbackSplitter
+    splitter = StratifiedSwitchbackSplitter(time_col="date",switch_frequency="1D",strata_cols=["country"])
+    df = pd.DataFrame({"date": ["2020-01-01", "2020-01-02", "2020-01-03","2020-01-04"], "country":["C1","C2","C2","C1"]})
+    df = splitter.assign_treatment_df(df)
+    print(df)
+    """
+
     def __init__(
         self,
         time_col: str = "date",
@@ -390,11 +442,11 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
 
     def assign_treatment_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
-        df = self.prepare_switchback_df(df)
+        df = self._prepare_switchback_df(df)
         return StratifiedClusteredSplitter.assign_treatment_df(self, df)
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config) -> "StratifiedSwitchbackSplitter":
         """Creates a StratifiedSwitchbackSplitter from a PowerConfig"""
         return cls(
             treatments=config.treatments,

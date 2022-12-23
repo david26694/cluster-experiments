@@ -38,6 +38,8 @@ class PowerConfig:
         control: what value of treatment_col should be considered as control
         strata_cols: columns to stratify with
         splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments
+        switch_frequency: how often to switch treatments
+        time_col: column to use as time in switchback splitter
         covariates: list of columns to use as covariates
         average_effect: average effect to use in the perturbator
         treatments: list of treatments to use
