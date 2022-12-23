@@ -32,6 +32,7 @@ class PowerConfig:
         target_col: column to use as target
         treatment_col: column to use as treatment
         treatment: what value of treatment_col should be considered as treatment
+        control: what value of treatment_col should be considered as control
         strata_cols: columns to stratify with
         splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments
         covariates: list of columns to use as covariates
@@ -90,6 +91,7 @@ class PowerConfig:
     # Power analysis
     n_simulations: int = 100
     alpha: float = 0.05
+    control: str = "A"
 
     # Cupac
     agg_col: str = ""

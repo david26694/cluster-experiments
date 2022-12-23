@@ -36,6 +36,7 @@ class PowerAnalysis:
         target_col: Name of the column with the outcome variable.
         treatment_col: Name of the column with the treatment variable.
         treatment: value of treatment_col considered to be treatment (not control)
+        control: value of treatment_col considered to be control (not treatment)
         n_simulations: Number of simulations to run.
         alpha: Significance level.
         features_cupac_model: Covariates to be used in cupac model
@@ -93,6 +94,7 @@ class PowerAnalysis:
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
+        control: str = "A",
         n_simulations: int = 100,
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
@@ -103,6 +105,7 @@ class PowerAnalysis:
         self.n_simulations = n_simulations
         self.target_col = target_col
         self.treatment = treatment
+        self.control = control
         self.treatment_col = treatment_col
         self.alpha = alpha
 
@@ -138,8 +141,14 @@ class PowerAnalysis:
         for _ in tqdm(range(self.n_simulations), disable=not verbose):
             treatment_df = self.splitter.assign_treatment_df(df)
             self.log_nulls(treatment_df)
+            # The second query allows as to do power analysis for multivariate testing
+            # It assumes that we give, to each treatment value, the same number of samples
+            # If this is not the case, several PowerAnalysis should be run with different weights
             treatment_df = treatment_df.query(
                 f"{self.treatment_col}.notnull()", engine="python"
+            ).query(
+                f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
+                engine="python",
             )
             treatment_df = self.perturbator.perturbate(
                 treatment_df, average_effect=average_effect
@@ -217,6 +226,10 @@ class PowerAnalysis:
         assert (
             self.analysis.treatment in self.splitter.treatments
         ), f"treatment in analysis ({self.analysis.treatment}) must be in treatments in splitter ({self.splitter.treatments})"
+
+        assert (
+            self.control in self.splitter.treatments
+        ), f"control in power analysis ({self.control}) must be in treatments in splitter ({self.splitter.treatments})"
 
     def check_covariates(self):
         if hasattr(self.analysis, "covariates"):
