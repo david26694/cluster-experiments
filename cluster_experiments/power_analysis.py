@@ -93,6 +93,7 @@ class PowerAnalysis:
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
+        control: str = "A",
         n_simulations: int = 100,
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
@@ -103,6 +104,7 @@ class PowerAnalysis:
         self.n_simulations = n_simulations
         self.target_col = target_col
         self.treatment = treatment
+        self.control = control
         self.treatment_col = treatment_col
         self.alpha = alpha
 
@@ -140,6 +142,9 @@ class PowerAnalysis:
             self.log_nulls(treatment_df)
             treatment_df = treatment_df.query(
                 f"{self.treatment_col}.notnull()", engine="python"
+            ).query(
+                f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
+                engine="python",
             )
             treatment_df = self.perturbator.perturbate(
                 treatment_df, average_effect=average_effect
@@ -217,6 +222,10 @@ class PowerAnalysis:
         assert (
             self.analysis.treatment in self.splitter.treatments
         ), f"treatment in analysis ({self.analysis.treatment}) must be in treatments in splitter ({self.splitter.treatments})"
+
+        assert (
+            self.control in self.splitter.treatments
+        ), f"control in power analysis ({self.control}) must be in treatments in splitter ({self.splitter.treatments})"
 
     def check_covariates(self):
         if hasattr(self.analysis, "covariates"):

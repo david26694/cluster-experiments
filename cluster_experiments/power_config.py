@@ -90,6 +90,7 @@ class PowerConfig:
     # Power analysis
     n_simulations: int = 100
     alpha: float = 0.05
+    control: str = "A"
 
     # Cupac
     agg_col: str = ""
