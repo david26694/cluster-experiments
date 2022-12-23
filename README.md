@@ -147,6 +147,10 @@ The library offers the following classes:
     * `BalancedClusteredSplitter`: to split data based on clusters in a balanced way
     * `NonClusteredSplitter`: Regular data splitting, no clusters
     * `StratifiedClusteredSplitter`: to split based on clusters and strata, balancing the number of clusters in each stratus
+    * Switchback splitters (the same can be done with clustered splitters, but there is a convenient way to define switchback splitters using switch frequency):
+        * `SwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments
+        * `BalancedSwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments, balancing treatment and control among all clusters
+        * `StratifiedSwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments, balancing the number of clusters in each stratus
 * Regarding analysis:
     * `GeeExperimentAnalysis`: to run GEE analysis on the results of a clustered design
     * `TTestClusteredAnalysis`: to run a t-test on aggregated data for clusters
