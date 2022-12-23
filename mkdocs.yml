@@ -11,6 +11,7 @@ nav:
     - Index: index.md
   - Cupac example: cupac_example.ipynb
   - Custom classes: create_custom_classes.ipynb
+  - Stratified switchback example: switchback.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
