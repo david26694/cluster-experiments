@@ -264,6 +264,13 @@ class PowerAnalysis:
             or not self.splitter.cluster_cols
         ), "splitter has cluster_cols but analysis does not."
 
+        has_time_col = hasattr(self.splitter, "time_col")
+        assert not (
+            has_time_col
+            and has_splitter_clusters
+            and self.splitter.time_col not in self.splitter.cluster_cols
+        ), "in switchback splitters, time_col must be in cluster_cols"
+
     def check_inputs(self):
         self.check_covariates()
         self.check_treatment_col()

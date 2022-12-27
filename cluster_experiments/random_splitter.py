@@ -182,9 +182,6 @@ class SwitchbackSplitter(ClusteredSplitter):
         df = df.copy()
         # Build time_col switchback column
         df[self.time_col] = self._get_time_col(df)
-        # Add time column to clusters
-        if self.time_col not in self.cluster_cols:
-            self.cluster_cols.append(self.time_col)
         return df
 
     def assign_treatment_df(

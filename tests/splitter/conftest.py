@@ -12,7 +12,9 @@ from cluster_experiments.random_splitter import (
 
 @pytest.fixture
 def switchback_splitter():
-    return SwitchbackSplitter(time_col="time", switch_frequency="1D")
+    return SwitchbackSplitter(
+        time_col="time", switch_frequency="1D", cluster_cols=["time"]
+    )
 
 
 @pytest.fixture
@@ -39,7 +41,9 @@ switchback_splitter_parametrize = pytest.mark.parametrize(
 
 @pytest.fixture
 def balanced_splitter():
-    return BalancedSwitchbackSplitter(time_col="time", switch_frequency="1D")
+    return BalancedSwitchbackSplitter(
+        time_col="time", switch_frequency="1D", cluster_cols=["time"]
+    )
 
 
 @pytest.fixture
@@ -70,6 +74,7 @@ def stratified_switchback_splitter():
         time_col="time",
         switch_frequency="1D",
         strata_cols=["day_of_week"],
+        cluster_cols=["time"],
     )
 
 
