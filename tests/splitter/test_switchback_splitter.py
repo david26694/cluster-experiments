@@ -1,6 +1,10 @@
 import pandas as pd
 import pytest
 
+from cluster_experiments.experiment_analysis import OLSAnalysis
+from cluster_experiments.perturbator import UniformPerturbator
+from cluster_experiments.power_analysis import PowerAnalysis
+from cluster_experiments.random_splitter import SwitchbackSplitter
 from tests.splitter.conftest import (
     balanced_splitter_parametrize,
     stratified_splitter_parametrize,
@@ -27,7 +31,7 @@ def test_switchback_splitter(splitter, date_df, request):
 def test_clustered_switchback_splitter(splitter, biweekly_df, request):
     switchback_splitter = request.getfixturevalue(splitter)
     biweekly_df_long = pd.concat([biweekly_df for _ in range(3)])
-    switchback_splitter.cluster_cols = ["cluster"]
+    switchback_splitter.cluster_cols = ["cluster", "time"]
     treatment_assignment = switchback_splitter.assign_treatment_df(biweekly_df_long)
     assert "time" in switchback_splitter.cluster_cols
 
@@ -45,7 +49,7 @@ def test_clustered_switchback_splitter_balance(
     balanced_splitter = request.getfixturevalue(splitter)
 
     if add_cluster_cols:
-        balanced_splitter.cluster_cols = ["cluster"]
+        balanced_splitter.cluster_cols += ["cluster"]
     treatment_assignment = balanced_splitter.assign_treatment_df(biweekly_df)
     assert "time" in balanced_splitter.cluster_cols
     # Assert that the treatment assignment is balanced
@@ -58,7 +62,7 @@ def test_stratified_splitter(splitter, add_cluster_cols, biweekly_df, request):
     stratified_switchback_splitter = request.getfixturevalue(splitter)
 
     if add_cluster_cols:
-        stratified_switchback_splitter.cluster_cols = ["cluster"]
+        stratified_switchback_splitter.cluster_cols += ["cluster"]
         stratified_switchback_splitter.strata_cols += ["cluster"]
 
     treatment_assignment = stratified_switchback_splitter.assign_treatment_df(
@@ -74,3 +78,18 @@ def test_stratified_splitter(splitter, add_cluster_cols, biweekly_df, request):
     # have the same number of observations. Same for cluster
     for col in ["cluster", "day_of_week"]:
         assert treatment_assignment.groupby([col, "treatment"]).size().nunique() == 1
+
+
+def test_raise_time_col_not_in_df():
+    with pytest.raises(
+        AssertionError,
+        match="in switchback splitters, time_col must be in cluster_cols",
+    ):
+        sw = SwitchbackSplitter(time_col="time")
+        perturbator = UniformPerturbator()
+        analysis = OLSAnalysis()
+        _ = PowerAnalysis(
+            splitter=sw,
+            perturbator=perturbator,
+            analysis=analysis,
+        )
