@@ -12,6 +12,7 @@ nav:
   - Cupac example: cupac_example.ipynb
   - Custom classes: create_custom_classes.ipynb
   - Stratified switchback example: switchback.ipynb
+  - Multiple treatments example: multivariate.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
