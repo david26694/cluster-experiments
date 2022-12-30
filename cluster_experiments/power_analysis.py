@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import Generator, List, Optional
 
 import pandas as pd
 from sklearn.base import BaseEstimator
@@ -117,28 +117,30 @@ class PowerAnalysis:
 
         self.check_inputs()
 
-    def power_analysis(
+    def simulate_pvalue(
         self,
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
         verbose: bool = False,
         average_effect: Optional[float] = None,
-    ) -> float:
+        n_simulations: int = 100,
+    ) -> Generator[float, None, None]:
         """
-        Run power analysis by simulation
+        Yields p-values for each iteration of the simulation.
+        In general, this is to be used in power_analysis method. However,
+        if you're interested in the distribution of p-values, you can use this method to generate them.
         Args:
             df: Dataframe with outcome and treatment variables.
             pre_experiment_df: Dataframe with pre-experiment data.
             verbose: Whether to show progress bar.
             average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
         """
         df = df.copy()
 
         df = self.cupac_handler.add_covariates(df, pre_experiment_df)
 
-        n_detected_mde = 0
-
-        for _ in tqdm(range(self.n_simulations), disable=not verbose):
+        for _ in tqdm(range(n_simulations), disable=not verbose):
             treatment_df = self.splitter.assign_treatment_df(df)
             self.log_nulls(treatment_df)
             # The second query allows as to do power analysis for multivariate testing
@@ -153,10 +155,41 @@ class PowerAnalysis:
             treatment_df = self.perturbator.perturbate(
                 treatment_df, average_effect=average_effect
             )
-            p_value = self.analysis.get_pvalue(treatment_df)
-            n_detected_mde += p_value < self.alpha
+            yield self.analysis.get_pvalue(treatment_df)
 
-        return n_detected_mde / self.n_simulations
+    def power_analysis(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effect: Optional[float] = None,
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> float:
+        """
+        Run power analysis by simulation
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+        alpha = self.alpha if alpha is None else alpha
+
+        n_detected_mde = 0
+        for p_value in self.simulate_pvalue(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            average_effect=average_effect,
+            n_simulations=n_simulations,
+        ):
+            n_detected_mde += p_value < alpha
+
+        return n_detected_mde / n_simulations
 
     def log_nulls(self, df: pd.DataFrame) -> None:
         """Warns about dropping nulls in treatment column"""
