@@ -310,6 +310,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         target_col: name of the column containing the variable to measure
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
+        comparison_col: column to generate 2 groups (a and b)
 
     Usage:
 
@@ -336,7 +337,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
-        comparison_col: str or None = None,
+        comparison_col: str = "",
     ):
         self.comparison_col = comparison_col
         self.target_col = target_col
@@ -356,8 +357,14 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         )[self.target_col].mean()
 
         df_pivot = df_grouped.pivot_table(
-            columns=self.treatment_col, index="cluster", values=self.target_col
+            columns=self.treatment_col,
+            index=self.comparison_col,
+            values=self.target_col,
         )
+
+        assert (
+            df.pivot.shape[1] == 2
+        ), "There should be only 2 columns (control and treatment)"
 
         t_test_results = ttest_rel(df_pivot[0], df_pivot[1])
         return t_test_results.pvalue
