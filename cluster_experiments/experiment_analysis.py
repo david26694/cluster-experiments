@@ -4,7 +4,7 @@ from typing import List, Optional
 import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
-from scipy.stats import ttest_ind
+from scipy.stats import ttest_ind, ttest_rel
 
 
 class ExperimentAnalysis(ABC):
@@ -298,6 +298,79 @@ class TTestClusteredAnalysis(ExperimentAnalysis):
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
+        )
+
+
+class PairedTTestClusteredAnalysis(ExperimentAnalysis):
+    """
+    Class to run paired T-test analysis on aggregated data
+
+    Arguments:
+        cluster_cols: list of columns to use as clusters
+        target_col: name of the column containing the variable to measure
+        treatment_col: name of the column containing the treatment variable
+        treatment: name of the treatment to use as the treated group
+
+    Usage:
+
+    ```python
+    from cluster_experiments.experiment_analysis import TTestClusteredAnalysis
+    import pandas as pd
+
+    df = pd.DataFrame({
+        'x': [1, 2, 3, 4, 0, 0, 1, 1],
+        'treatment': ["A", "B", "A", "B"] * 2,
+        'cluster': [1, 2, 3, 4, 1, 2, 3, 4],
+    })
+
+    TTestClusteredAnalysis(
+        cluster_cols=['cluster'],
+        target_col='x',
+    ).get_pvalue(df)
+    ```
+    """
+
+    def __init__(
+        self,
+        cluster_cols: List[str],
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        comparison_col: str or None = None,
+    ):
+        self.comparison_col = comparison_col
+        self.target_col = target_col
+        self.treatment = treatment
+        self.treatment_col = treatment_col
+        self.cluster_cols = cluster_cols
+
+    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the p-value of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+
+        df_grouped = df.groupby(
+            self.cluster_cols + [self.treatment_col], as_index=False
+        )[self.target_col].mean()
+
+        df_pivot = df_grouped.pivot_table(
+            columns=self.treatment_col, index="cluster", values=self.target_col
+        )
+
+        t_test_results = ttest_rel(df_pivot[0], df_pivot[1])
+        return t_test_results.pvalue
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a TTestClusteredAnalysis object from a PowerConfig object"""
+        return cls(
+            cluster_cols=config.cluster_cols,
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            comparison_col=config.comparison_col,
         )
 
 
