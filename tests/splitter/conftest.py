@@ -122,3 +122,57 @@ def biweekly_df():
         day_of_week=lambda df: df["time"].dt.day_name(),
     )
     return pd.concat([df.assign(cluster=f"Cluster {i}") for i in range(10)])
+
+
+@pytest.fixture
+def washover_df():
+    # Define data with random dates
+    df_raw = pd.DataFrame(
+        {
+            "time": pd.date_range("2021-01-01", "2021-01-02", freq="1min")[
+                np.random.randint(24 * 60, size=7 * 24 * 60)
+            ],
+            "y": np.random.randn(7 * 24 * 60),
+        }
+    ).assign(
+        day_of_week=lambda df: df.time.dt.dayofweek,
+        hour_of_day=lambda df: df.time.dt.hour,
+    )
+    df = pd.concat([df_raw.assign(city=city) for city in ("TGN", "NYC", "LON", "REU")])
+    return df
+
+
+@pytest.fixture
+def washover_base_df():
+    df = pd.DataFrame(
+        {
+            "og___time": [
+                pd.to_datetime("2022-01-01 00:20:00"),
+                pd.to_datetime("2022-01-01 00:31:00"),
+                pd.to_datetime("2022-01-01 01:14:00"),
+                pd.to_datetime("2022-01-01 01:31:00"),
+            ],
+            "treatment": ["A", "A", "B", "B"],
+            "city": ["TGN"] * 4,
+        }
+    ).assign(time=lambda x: x["og___time"].dt.floor("1h", ambiguous="infer"))
+    return df
+
+
+@pytest.fixture
+def washover_df_no_switch():
+    df = pd.DataFrame(
+        {
+            "og___time": [
+                pd.to_datetime("2022-01-01 00:20:00"),
+                pd.to_datetime("2022-01-01 00:31:00"),
+                pd.to_datetime("2022-01-01 01:14:00"),
+                pd.to_datetime("2022-01-01 01:31:00"),
+                pd.to_datetime("2022-01-01 02:01:00"),
+                pd.to_datetime("2022-01-01 02:31:00"),
+            ],
+            "treatment": ["A", "A", "B", "B", "B", "B"],
+            "city": ["TGN"] * 6,
+        }
+    ).assign(time=lambda x: x["og___time"].dt.floor("1h", ambiguous="infer"))
+    return df
