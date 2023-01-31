@@ -356,17 +356,17 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
             self.cluster_cols + [self.treatment_col], as_index=False
         )[self.target_col].mean()
 
+        assert (
+            df_grouped["comparison_col"].nunique() == 2
+        ), "there should be only 2 values for paired t test"
+
         df_pivot = df_grouped.pivot_table(
             columns=self.treatment_col,
             index=self.comparison_col,
             values=self.target_col,
         )
 
-        assert (
-            df.pivot.shape[1] == 2
-        ), "There should be only 2 columns (control and treatment)"
-
-        t_test_results = ttest_rel(df_pivot[0], df_pivot[1])
+        t_test_results = ttest_rel(df_pivot.iloc[:, 0], df_pivot.iloc[:, 1])
         return t_test_results.pvalue
 
     @classmethod
