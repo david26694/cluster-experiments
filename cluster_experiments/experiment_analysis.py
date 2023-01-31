@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-
+import warnings
 import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
@@ -310,7 +310,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         target_col: name of the column containing the variable to measure
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
-        comparison_col: column to generate 2 groups (a and b)
+        strata: column to generate 2 groups (a and b)
 
     Usage:
 
@@ -324,9 +324,9 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         'cluster': [1, 2, 3, 4, 1, 2, 3, 4],
     })
 
-    TTestClusteredAnalysis(
-        cluster_cols=['cluster'],
-        target_col='x',
+    PairedTTestClusteredAnalysis(
+        strata=df['cluster'],
+        target_col=df['x'],
     ).get_pvalue(df)
     ```
     """
@@ -334,12 +334,12 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
     def __init__(
         self,
         cluster_cols: List[str],
+        strata_cols: List[str] = None,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
-        comparison_col: str = "",
     ):
-        self.comparison_col = comparison_col
+        self.strata_cols = cluster_cols if strata_cols is None else strata_cols
         self.target_col = target_col
         self.treatment = treatment
         self.treatment_col = treatment_col
@@ -356,15 +356,21 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
             self.cluster_cols + [self.treatment_col], as_index=False
         )[self.target_col].mean()
 
-        assert (
-            df_grouped["comparison_col"].nunique() == 2
-        ), "there should be only 2 values for paired t test"
+        if (
+            df_grouped[self.treatment_col].value_counts()[0]
+            != df_grouped[self.treatment_col].value_counts()[1]
+        ):
+            warnings.warn(
+                "groups don't have same number of observations"
+            )  # todo raise count as well?
 
         df_pivot = df_grouped.pivot_table(
             columns=self.treatment_col,
-            index=self.comparison_col,
+            index=self.strata_cols,
             values=self.target_col,
         )
+
+        assert df_pivot.isna().sum().sum() == 0, "missing data from some cluster"
 
         t_test_results = ttest_rel(df_pivot.iloc[:, 0], df_pivot.iloc[:, 1])
         return t_test_results.pvalue
@@ -377,7 +383,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
-            comparison_col=config.comparison_col,
+            strata=config.strata_cols,
         )
 
 

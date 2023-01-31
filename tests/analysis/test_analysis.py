@@ -4,6 +4,7 @@ import pytest
 from cluster_experiments.experiment_analysis import (
     GeeExperimentAnalysis,
     TTestClusteredAnalysis,
+    PairedTTestClusteredAnalysis,
 )
 
 from tests.examples import analysis_df, generate_random_data
@@ -54,6 +55,27 @@ def test_ttest(analysis_df_diff):
     analyser = TTestClusteredAnalysis(cluster_cols=["cluster"])
 
     assert 0.05 >= analyser.get_pvalue(analysis_df_diff) >= 0
+
+
+def test_paired_ttest():
+    "This test make sure that pivot table works as expected (inside get_pvalue) and that paired t test returns a possible value"
+
+    analysis_df = pd.DataFrame(
+        {
+            "cluster": ["ES"] * 4 + ["IT"] * 4 + ["PL"] * 4 + ["RO"] * 4,
+            "date": ["2022-01-01", "2022-01-02", "2022-01-03", "2022-01-04"] * 4,
+            "treatment": ["A", "B"] * 8,
+            "target": [0.01] * 16,
+        }
+    )
+    # Changing just one observation so we have a p value
+    analysis_df.loc[1, "target"] = 0.001
+
+    analyser = PairedTTestClusteredAnalysis(
+        cluster_cols=["cluster", "date"], strata_cols=["cluster"]
+    )  # todo test passing no strata, test passing many strata
+
+    assert 1 >= analyser.get_pvalue(analysis_df) >= 0, "p value is null or inf"
 
 
 def test_ttest_random_data():
