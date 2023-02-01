@@ -35,7 +35,6 @@ binary_df = pd.DataFrame(
     }
 )
 
-
 continuous_df = pd.DataFrame(
     {
         "target": [0.5, 0.5, 0.5, 0.5],
@@ -51,3 +50,20 @@ analysis_df = pd.DataFrame(
         "date": ["2022-01-01", "2022-01-01", "2022-01-01", "2022-01-01"],
     }
 )
+
+
+def generate_clustered_data():
+    analysis_df = pd.DataFrame(
+        {
+            "country_code": ["ES"] * 4 + ["IT"] * 4 + ["PL"] * 4 + ["RO"] * 4,
+            "city_code": ["BCN", "BCN", "MAD", "BCN"]
+            + ["NAP"] * 4
+            + ["WAW"] * 4
+            + ["BUC"] * 4,
+            "courier_id": [1, 1, 2, 1, 3, 4, 5, 6, 7, 8, 8, 8, 9, 9, 9, 9],
+            "date": ["2022-01-01", "2022-01-02", "2022-01-03", "2022-01-04"] * 4,
+            "treatment": ["A", "B"] * 8,
+            "target": [0.01] * 16,
+        }
+    )
+    return analysis_df

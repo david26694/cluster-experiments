@@ -115,7 +115,7 @@ def test_ttest(df):
 def test_paired_ttest(df):
     config = dict(
         cluster_cols=["cluster", "date"],
-        comparison_col="cluster",
+        strata_cols="cluster",
         analysis="paired_ttest_clustered",
         perturbator="uniform",
         splitter="clustered",

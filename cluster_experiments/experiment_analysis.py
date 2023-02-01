@@ -1,6 +1,6 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
-import warnings
 import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
@@ -310,12 +310,13 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         target_col: name of the column containing the variable to measure
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
-        strata: column to generate 2 groups (a and b)
+        strata_cols: list of index columns for paired t test. Should be a subset or equal to cluster_cols
 
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import TTestClusteredAnalysis
+    from cluster_experiments.experiment_analysis import PairedTTestClusteredAnalysis
+    from scipy.stats import  ttest_rel
     import pandas as pd
 
     df = pd.DataFrame({
@@ -334,7 +335,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
     def __init__(
         self,
         cluster_cols: List[str],
-        strata_cols: List[str] = None,
+        strata_cols: List[str],
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
@@ -345,6 +346,31 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         self.treatment_col = treatment_col
         self.cluster_cols = cluster_cols
 
+    def preprocessing(self, df):
+        df_grouped = df.groupby(
+            self.cluster_cols + [self.treatment_col], as_index=False
+        )[self.target_col].mean()
+
+        n_control = df_grouped[self.treatment_col].value_counts()[0]
+        n_treatment = df_grouped[self.treatment_col].value_counts()[1]
+
+        if n_control != n_treatment:
+            logging.warning(
+                f"groups don't have same number of observations, {n_treatment =} and  {n_treatment =}"
+            )
+
+        #         set(self.strata_cols if len ) <= set(self.cluster_cols)
+        assert all(
+            [x in self.cluster_cols for x in self.strata_cols]
+        ), f"strata should be a subset or equal to cluster_cols ({self.cluster_cols = }, {self.strata_cols = })"
+
+        df_pivot = df_grouped.pivot_table(
+            columns=self.treatment_col,
+            index=self.strata_cols,
+            values=self.target_col,
+        )
+        return df_pivot
+
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
         Arguments:
@@ -352,38 +378,25 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
             verbose (Optional): bool, prints the regression summary if True
         """
 
-        df_grouped = df.groupby(
-            self.cluster_cols + [self.treatment_col], as_index=False
-        )[self.target_col].mean()
-
-        if (
-            df_grouped[self.treatment_col].value_counts()[0]
-            != df_grouped[self.treatment_col].value_counts()[1]
-        ):
-            warnings.warn(
-                "groups don't have same number of observations"
-            )  # todo raise count as well?
-
-        df_pivot = df_grouped.pivot_table(
-            columns=self.treatment_col,
-            index=self.strata_cols,
-            values=self.target_col,
-        )
+        df_pivot = self.preprocessing(df=df)
 
         assert df_pivot.isna().sum().sum() == 0, "missing data from some cluster"
+
+        if verbose:
+            f"performing paired t test in this data \n {df_pivot}"
 
         t_test_results = ttest_rel(df_pivot.iloc[:, 0], df_pivot.iloc[:, 1])
         return t_test_results.pvalue
 
     @classmethod
     def from_config(cls, config):
-        """Creates a TTestClusteredAnalysis object from a PowerConfig object"""
+        """Creates a PairedTTestClusteredAnalysis object from a PowerConfig object"""
         return cls(
             cluster_cols=config.cluster_cols,
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
-            strata=config.strata_cols,
+            strata_cols=config.strata_cols,
         )
 
 

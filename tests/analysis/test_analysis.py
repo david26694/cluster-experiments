@@ -7,7 +7,7 @@ from cluster_experiments.experiment_analysis import (
     PairedTTestClusteredAnalysis,
 )
 
-from tests.examples import analysis_df, generate_random_data
+from tests.examples import analysis_df, generate_random_data, generate_clustered_data
 
 
 @pytest.fixture
@@ -73,9 +73,20 @@ def test_paired_ttest():
 
     analyser = PairedTTestClusteredAnalysis(
         cluster_cols=["cluster", "date"], strata_cols=["cluster"]
-    )  # todo test passing no strata, test passing many strata
+    )
 
     assert 1 >= analyser.get_pvalue(analysis_df) >= 0, "p value is null or inf"
+
+
+def test_paired_ttest_preprocessing():
+
+    analyser = PairedTTestClusteredAnalysis(
+        cluster_cols=["country_code", "city_code"], strata_cols=["country_code"]
+    )
+
+    df_pivot = analyser.preprocessing(df=generate_clustered_data())
+
+    assert df_pivot.isna().sum().sum() == 0, "Unexpected nas in pivot"
 
 
 def test_ttest_random_data():
