@@ -369,6 +369,14 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
             index=self.strata_cols,
             values=self.target_col,
         )
+
+        if df_pivot.isna().sum().sum() == 0:
+            logging.warning(
+                f"There are missing data from some clusters, removing them: {df_pivot[df_pivot.isna().any(axis=1)].to_dict()}"
+            )
+
+        df_pivot = df_pivot.dropna()
+
         return df_pivot
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
@@ -379,8 +387,6 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         """
 
         df_pivot = self.preprocessing(df=df)
-
-        assert df_pivot.isna().sum().sum() == 0, "missing data from some cluster"
 
         if verbose:
             f"performing paired t test in this data \n {df_pivot}"

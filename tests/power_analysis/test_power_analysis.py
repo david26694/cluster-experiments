@@ -115,13 +115,14 @@ def test_ttest(df):
 def test_paired_ttest(df):
     config = dict(
         cluster_cols=["cluster", "date"],
-        strata_cols="cluster",
+        strata_cols=["cluster"],
         analysis="paired_ttest_clustered",
         perturbator="uniform",
         splitter="clustered",
         n_simulations=4,
     )
     pw = PowerAnalysis.from_dict(config)
+
     power = pw.power_analysis(df, average_effect=0.0)
     assert power >= 0
     assert power <= 1
