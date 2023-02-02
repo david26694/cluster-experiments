@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
+
 import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
@@ -326,6 +327,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
     })
 
     PairedTTestClusteredAnalysis(
+        cluster_cols=df['cluster'],
         strata=df['cluster'],
         target_col=df['x'],
     ).get_pvalue(df)
