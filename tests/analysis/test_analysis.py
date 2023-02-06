@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 from cluster_experiments.experiment_analysis import (
     GeeExperimentAnalysis,
-    TTestClusteredAnalysis,
     PairedTTestClusteredAnalysis,
+    TTestClusteredAnalysis,
 )
-
-from tests.examples import analysis_df, generate_random_data, generate_clustered_data
+from tests.examples import analysis_df, generate_clustered_data, generate_random_data
 
 
 @pytest.fixture
@@ -83,10 +83,21 @@ def test_paired_ttest_preprocessing():
     analyser = PairedTTestClusteredAnalysis(
         cluster_cols=["country_code", "city_code"], strata_cols=["country_code"]
     )
+    df = generate_clustered_data()
 
-    df_pivot = analyser.preprocessing(df=generate_clustered_data())
+    df_pivot = analyser._preprocessing(df=df)
 
     assert df_pivot.isna().sum().sum() == 0, "Unexpected nas in pivot"
+    assert (df_pivot.index == ["ES", "IT", "PL", "RO"]).all(), "wrong index"
+    assert (df_pivot.columns == ["A", "B"]).all(), "wrong columns"
+    assert (
+        df_pivot.values == [[0.01, 0.01], [0.01, 0.01], [0.01, 0.01], [0.1, 0.01]]
+    ).all(), "wrong values"
+
+    assert df_pivot.shape == (
+        df["country_code"].nunique(),
+        2,
+    ), "different shape than expected"
 
 
 def test_ttest_random_data():

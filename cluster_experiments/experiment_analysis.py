@@ -317,7 +317,6 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
 
     ```python
     from cluster_experiments.experiment_analysis import PairedTTestClusteredAnalysis
-    from scipy.stats import  ttest_rel
     import pandas as pd
 
     df = pd.DataFrame({
@@ -327,8 +326,8 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
     })
 
     PairedTTestClusteredAnalysis(
-        cluster_cols=df['cluster'],
-        strata=df['cluster'],
+        cluster_cols='cluster',
+        strata_cols='cluster',
         target_col=df['x'],
     ).get_pvalue(df)
     ```
@@ -342,13 +341,13 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
     ):
-        self.strata_cols = cluster_cols if strata_cols is None else strata_cols
+        self.strata_cols = strata_cols
         self.target_col = target_col
         self.treatment = treatment
         self.treatment_col = treatment_col
         self.cluster_cols = cluster_cols
 
-    def preprocessing(self, df):
+    def _preprocessing(self, df: pd.DataFrame) -> pd.DataFrame:
         df_grouped = df.groupby(
             self.cluster_cols + [self.treatment_col], as_index=False
         )[self.target_col].mean()
@@ -358,10 +357,9 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
 
         if n_control != n_treatment:
             logging.warning(
-                f"groups don't have same number of observations, {n_treatment =} and  {n_treatment =}"
+                f"groups don't have same number of observations, {n_treatment =} and  {n_control =}"
             )
 
-        #         set(self.strata_cols if len ) <= set(self.cluster_cols)
         assert all(
             [x in self.cluster_cols for x in self.strata_cols]
         ), f"strata should be a subset or equal to cluster_cols ({self.cluster_cols = }, {self.strata_cols = })"
@@ -388,12 +386,16 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
             verbose (Optional): bool, prints the regression summary if True
         """
 
-        df_pivot = self.preprocessing(df=df)
+        df_pivot = self._preprocessing(df=df)
 
         if verbose:
-            f"performing paired t test in this data \n {df_pivot}"
+            print(f"performing paired t test in this data \n {df_pivot} \n")
 
         t_test_results = ttest_rel(df_pivot.iloc[:, 0], df_pivot.iloc[:, 1])
+
+        if verbose:
+            print(f"paired t test results: \n {t_test_results} \n")
+
         return t_test_results.pvalue
 
     @classmethod

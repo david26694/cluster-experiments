@@ -60,10 +60,27 @@ def generate_clustered_data():
             + ["NAP"] * 4
             + ["WAW"] * 4
             + ["BUC"] * 4,
-            "courier_id": [1, 1, 2, 1, 3, 4, 5, 6, 7, 8, 8, 8, 9, 9, 9, 9],
+            "user_id": [1, 1, 2, 1, 3, 4, 5, 6, 7, 8, 8, 8, 9, 9, 9, 10],
             "date": ["2022-01-01", "2022-01-02", "2022-01-03", "2022-01-04"] * 4,
-            "treatment": ["A", "B"] * 8,
-            "target": [0.01] * 16,
+            "treatment": [
+                "A",
+                "A",
+                "B",
+                "A",
+                "B",
+                "B",
+                "A",
+                "B",
+                "B",
+                "A",
+                "A",
+                "A",
+                "B",
+                "B",
+                "B",
+                "A",
+            ],  # Randomization is done at user level, so same user will always have same treatment
+            "target": [0.01] * 15 + [0.1],
         }
     )
     return analysis_df
