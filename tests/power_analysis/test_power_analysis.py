@@ -143,7 +143,7 @@ def test_power_alpha(df):
         alpha=0.05,
     )
     pw = PowerAnalysis.from_config(config)
-    power_50 = pw.power_analysis(df, alpha=0.5)
+    power_50 = pw.power_analysis(df, alpha=0.5, verbose=True)
     power_01 = pw.power_analysis(df, alpha=0.01)
 
     assert power_50 > power_01

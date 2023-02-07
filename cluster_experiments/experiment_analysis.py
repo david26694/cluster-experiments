@@ -77,7 +77,7 @@ class ExperimentAnalysis(ABC):
                 f"Outcome column {self.target_col} should be numeric and not {df[self.target_col].dtype}"
             )
 
-    def get_pvalue(self, df: pd.DataFrame) -> float:
+    def get_pvalue(self, df: pd.DataFrame, verbose: bool) -> float:
         """Returns the p-value of the analysis
 
         Arguments:
@@ -86,7 +86,7 @@ class ExperimentAnalysis(ABC):
         df = df.copy()
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
-        return self.analysis_pvalue(df)
+        return self.analysis_pvalue(df, verbose=verbose)
 
     @classmethod
     def from_config(cls, config):
@@ -347,7 +347,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         self.treatment_col = treatment_col
         self.cluster_cols = cluster_cols
 
-    def _preprocessing(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _preprocessing(self, df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         df_grouped = df.groupby(
             self.cluster_cols + [self.treatment_col], as_index=False
         )[self.target_col].mean()
@@ -370,10 +370,13 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
             values=self.target_col,
         )
 
-        if df_pivot.isna().sum().sum() == 0:
+        if df_pivot.isna().sum().sum() > 0:
             logging.warning(
-                f"There are missing data from some clusters, removing them: {df_pivot[df_pivot.isna().any(axis=1)].to_dict()}"
+                f"There are missing pairs for some clusters, removing the lonely ones: {df_pivot[df_pivot.isna().any(axis=1)].to_dict()}"
             )
+
+        if verbose:
+            print(f"performing paired t test in this data \n {df_pivot} \n")
 
         df_pivot = df_pivot.dropna()
 
@@ -383,13 +386,10 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         """Returns the p-value of the analysis
         Arguments:
             df: dataframe containing the data to analyze
-            verbose (Optional): bool, prints the regression summary if True
+            verbose (Optional): bool, prints the extra info if True
         """
 
         df_pivot = self._preprocessing(df=df)
-
-        if verbose:
-            print(f"performing paired t test in this data \n {df_pivot} \n")
 
         t_test_results = ttest_rel(df_pivot.iloc[:, 0], df_pivot.iloc[:, 1])
 
