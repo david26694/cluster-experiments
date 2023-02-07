@@ -77,7 +77,7 @@ class ExperimentAnalysis(ABC):
                 f"Outcome column {self.target_col} should be numeric and not {df[self.target_col].dtype}"
             )
 
-    def get_pvalue(self, df: pd.DataFrame, verbose: bool) -> float:
+    def get_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
 
         Arguments:
