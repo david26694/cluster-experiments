@@ -326,9 +326,9 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
     })
 
     PairedTTestClusteredAnalysis(
-        cluster_cols='cluster',
-        strata_cols='cluster',
-        target_col=df['x'],
+        cluster_cols=['cluster'],
+        strata_cols=['cluster'],
+        target_col='x',
     ).get_pvalue(df)
     ```
     """
@@ -388,6 +388,12 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the extra info if True
         """
+        assert (
+            type(self.cluster_cols) is list
+        ), "cluster_cols needs to be a list of strings (even with one element)"
+        assert (
+            type(self.strata_cols) is list
+        ), "strata_cols needs to be a list of strings (even with one element)"
 
         df_pivot = self._preprocessing(df=df)
 
