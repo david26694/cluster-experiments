@@ -77,7 +77,7 @@ class ExperimentAnalysis(ABC):
                 f"Outcome column {self.target_col} should be numeric and not {df[self.target_col].dtype}"
             )
 
-    def get_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
+    def get_pvalue(self, df: pd.DataFrame) -> float:
         """Returns the p-value of the analysis
 
         Arguments:
@@ -86,7 +86,7 @@ class ExperimentAnalysis(ABC):
         df = df.copy()
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
-        return self.analysis_pvalue(df, verbose=verbose)
+        return self.analysis_pvalue(df)
 
     @classmethod
     def from_config(cls, config):

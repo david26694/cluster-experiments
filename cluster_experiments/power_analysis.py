@@ -155,7 +155,7 @@ class PowerAnalysis:
             treatment_df = self.perturbator.perturbate(
                 treatment_df, average_effect=average_effect
             )
-            yield self.analysis.get_pvalue(treatment_df, verbose=verbose)
+            yield self.analysis.get_pvalue(treatment_df)
 
     def power_analysis(
         self,
