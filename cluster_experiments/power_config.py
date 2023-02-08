@@ -7,6 +7,7 @@ from cluster_experiments.experiment_analysis import (
     GeeExperimentAnalysis,
     OLSAnalysis,
     TTestClusteredAnalysis,
+    PairedTTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
 from cluster_experiments.random_splitter import (
@@ -126,6 +127,7 @@ analysis_mapping = {
     "ols_non_clustered": OLSAnalysis,
     "ols_clustered": ClusteredOLSAnalysis,
     "ttest_clustered": TTestClusteredAnalysis,
+    "paired_ttest_clustered": PairedTTestClusteredAnalysis,
 }
 
 cupac_model_mapping = {"": EmptyRegressor, "mean_cupac_model": TargetAggregation}

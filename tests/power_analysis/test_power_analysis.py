@@ -112,6 +112,26 @@ def test_ttest(df):
     assert power_verbose <= 1
 
 
+def test_paired_ttest(df):
+    config = dict(
+        cluster_cols=["cluster", "date"],
+        strata_cols=["cluster"],
+        analysis="paired_ttest_clustered",
+        perturbator="uniform",
+        splitter="clustered",
+        n_simulations=4,
+    )
+    pw = PowerAnalysis.from_dict(config)
+
+    power = pw.power_analysis(df, average_effect=0.0)
+    assert power >= 0
+    assert power <= 1
+
+    power_verbose = pw.power_analysis(df, verbose=True, average_effect=0.0)
+    assert power_verbose >= 0
+    assert power_verbose <= 1
+
+
 def test_power_alpha(df):
     config = PowerConfig(
         cluster_cols=["cluster", "date"],
@@ -123,7 +143,7 @@ def test_power_alpha(df):
         alpha=0.05,
     )
     pw = PowerAnalysis.from_config(config)
-    power_50 = pw.power_analysis(df, alpha=0.5)
+    power_50 = pw.power_analysis(df, alpha=0.5, verbose=True)
     power_01 = pw.power_analysis(df, alpha=0.01)
 
     assert power_50 > power_01

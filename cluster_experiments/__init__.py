@@ -4,6 +4,7 @@ from cluster_experiments.experiment_analysis import (
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     OLSAnalysis,
+    PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import (
@@ -45,4 +46,5 @@ __all__ = [
     "StratifiedSwitchbackSplitter",
     "ClusteredOLSAnalysis",
     "TTestClusteredAnalysis",
+    "PairedTTestClusteredAnalysis",
 ]

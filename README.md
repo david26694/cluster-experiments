@@ -154,6 +154,7 @@ The library offers the following classes:
 * Regarding analysis:
     * `GeeExperimentAnalysis`: to run GEE analysis on the results of a clustered design
     * `TTestClusteredAnalysis`: to run a t-test on aggregated data for clusters
+    * `PairedTTestClusteredAnalysis`: to run a paired t-test on aggregated data for clusters
     * `ClusteredOLSAnalysis`: to run OLS analysis on the results of a clustered design
     * `OLSAnalysis`: to run OLS analysis for non-clustered data
     * `TargetAggregation`: to add pre-experimental data of the outcome to reduce variance

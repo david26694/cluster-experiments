@@ -11,6 +11,7 @@ from cluster_experiments import (
     GeeExperimentAnalysis,
     NonClusteredSplitter,
     OLSAnalysis,
+    PairedTTestClusteredAnalysis,
     Perturbator,
     PowerAnalysis,
     PowerConfig,
@@ -38,6 +39,7 @@ all_objects = [
     StratifiedClusteredSplitter,
     TargetAggregation,
     TTestClusteredAnalysis,
+    PairedTTestClusteredAnalysis,
     UniformPerturbator,
 ]
 
