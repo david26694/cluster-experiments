@@ -4,8 +4,12 @@ from typing import List
 
 import pandas as pd
 
+from cluster_experiments.utils import _original_time_column
+
 
 class Washover(ABC):
+    """Abstract class to model washovers in the switchback splitter."""
+
     @abstractmethod
     def washover(
         self,
@@ -18,6 +22,8 @@ class Washover(ABC):
 
 
 class EmptyWashover(Washover):
+    """No washover - assumes no spill-over effects from one treatment to another."""
+
     def washover(
         self,
         df: pd.DataFrame,
@@ -25,10 +31,54 @@ class EmptyWashover(Washover):
         treatment_col: str,
         cluster_cols: List[str],
     ) -> pd.DataFrame:
+        """No washover - returns the same dataframe as input.
+
+        Args:
+            df (pd.DataFrame): Input dataframe.
+            time_col (str): Name of the time column.
+            treatment_col (str): Name of the treatment column.
+            cluster_cols (List[str]): List of clusters of experiment.
+
+        Returns:
+            pd.DataFrame: Same dataframe as input.
+
+        Usage:
+        ```python
+        from cluster_experiments import SwitchbackSplitter
+        from cluster_experiments import EmptyWashover
+
+        washover = EmptyWashover()
+
+        n = 10
+        df = pd.DataFrame(
+            {
+                # Random time each minute in 2022-01-01, length 10
+                "time": pd.date_range("2022-01-01", "2022-01-02", freq="1min")[
+                    np.random.randint(24 * 60, size=n)
+                ],
+                "city": random.choices(["TGN", "NYC", "LON", "REU"], k=n),
+            }
+        )
+
+
+        splitter = SwitchbackSplitter(
+            washover=washover,
+            time_col="time",
+            cluster_cols=["city", "time"],
+            treatment_col="treatment",
+            switch_frequency="30T",
+        )
+
+        out_df = splitter.assign_treatment_df(df=washover_split_df)
+
+        """
         return df
 
 
 class ConstantWashover(Washover):
+    """Constant washover - we drop all rows in the washover period when
+    there is a switch where the treatment is different."""
+
     def __init__(self, washover_time_delta: datetime.timedelta):
         self.washover_time_delta = washover_time_delta
 
@@ -39,9 +89,50 @@ class ConstantWashover(Washover):
         treatment_col: str,
         cluster_cols: List[str],
     ) -> pd.DataFrame:
+        """No washover - returns the same dataframe as input.
+
+        Args:
+            df (pd.DataFrame): Input dataframe.
+            time_col (str): Name of the time column.
+            treatment_col (str): Name of the treatment column.
+            cluster_cols (List[str]): List of clusters of experiment.
+
+        Returns:
+            pd.DataFrame: Same dataframe as input.
+
+        Usage:
+        ```python
+        from cluster_experiments import SwitchbackSplitter
+        from cluster_experiments import ConstantWashover
+
+        washover = ConstantWashover(washover_time_delta=datetime.timedelta(minutes=30))
+
+        n = 10
+        df = pd.DataFrame(
+            {
+                # Random time each minute in 2022-01-01, length 10
+                "time": pd.date_range("2022-01-01", "2022-01-02", freq="1min")[
+                    np.random.randint(24 * 60, size=n)
+                ],
+                "city": random.choices(["TGN", "NYC", "LON", "REU"], k=n),
+            }
+        )
+
+
+        splitter = SwitchbackSplitter(
+            washover=washover,
+            time_col="time",
+            cluster_cols=["city", "time"],
+            treatment_col="treatment",
+            switch_frequency="30T",
+        )
+
+        out_df = splitter.assign_treatment_df(df=washover_split_df)
+
+        """
+        # Cluster columns that do not involve time
         non_time_cols = list(set(cluster_cols) - set([time_col]))
         # For each cluster, we need to check if treatment has changed wrt last time
-
         df_agg = df.drop_duplicates(subset=cluster_cols + [treatment_col]).copy()
         df_agg["__changed"] = (
             df_agg.groupby(non_time_cols)[treatment_col].shift(1)
@@ -51,7 +142,8 @@ class ConstantWashover(Washover):
         return (
             df.merge(df_agg, on=cluster_cols, how="inner")
             .assign(
-                __time_since_switch=lambda x: x[f"og___{time_col}"] - x[time_col],
+                __time_since_switch=lambda x: x[_original_time_column(time_col)]
+                - x[time_col],
                 __after_washover=lambda x: x["__time_since_switch"]
                 > self.washover_time_delta,
             )

@@ -6,7 +6,9 @@ from cluster_experiments import (
     BinaryPerturbator,
     ClusteredOLSAnalysis,
     ClusteredSplitter,
+    ConstantWashover,
     EmptyRegressor,
+    EmptyWashover,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     NonClusteredSplitter,
@@ -21,6 +23,7 @@ from cluster_experiments import (
     TTestClusteredAnalysis,
     UniformPerturbator,
 )
+from cluster_experiments.utils import _original_time_column
 
 all_objects = [
     BalancedClusteredSplitter,
@@ -41,6 +44,9 @@ all_objects = [
     TTestClusteredAnalysis,
     PairedTTestClusteredAnalysis,
     UniformPerturbator,
+    _original_time_column,
+    ConstantWashover,
+    EmptyWashover,
 ]
 
 

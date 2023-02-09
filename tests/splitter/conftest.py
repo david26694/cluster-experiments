@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -146,7 +148,7 @@ def washover_df():
 def washover_base_df():
     df = pd.DataFrame(
         {
-            "og___time": [
+            "original___time": [
                 pd.to_datetime("2022-01-01 00:20:00"),
                 pd.to_datetime("2022-01-01 00:31:00"),
                 pd.to_datetime("2022-01-01 01:14:00"),
@@ -155,7 +157,7 @@ def washover_base_df():
             "treatment": ["A", "A", "B", "B"],
             "city": ["TGN"] * 4,
         }
-    ).assign(time=lambda x: x["og___time"].dt.floor("1h", ambiguous="infer"))
+    ).assign(time=lambda x: x["original___time"].dt.floor("1h", ambiguous="infer"))
     return df
 
 
@@ -163,7 +165,7 @@ def washover_base_df():
 def washover_df_no_switch():
     df = pd.DataFrame(
         {
-            "og___time": [
+            "original___time": [
                 pd.to_datetime("2022-01-01 00:20:00"),
                 pd.to_datetime("2022-01-01 00:31:00"),
                 pd.to_datetime("2022-01-01 01:14:00"),
@@ -174,5 +176,19 @@ def washover_df_no_switch():
             "treatment": ["A", "A", "B", "B", "B", "B"],
             "city": ["TGN"] * 6,
         }
-    ).assign(time=lambda x: x["og___time"].dt.floor("1h", ambiguous="infer"))
+    ).assign(time=lambda x: x["original___time"].dt.floor("1h", ambiguous="infer"))
     return df
+
+
+@pytest.fixture
+def washover_split_df(n):
+    # Return
+    return pd.DataFrame(
+        {
+            # Random time each minute in 2022-01-01, length 1000
+            "time": pd.date_range("2022-01-01", "2022-01-02", freq="1min")[
+                np.random.randint(24 * 60, size=n)
+            ],
+            "city": random.choices(["TGN", "NYC", "LON", "REU"], k=n),
+        }
+    )

@@ -5,6 +5,7 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 
+from cluster_experiments.utils import _original_time_column
 from cluster_experiments.washover import EmptyWashover, Washover
 
 
@@ -173,10 +174,8 @@ class SwitchbackSplitter(ClusteredSplitter):
         self.splitter_weights = splitter_weights
         self.washover = washover or EmptyWashover()
 
-    def _get_time_col(self, df: pd.DataFrame) -> pd.Series:
+    def _get_time_col_cluster(self, df: pd.DataFrame) -> pd.Series:
         df = df.copy()
-        # TODO: This is a hack to keep the original time column. Needs improvement
-        df[f"og___{self.time_col}"] = df[self.time_col]
         df[self.time_col] = pd.to_datetime(df[self.time_col])
         # Given the switch frequency, truncate the time column to the switch frequency
         # Using pandas frequency aliases: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
@@ -187,7 +186,9 @@ class SwitchbackSplitter(ClusteredSplitter):
     def _prepare_switchback_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         # Build time_col switchback column
-        df[self.time_col] = self._get_time_col(df)
+        # Overwriting column, this is the worst! If we use the column as a covariate, we're screwed. Needs improvement
+        df[_original_time_column(self.time_col)] = df[self.time_col]
+        df[self.time_col] = self._get_time_col_cluster(df)
         return df
 
     def assign_treatment_df(
@@ -202,13 +203,14 @@ class SwitchbackSplitter(ClusteredSplitter):
         """
         df = df.copy()
         df = self._prepare_switchback_df(df)
+        df = super().assign_treatment_df(df)
         df = self.washover.washover(
             df,
             time_col=self.time_col,
             treatment_col=self.treatment_col,
             cluster_cols=self.cluster_cols,
         )
-        return super().assign_treatment_df(df)
+        return df
 
     @classmethod
     def from_config(cls, config) -> "SwitchbackSplitter":

@@ -276,6 +276,15 @@ class PowerAnalysis:
                 f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
             )
 
+            if hasattr(self.splitter, "cluster_cols"):
+                if set(self.analysis.covariates).intersection(
+                    set(self.splitter.cluster_cols)
+                ):
+                    logging.warning(
+                        f"covariates in analysis ({self.analysis.covariates}) are also cluster_cols in splitter ({self.splitter.cluster_cols}). "
+                        f"Be specially careful when using switchback splitters, since the time splitter column is being overriden"
+                    )
+
     def check_clusters(self):
         has_analysis_clusters = hasattr(self.analysis, "cluster_cols")
         has_splitter_clusters = hasattr(self.splitter, "cluster_cols")

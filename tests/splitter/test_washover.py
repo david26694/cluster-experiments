@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 
+from cluster_experiments import SwitchbackSplitter
 from cluster_experiments.washover import ConstantWashover
 
 
@@ -16,7 +17,7 @@ def test_constant_washover_base(minutes, n_rows, washover_base_df):
     )
 
     assert len(out_df) == n_rows
-    assert (out_df["og___time"].dt.minute > minutes).all()
+    assert (out_df["original___time"].dt.minute > minutes).all()
 
 
 @pytest.mark.parametrize(
@@ -45,3 +46,29 @@ def test_constant_washover_no_switch(minutes, n_rows, washover_df_no_switch):
     assert not washover_df_no_switch.query("time >= '2022-01-01 01:00:00'").equals(
         out_df.query("time >= '2022-01-01 01:00:00'")
     )
+
+
+@pytest.mark.parametrize(
+    "minutes, n",
+    [
+        (15, 1000),
+    ],
+)
+def test_constant_washover_split(minutes, n, washover_split_df):
+    washover = ConstantWashover(washover_time_delta=timedelta(minutes=minutes))
+
+    splitter = SwitchbackSplitter(
+        washover=washover,
+        time_col="time",
+        cluster_cols=["city", "time"],
+        treatment_col="treatment",
+        switch_frequency="30T",
+    )
+
+    out_df = splitter.assign_treatment_df(df=washover_split_df)
+
+    # Assert A and B in out_df
+    assert set(out_df["treatment"].unique()) == {"A", "B"}
+
+    # We need to have less than 1000 rows
+    assert len(out_df) < n
