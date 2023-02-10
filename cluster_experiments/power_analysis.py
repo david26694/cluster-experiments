@@ -1,5 +1,5 @@
 import logging
-from typing import Generator, List, Optional
+from typing import Dict, Generator, Iterable, List, Optional
 
 import pandas as pd
 from sklearn.base import BaseEstimator
@@ -191,6 +191,42 @@ class PowerAnalysis:
             n_detected_mde += p_value < alpha
 
         return n_detected_mde / n_simulations
+
+    def power_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effects: Iterable[float] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> Dict[float, float]:
+        """Runs power analysis with multiple average effects
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effects: Average effects to test.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+
+        Returns:
+            Dictionary with average effects as keys and power as values.
+        """
+        return {
+            effect: self.power_analysis(
+                df=df,
+                pre_experiment_df=pre_experiment_df,
+                verbose=verbose,
+                average_effect=effect,
+                n_simulations=n_simulations,
+                alpha=alpha,
+            )
+            for effect in tqdm(
+                list(average_effects), disable=not verbose, desc="Effects loop"
+            )
+        }
 
     def log_nulls(self, df: pd.DataFrame) -> None:
         """Warns about dropping nulls in treatment column"""
