@@ -3,7 +3,7 @@ from datetime import timedelta
 import pytest
 
 from cluster_experiments import SwitchbackSplitter
-from cluster_experiments.washover import ConstantWashover
+from cluster_experiments.washover import ConstantWashover, EmptyWashover
 
 
 @pytest.mark.parametrize("minutes, n_rows", [(30, 2), (10, 4), (15, 3)])
@@ -51,7 +51,7 @@ def test_constant_washover_no_switch(minutes, n_rows, washover_df_no_switch):
 @pytest.mark.parametrize(
     "minutes, n",
     [
-        (15, 1000),
+        (15, 10000),
     ],
 )
 def test_constant_washover_split(minutes, n, washover_split_df):
@@ -70,5 +70,34 @@ def test_constant_washover_split(minutes, n, washover_split_df):
     # Assert A and B in out_df
     assert set(out_df["treatment"].unique()) == {"A", "B"}
 
-    # We need to have less than 1000 rows
+    # We need to have less than 10000 rows
     assert len(out_df) < n
+
+    # We need to have more than 5000 rows (this is because ABB doesn't do washover on the second split)
+    assert len(out_df) > n / 2
+
+
+@pytest.mark.parametrize(
+    "minutes, n",
+    [
+        (15, 1000),
+    ],
+)
+def test_no_washover_split(minutes, n, washover_split_df):
+    washover = EmptyWashover()
+
+    splitter = SwitchbackSplitter(
+        washover=washover,
+        time_col="time",
+        cluster_cols=["city", "time"],
+        treatment_col="treatment",
+        switch_frequency="30T",
+    )
+
+    out_df = splitter.assign_treatment_df(df=washover_split_df)
+
+    # Assert A and B in out_df
+    assert set(out_df["treatment"].unique()) == {"A", "B"}
+
+    # We need to have exactly 1000 rows
+    assert len(out_df) == n
