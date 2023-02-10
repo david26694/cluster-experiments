@@ -150,10 +150,11 @@ class SwitchbackSplitter(ClusteredSplitter):
     ```python
     import pandas as pd
     from cluster_experiments.random_splitter import SwitchbackSplitter
-    splitter = SwitchbackSplitter(time_col="date", switch_frequency="1D")
+    splitter = SwitchbackSplitter(time_col="date", switch_frequency="1D", cluster_cols=["date"])
     df = pd.DataFrame({"date": pd.date_range("2020-01-01", "2020-01-03")})
     df = splitter.assign_treatment_df(df)
     print(df)
+    ```
     """
 
     def __init__(
@@ -425,7 +426,7 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
     ```python
     import pandas as pd
     from cluster_experiments.random_splitter import StratifiedSwitchbackSplitter
-    splitter = StratifiedSwitchbackSplitter(time_col="date",switch_frequency="1D",strata_cols=["country"])
+    splitter = StratifiedSwitchbackSplitter(time_col="date",switch_frequency="1D",strata_cols=["country"], cluster_cols=["country", "date"])
     df = pd.DataFrame({"date": ["2020-01-01", "2020-01-02", "2020-01-03","2020-01-04"], "country":["C1","C2","C2","C1"]})
     df = splitter.assign_treatment_df(df)
     print(df)
