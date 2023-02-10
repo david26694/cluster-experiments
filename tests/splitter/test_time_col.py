@@ -62,7 +62,7 @@ def test_date_col(splitter, df, switchback_freq, n_splits, request):
     date_df = request.getfixturevalue(df)
     splitter = request.getfixturevalue(splitter)
     splitter.switch_frequency = switchback_freq
-    time_col = splitter._get_time_col(date_df)
+    time_col = splitter._get_time_col_cluster(date_df)
     assert time_col.dtype == "datetime64[ns]"
     assert time_col.nunique() == n_splits
 
@@ -85,7 +85,7 @@ def test_date_col(splitter, df, switchback_freq, n_splits, request):
 def test_week_col_date(splitter, date_df, switchback_freq, day_of_week, request):
     splitter = request.getfixturevalue(splitter)
     splitter.switch_frequency = switchback_freq
-    time_col = splitter._get_time_col(date_df)
+    time_col = splitter._get_time_col_cluster(date_df)
     assert time_col.dtype == "datetime64[ns]"
     pd.testing.assert_series_equal(
         time_col, date_df["time"].dt.to_period(switchback_freq).dt.start_time

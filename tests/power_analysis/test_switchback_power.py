@@ -1,7 +1,11 @@
+import datetime
+
 import numpy as np
 import pandas as pd
+import pytest
 
 from cluster_experiments.power_analysis import PowerAnalysis
+from cluster_experiments.washover import ConstantWashover
 
 
 def test_switchback(switchback_power_analysis, df):
@@ -28,6 +32,53 @@ def test_switchback_hour(switchback_power_analysis, df):
         df,
         average_effect=0.0,
         verbose=True,
+    )
+    assert power >= 0
+    assert power <= 1
+
+
+def test_switchback_washover(switchback_power_analysis, df):
+
+    power_no_washover = switchback_power_analysis.power_analysis(
+        df,
+        average_effect=0.1,
+        n_simulations=10,
+    )
+    switchback_power_analysis.splitter.washover = ConstantWashover(
+        washover_time_delta=datetime.timedelta(hours=23)
+    )
+
+    power = switchback_power_analysis.power_analysis(
+        df,
+        average_effect=0.1,
+        n_simulations=10,
+    )
+    assert power >= 0
+    assert power <= 1
+    assert power_no_washover >= power
+
+
+def test_raise_no_delta():
+    with pytest.raises(ValueError):
+        PowerAnalysis.from_dict(
+            {
+                "time_col": "date",
+                "switch_frequency": "1D",
+                "perturbator": "uniform",
+                "analysis": "ols_clustered",
+                "splitter": "switchback_balance",
+                "cluster_cols": ["cluster", "date"],
+                "strata_cols": ["cluster"],
+                "washover": "constant_washover",
+            }
+        )
+
+
+def test_switchback_washover_config(switchback_washover, df):
+    power = switchback_washover.power_analysis(
+        df,
+        average_effect=0.1,
+        n_simulations=10,
     )
     assert power >= 0
     assert power <= 1
