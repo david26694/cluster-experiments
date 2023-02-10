@@ -3,6 +3,7 @@ from mktestdocs import check_docstring, check_md_file, get_codeblock_members
 
 from cluster_experiments import (
     BalancedClusteredSplitter,
+    BalancedSwitchbackSplitter,
     BinaryPerturbator,
     ClusteredOLSAnalysis,
     ClusteredSplitter,
@@ -19,6 +20,8 @@ from cluster_experiments import (
     PowerConfig,
     RandomSplitter,
     StratifiedClusteredSplitter,
+    StratifiedSwitchbackSplitter,
+    SwitchbackSplitter,
     TargetAggregation,
     TTestClusteredAnalysis,
     UniformPerturbator,
@@ -47,6 +50,9 @@ all_objects = [
     _original_time_column,
     ConstantWashover,
     EmptyWashover,
+    BalancedSwitchbackSplitter,
+    StratifiedSwitchbackSplitter,
+    SwitchbackSplitter,
 ]
 
 
