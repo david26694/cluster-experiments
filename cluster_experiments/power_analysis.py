@@ -192,7 +192,7 @@ class PowerAnalysis:
 
         return n_detected_mde / n_simulations
 
-    def power_curve(
+    def power_line(
         self,
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,

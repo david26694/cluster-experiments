@@ -86,7 +86,7 @@ print(f"{power = }")
 
 
 # You may also get the power curve by running the power analysis with different average effects
-power_curve = pw.power_curve(df, average_effects=[0, 0.1, 0.2])
+power_line = pw.power_line(df, average_effects=[0, 0.1, 0.2])
 ```
 
 ### Long example

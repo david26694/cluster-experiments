@@ -164,3 +164,21 @@ def test_length_simulation(df):
     for _ in pw.simulate_pvalue(df, n_simulations=5):
         i += 1
     assert i == 5
+
+
+def test_power_line(df):
+    config = PowerConfig(
+        cluster_cols=["cluster", "date"],
+        analysis="gee",
+        perturbator="uniform",
+        splitter="clustered",
+        n_simulations=10,
+        average_effect=0.0,
+        alpha=0.05,
+    )
+    pw = PowerAnalysis.from_config(config)
+
+    power_line = pw.power_line(df, average_effects=[0.0, 1.0], n_simulations=10)
+    assert len(power_line) == 2
+    assert power_line[0.0] >= 0
+    assert power_line[1.0] >= power_line[0.0]
