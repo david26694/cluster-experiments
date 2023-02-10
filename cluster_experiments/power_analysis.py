@@ -16,6 +16,7 @@ from cluster_experiments.power_config import (
     splitter_mapping,
 )
 from cluster_experiments.random_splitter import RandomSplitter
+from cluster_experiments.utils import _get_mapping_key
 
 
 class PowerAnalysis:
@@ -319,12 +320,3 @@ class PowerAnalysis:
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
-
-
-def _get_mapping_key(mapping, key):
-    try:
-        return mapping[key]
-    except KeyError:
-        raise KeyError(
-            f"Could not find {key = } in mapping. All options are the following: {list(mapping.keys())}"
-        )

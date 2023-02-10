@@ -20,6 +20,10 @@ class Washover(ABC):
     ) -> pd.DataFrame:
         pass
 
+    @classmethod
+    def from_config(cls, config) -> "Washover":
+        return cls()
+
 
 class EmptyWashover(Washover):
     """No washover - assumes no spill-over effects from one treatment to another."""
@@ -142,8 +146,10 @@ class ConstantWashover(Washover):
         return (
             df.merge(df_agg, on=cluster_cols, how="inner")
             .assign(
-                __time_since_switch=lambda x: x[_original_time_column(time_col)]
-                - x[time_col],
+                __time_since_switch=lambda x: x[_original_time_column(time_col)].astype(
+                    "datetime64[ns]"
+                )
+                - x[time_col].astype("datetime64[ns]"),
                 __after_washover=lambda x: x["__time_since_switch"]
                 > self.washover_time_delta,
             )
@@ -151,3 +157,17 @@ class ConstantWashover(Washover):
             .query("__after_washover or not __changed")
             .drop(columns=["__time_since_switch", "__after_washover", "__changed"])
         )
+
+    @classmethod
+    def from_config(cls, config) -> "Washover":
+        if not config.washover_time_delta:
+            raise ValueError(
+                f"Washover time delta must be specified for ConstantWashover, while it is {config.washover_time_delta = }"
+            )
+        return cls(
+            washover_time_delta=config.washover_time_delta,
+        )
+
+
+# This is kept in here because of circular imports, need to rethink this
+washover_mapping = {"": EmptyWashover, "constant_washover": ConstantWashover}

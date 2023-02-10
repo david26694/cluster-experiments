@@ -21,31 +21,34 @@ def test_constant_washover_base(minutes, n_rows, washover_base_df):
 
 
 @pytest.mark.parametrize(
-    "minutes, n_rows",
+    "minutes, n_rows, df",
     [
-        (30, 4),
+        (30, 4, "washover_df_no_switch"),
+        (30, 4 + 4, "washover_df_multi_city"),
     ],
 )
-def test_constant_washover_no_switch(minutes, n_rows, washover_df_no_switch):
+def test_constant_washover_no_switch(minutes, n_rows, df, request):
+
+    washover_df = request.getfixturevalue(df)
 
     out_df = ConstantWashover(washover_time_delta=timedelta(minutes=minutes)).washover(
-        df=washover_df_no_switch,
+        df=washover_df,
         time_col="time",
         cluster_cols=["city", "time"],
         treatment_col="treatment",
     )
     assert len(out_df) == n_rows
-    # Check that, after 2022-01-01 02:00:00, we keep all the rows of the original
-    # dataframe
-    assert washover_df_no_switch.query("time >= '2022-01-01 02:00:00'").equals(
-        out_df.query("time >= '2022-01-01 02:00:00'")
-    )
-
-    # Check that, after 2022-01-01 01:00:00, we don't have the same rows as the
-    # original dataframe
-    assert not washover_df_no_switch.query("time >= '2022-01-01 01:00:00'").equals(
-        out_df.query("time >= '2022-01-01 01:00:00'")
-    )
+    if df == "washover_df_no_switch":
+        # Check that, after 2022-01-01 02:00:00, we keep all the rows of the original
+        # dataframe
+        assert washover_df.query("time >= '2022-01-01 02:00:00'").equals(
+            out_df.query("time >= '2022-01-01 02:00:00'")
+        )
+        # Check that, after 2022-01-01 01:00:00, we don't have the same rows as the
+        # original dataframe
+        assert not washover_df.query("time >= '2022-01-01 01:00:00'").equals(
+            out_df.query("time >= '2022-01-01 01:00:00'")
+        )
 
 
 @pytest.mark.parametrize(

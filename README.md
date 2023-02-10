@@ -151,6 +151,9 @@ The library offers the following classes:
         * `SwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments
         * `BalancedSwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments, balancing treatment and control among all clusters
         * `StratifiedSwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments, balancing the number of clusters in each stratus
+        * Washover for switchback experiments:
+            * `EmptyWashover`: no washover done at all.
+            * `ConstantWashover`: accepts a timedelta parameter and removes the data when we switch from A to B for the timedelta interval.
 * Regarding analysis:
     * `GeeExperimentAnalysis`: to run GEE analysis on the results of a clustered design
     * `TTestClusteredAnalysis`: to run a t-test on aggregated data for clusters

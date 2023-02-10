@@ -181,6 +181,27 @@ def washover_df_no_switch():
 
 
 @pytest.fixture
+def washover_df_multi_city():
+    df = pd.DataFrame(
+        {
+            "original___time": [
+                pd.to_datetime("2022-01-01 00:20:00"),
+                pd.to_datetime("2022-01-01 00:31:00"),
+                pd.to_datetime("2022-01-01 01:14:00"),
+                pd.to_datetime("2022-01-01 01:31:00"),
+                pd.to_datetime("2022-01-01 02:01:00"),
+                pd.to_datetime("2022-01-01 02:31:00"),
+            ]
+            * 2,
+            "treatment": ["A", "A", "B", "B", "B", "B"]
+            + ["A", "A", "A", "A", "B", "B"],
+            "city": ["TGN"] * 6 + ["BCN"] * 6,
+        }
+    ).assign(time=lambda x: x["original___time"].dt.floor("1h", ambiguous="infer"))
+    return df
+
+
+@pytest.fixture
 def washover_split_df(n):
     # Return
     return pd.DataFrame(

@@ -8,3 +8,12 @@ def _original_time_column(time_col: str) -> str:
     ```
     """
     return f"original___{time_col}"
+
+
+def _get_mapping_key(mapping, key):
+    try:
+        return mapping[key]
+    except KeyError:
+        raise KeyError(
+            f"Could not find {key = } in mapping. All options are the following: {list(mapping.keys())}"
+        )

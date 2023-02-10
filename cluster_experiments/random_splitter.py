@@ -5,8 +5,8 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 
-from cluster_experiments.utils import _original_time_column
-from cluster_experiments.washover import EmptyWashover, Washover
+from cluster_experiments.utils import _get_mapping_key, _original_time_column
+from cluster_experiments.washover import EmptyWashover, Washover, washover_mapping
 
 
 class RandomSplitter(ABC):
@@ -214,6 +214,7 @@ class SwitchbackSplitter(ClusteredSplitter):
 
     @classmethod
     def from_config(cls, config) -> "SwitchbackSplitter":
+        washover_cls = _get_mapping_key(washover_mapping, config.washover)
         return cls(
             time_col=config.time_col,
             switch_frequency=config.switch_frequency,
@@ -221,6 +222,7 @@ class SwitchbackSplitter(ClusteredSplitter):
             treatments=config.treatments,
             treatment_col=config.treatment_col,
             splitter_weights=config.splitter_weights,
+            washover=washover_cls.from_config(config),
         )
 
 
@@ -468,6 +470,7 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
     @classmethod
     def from_config(cls, config) -> "StratifiedSwitchbackSplitter":
         """Creates a StratifiedSwitchbackSplitter from a PowerConfig"""
+        washover_cls = _get_mapping_key(washover_mapping, config.washover)
         return cls(
             treatments=config.treatments,
             cluster_cols=config.cluster_cols,
@@ -476,4 +479,5 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
             time_col=config.time_col,
             switch_frequency=config.switch_frequency,
             splitter_weights=config.splitter_weights,
+            washover=washover_cls.from_config(config),
         )
