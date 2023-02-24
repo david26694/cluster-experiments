@@ -188,6 +188,9 @@ class PowerAnalysis:
         Yields point estimates for each iteration of the simulation.
         In general, this is to be used in power_analysis method. However,
         if you're interested in the distribution of point estimates, you can use this method to generate them.
+
+        This is an experimental feature and it might change in the future.
+
         Args:
             df: Dataframe with outcome and treatment variables.
             pre_experiment_df: Dataframe with pre-experiment data.
