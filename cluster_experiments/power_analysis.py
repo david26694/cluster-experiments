@@ -143,10 +143,10 @@ class PowerAnalysis:
                 f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
                 engine="python",
             )
-            treatment_df = self.perturbator.perturbate(
+            perturbed_df = self.perturbator.perturbate(
                 treatment_df, average_effect=average_effect
             )
-            yield treatment_df
+            yield perturbed_df
 
     def simulate_pvalue(
         self,
@@ -167,14 +167,14 @@ class PowerAnalysis:
             average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
             n_simulations: Number of simulations to run.
         """
-        for treatment_df in self._simulate_perturbed_df(
+        for perturbed_df in self._simulate_perturbed_df(
             df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
             average_effect=average_effect,
             n_simulations=n_simulations,
         ):
-            yield self.analysis.get_pvalue(treatment_df)
+            yield self.analysis.get_pvalue(perturbed_df)
 
     def simulate_point_estimate(
         self,
@@ -195,14 +195,14 @@ class PowerAnalysis:
             average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
             n_simulations: Number of simulations to run.
         """
-        for treatment_df in self._simulate_perturbed_df(
+        for perturbed_df in self._simulate_perturbed_df(
             df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
             average_effect=average_effect,
             n_simulations=n_simulations,
         ):
-            yield self.analysis.get_point_estimate(treatment_df)
+            yield self.analysis.get_point_estimate(perturbed_df)
 
     def power_analysis(
         self,
