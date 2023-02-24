@@ -118,25 +118,15 @@ class PowerAnalysis:
 
         self.check_inputs()
 
-    def simulate_pvalue(
+    def _simulate_perturbed_df(
         self,
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
         verbose: bool = False,
         average_effect: Optional[float] = None,
         n_simulations: int = 100,
-    ) -> Generator[float, None, None]:
-        """
-        Yields p-values for each iteration of the simulation.
-        In general, this is to be used in power_analysis method. However,
-        if you're interested in the distribution of p-values, you can use this method to generate them.
-        Args:
-            df: Dataframe with outcome and treatment variables.
-            pre_experiment_df: Dataframe with pre-experiment data.
-            verbose: Whether to show progress bar.
-            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
-            n_simulations: Number of simulations to run.
-        """
+    ) -> Generator[pd.DataFrame, None, None]:
+        """Yields splitted + perturbated dataframe for each iteration of the simulation."""
         df = df.copy()
 
         df = self.cupac_handler.add_covariates(df, pre_experiment_df)
@@ -156,7 +146,63 @@ class PowerAnalysis:
             treatment_df = self.perturbator.perturbate(
                 treatment_df, average_effect=average_effect
             )
+            yield treatment_df
+
+    def simulate_pvalue(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effect: Optional[float] = None,
+        n_simulations: int = 100,
+    ) -> Generator[float, None, None]:
+        """
+        Yields p-values for each iteration of the simulation.
+        In general, this is to be used in power_analysis method. However,
+        if you're interested in the distribution of p-values, you can use this method to generate them.
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
+        """
+        for treatment_df in self._simulate_perturbed_df(
+            df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            average_effect=average_effect,
+            n_simulations=n_simulations,
+        ):
             yield self.analysis.get_pvalue(treatment_df)
+
+    def simulate_point_estimate(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effect: Optional[float] = None,
+        n_simulations: int = 100,
+    ) -> Generator[float, None, None]:
+        """
+        Yields point estimates for each iteration of the simulation.
+        In general, this is to be used in power_analysis method. However,
+        if you're interested in the distribution of point estimates, you can use this method to generate them.
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
+        """
+        for treatment_df in self._simulate_perturbed_df(
+            df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            average_effect=average_effect,
+            n_simulations=n_simulations,
+        ):
+            yield self.analysis.get_point_estimate(treatment_df)
 
     def power_analysis(
         self,
