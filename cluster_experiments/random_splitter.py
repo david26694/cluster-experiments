@@ -47,7 +47,7 @@ class RandomSplitter(ABC):
         Arguments:
             df: dataframe to assign treatments to
         """
-        pass
+        ...
 
     @classmethod
     def from_config(cls, config):
