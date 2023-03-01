@@ -51,7 +51,6 @@ class Perturbator(ABC):
         self, df: pd.DataFrame, average_effect: Optional[float] = None
     ) -> pd.DataFrame:
         """Method to perturbate a dataframe"""
-        ...
 
     @classmethod
     def from_config(cls, config):

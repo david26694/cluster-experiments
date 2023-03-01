@@ -18,7 +18,7 @@ class Washover(ABC):
         treatment_col: str,
         cluster_cols: List[str],
     ) -> pd.DataFrame:
-        ...
+        """Abstract method to add washvover to the dataframe."""
 
     @classmethod
     def from_config(cls, config) -> "Washover":
