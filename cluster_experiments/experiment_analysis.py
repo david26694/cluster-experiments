@@ -63,7 +63,6 @@ class ExperimentAnalysis(ABC):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        pass
 
     def analysis_point_estimate(
         self,
