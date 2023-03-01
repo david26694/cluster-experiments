@@ -63,7 +63,6 @@ class ExperimentAnalysis(ABC):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        pass
 
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
