@@ -121,4 +121,4 @@ def test_point_estimate_raises():
 
     analyser = DummyAnalysis()
     with pytest.raises(NotImplementedError):
-        analyser.get_point_estimate(df=pd.DataFrame())
+        analyser.analysis_point_estimate(df=pd.DataFrame())
