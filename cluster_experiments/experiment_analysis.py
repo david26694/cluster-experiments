@@ -64,6 +64,19 @@ class ExperimentAnalysis(ABC):
             verbose (Optional): bool, prints the regression summary if True
         """
 
+    def analysis_point_estimate(
+        self,
+        df: pd.DataFrame,
+        verbose: bool = False,
+    ) -> float:
+        """
+        Returns the point estimate of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError("Point estimate not implemented for this analysis")
+
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
         if df[self.target_col].isnull().any():
@@ -86,6 +99,17 @@ class ExperimentAnalysis(ABC):
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
         return self.analysis_pvalue(df)
+
+    def get_point_estimate(self, df: pd.DataFrame) -> float:
+        """Returns the point estimate of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_point_estimate(df)
 
     @classmethod
     def from_config(cls, config):
@@ -149,22 +173,35 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         self.fam = sm.families.Gaussian()
         self.va = sm.cov_struct.Exchangeable()
 
-    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
-        """Returns the p-value of the analysis
-        Arguments:
-            df: dataframe containing the data to analyze
-            verbose (Optional): bool, prints the regression summary if True
-        """
-        results_gee = sm.GEE.from_formula(
+    def fit_gee(self, df: pd.DataFrame) -> sm.GEE:
+        """Returns the fitted GEE model"""
+        return sm.GEE.from_formula(
             self.formula,
             data=df,
             groups=self._get_cluster_column(df),
             family=self.fam,
             cov_struct=self.va,
         ).fit()
+
+    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the p-value of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
         if verbose:
             print(results_gee.summary())
         return results_gee.pvalues[self.treatment_col]
+
+    def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the point estimate of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
+        return results_gee.params[self.treatment_col]
 
 
 class ClusteredOLSAnalysis(ExperimentAnalysis):

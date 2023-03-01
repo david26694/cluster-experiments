@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.experiment_analysis import (
+    ExperimentAnalysis,
     GeeExperimentAnalysis,
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
@@ -108,3 +109,16 @@ def test_ttest_random_data():
     analyser = TTestClusteredAnalysis(cluster_cols=["cluster", "date"])
 
     assert analyser.get_pvalue(analysis_df) >= 0
+
+
+def test_point_estimate_raises():
+    class DummyAnalysis(ExperimentAnalysis):
+        def __init__(self):
+            pass
+
+        def analysis_pvalue(self, df):
+            return 0.05
+
+    analyser = DummyAnalysis()
+    with pytest.raises(NotImplementedError):
+        analyser.analysis_point_estimate(df=pd.DataFrame())
