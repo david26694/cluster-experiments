@@ -44,6 +44,7 @@ config = {
 }
 pw = PowerAnalysis.from_dict(config)
 
+# Keep in mind that the average effect is the absolute effect added, this is not relative!
 power = pw.power_analysis(df, average_effect=0.1)
 
 # You may also get the power curve by running the power analysis with different average effects
@@ -85,6 +86,7 @@ config = {
 pw = PowerAnalysis.from_dict(config)
 
 print(df)
+# Keep in mind that the average effect is the absolute effect added, this is not relative!
 power = pw.power_analysis(df, average_effect=0.1)
 print(f"{power = }")
 ```
@@ -133,6 +135,7 @@ pw = PowerAnalysis(
     perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50
 )
 
+# Keep in mind that the average effect is the absolute effect added, this is not relative!
 power = pw.power_analysis(df, average_effect=0.1)
 print(f"{power = }")
 ```
