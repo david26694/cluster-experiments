@@ -7,7 +7,8 @@ import pandas as pd
 
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import UniformPerturbator
-from cluster_experiments.power_analysis_parallel import PowerAnalysis
+from cluster_experiments.power_analysis_parallel import PowerAnalysis as ParallelPowerAnalysis
+from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import ClusteredSplitter
 
 
@@ -58,8 +59,14 @@ print('Non Parallel execution finished')
 non_parallel_duration = non_parallel_end - non_parallel_start
 print(f'{non_parallel_duration=}')
 #%%
+parallel_pw = ParallelPowerAnalysis(
+    perturbator=perturbator,
+    splitter=sw,
+    analysis=analysis,
+    n_simulations=100
+)
 parallel_start = time.time()
-simulated_ps = pw.run_pvalue_simulation(
+simulated_ps = parallel_pw.run_pvalue_simulation(
     df=df,
     n_simulations=100,
     average_effect=-0.01
