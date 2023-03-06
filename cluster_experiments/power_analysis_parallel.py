@@ -121,153 +121,109 @@ class PowerAnalysis:
         )
 
         self.check_inputs()
+    
+    # PARALLEL EXECUTION
 
-
-    def _simulate_perturbed_df(
+    def _get_single_prepared_df(
         self,
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
-        verbose: bool = False,
-        average_effect: Optional[float] = None,
-        n_simulations: int = 100,
-    ) -> Generator[pd.DataFrame, None, None]:
-        """Yields splitted + perturbated dataframe for each iteration of the simulation."""
-        for _ in tqdm(range(n_simulations), disable=not verbose):
-            perturbed_df = self._get_single_perturbed_df(
-                df=df,
-                pre_experiment_df=pre_experiment_df,
-                average_effect=average_effect
-            )
-            yield perturbed_df       
-
-    def simulate_pvalue(
+        average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
+        
+        df = df.copy()
+        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+        treatment_df = self.splitter.assign_treatment_df(df)
+        self.log_nulls(treatment_df)
+        # The second query allows as to do power analysis for multivariate testing
+        # It assumes that we give, to each treatment value, the same number of samples
+        # If this is not the case, several PowerAnalysis should be run with different weights
+        treatment_df = treatment_df.query(
+            f"{self.treatment_col}.notnull()", engine="python"
+        ).query(
+            f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
+            engine="python",
+        )
+        perturbed_df = self.perturbator.perturbate(
+            treatment_df, average_effect=average_effect
+        )
+        return perturbed_df
+    
+    def _get_single_p_value(
         self,
-        df: pd.DataFrame,
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        verbose: bool = False,
-        average_effect: Optional[float] = None,
-        n_simulations: int = 100,
-    ) -> Generator[float, None, None]:
-        """
-        Yields p-values for each iteration of the simulation.
-        In general, this is to be used in power_analysis method. However,
-        if you're interested in the distribution of p-values, you can use this method to generate them.
-        Args:
-            df: Dataframe with outcome and treatment variables.
-            pre_experiment_df: Dataframe with pre-experiment data.
-            verbose: Whether to show progress bar.
-            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
-            n_simulations: Number of simulations to run.
-        """
-        for perturbed_df in self._simulate_perturbed_df(
-            df,
-            pre_experiment_df=pre_experiment_df,
-            verbose=verbose,
-            average_effect=average_effect,
-            n_simulations=n_simulations,
-        ):
-            yield self.analysis.get_pvalue(perturbed_df)
-
-    def simulate_point_estimate(
-        self,
-        df: pd.DataFrame,
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        verbose: bool = False,
-        average_effect: Optional[float] = None,
-        n_simulations: int = 100,
-    ) -> Generator[float, None, None]:
-        """
-        Yields point estimates for each iteration of the simulation.
-        In general, this is to be used in power_analysis method. However,
-        if you're interested in the distribution of point estimates, you can use this method to generate them.
-
-        This is an experimental feature and it might change in the future.
-
-        Args:
-            df: Dataframe with outcome and treatment variables.
-            pre_experiment_df: Dataframe with pre-experiment data.
-            verbose: Whether to show progress bar.
-            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
-            n_simulations: Number of simulations to run.
-        """
-        for perturbed_df in self._simulate_perturbed_df(
-            df,
-            pre_experiment_df=pre_experiment_df,
-            verbose=verbose,
-            average_effect=average_effect,
-            n_simulations=n_simulations,
-        ):
-            yield self.analysis.get_point_estimate(perturbed_df)
-
-    def power_analysis(
-        self,
-        df: pd.DataFrame,
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        verbose: bool = False,
-        average_effect: Optional[float] = None,
-        n_simulations: Optional[int] = None,
-        alpha: Optional[float] = None,
+        prepared_df: pd.DataFrame,
     ) -> float:
-        """
-        Run power analysis by simulation
-        Args:
-            df: Dataframe with outcome and treatment variables.
-            pre_experiment_df: Dataframe with pre-experiment data.
-            verbose: Whether to show progress bar.
-            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
-            n_simulations: Number of simulations to run.
-            alpha: Significance level.
-        """
-        n_simulations = self.n_simulations if n_simulations is None else n_simulations
-        alpha = self.alpha if alpha is None else alpha
-
-        n_detected_mde = 0
-        for p_value in self.simulate_pvalue(
+        return self.analysis.get_pvalue(prepared_df)
+    
+    def _get_single_pvalue_simulation(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        average_effect: Optional[float] = None
+    ) -> float:
+        prepared_df = self._get_single_prepared_df(
             df=df,
             pre_experiment_df=pre_experiment_df,
-            verbose=verbose,
-            average_effect=average_effect,
-            n_simulations=n_simulations,
-        ):
-            n_detected_mde += p_value < alpha
+            average_effect=average_effect
+        )
+        p_value = self._get_single_p_value(
+            prepared_df=prepared_df
+        )
+        return p_value
 
-        return n_detected_mde / n_simulations
+    def _get_iterable_simulator(
+        self,
+    
+        pre_experiment_df:pd.DataFrame,
+        average_effect:float
+    ) -> Callable:
+        iterable_function = partial(
+            self._get_single_pvalue_simulation,
+            pre_experiment_df=pre_experiment_df,
+            average_effect=average_effect
+        )
+        return iterable_function
 
-    def power_line(
+    def _get_data_generator(
+        self,
+        df:pd.DataFrame,
+        n_simulations:int=100
+    ) -> Generator[pd.DataFrame, None, None]:
+        for _ in range(n_simulations): yield df.copy()
+
+    def run_simulation(
+        self,
+        iterable_function:Callable,
+        data_generator:Generator,
+        n_processes:int=5
+    ) -> np.ndarray:
+        with Pool(n_processes) as pool:
+            simulation_results = pool.map(iterable_function, data_generator)
+        return np.array(simulation_results)
+
+    def run_pvalue_simulation(
         self,
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
-        verbose: bool = False,
-        average_effects: Iterable[float] = (),
-        n_simulations: Optional[int] = None,
-        alpha: Optional[float] = None,
-    ) -> Dict[float, float]:
-        """Runs power analysis with multiple average effects
+        average_effect: Optional[float] = None,
+        n_simulations: Optional[int] = 100,
+        n_processes: Optional[int] = 5
+    ) -> np.ndarray:
+        iterable_simulator = self._get_iterable_simulator(
+            pre_experiment_df=pre_experiment_df,
+            average_effect=average_effect
+        )
+        data_generator = self._get_data_generator(
+            df=df,
+            n_simulations=n_simulations
+        )
+        simulation_results = self.run_simulation(
+            iterable_function=iterable_simulator,
+            data_generator=data_generator,
+            n_processes=n_processes
+        )
+        return simulation_results
 
-        Args:
-            df: Dataframe with outcome and treatment variables.
-            pre_experiment_df: Dataframe with pre-experiment data.
-            verbose: Whether to show progress bar.
-            average_effects: Average effects to test.
-            n_simulations: Number of simulations to run.
-            alpha: Significance level.
-
-        Returns:
-            Dictionary with average effects as keys and power as values.
-        """
-        return {
-            effect: self.power_analysis(
-                df=df,
-                pre_experiment_df=pre_experiment_df,
-                verbose=verbose,
-                average_effect=effect,
-                n_simulations=n_simulations,
-                alpha=alpha,
-            )
-            for effect in tqdm(
-                list(average_effects), disable=not verbose, desc="Effects loop"
-            )
-        }
 
     def log_nulls(self, df: pd.DataFrame) -> None:
         """Warns about dropping nulls in treatment column"""
@@ -397,105 +353,3 @@ class PowerAnalysis:
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
-
-    # PARALLEL EXECUTION
-
-    def _get_single_perturbed_df(
-        self,
-        df: pd.DataFrame,
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        average_effect: Optional[float] = None
-    ) -> pd.DataFrame:
-        
-        df = df.copy()
-        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
-        treatment_df = self.splitter.assign_treatment_df(df)
-        self.log_nulls(treatment_df)
-        # The second query allows as to do power analysis for multivariate testing
-        # It assumes that we give, to each treatment value, the same number of samples
-        # If this is not the case, several PowerAnalysis should be run with different weights
-        treatment_df = treatment_df.query(
-            f"{self.treatment_col}.notnull()", engine="python"
-        ).query(
-            f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
-            engine="python",
-        )
-        perturbed_df = self.perturbator.perturbate(
-            treatment_df, average_effect=average_effect
-        )
-        return perturbed_df
-    
-    def _get_single_p_value(
-        self,
-        prepared_df: pd.DataFrame,
-    ) -> float:
-        return self.analysis.get_pvalue(prepared_df)
-    
-    def _get_single_pvalue_simulation(
-        self,
-        df: pd.DataFrame,
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        average_effect: Optional[float] = None
-    ) -> float:
-        prepared_df = self._get_single_perturbed_df(
-            df=df,
-            pre_experiment_df=pre_experiment_df,
-            average_effect=average_effect
-        )
-        p_value = self._get_single_p_value(
-            prepared_df=prepared_df
-        )
-        return p_value
-
-    def _get_iterable_simulator(
-        self,
-    
-        pre_experiment_df:pd.DataFrame,
-        average_effect:float
-    ) -> Callable:
-        iterable_function = partial(
-            self._get_single_pvalue_simulation,
-            pre_experiment_df=pre_experiment_df,
-            average_effect=average_effect
-        )
-        return iterable_function
-
-    def _get_data_generator(
-        self,
-        df:pd.DataFrame,
-        n_simulations:int=100
-    ) -> Generator[pd.DataFrame, None, None]:
-        for _ in range(n_simulations): yield df.copy()
-
-    def run_simulation(
-        self,
-        iterable_function:Callable,
-        data_generator:Generator,
-        n_processes:int=5
-    ) -> np.ndarray:
-        with Pool(n_processes) as pool:
-            simulation_results = pool.map(iterable_function, data_generator)
-        return np.array(simulation_results)
-
-    def run_pvalue_simulation(
-        self,
-        df: pd.DataFrame,
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        average_effect: Optional[float] = None,
-        n_simulations: Optional[int] = 100,
-        n_processes: Optional[int] = 5
-    ) -> np.ndarray:
-        iterable_simulator = self._get_iterable_simulator(
-            pre_experiment_df=pre_experiment_df,
-            average_effect=average_effect
-        )
-        data_generator = self._get_data_generator(
-            df=df,
-            n_simulations=n_simulations
-        )
-        simulation_results = self.run_simulation(
-            iterable_function=iterable_simulator,
-            data_generator=data_generator,
-            n_processes=n_processes
-        )
-        return simulation_results
