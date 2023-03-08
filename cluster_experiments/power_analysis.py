@@ -155,6 +155,7 @@ class PowerAnalysis:
         verbose: bool = False,
         average_effect: Optional[float] = None,
         n_simulations: int = 100,
+        n_processes: int = 0,
     ) -> Generator[float, None, None]:
         """
         Yields p-values for each iteration of the simulation.
@@ -167,6 +168,21 @@ class PowerAnalysis:
             average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
             n_simulations: Number of simulations to run.
         """
+        if n_processes > 0:
+            from pathos.multiprocessing import ProcessPool
+
+            p_value_function = self.analysis.get_pvalue
+            df_generator = self._simulate_perturbed_df(
+                df,
+                pre_experiment_df=pre_experiment_df,
+                verbose=verbose,
+                average_effect=average_effect,
+                n_simulations=n_simulations,
+            )
+            with ProcessPool(n_processes) as pool:
+                simulated_pvalues = pool.imap(p_value_function, df_generator)
+            return simulated_pvalues
+
         for perturbed_df in self._simulate_perturbed_df(
             df,
             pre_experiment_df=pre_experiment_df,
