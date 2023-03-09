@@ -160,6 +160,7 @@ The library offers the following classes:
         * Washover for switchback experiments:
             * `EmptyWashover`: no washover done at all.
             * `ConstantWashover`: accepts a timedelta parameter and removes the data when we switch from A to B for the timedelta interval.
+            * `SimmetricWashover`: accepts a timedelta parameter and removes the data when we switch from A to B for the timedelta interval, and also before the switch.
 * Regarding analysis:
     * `GeeExperimentAnalysis`: to run GEE analysis on the results of a clustered design
     * `TTestClusteredAnalysis`: to run a t-test on aggregated data for clusters

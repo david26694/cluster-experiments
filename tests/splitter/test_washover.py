@@ -3,7 +3,11 @@ from datetime import timedelta
 import pytest
 
 from cluster_experiments import SwitchbackSplitter
-from cluster_experiments.washover import ConstantWashover, EmptyWashover
+from cluster_experiments.washover import (
+    ConstantWashover,
+    EmptyWashover,
+    SimmetricWashover,
+)
 
 
 @pytest.mark.parametrize("minutes, n_rows", [(30, 2), (10, 4), (15, 3)])
@@ -16,6 +20,22 @@ def test_constant_washover_base(minutes, n_rows, washover_base_df):
         treatment_col="treatment",
     )
 
+    assert len(out_df) == n_rows
+    assert (out_df["original___time"].dt.minute > minutes).all()
+
+
+# @pytest.mark.parametrize("minutes, n_rows", [(30, 1), (10, 4), (15, 3)])
+@pytest.mark.parametrize("minutes, n_rows", [(30, 1)])
+def test_simmetric_washover_base(minutes, n_rows, washover_base_df):
+
+    out_df = SimmetricWashover(washover_time_delta=timedelta(minutes=minutes)).washover(
+        df=washover_base_df,
+        time_col="time",
+        cluster_cols=["city", "time"],
+        treatment_col="treatment",
+    )
+
+    print(out_df, minutes, n_rows)
     assert len(out_df) == n_rows
     assert (out_df["original___time"].dt.minute > minutes).all()
 
