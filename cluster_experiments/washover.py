@@ -41,9 +41,10 @@ class EmptyWashover(Washover):
 
         Args:
             df (pd.DataFrame): Input dataframe.
-            time_col (str): Name of the time column.
+            truncated_time_col (str): Name of the truncated time column.
             treatment_col (str): Name of the treatment column.
             cluster_cols (List[str]): List of clusters of experiment.
+            original_time_col (Optional[str], optional): Name of the original time column.
 
         Returns:
             pd.DataFrame: Same dataframe as input.
@@ -100,9 +101,10 @@ class ConstantWashover(Washover):
 
         Args:
             df (pd.DataFrame): Input dataframe.
-            time_col (str): Name of the time column.
+            truncated_time_col (str): Name of the truncated time column.
             treatment_col (str): Name of the treatment column.
             cluster_cols (List[str]): List of clusters of experiment.
+            original_time_col (Optional[str], optional): Name of the original time column.
 
         Returns:
             pd.DataFrame: Same dataframe as input.
