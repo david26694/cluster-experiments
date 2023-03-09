@@ -253,6 +253,9 @@ class SimmetricWashover(Washover):
                     "datetime64[ns]"
                 )
                 - x[time_col].astype("datetime64[ns]"),
+                # TODO: we have to get the next switch time
+                __time_to_next_switch=lambda x: x[time_col].astype("datetime64[ns]")
+                - x[_original_time_column(time_col)].astype("datetime64[ns]"),
                 __before_or_after_washover=lambda x: (
                     x["__time_since_switch"] > self.washover_time_delta
                 )
