@@ -1,6 +1,6 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 
@@ -14,9 +14,10 @@ class Washover(ABC):
     def washover(
         self,
         df: pd.DataFrame,
-        time_col: str,
+        truncated_time_col: str,
         treatment_col: str,
         cluster_cols: List[str],
+        original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
         """Abstract method to add washvover to the dataframe."""
 
@@ -31,9 +32,10 @@ class EmptyWashover(Washover):
     def washover(
         self,
         df: pd.DataFrame,
-        time_col: str,
+        truncated_time_col: str,
         treatment_col: str,
         cluster_cols: List[str],
+        original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
         """No washover - returns the same dataframe as input.
 
@@ -89,9 +91,10 @@ class ConstantWashover(Washover):
     def washover(
         self,
         df: pd.DataFrame,
-        time_col: str,
+        truncated_time_col: str,
         treatment_col: str,
         cluster_cols: List[str],
+        original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
         """No washover - returns the same dataframe as input.
 
@@ -134,8 +137,14 @@ class ConstantWashover(Washover):
         out_df = splitter.assign_treatment_df(df=washover_split_df)
 
         """
+        # Set original time column
+        original_time_col = (
+            original_time_col
+            if original_time_col
+            else _original_time_column(truncated_time_col)
+        )
         # Cluster columns that do not involve time
-        non_time_cols = list(set(cluster_cols) - set([time_col]))
+        non_time_cols = list(set(cluster_cols) - set([truncated_time_col]))
         # For each cluster, we need to check if treatment has changed wrt last time
         df_agg = df.drop_duplicates(subset=cluster_cols + [treatment_col]).copy()
         df_agg["__changed"] = (
@@ -146,10 +155,10 @@ class ConstantWashover(Washover):
         return (
             df.merge(df_agg, on=cluster_cols, how="inner")
             .assign(
-                __time_since_switch=lambda x: x[_original_time_column(time_col)].astype(
+                __time_since_switch=lambda x: x[original_time_col].astype(
                     "datetime64[ns]"
                 )
-                - x[time_col].astype("datetime64[ns]"),
+                - x[truncated_time_col].astype("datetime64[ns]"),
                 __after_washover=lambda x: x["__time_since_switch"]
                 > self.washover_time_delta,
             )
