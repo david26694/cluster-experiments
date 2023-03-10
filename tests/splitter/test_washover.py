@@ -15,9 +15,10 @@ def test_constant_washover_base(minutes, n_rows, washover_base_df):
 
     out_df = ConstantWashover(washover_time_delta=timedelta(minutes=minutes)).washover(
         df=washover_base_df,
-        time_col="time",
+        truncated_time_col="time",
         cluster_cols=["city", "time"],
         treatment_col="treatment",
+        original_time_col="original___time",
     )
 
     assert len(out_df) == n_rows
@@ -53,7 +54,7 @@ def test_constant_washover_no_switch(minutes, n_rows, df, request):
 
     out_df = ConstantWashover(washover_time_delta=timedelta(minutes=minutes)).washover(
         df=washover_df,
-        time_col="time",
+        truncated_time_col="time",
         cluster_cols=["city", "time"],
         treatment_col="treatment",
     )
