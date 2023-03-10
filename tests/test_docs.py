@@ -25,6 +25,7 @@ from cluster_experiments import (
     SwitchbackSplitter,
     TargetAggregation,
     TTestClusteredAnalysis,
+    TwoSidedWashover,
     UniformPerturbator,
 )
 from cluster_experiments.utils import _original_time_column
@@ -50,6 +51,7 @@ all_objects = [
     UniformPerturbator,
     _original_time_column,
     ConstantWashover,
+    TwoSidedWashover,
     SimmetricWashover,
     EmptyWashover,
     BalancedSwitchbackSplitter,

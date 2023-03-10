@@ -180,12 +180,17 @@ class ConstantWashover(Washover):
         )
 
 
-class SimmetricWashover(Washover):
-    """Simmetric washover - we drop all rows before and after the switch within
+class TwoSidedWashover(Washover):
+    """Two sided washover - we drop all rows before and after the switch within
     the time delta when there is a switch where the treatment is different."""
 
-    def __init__(self, washover_time_delta: datetime.timedelta):
-        self.washover_time_delta = washover_time_delta
+    def __init__(
+        self,
+        washover_time_delta_before: datetime.timedelta,
+        washover_time_delta_after: datetime.timedelta,
+    ):
+        self.washover_time_delta_before = washover_time_delta_before
+        self.washover_time_delta_after = washover_time_delta_after
 
     def washover(
         self,
@@ -195,7 +200,7 @@ class SimmetricWashover(Washover):
         cluster_cols: List[str],
         original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
-        """Simmetric washover - removes rows simmetrically around the switch.
+        """Two sided washover - removes rows simmetrically around the switch.
 
         Args:
             df (pd.DataFrame): Input dataframe.
@@ -212,7 +217,7 @@ class SimmetricWashover(Washover):
         from cluster_experiments import SwitchbackSplitter
         from cluster_experiments import ConstantWashover
 
-        washover = SimmetricWashover(washover_time_delta=datetime.timedelta(minutes=30))
+        washover = TwoSidedWashover(washover_time_delta=datetime.timedelta(minutes=30))
 
         n = 10
         df = pd.DataFrame(
@@ -252,7 +257,7 @@ class SimmetricWashover(Washover):
         df_agg["__changed"] = (
             df_agg.groupby(non_time_cols)[treatment_col].shift(1)
             != df_agg[treatment_col]
-        )
+        ) & df_agg.groupby(non_time_cols)[treatment_col].shift(1).notnull()
 
         # We also check if treatment changes for the next time
         df_agg["__changed_next"] = (
@@ -283,10 +288,10 @@ class SimmetricWashover(Washover):
                 ].astype("datetime64[ns]")
                 - x[original_time_col].astype("datetime64[ns]"),
                 __after_washover=lambda x: (
-                    x["__time_since_switch"] > self.washover_time_delta
+                    x["__time_since_switch"] > self.washover_time_delta_after
                 ),
                 __before_washover=lambda x: (
-                    x["__time_to_next_switch"] > self.washover_time_delta
+                    x["__time_to_next_switch"] > self.washover_time_delta_before
                 ),
             )
             # if no change or too late after change, don't drop
@@ -313,13 +318,31 @@ class SimmetricWashover(Washover):
                 f"Washover time delta must be specified for SimetricWashover, while it is {config.washover_time_delta = }"
             )
         return cls(
-            washover_time_delta=config.washover_time_delta,
+            washover_time_delta_before=config.washover_time_delta,
+            washover_time_delta_after=config.washover_time_delta,
         )
+
+
+class SimmetricWashover(TwoSidedWashover):
+    def __init__(self, washover_time_delta: datetime.timedelta):
+        super().__init__(
+            washover_time_delta_before=washover_time_delta,
+            washover_time_delta_after=washover_time_delta,
+        )
+
+    @classmethod
+    def from_config(cls, config) -> "Washover":
+        if not config.washover_time_delta:
+            raise ValueError(
+                f"Washover time delta must be specified for SimetricWashover, while it is {config.washover_time_delta = }"
+            )
+        return cls(washover_time_delta=config.washover_time_delta)
 
 
 # This is kept in here because of circular imports, need to rethink this
 washover_mapping = {
     "": EmptyWashover,
     "constant_washover": ConstantWashover,
+    "two_sided_washover": TwoSidedWashover,
     "simmetric_washover": SimmetricWashover,
 }

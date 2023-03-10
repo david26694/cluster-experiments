@@ -28,6 +28,7 @@ from cluster_experiments.washover import (
     ConstantWashover,
     EmptyWashover,
     SimmetricWashover,
+    TwoSidedWashover,
     Washover,
 )
 
@@ -55,6 +56,7 @@ __all__ = [
     "PairedTTestClusteredAnalysis",
     "EmptyWashover",
     "ConstantWashover",
+    "TwoSidedWashover",
     "SimmetricWashover",
     "Washover",
 ]

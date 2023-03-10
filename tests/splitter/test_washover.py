@@ -7,6 +7,7 @@ from cluster_experiments.washover import (
     ConstantWashover,
     EmptyWashover,
     SimmetricWashover,
+    TwoSidedWashover,
 )
 
 
@@ -25,7 +26,7 @@ def test_constant_washover_base(minutes, n_rows, washover_base_df):
     assert (out_df["original___time"].dt.minute > minutes).all()
 
 
-@pytest.mark.parametrize("minutes, n_rows", [(30, 1), (15, 2), (12, 3), (10, 4)])
+@pytest.mark.parametrize("minutes, n_rows", [(30, 2), (15, 2), (12, 3), (10, 4)])
 def test_simmetric_washover_base(minutes, n_rows, simmetric_washover_base_df):
 
     out_df = SimmetricWashover(washover_time_delta=timedelta(minutes=minutes)).washover(
@@ -35,9 +36,29 @@ def test_simmetric_washover_base(minutes, n_rows, simmetric_washover_base_df):
         treatment_col="treatment",
     )
 
-    print(out_df, minutes, n_rows)
     assert len(out_df) == n_rows
     assert (out_df["original___time"].dt.minute > minutes).all()
+
+
+@pytest.mark.parametrize(
+    "minutes_before, minutes_after, n_rows",
+    [(30, 30, 2), (10, 10, 4), (15, 15, 2), (12, 15, 2)],
+)
+def test_2_sided_washover(
+    minutes_before, minutes_after, n_rows, simmetric_washover_base_df
+):
+
+    out_df = TwoSidedWashover(
+        washover_time_delta_before=timedelta(minutes=minutes_before),
+        washover_time_delta_after=timedelta(minutes=minutes_after),
+    ).washover(
+        df=simmetric_washover_base_df,
+        truncated_time_col="time",
+        cluster_cols=["city", "time"],
+        treatment_col="treatment",
+    )
+
+    assert len(out_df) == n_rows
 
 
 @pytest.mark.parametrize(
