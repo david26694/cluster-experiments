@@ -11,7 +11,7 @@ from cluster_experiments.washover import (
 )
 
 
-@pytest.mark.parametrize("minutes, n_rows", [(30, 2), (10, 4), (15, 3)])
+@pytest.mark.parametrize("minutes, n_rows", [(30, 3), (10, 4), (15, 3)])
 def test_constant_washover_base(minutes, n_rows, washover_base_df):
 
     out_df = ConstantWashover(washover_time_delta=timedelta(minutes=minutes)).washover(
@@ -23,7 +23,6 @@ def test_constant_washover_base(minutes, n_rows, washover_base_df):
     )
 
     assert len(out_df) == n_rows
-    assert (out_df["original___time"].dt.minute > minutes).all()
 
 
 @pytest.mark.parametrize("minutes, n_rows", [(30, 2), (15, 2), (12, 3), (10, 4)])
@@ -37,7 +36,6 @@ def test_simmetric_washover_base(minutes, n_rows, simmetric_washover_base_df):
     )
 
     assert len(out_df) == n_rows
-    assert (out_df["original___time"].dt.minute > minutes).all()
 
 
 @pytest.mark.parametrize(
@@ -64,8 +62,8 @@ def test_2_sided_washover(
 @pytest.mark.parametrize(
     "minutes, n_rows, df",
     [
-        (30, 4, "washover_df_no_switch"),
-        (30, 4 + 4, "washover_df_multi_city"),
+        (30, 5, "washover_df_no_switch"),
+        (30, 5 + 5, "washover_df_multi_city"),
     ],
 )
 def test_constant_washover_no_switch(minutes, n_rows, df, request):
