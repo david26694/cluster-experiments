@@ -25,13 +25,12 @@ def test_constant_washover_base(minutes, n_rows, washover_base_df):
     assert (out_df["original___time"].dt.minute > minutes).all()
 
 
-# @pytest.mark.parametrize("minutes, n_rows", [(30, 1), (10, 4), (15, 3)])
-@pytest.mark.parametrize("minutes, n_rows", [(30, 1)])
-def test_simmetric_washover_base(minutes, n_rows, washover_base_df):
+@pytest.mark.parametrize("minutes, n_rows", [(30, 1), (15, 2), (12, 3), (10, 4)])
+def test_simmetric_washover_base(minutes, n_rows, simmetric_washover_base_df):
 
     out_df = SimmetricWashover(washover_time_delta=timedelta(minutes=minutes)).washover(
-        df=washover_base_df,
-        time_col="time",
+        df=simmetric_washover_base_df,
+        truncated_time_col="time",
         cluster_cols=["city", "time"],
         treatment_col="treatment",
     )

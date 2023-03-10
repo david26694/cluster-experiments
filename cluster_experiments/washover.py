@@ -97,7 +97,7 @@ class ConstantWashover(Washover):
         cluster_cols: List[str],
         original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
-        """No washover - returns the same dataframe as input.
+        """Constant washover - removes rows after the switch.
 
         Args:
             df (pd.DataFrame): Input dataframe.
@@ -190,17 +190,19 @@ class SimmetricWashover(Washover):
     def washover(
         self,
         df: pd.DataFrame,
-        time_col: str,
+        truncated_time_col: str,
         treatment_col: str,
         cluster_cols: List[str],
+        original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
-        """No washover - returns the same dataframe as input.
+        """Simmetric washover - removes rows simmetrically around the switch.
 
         Args:
             df (pd.DataFrame): Input dataframe.
-            time_col (str): Name of the time column.
+            truncated_time_col (str): Name of the truncated time column.
             treatment_col (str): Name of the treatment column.
             cluster_cols (List[str]): List of clusters of experiment.
+            original_time_col (Optional[str], optional): Name of the original time column.
 
         Returns:
             pd.DataFrame: Same dataframe as input.
@@ -235,50 +237,71 @@ class SimmetricWashover(Washover):
         out_df = splitter.assign_treatment_df(df=washover_split_df)
 
         """
+        # Set original time column
+        original_time_col = (
+            original_time_col
+            if original_time_col
+            else _original_time_column(truncated_time_col)
+        )
+
         # Cluster columns that do not involve time
-        non_time_cols = list(set(cluster_cols) - set([time_col]))
+        non_time_cols = list(set(cluster_cols) - set([truncated_time_col]))
+
         # For each cluster, we need to check if treatment has changed wrt last time
         df_agg = df.drop_duplicates(subset=cluster_cols + [treatment_col]).copy()
         df_agg["__changed"] = (
             df_agg.groupby(non_time_cols)[treatment_col].shift(1)
             != df_agg[treatment_col]
         )
-        df_agg = df_agg.loc[:, cluster_cols + ["__changed"]]
 
-        print(
-            df.merge(df_agg, on=cluster_cols, how="inner").assign(
-                __time_since_switch=lambda x: x[_original_time_column(time_col)].astype(
-                    "datetime64[ns]"
-                )
-                - x[time_col].astype("datetime64[ns]"),
-                __before_or_after_washover=lambda x: (
-                    x["__time_since_switch"] > self.washover_time_delta
-                )
-                | (x["__time_since_switch"] < -self.washover_time_delta),
-            )
-        )
+        # We also check if treatment changes for the next time
+        df_agg["__changed_next"] = (
+            df_agg.groupby(non_time_cols)[treatment_col].shift(-1)
+            != df_agg[treatment_col]
+        ) & df_agg.groupby(non_time_cols)[treatment_col].shift(-1).notnull()
+
+        # Calculate switch start of the next time
+        df_agg[f"__next_{truncated_time_col}"] = df_agg.groupby(non_time_cols)[
+            truncated_time_col
+        ].shift(-1)
+
+        # Clean switch df
+        df_agg = df_agg.loc[
+            :,
+            cluster_cols
+            + ["__changed", "__changed_next", f"__next_{truncated_time_col}"],
+        ]
         return (
             df.merge(df_agg, on=cluster_cols, how="inner")
             .assign(
-                __time_since_switch=lambda x: x[_original_time_column(time_col)].astype(
+                __time_since_switch=lambda x: x[original_time_col].astype(
                     "datetime64[ns]"
                 )
-                - x[time_col].astype("datetime64[ns]"),
-                # TODO: we have to get the next switch time
-                __time_to_next_switch=lambda x: x[time_col].astype("datetime64[ns]")
-                - x[_original_time_column(time_col)].astype("datetime64[ns]"),
-                __before_or_after_washover=lambda x: (
+                - x[truncated_time_col].astype("datetime64[ns]"),
+                __time_to_next_switch=lambda x: x[
+                    f"__next_{truncated_time_col}"
+                ].astype("datetime64[ns]")
+                - x[original_time_col].astype("datetime64[ns]"),
+                __after_washover=lambda x: (
                     x["__time_since_switch"] > self.washover_time_delta
-                )
-                | (x["__time_since_switch"] < -self.washover_time_delta),
+                ),
+                __before_washover=lambda x: (
+                    x["__time_to_next_switch"] > self.washover_time_delta
+                ),
             )
-            # add not changed in query
-            .query("__before_or_after_washover or not __changed")
+            # if no change or too late after change, don't drop
+            .query("__after_washover or not __changed")
+            # if no change to next switch or too early before change, don't drop
+            .query("__before_washover or not __changed_next")
             .drop(
                 columns=[
                     "__time_since_switch",
-                    "__before_or_after_washover",
+                    "__time_to_next_switch",
+                    "__after_washover",
+                    "__before_washover",
                     "__changed",
+                    "__changed_next",
+                    f"__next_{truncated_time_col}",
                 ]
             )
         )
@@ -295,4 +318,8 @@ class SimmetricWashover(Washover):
 
 
 # This is kept in here because of circular imports, need to rethink this
-washover_mapping = {"": EmptyWashover, "constant_washover": ConstantWashover}
+washover_mapping = {
+    "": EmptyWashover,
+    "constant_washover": ConstantWashover,
+    "simmetric_washover": SimmetricWashover,
+}
