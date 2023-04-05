@@ -84,7 +84,7 @@ class EmptyWashover(Washover):
 
 class TwoSidedWashover(Washover):
     """Two sided washover - we drop all rows before and after the switch within
-    the time delta when there is a switch where the treatment is different."""
+    the time deltas when there is a switch where the treatment is different."""
 
     def __init__(
         self,
@@ -102,7 +102,7 @@ class TwoSidedWashover(Washover):
         cluster_cols: List[str],
         original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
-        """Two sided washover - removes rows simmetrically around the switch.
+        """Two sided washover - removes rows around the switch.
 
         Args:
             df (pd.DataFrame): Input dataframe.
@@ -215,9 +215,12 @@ class TwoSidedWashover(Washover):
 
     @classmethod
     def from_config(cls, config) -> "Washover":
-        if not config.washover_time_delta:
+        if (
+            not config.washover_time_delta_before
+            or not config.washover_time_delta_after
+        ):
             raise ValueError(
-                f"Washover time delta must be specified for SimetricWashover, while it is {config.washover_time_delta = }"
+                f"Washover time deltas must be specified for , while it is {config.washover_time_delta_before = } and {config.washover_time_delta_after = }"
             )
         return cls(
             washover_time_delta_before=config.washover_time_delta,
@@ -226,8 +229,8 @@ class TwoSidedWashover(Washover):
 
 
 class ConstantWashover(TwoSidedWashover):
-    """Constant washover - we drop all rows in the washover period when
-    there is a switch where the treatment is different."""
+    """Constant washover - we drop all rows in the washover period after
+    the switch when the treatment is different."""
 
     def __init__(self, washover_time_delta: datetime.timedelta):
         super().__init__(datetime.timedelta(seconds=0), washover_time_delta)
@@ -242,6 +245,9 @@ class ConstantWashover(TwoSidedWashover):
 
 
 class SimmetricWashover(TwoSidedWashover):
+    """Simmetric washover - we drop all rows in the washover period before
+    and after the switch when the treatment is different."""
+
     def __init__(self, washover_time_delta: datetime.timedelta):
         super().__init__(
             washover_time_delta_before=washover_time_delta,
