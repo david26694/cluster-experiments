@@ -230,7 +230,9 @@ class PowerAnalysis:
         else:
             raise ValueError("n_jobs must be greater than 0, or -1.")
 
-    def _split_and_perturbate(self, df: pd.DataFrame, average_effect: Optional[float]):
+    def _split_and_perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
         """
         Split and perturbate dataframe.
         Args:
@@ -262,7 +264,7 @@ class PowerAnalysis:
         n_simulations: int,
         alpha: float,
         verbose: bool,
-    ):
+    ) -> float:
         """
         Run power analysis by simulation in serial
         Args:
@@ -286,7 +288,7 @@ class PowerAnalysis:
         alpha: float,
         verbose: bool,
         n_jobs: int,
-    ):
+    ) -> float:
         """
         Run power analysis by simulation in parallel
         Args:
