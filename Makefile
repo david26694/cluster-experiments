@@ -64,3 +64,10 @@ pypi: clean
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
 	twine upload dist/*
+
+# Report log
+report-log:
+	pytest --report-log experiments/reportlog.jsonl
+
+duration-insights:
+	pytest-duration-insights explore experiments/reportlog.jsonl

@@ -18,6 +18,8 @@ only_test_packages = [
     "pytest-sugar>=0.9.4",
     "pytest-slow-last>=0.1.3",
     "coverage",
+    "pytest-reportlog",
+    "pytest-duration-insights",
 ]
 test_packages = only_test_packages + base_packages
 

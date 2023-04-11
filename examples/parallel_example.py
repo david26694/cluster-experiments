@@ -5,12 +5,10 @@ from datetime import date
 import numpy as np
 import pandas as pd
 
-from cluster_experiments.experiment_analysis import OLSAnalysis
+from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import UniformPerturbator
-
-# from cluster_experiments.power_analysis_parallel import PowerAnalysis as ParallelPowerAnalysis
 from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.random_splitter import NonClusteredSplitter
+from cluster_experiments.random_splitter import ClusteredSplitter
 
 
 def generate_random_data(clusters, dates, N):
@@ -29,39 +27,57 @@ def generate_random_data(clusters, dates, N):
 
 
 # %%
-clusters = [f"Cluster {i}" for i in range(100)]
+clusters = [f"Cluster {i}" for i in range(1000)]
 dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
-N = 1000
+N = 1_000_000
 df = generate_random_data(clusters, dates, N)
-sw = NonClusteredSplitter()
+sw = ClusteredSplitter(
+    cluster_cols=["cluster", "date"],
+)
 
 perturbator = UniformPerturbator(
     average_effect=0.1,
 )
 
-analysis = OLSAnalysis()
-
-pw = PowerAnalysis(
-    perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50
+analysis = GeeExperimentAnalysis(
+    cluster_cols=["cluster", "date"],
 )
+
+pw = PowerAnalysis(perturbator=perturbator, splitter=sw, analysis=analysis)
 
 print(df)
 # %%
-parallel_start = time.time()
-parallel_sim = pw.simulate_pvalue(
-    df=df, n_simulations=100, average_effect=-0.01, n_processes=10
-)
-parallel_end = time.time()
-print("Parallel execution finished")
-parallel_duration = parallel_end - parallel_start
-print(f"{parallel_duration=}")
 
-# %%
-non_parallel_start = time.time()
-simple_sim = list(pw.simulate_pvalue(df=df, n_simulations=100, average_effect=-0.01))
-non_parallel_end = time.time()
-print("Non Parallel execution finished")
-non_parallel_duration = non_parallel_end - non_parallel_start
-print(f"{non_parallel_duration=}")
+if __name__ == "__main__":
 
-# %%
+    n_simulations = 16
+    n_jobs = 8
+    # parallel_start = time.time()
+    # parallel_sim = pw.power_analysis_parallel(
+    #     df=df, n_simulations=n_simulations, average_effect=-0.01, n_jobs=16
+    # )
+    # parallel_end = time.time()
+    # print("Parallel execution finished")
+    # parallel_duration = parallel_end - parallel_start
+    # print(f"{parallel_duration=}")
+
+    non_parallel_start = time.time()
+    simple_sim = pw.power_analysis(
+        df=df, n_simulations=n_simulations, average_effect=-0.01
+    )
+    non_parallel_end = time.time()
+    print("Non Parallel execution finished")
+    non_parallel_duration = non_parallel_end - non_parallel_start
+    print(f"{non_parallel_duration=}")
+
+    parallel_start = time.time()
+    parallel_sim = pw.power_analysis(
+        df=df,
+        n_simulations=n_simulations,
+        average_effect=-0.01,
+        n_jobs=n_jobs,
+    )
+    parallel_end = time.time()
+    print("Parallel mp execution finished")
+    parallel_duration = parallel_end - parallel_start
+    print(f"{parallel_duration=}")
