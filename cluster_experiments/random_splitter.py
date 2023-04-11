@@ -206,7 +206,7 @@ class SwitchbackSplitter(ClusteredSplitter):
         df = super().assign_treatment_df(df)
         df = self.washover.washover(
             df,
-            time_col=self.time_col,
+            truncated_time_col=self.time_col,
             treatment_col=self.treatment_col,
             cluster_cols=self.cluster_cols,
         )
@@ -463,7 +463,7 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
         return self.washover.washover(
             df=df,
             treatment_col=self.treatment_col,
-            time_col=self.time_col,
+            truncated_time_col=self.time_col,
             cluster_cols=self.cluster_cols,
         )
 
