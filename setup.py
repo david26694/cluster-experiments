@@ -18,6 +18,8 @@ only_test_packages = [
     "pytest-sugar>=0.9.4",
     "pytest-slow-last>=0.1.3",
     "coverage",
+    "pytest-reportlog",
+    "pytest-duration-insights",
 ]
 test_packages = only_test_packages + base_packages
 
@@ -40,7 +42,7 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.6.0",
+    version="0.6.1",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,
