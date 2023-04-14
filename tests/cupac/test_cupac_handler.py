@@ -81,10 +81,18 @@ def test_add_covariates(cupac_handler, df_feats, request):
 
 
 def test_no_target(missing_cupac, df_feats):
-    df = missing_cupac.add_covariates(df_feats, df_feats.head(10))
+    """Checks that no target is added when the there is no cupac model"""
+    df = missing_cupac.add_covariates(df_feats)
     assert "estimate_target" not in df.columns
 
 
 def test_no_pre_experiment(cupac_handler_base, df_feats):
-    with pytest.raises(ValueError):
+    """Checks that if there is a cupac model, pre_experiment_df should be provided"""
+    with pytest.raises(ValueError, match="pre_experiment_df should be provided"):
         cupac_handler_base.add_covariates(df_feats)
+
+
+def test_no_cupac(missing_cupac, df_feats):
+    """Checks that if there is no cupac model, pre_experiment_df should not be provided"""
+    with pytest.raises(ValueError, match="remove pre_experiment_df argument"):
+        missing_cupac.add_covariates(df_feats, df_feats.head(10))
