@@ -18,4 +18,4 @@ repos:
   rev: 'v0.0.261'
   hooks:
     - id: ruff
-      args: ["--fix", "--select I001"]
+      args: ["--fix"]
