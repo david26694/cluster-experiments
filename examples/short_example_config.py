@@ -2,6 +2,7 @@ from datetime import date
 
 import numpy as np
 import pandas as pd
+
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.power_config import PowerConfig
 

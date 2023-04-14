@@ -2,11 +2,12 @@ from datetime import date
 
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import HistGradientBoostingRegressor
+
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import UniformPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import ClusteredSplitter
-from sklearn.ensemble import HistGradientBoostingRegressor
 
 
 def generate_random_data(clusters, dates, N):
