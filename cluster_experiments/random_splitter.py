@@ -1,3 +1,4 @@
+import datetime
 import random
 from abc import ABC, abstractmethod
 from typing import List, Optional
@@ -210,6 +211,35 @@ class SwitchbackSplitter(ClusteredSplitter):
             treatment_col=self.treatment_col,
             cluster_cols=self.cluster_cols,
         )
+        return df
+
+    def create_switchback_calendar(
+        self,
+        start_time: datetime.datetime,
+        length: datetime.timedelta,
+        df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """
+        Creates a calendar starting at start_time and ending at start_time + length
+        """
+        df = df.copy()
+        df_switches = pd.DataFrame(
+            {
+                self.time_col: pd.date_range(
+                    start=start_time,
+                    end=start_time + length,
+                    freq=self.switch_frequency,
+                ),
+                "__key": 0,
+            }
+        )
+        df["__key"] = 0
+        df = df.merge(df_switches, on="__key", how="left").drop(columns="__key")
+        # No washover in calendar creation
+        washover = self.washover
+        self.washover = EmptyWashover()
+        df = self.assign_treatment_df(df)
+        self.washover = washover
         return df
 
     @classmethod
