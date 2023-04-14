@@ -12,7 +12,7 @@ test:
 coverage_xml:
 	coverage xml
 
-check: black flake test coverage_xml
+check: black ruff test coverage_xml
 
 install:
 	python -m pip install -e .

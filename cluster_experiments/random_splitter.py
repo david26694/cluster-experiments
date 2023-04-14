@@ -14,7 +14,8 @@ class RandomSplitter(ABC):
     Abstract class to split instances in a switchback or clustered way. It can be used to create a calendar/split of clusters
     or to run a power analysis.
 
-    In order to create your own RandomSplitter, you should write your own assign_treatment_df method, that takes a dataframe as an input and returns the same dataframe with the treatment_col column.
+    In order to create your own RandomSplitter, you should write your own assign_treatment_df method,
+    that takes a dataframe as an input and returns the same dataframe with the treatment_col column.
 
     Arguments:
         cluster_cols: List of columns to use as clusters
@@ -139,7 +140,8 @@ class SwitchbackSplitter(ClusteredSplitter):
 
     Arguments:
         time_col: Name of the column with the time variable.
-        switch_frequency: Frequency to switch treatments. Uses pandas frequency aliases: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+        switch_frequency: Frequency to switch treatments. Uses pandas frequency aliases
+            (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
         cluster_cols: List of columns to use as clusters
         treatments: list of treatments
         treatment_col: Name of the column with the treatment variable.
