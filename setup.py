@@ -20,6 +20,8 @@ only_test_packages = [
     "coverage",
     "pytest-reportlog",
     "pytest-duration-insights",
+    "pytest-clarity",
+    "pytest-xdist",
 ]
 test_packages = only_test_packages + base_packages
 
