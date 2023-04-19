@@ -139,7 +139,7 @@ class SwitchbackSplitter(ClusteredSplitter):
 
     Arguments:
         time_col: Name of the column with the time variable.
-        switch_frequency: Frequency to switch treatments. Uses pandas frequency aliases: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+        switch_frequency: Frequency to switch treatments. Uses pandas frequency aliases (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
         cluster_cols: List of columns to use as clusters
         treatments: list of treatments
         treatment_col: Name of the column with the treatment variable.

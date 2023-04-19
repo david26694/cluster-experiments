@@ -3,8 +3,8 @@
 black:
 	black cluster_experiments tests setup.py --check
 
-flake:
-	flake8 cluster_experiments tests setup.py
+ruff:
+	ruff cluster_experiments tests setup.py
 
 test:
 	pytest --cov=./cluster_experiments
@@ -12,7 +12,7 @@ test:
 coverage_xml:
 	coverage xml
 
-check: black flake test coverage_xml
+check: black ruff test coverage_xml
 
 install:
 	python -m pip install -e .
