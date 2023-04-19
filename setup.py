@@ -12,12 +12,16 @@ base_packages = [
 only_test_packages = [
     "pytest>=5.4.3",
     "black==22.12.0",
-    "flake8>=3.8.3",
+    "ruff==0.0.261",
     "mktestdocs>=0.2.0",
     "pytest-cov>=2.10.1",
     "pytest-sugar>=0.9.4",
     "pytest-slow-last>=0.1.3",
     "coverage",
+    "pytest-reportlog",
+    "pytest-duration-insights",
+    "pytest-clarity",
+    "pytest-xdist",
 ]
 test_packages = only_test_packages + base_packages
 
@@ -40,7 +44,7 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.6.0",
+    version="0.6.2",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,

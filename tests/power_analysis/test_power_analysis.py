@@ -51,10 +51,9 @@ def test_power_analysis_config_avg_effect(df):
 
 def test_power_analysis_dict(df):
     config = dict(
-        cluster_cols=["cluster", "date"],
-        analysis="gee",
+        analysis="ols_non_clustered",
         perturbator="uniform",
-        splitter="clustered",
+        splitter="non_clustered",
         n_simulations=4,
     )
     pw = PowerAnalysis.from_dict(config)
@@ -77,7 +76,7 @@ def test_different_names(df):
     )
     config = dict(
         cluster_cols=["cluster_0", "date_0"],
-        analysis="gee",
+        analysis="ols_clustered",
         perturbator="uniform",
         splitter="clustered",
         n_simulations=4,
@@ -134,10 +133,9 @@ def test_paired_ttest(df):
 
 def test_power_alpha(df):
     config = PowerConfig(
-        cluster_cols=["cluster", "date"],
-        analysis="gee",
+        analysis="ols_non_clustered",
         perturbator="uniform",
-        splitter="clustered",
+        splitter="non_clustered",
         n_simulations=10,
         average_effect=0.0,
         alpha=0.05,
@@ -152,7 +150,7 @@ def test_power_alpha(df):
 def test_length_simulation(df):
     config = PowerConfig(
         cluster_cols=["cluster", "date"],
-        analysis="gee",
+        analysis="ols_clustered",
         perturbator="uniform",
         splitter="clustered",
         n_simulations=10,
@@ -183,10 +181,9 @@ def test_point_estimates(df):
 
 def test_power_line(df):
     config = PowerConfig(
-        cluster_cols=["cluster", "date"],
-        analysis="gee",
+        analysis="ols_non_clustered",
         perturbator="uniform",
-        splitter="clustered",
+        splitter="non_clustered",
         n_simulations=10,
         average_effect=0.0,
         alpha=0.05,

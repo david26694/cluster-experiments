@@ -1,8 +1,8 @@
 from typing import Tuple
 
 import pandas as pd
-from cluster_experiments.cupac import TargetAggregation
 
+from cluster_experiments.cupac import TargetAggregation
 from tests.examples import binary_df
 
 

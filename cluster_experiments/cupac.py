@@ -188,3 +188,9 @@ class CupacHandler:
     def check_cupac_inputs(self, pre_experiment_df: Optional[pd.DataFrame] = None):
         if self.is_cupac and pre_experiment_df is None:
             raise ValueError("If cupac is used, pre_experiment_df should be provided.")
+
+        if not self.is_cupac and pre_experiment_df is not None:
+            raise ValueError(
+                "If cupac is not used, pre_experiment_df should not be provided - "
+                "remove pre_experiment_df argument or set cupac_model to not None."
+            )
