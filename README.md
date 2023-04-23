@@ -44,7 +44,12 @@ config = {
 }
 pw = PowerAnalysis.from_dict(config)
 
+# Keep in mind that the average effect is the absolute effect added, this is not relative!
 power = pw.power_analysis(df, average_effect=0.1)
+
+# You may also get the power curve by running the power analysis with different average effects
+power_line = pw.power_line(df, average_effects=[0, 0.1, 0.2])
+
 ```
 
 ### Switchback
@@ -81,9 +86,9 @@ config = {
 pw = PowerAnalysis.from_dict(config)
 
 print(df)
+# Keep in mind that the average effect is the absolute effect added, this is not relative!
 power = pw.power_analysis(df, average_effect=0.1)
 print(f"{power = }")
-
 ```
 
 ### Long example
@@ -130,6 +135,7 @@ pw = PowerAnalysis(
     perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50
 )
 
+# Keep in mind that the average effect is the absolute effect added, this is not relative!
 power = pw.power_analysis(df, average_effect=0.1)
 print(f"{power = }")
 ```
@@ -151,9 +157,13 @@ The library offers the following classes:
         * `SwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments
         * `BalancedSwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments, balancing treatment and control among all clusters
         * `StratifiedSwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments, balancing the number of clusters in each stratus
+        * Washover for switchback experiments:
+            * `EmptyWashover`: no washover done at all.
+            * `ConstantWashover`: accepts a timedelta parameter and removes the data when we switch from A to B for the timedelta interval.
 * Regarding analysis:
     * `GeeExperimentAnalysis`: to run GEE analysis on the results of a clustered design
     * `TTestClusteredAnalysis`: to run a t-test on aggregated data for clusters
+    * `PairedTTestClusteredAnalysis`: to run a paired t-test on aggregated data for clusters
     * `ClusteredOLSAnalysis`: to run OLS analysis on the results of a clustered design
     * `OLSAnalysis`: to run OLS analysis for non-clustered data
     * `TargetAggregation`: to add pre-experimental data of the outcome to reduce variance

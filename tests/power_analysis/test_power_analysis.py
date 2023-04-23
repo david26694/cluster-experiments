@@ -51,10 +51,9 @@ def test_power_analysis_config_avg_effect(df):
 
 def test_power_analysis_dict(df):
     config = dict(
-        cluster_cols=["cluster", "date"],
-        analysis="gee",
+        analysis="ols_non_clustered",
         perturbator="uniform",
-        splitter="clustered",
+        splitter="non_clustered",
         n_simulations=4,
     )
     pw = PowerAnalysis.from_dict(config)
@@ -77,7 +76,7 @@ def test_different_names(df):
     )
     config = dict(
         cluster_cols=["cluster_0", "date_0"],
-        analysis="gee",
+        analysis="ols_clustered",
         perturbator="uniform",
         splitter="clustered",
         n_simulations=4,
@@ -115,13 +114,14 @@ def test_ttest(df):
 def test_paired_ttest(df):
     config = dict(
         cluster_cols=["cluster", "date"],
-        comparison_col="cluster",
+        strata_cols=["cluster"],
         analysis="paired_ttest_clustered",
         perturbator="uniform",
         splitter="clustered",
         n_simulations=4,
     )
     pw = PowerAnalysis.from_dict(config)
+
     power = pw.power_analysis(df, average_effect=0.0)
     assert power >= 0
     assert power <= 1
@@ -133,16 +133,15 @@ def test_paired_ttest(df):
 
 def test_power_alpha(df):
     config = PowerConfig(
-        cluster_cols=["cluster", "date"],
-        analysis="gee",
+        analysis="ols_non_clustered",
         perturbator="uniform",
-        splitter="clustered",
+        splitter="non_clustered",
         n_simulations=10,
         average_effect=0.0,
         alpha=0.05,
     )
     pw = PowerAnalysis.from_config(config)
-    power_50 = pw.power_analysis(df, alpha=0.5)
+    power_50 = pw.power_analysis(df, alpha=0.5, verbose=True)
     power_01 = pw.power_analysis(df, alpha=0.01)
 
     assert power_50 > power_01
@@ -151,7 +150,7 @@ def test_power_alpha(df):
 def test_length_simulation(df):
     config = PowerConfig(
         cluster_cols=["cluster", "date"],
-        analysis="gee",
+        analysis="ols_clustered",
         perturbator="uniform",
         splitter="clustered",
         n_simulations=10,
@@ -163,3 +162,35 @@ def test_length_simulation(df):
     for _ in pw.simulate_pvalue(df, n_simulations=5):
         i += 1
     assert i == 5
+
+
+def test_point_estimates(df):
+    config = PowerConfig(
+        cluster_cols=["cluster", "date"],
+        analysis="gee",
+        perturbator="uniform",
+        splitter="clustered",
+        n_simulations=10,
+        average_effect=5.0,
+        alpha=0.05,
+    )
+    pw = PowerAnalysis.from_config(config)
+    for point_estimate in pw.simulate_point_estimate(df, n_simulations=5):
+        assert point_estimate > 0.0
+
+
+def test_power_line(df):
+    config = PowerConfig(
+        analysis="ols_non_clustered",
+        perturbator="uniform",
+        splitter="non_clustered",
+        n_simulations=10,
+        average_effect=0.0,
+        alpha=0.05,
+    )
+    pw = PowerAnalysis.from_config(config)
+
+    power_line = pw.power_line(df, average_effects=[0.0, 1.0], n_simulations=10)
+    assert len(power_line) == 2
+    assert power_line[0.0] >= 0
+    assert power_line[1.0] >= power_line[0.0]

@@ -5,6 +5,9 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 
+from cluster_experiments.utils import _get_mapping_key, _original_time_column
+from cluster_experiments.washover import EmptyWashover, Washover, washover_mapping
+
 
 class RandomSplitter(ABC):
     """
@@ -44,7 +47,6 @@ class RandomSplitter(ABC):
         Arguments:
             df: dataframe to assign treatments to
         """
-        pass
 
     @classmethod
     def from_config(cls, config):
@@ -137,7 +139,7 @@ class SwitchbackSplitter(ClusteredSplitter):
 
     Arguments:
         time_col: Name of the column with the time variable.
-        switch_frequency: Frequency to switch treatments. Uses pandas frequency aliases: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+        switch_frequency: Frequency to switch treatments. Uses pandas frequency aliases (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
         cluster_cols: List of columns to use as clusters
         treatments: list of treatments
         treatment_col: Name of the column with the treatment variable.
@@ -147,10 +149,11 @@ class SwitchbackSplitter(ClusteredSplitter):
     ```python
     import pandas as pd
     from cluster_experiments.random_splitter import SwitchbackSplitter
-    splitter = SwitchbackSplitter(time_col="date", switch_frequency="1D")
+    splitter = SwitchbackSplitter(time_col="date", switch_frequency="1D", cluster_cols=["date"])
     df = pd.DataFrame({"date": pd.date_range("2020-01-01", "2020-01-03")})
     df = splitter.assign_treatment_df(df)
     print(df)
+    ```
     """
 
     def __init__(
@@ -161,6 +164,7 @@ class SwitchbackSplitter(ClusteredSplitter):
         treatments: Optional[List[str]] = None,
         treatment_col: str = "treatment",
         splitter_weights: Optional[List[float]] = None,
+        washover: Optional[Washover] = None,
     ) -> None:
         self.time_col = time_col or "date"
         self.switch_frequency = switch_frequency or "1D"
@@ -168,8 +172,9 @@ class SwitchbackSplitter(ClusteredSplitter):
         self.treatments = treatments or ["A", "B"]
         self.treatment_col = treatment_col
         self.splitter_weights = splitter_weights
+        self.washover = washover or EmptyWashover()
 
-    def _get_time_col(self, df: pd.DataFrame) -> pd.Series:
+    def _get_time_col_cluster(self, df: pd.DataFrame) -> pd.Series:
         df = df.copy()
         df[self.time_col] = pd.to_datetime(df[self.time_col])
         # Given the switch frequency, truncate the time column to the switch frequency
@@ -181,7 +186,9 @@ class SwitchbackSplitter(ClusteredSplitter):
     def _prepare_switchback_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         # Build time_col switchback column
-        df[self.time_col] = self._get_time_col(df)
+        # Overwriting column, this is the worst! If we use the column as a covariate, we're screwed. Needs improvement
+        df[_original_time_column(self.time_col)] = df[self.time_col]
+        df[self.time_col] = self._get_time_col_cluster(df)
         return df
 
     def assign_treatment_df(
@@ -196,10 +203,18 @@ class SwitchbackSplitter(ClusteredSplitter):
         """
         df = df.copy()
         df = self._prepare_switchback_df(df)
-        return super().assign_treatment_df(df)
+        df = super().assign_treatment_df(df)
+        df = self.washover.washover(
+            df,
+            truncated_time_col=self.time_col,
+            treatment_col=self.treatment_col,
+            cluster_cols=self.cluster_cols,
+        )
+        return df
 
     @classmethod
     def from_config(cls, config) -> "SwitchbackSplitter":
+        washover_cls = _get_mapping_key(washover_mapping, config.washover)
         return cls(
             time_col=config.time_col,
             switch_frequency=config.switch_frequency,
@@ -207,6 +222,7 @@ class SwitchbackSplitter(ClusteredSplitter):
             treatments=config.treatments,
             treatment_col=config.treatment_col,
             splitter_weights=config.splitter_weights,
+            washover=washover_cls.from_config(config),
         )
 
 
@@ -409,7 +425,7 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
     ```python
     import pandas as pd
     from cluster_experiments.random_splitter import StratifiedSwitchbackSplitter
-    splitter = StratifiedSwitchbackSplitter(time_col="date",switch_frequency="1D",strata_cols=["country"])
+    splitter = StratifiedSwitchbackSplitter(time_col="date",switch_frequency="1D",strata_cols=["country"], cluster_cols=["country", "date"])
     df = pd.DataFrame({"date": ["2020-01-01", "2020-01-02", "2020-01-03","2020-01-04"], "country":["C1","C2","C2","C1"]})
     df = splitter.assign_treatment_df(df)
     print(df)
@@ -424,6 +440,7 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
         treatments: Optional[List[str]] = None,
         treatment_col: str = "treatment",
         splitter_weights: Optional[List[float]] = None,
+        washover: Optional[Washover] = None,
         strata_cols: Optional[List[str]] = None,
     ) -> None:
         # Inherit init from SwitchbackSplitter
@@ -435,17 +452,25 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
             treatments=treatments,
             treatment_col=treatment_col,
             splitter_weights=splitter_weights,
+            washover=washover,
         )
         self.strata_cols = strata_cols or ["strata"]
 
     def assign_treatment_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         df = self._prepare_switchback_df(df)
-        return StratifiedClusteredSplitter.assign_treatment_df(self, df)
+        df = StratifiedClusteredSplitter.assign_treatment_df(self, df)
+        return self.washover.washover(
+            df=df,
+            treatment_col=self.treatment_col,
+            truncated_time_col=self.time_col,
+            cluster_cols=self.cluster_cols,
+        )
 
     @classmethod
     def from_config(cls, config) -> "StratifiedSwitchbackSplitter":
         """Creates a StratifiedSwitchbackSplitter from a PowerConfig"""
+        washover_cls = _get_mapping_key(washover_mapping, config.washover)
         return cls(
             treatments=config.treatments,
             cluster_cols=config.cluster_cols,
@@ -454,4 +479,5 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
             time_col=config.time_col,
             switch_frequency=config.switch_frequency,
             splitter_weights=config.splitter_weights,
+            washover=washover_cls.from_config(config),
         )

@@ -3,23 +3,30 @@ from mktestdocs import check_docstring, check_md_file, get_codeblock_members
 
 from cluster_experiments import (
     BalancedClusteredSplitter,
+    BalancedSwitchbackSplitter,
     BinaryPerturbator,
     ClusteredOLSAnalysis,
     ClusteredSplitter,
+    ConstantWashover,
     EmptyRegressor,
+    EmptyWashover,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     NonClusteredSplitter,
     OLSAnalysis,
+    PairedTTestClusteredAnalysis,
     Perturbator,
     PowerAnalysis,
     PowerConfig,
     RandomSplitter,
     StratifiedClusteredSplitter,
+    StratifiedSwitchbackSplitter,
+    SwitchbackSplitter,
     TargetAggregation,
     TTestClusteredAnalysis,
     UniformPerturbator,
 )
+from cluster_experiments.utils import _original_time_column
 
 all_objects = [
     BalancedClusteredSplitter,
@@ -38,7 +45,14 @@ all_objects = [
     StratifiedClusteredSplitter,
     TargetAggregation,
     TTestClusteredAnalysis,
+    PairedTTestClusteredAnalysis,
     UniformPerturbator,
+    _original_time_column,
+    ConstantWashover,
+    EmptyWashover,
+    BalancedSwitchbackSplitter,
+    StratifiedSwitchbackSplitter,
+    SwitchbackSplitter,
 ]
 
 

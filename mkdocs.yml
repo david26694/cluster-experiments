@@ -14,6 +14,7 @@ nav:
   - Stratified switchback: switchback.ipynb
   - Multiple treatments: multivariate.ipynb
   - AA test clustered: aa_test.ipynb
+  - Paired T test: paired_ttest.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md

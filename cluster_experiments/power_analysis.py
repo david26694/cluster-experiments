@@ -1,5 +1,5 @@
 import logging
-from typing import Generator, List, Optional
+from typing import Dict, Generator, Iterable, List, Optional, Tuple
 
 import pandas as pd
 from sklearn.base import BaseEstimator
@@ -16,6 +16,7 @@ from cluster_experiments.power_config import (
     splitter_mapping,
 )
 from cluster_experiments.random_splitter import RandomSplitter
+from cluster_experiments.utils import _get_mapping_key
 
 
 class PowerAnalysis:
@@ -117,6 +118,21 @@ class PowerAnalysis:
 
         self.check_inputs()
 
+    def _simulate_perturbed_df(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effect: Optional[float] = None,
+        n_simulations: int = 100,
+    ) -> Generator[pd.DataFrame, None, None]:
+        """Yields splitted + perturbated dataframe for each iteration of the simulation."""
+        df = df.copy()
+        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+
+        for _ in tqdm(range(n_simulations), disable=not verbose):
+            yield self._split_and_perturbate(df, average_effect)
+
     def simulate_pvalue(
         self,
         df: pd.DataFrame,
@@ -136,26 +152,45 @@ class PowerAnalysis:
             average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
             n_simulations: Number of simulations to run.
         """
-        df = df.copy()
+        for perturbed_df in self._simulate_perturbed_df(
+            df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            average_effect=average_effect,
+            n_simulations=n_simulations,
+        ):
+            yield self.analysis.get_pvalue(perturbed_df)
 
-        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+    def simulate_point_estimate(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effect: Optional[float] = None,
+        n_simulations: int = 100,
+    ) -> Generator[float, None, None]:
+        """
+        Yields point estimates for each iteration of the simulation.
+        In general, this is to be used in power_analysis method. However,
+        if you're interested in the distribution of point estimates, you can use this method to generate them.
 
-        for _ in tqdm(range(n_simulations), disable=not verbose):
-            treatment_df = self.splitter.assign_treatment_df(df)
-            self.log_nulls(treatment_df)
-            # The second query allows as to do power analysis for multivariate testing
-            # It assumes that we give, to each treatment value, the same number of samples
-            # If this is not the case, several PowerAnalysis should be run with different weights
-            treatment_df = treatment_df.query(
-                f"{self.treatment_col}.notnull()", engine="python"
-            ).query(
-                f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
-                engine="python",
-            )
-            treatment_df = self.perturbator.perturbate(
-                treatment_df, average_effect=average_effect
-            )
-            yield self.analysis.get_pvalue(treatment_df)
+        This is an experimental feature and it might change in the future.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
+        """
+        for perturbed_df in self._simulate_perturbed_df(
+            df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            average_effect=average_effect,
+            n_simulations=n_simulations,
+        ):
+            yield self.analysis.get_point_estimate(perturbed_df)
 
     def power_analysis(
         self,
@@ -165,6 +200,7 @@ class PowerAnalysis:
         average_effect: Optional[float] = None,
         n_simulations: Optional[int] = None,
         alpha: Optional[float] = None,
+        n_jobs: int = 1,
     ) -> float:
         """
         Run power analysis by simulation
@@ -175,21 +211,144 @@ class PowerAnalysis:
             average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
             n_simulations: Number of simulations to run.
             alpha: Significance level.
+            n_jobs: Number of jobs to run in parallel. If 1, it will run in serial.
         """
         n_simulations = self.n_simulations if n_simulations is None else n_simulations
         alpha = self.alpha if alpha is None else alpha
 
+        df = df.copy()
+        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+
+        if n_jobs == 1:
+            return self._non_parallel_loop(
+                df, average_effect, n_simulations, alpha, verbose
+            )
+        elif n_jobs > 1 or n_jobs == -1:
+            return self._parallel_loop(
+                df, average_effect, n_simulations, alpha, verbose, n_jobs
+            )
+        else:
+            raise ValueError("n_jobs must be greater than 0, or -1.")
+
+    def _split_and_perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+        """
+        Split and perturbate dataframe.
+        Args:
+            df: Dataframe with outcome variable
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+        """
+        treatment_df = self.splitter.assign_treatment_df(df)
+        self.log_nulls(treatment_df)
+        treatment_df = treatment_df.query(
+            f"{self.treatment_col}.notnull()", engine="python"
+        ).query(
+            f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
+            engine="python",
+        )
+        perturbed_df = self.perturbator.perturbate(
+            treatment_df, average_effect=average_effect
+        )
+        return perturbed_df
+
+    def _run_simulation(self, args: Tuple[pd.DataFrame, Optional[float]]) -> float:
+        df, average_effect = args
+        perturbed_df = self._split_and_perturbate(df, average_effect)
+        return self.analysis.get_pvalue(perturbed_df)
+
+    def _non_parallel_loop(
+        self,
+        df: pd.DataFrame,
+        average_effect: Optional[float],
+        n_simulations: int,
+        alpha: float,
+        verbose: bool,
+    ) -> float:
+        """
+        Run power analysis by simulation in serial
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
         n_detected_mde = 0
-        for p_value in self.simulate_pvalue(
-            df=df,
-            pre_experiment_df=pre_experiment_df,
-            verbose=verbose,
-            average_effect=average_effect,
-            n_simulations=n_simulations,
-        ):
+        for _ in tqdm(range(n_simulations), disable=not verbose):
+            p_value = self._run_simulation((df, average_effect))
             n_detected_mde += p_value < alpha
 
         return n_detected_mde / n_simulations
+
+    def _parallel_loop(
+        self,
+        df: pd.DataFrame,
+        average_effect: Optional[float],
+        n_simulations: int,
+        alpha: float,
+        verbose: bool,
+        n_jobs: int,
+    ) -> float:
+        """
+        Run power analysis by simulation in parallel
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+            n_jobs: Number of jobs to run in parallel.
+        """
+        from multiprocessing import Pool, cpu_count
+
+        n_jobs = n_jobs if n_jobs != -1 else cpu_count()
+
+        n_detected_mde = 0
+        with Pool(processes=n_jobs) as pool:
+            args = [(df, average_effect) for _ in range(n_simulations)]
+            results = pool.imap_unordered(self._run_simulation, args)
+            for p_value in tqdm(results, total=n_simulations, disable=not verbose):
+                n_detected_mde += p_value < alpha
+
+        return n_detected_mde / n_simulations
+
+    def power_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effects: Iterable[float] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+        n_jobs: int = 1,
+    ) -> Dict[float, float]:
+        """Runs power analysis with multiple average effects
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effects: Average effects to test.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+            n_jobs: Number of jobs to run in parallel.
+
+        Returns:
+            Dictionary with average effects as keys and power as values.
+        """
+        return {
+            effect: self.power_analysis(
+                df=df,
+                pre_experiment_df=pre_experiment_df,
+                verbose=verbose,
+                average_effect=effect,
+                n_simulations=n_simulations,
+                alpha=alpha,
+                n_jobs=n_jobs,
+            )
+            for effect in tqdm(
+                list(average_effects), disable=not verbose, desc="Effects loop"
+            )
+        }
 
     def log_nulls(self, df: pd.DataFrame) -> None:
         """Warns about dropping nulls in treatment column"""
@@ -276,6 +435,15 @@ class PowerAnalysis:
                 f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
             )
 
+            if hasattr(self.splitter, "cluster_cols"):
+                if set(self.analysis.covariates).intersection(
+                    set(self.splitter.cluster_cols)
+                ):
+                    logging.warning(
+                        f"covariates in analysis ({self.analysis.covariates}) are also cluster_cols in splitter ({self.splitter.cluster_cols}). "
+                        f"Be specially careful when using switchback splitters, since the time splitter column is being overriden"
+                    )
+
     def check_clusters(self):
         has_analysis_clusters = hasattr(self.analysis, "cluster_cols")
         has_splitter_clusters = hasattr(self.splitter, "cluster_cols")
@@ -310,12 +478,3 @@ class PowerAnalysis:
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
-
-
-def _get_mapping_key(mapping, key):
-    try:
-        return mapping[key]
-    except KeyError:
-        raise KeyError(
-            f"Could not find {key = } in mapping. All options are the following: {list(mapping.keys())}"
-        )

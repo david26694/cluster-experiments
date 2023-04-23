@@ -1,3 +1,4 @@
+import datetime
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -6,8 +7,8 @@ from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
     GeeExperimentAnalysis,
     OLSAnalysis,
-    TTestClusteredAnalysis,
     PairedTTestClusteredAnalysis,
+    TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
 from cluster_experiments.random_splitter import (
@@ -71,6 +72,7 @@ class PowerConfig:
     perturbator: str
     splitter: str
     analysis: str
+    washover: str = ""
 
     # Needed
     cluster_cols: Optional[List[str]] = None
@@ -92,7 +94,9 @@ class PowerConfig:
     strata_cols: Optional[List[str]] = None
     splitter_weights: Optional[List[float]] = None
     switch_frequency: Optional[str] = None
+    # Switchback
     time_col: Optional[str] = None
+    washover_time_delta: Optional[datetime.timedelta] = None
 
     # Analysis
     covariates: Optional[List[str]] = None

@@ -1,6 +1,6 @@
 import pandas as pd
-from cluster_experiments.experiment_analysis import OLSAnalysis
 
+from cluster_experiments.experiment_analysis import OLSAnalysis
 from tests.examples import analysis_df
 
 

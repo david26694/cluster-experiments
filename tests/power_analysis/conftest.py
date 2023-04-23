@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import numpy as np
 import pytest
@@ -114,4 +114,21 @@ def switchback_power_analysis_hourly(perturbator, analysis_gee_vainilla):
         splitter=sw,
         analysis=analysis_gee_vainilla,
         n_simulations=3,
+    )
+
+
+@pytest.fixture
+def switchback_washover():
+    return PowerAnalysis.from_dict(
+        {
+            "time_col": "date",
+            "switch_frequency": "1D",
+            "perturbator": "uniform",
+            "analysis": "ols_clustered",
+            "splitter": "switchback_balance",
+            "cluster_cols": ["cluster", "date"],
+            "strata_cols": ["cluster"],
+            "washover": "constant_washover",
+            "washover_time_delta": timedelta(hours=2),
+        }
     )

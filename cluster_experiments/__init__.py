@@ -4,6 +4,7 @@ from cluster_experiments.experiment_analysis import (
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     OLSAnalysis,
+    PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import (
@@ -23,6 +24,7 @@ from cluster_experiments.random_splitter import (
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
 )
+from cluster_experiments.washover import ConstantWashover, EmptyWashover, Washover
 
 __all__ = [
     "ExperimentAnalysis",
@@ -45,4 +47,8 @@ __all__ = [
     "StratifiedSwitchbackSplitter",
     "ClusteredOLSAnalysis",
     "TTestClusteredAnalysis",
+    "PairedTTestClusteredAnalysis",
+    "EmptyWashover",
+    "ConstantWashover",
+    "Washover",
 ]

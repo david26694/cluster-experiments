@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
@@ -62,7 +63,19 @@ class ExperimentAnalysis(ABC):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        pass
+
+    def analysis_point_estimate(
+        self,
+        df: pd.DataFrame,
+        verbose: bool = False,
+    ) -> float:
+        """
+        Returns the point estimate of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError("Point estimate not implemented for this analysis")
 
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
@@ -86,6 +99,17 @@ class ExperimentAnalysis(ABC):
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
         return self.analysis_pvalue(df)
+
+    def get_point_estimate(self, df: pd.DataFrame) -> float:
+        """Returns the point estimate of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_point_estimate(df)
 
     @classmethod
     def from_config(cls, config):
@@ -149,22 +173,35 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         self.fam = sm.families.Gaussian()
         self.va = sm.cov_struct.Exchangeable()
 
-    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
-        """Returns the p-value of the analysis
-        Arguments:
-            df: dataframe containing the data to analyze
-            verbose (Optional): bool, prints the regression summary if True
-        """
-        results_gee = sm.GEE.from_formula(
+    def fit_gee(self, df: pd.DataFrame) -> sm.GEE:
+        """Returns the fitted GEE model"""
+        return sm.GEE.from_formula(
             self.formula,
             data=df,
             groups=self._get_cluster_column(df),
             family=self.fam,
             cov_struct=self.va,
         ).fit()
+
+    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the p-value of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
         if verbose:
             print(results_gee.summary())
         return results_gee.pvalues[self.treatment_col]
+
+    def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the point estimate of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
+        return results_gee.params[self.treatment_col]
 
 
 class ClusteredOLSAnalysis(ExperimentAnalysis):
@@ -310,11 +347,12 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         target_col: name of the column containing the variable to measure
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
+        strata_cols: list of index columns for paired t test. Should be a subset or equal to cluster_cols
 
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import TTestClusteredAnalysis
+    from cluster_experiments.experiment_analysis import PairedTTestClusteredAnalysis
     import pandas as pd
 
     df = pd.DataFrame({
@@ -323,8 +361,9 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         'cluster': [1, 2, 3, 4, 1, 2, 3, 4],
     })
 
-    TTestClusteredAnalysis(
+    PairedTTestClusteredAnalysis(
         cluster_cols=['cluster'],
+        strata_cols=['cluster'],
         target_col='x',
     ).get_pvalue(df)
     ```
@@ -333,44 +372,83 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
     def __init__(
         self,
         cluster_cols: List[str],
+        strata_cols: List[str],
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
-        comparison_col: str or None = None,
     ):
-        self.comparison_col = comparison_col
+        self.strata_cols = strata_cols
         self.target_col = target_col
         self.treatment = treatment
         self.treatment_col = treatment_col
         self.cluster_cols = cluster_cols
 
-    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
-        """Returns the p-value of the analysis
-        Arguments:
-            df: dataframe containing the data to analyze
-            verbose (Optional): bool, prints the regression summary if True
-        """
-
+    def _preprocessing(self, df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         df_grouped = df.groupby(
             self.cluster_cols + [self.treatment_col], as_index=False
         )[self.target_col].mean()
 
+        n_control = df_grouped[self.treatment_col].value_counts()[0]
+        n_treatment = df_grouped[self.treatment_col].value_counts()[1]
+
+        if n_control != n_treatment:
+            logging.warning(
+                f"groups don't have same number of observations, {n_treatment =} and  {n_control =}"
+            )
+
+        assert all(
+            [x in self.cluster_cols for x in self.strata_cols]
+        ), f"strata should be a subset or equal to cluster_cols ({self.cluster_cols = }, {self.strata_cols = })"
+
         df_pivot = df_grouped.pivot_table(
-            columns=self.treatment_col, index="cluster", values=self.target_col
+            columns=self.treatment_col,
+            index=self.strata_cols,
+            values=self.target_col,
         )
 
-        t_test_results = ttest_rel(df_pivot[0], df_pivot[1])
+        if df_pivot.isna().sum().sum() > 0:
+            logging.warning(
+                f"There are missing pairs for some clusters, removing the lonely ones: {df_pivot[df_pivot.isna().any(axis=1)].to_dict()}"
+            )
+
+        if verbose:
+            print(f"performing paired t test in this data \n {df_pivot} \n")
+
+        df_pivot = df_pivot.dropna()
+
+        return df_pivot
+
+    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the p-value of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the extra info if True
+        """
+        assert (
+            type(self.cluster_cols) is list
+        ), "cluster_cols needs to be a list of strings (even with one element)"
+        assert (
+            type(self.strata_cols) is list
+        ), "strata_cols needs to be a list of strings (even with one element)"
+
+        df_pivot = self._preprocessing(df=df)
+
+        t_test_results = ttest_rel(df_pivot.iloc[:, 0], df_pivot.iloc[:, 1])
+
+        if verbose:
+            print(f"paired t test results: \n {t_test_results} \n")
+
         return t_test_results.pvalue
 
     @classmethod
     def from_config(cls, config):
-        """Creates a TTestClusteredAnalysis object from a PowerConfig object"""
+        """Creates a PairedTTestClusteredAnalysis object from a PowerConfig object"""
         return cls(
             cluster_cols=config.cluster_cols,
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
-            comparison_col=config.comparison_col,
+            strata_cols=config.strata_cols,
         )
 
 
