@@ -11,8 +11,10 @@ nav:
     - Index: index.md
   - Cupac example: cupac_example.ipynb
   - Custom classes: create_custom_classes.ipynb
-  - Stratified switchback: switchback.ipynb
-  - Switchback calendar visualization: plot_calendars.ipynb
+  - Switchback:
+      - Stratified switchback: switchback.ipynb
+      - Switchback calendar visualization: plot_calendars.ipynb
+      - Visualization - 4-hour switches: plot_calendars_hours.ipynb
   - Multiple treatments: multivariate.ipynb
   - AA test clustered: aa_test.ipynb
   - Paired T test: paired_ttest.ipynb
