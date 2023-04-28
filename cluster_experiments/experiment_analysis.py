@@ -634,3 +634,13 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         results_mlm = self.fit_mlm(df)
         # negative sign, as we use the treatment as reference (instead of the baseline)
         return -results_mlm.params[self.mlm_treatment_label]
+
+    def get_pvalue(self, df: pd.DataFrame) -> float:
+        """Returns the p-value of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        df = df.copy()
+        self._data_checks(df=df)
+        return self.analysis_pvalue(df)
