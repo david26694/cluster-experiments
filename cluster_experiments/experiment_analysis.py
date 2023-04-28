@@ -267,6 +267,19 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
             print(results_ols.summary())
         return results_ols.pvalues[self.treatment_col]
 
+    def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the point estimate of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        # Keep in mind that the point estimate of the OLS is the same as the ClusteredOLS
+        results_ols = sm.OLS.from_formula(
+            self.formula,
+            data=df,
+        ).fit()
+        return results_ols.params[self.treatment_col]
+
 
 class TTestClusteredAnalysis(ExperimentAnalysis):
     """
@@ -493,16 +506,29 @@ class OLSAnalysis(ExperimentAnalysis):
         self.regressors = [self.treatment_col] + self.covariates
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
 
+    def fit_ols(self, df: pd.DataFrame) -> sm.GEE:
+        """Returns the fitted OLS model"""
+        return sm.OLS.from_formula(self.formula, data=df).fit()
+
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
         Arguments:
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        results_ols = sm.OLS.from_formula(self.formula, data=df).fit()
+        results_ols = self.fit_ols(df=df)
         if verbose:
             print(results_ols.summary())
         return results_ols.pvalues[self.treatment_col]
+
+    def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the point estimate of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols(df=df)
+        return results_ols.params[self.treatment_col]
 
     @classmethod
     def from_config(cls, config):
