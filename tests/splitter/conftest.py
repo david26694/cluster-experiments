@@ -162,6 +162,23 @@ def washover_base_df():
 
 
 @pytest.fixture
+def simmetric_washover_base_df():
+    df = pd.DataFrame(
+        {
+            "original___time": [
+                pd.to_datetime("2022-01-01 00:20:00"),
+                pd.to_datetime("2022-01-01 00:49:00"),
+                pd.to_datetime("2022-01-01 01:14:00"),
+                pd.to_datetime("2022-01-01 01:31:00"),
+            ],
+            "treatment": ["A", "A", "B", "B"],
+            "city": ["TGN"] * 4,
+        }
+    ).assign(time=lambda x: x["original___time"].dt.floor("1h", ambiguous="infer"))
+    return df
+
+
+@pytest.fixture
 def washover_df_no_switch():
     df = pd.DataFrame(
         {

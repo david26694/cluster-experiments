@@ -19,11 +19,13 @@ from cluster_experiments import (
     PowerAnalysis,
     PowerConfig,
     RandomSplitter,
+    SimmetricWashover,
     StratifiedClusteredSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
     TargetAggregation,
     TTestClusteredAnalysis,
+    TwoSidedWashover,
     UniformPerturbator,
 )
 from cluster_experiments.utils import _original_time_column
@@ -49,6 +51,8 @@ all_objects = [
     UniformPerturbator,
     _original_time_column,
     ConstantWashover,
+    TwoSidedWashover,
+    SimmetricWashover,
     EmptyWashover,
     BalancedSwitchbackSplitter,
     StratifiedSwitchbackSplitter,

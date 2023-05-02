@@ -24,7 +24,13 @@ from cluster_experiments.random_splitter import (
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
 )
-from cluster_experiments.washover import ConstantWashover, EmptyWashover, Washover
+from cluster_experiments.washover import (
+    ConstantWashover,
+    EmptyWashover,
+    SimmetricWashover,
+    TwoSidedWashover,
+    Washover,
+)
 
 __all__ = [
     "ExperimentAnalysis",
@@ -50,5 +56,7 @@ __all__ = [
     "PairedTTestClusteredAnalysis",
     "EmptyWashover",
     "ConstantWashover",
+    "TwoSidedWashover",
+    "SimmetricWashover",
     "Washover",
 ]
