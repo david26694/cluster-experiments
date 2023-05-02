@@ -5,6 +5,7 @@ import pytest
 from cluster_experiments.experiment_analysis import (
     ExperimentAnalysis,
     GeeExperimentAnalysis,
+    MLMExperimentAnalysis,
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
@@ -49,6 +50,16 @@ def test_get_pvalue():
         cluster_cols=["cluster", "date"],
     )
     assert analyser.get_pvalue(analysis_df_full) >= 0
+
+
+def test_mlm_analysis(analysis_df_diff):
+    analyser = MLMExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+    p_value = analyser.get_pvalue(analysis_df_diff)
+    point_estimate = analyser.analysis_point_estimate(analysis_df_diff)
+    assert np.isclose(p_value, 0)
+    assert np.isclose(point_estimate, 0.1)
 
 
 def test_ttest(analysis_df_diff):
