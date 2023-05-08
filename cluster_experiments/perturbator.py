@@ -104,6 +104,19 @@ class BinaryPerturbator(Perturbator):
             return df
         return df.sample(n=n)
 
+    def _data_checks(self, df: pd.DataFrame, average_effect: float) -> None:
+        """Check that outcome is indeed binary, and average effect is in (-1, 1)"""
+
+        if set(df[self.target_col].unique()) != {0, 1}:
+            raise ValueError(
+                f"Target column must be binary, found {set(df[self.target_col].unique())}"
+            )
+
+        if average_effect > 1 or average_effect < -1:
+            raise ValueError(
+                f"Average effect must be in (-1, 1), found {average_effect}"
+            )
+
     def perturbate(
         self, df: pd.DataFrame, average_effect: Optional[float] = None
     ) -> pd.DataFrame:
@@ -121,6 +134,8 @@ class BinaryPerturbator(Perturbator):
 
         df = df.copy().reset_index(drop=True)
         average_effect = self.get_average_effect(average_effect)
+
+        self._data_checks(df, average_effect)
 
         from_target, to_target = 1, 0
         if average_effect > 0:

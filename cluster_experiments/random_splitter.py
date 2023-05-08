@@ -181,7 +181,7 @@ class SwitchbackSplitter(ClusteredSplitter):
         # Using pandas frequency aliases: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
         if "W" in self.switch_frequency or "M" in self.switch_frequency:
             return df[self.time_col].dt.to_period(self.switch_frequency).dt.start_time
-        return df[self.time_col].dt.floor(self.switch_frequency, ambiguous="infer")
+        return df[self.time_col].dt.floor(self.switch_frequency)
 
     def _prepare_switchback_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
