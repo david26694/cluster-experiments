@@ -67,5 +67,19 @@ def test_uniform_perturbator_perturbate(average_effect, avg_target):
 def test_binary_raises():
     binary_df_repeated = pd.concat([binary_df for _ in range(50)])
     bp = BinaryPerturbator()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="average_effect must be provided"):
         bp.perturbate(binary_df_repeated)
+
+
+@pytest.mark.parametrize("average_effect", [(-1.1), (1.1)])
+def test_binary_raises_out_of_limit(average_effect):
+    bp = BinaryPerturbator()
+    with pytest.raises(ValueError, match="Average effect must be in"):
+        bp.perturbate(binary_df, average_effect=average_effect)
+
+
+def test_binary_raises_non_binary_target():
+    bp = BinaryPerturbator()
+    binary_df["target"] = binary_df["target"] + 0.01
+    with pytest.raises(ValueError, match="must be binary"):
+        bp.perturbate(binary_df, average_effect=0.05)
