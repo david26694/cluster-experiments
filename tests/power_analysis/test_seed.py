@@ -21,7 +21,7 @@ def test_power_analysis_uniform_perturbator_seed(df):
     powers = []
     for _ in range(10):
         pw = PowerAnalysis.from_dict(config_dict)
-        powers = pw.power_analysis(df, average_effect=10)
+        powers.append(pw.power_analysis(df, average_effect=10))
 
     assert np.var(np.asarray(powers)) == 0
 
