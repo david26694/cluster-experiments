@@ -12,6 +12,7 @@ from cluster_experiments import (
     EmptyWashover,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
+    MLMExperimentAnalysis,
     NonClusteredSplitter,
     OLSAnalysis,
     PairedTTestClusteredAnalysis,
@@ -53,6 +54,7 @@ all_objects = [
     BalancedSwitchbackSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
+    MLMExperimentAnalysis,
 ]
 
 
