@@ -157,7 +157,7 @@ def washover_base_df():
             "treatment": ["A", "A", "B", "B"],
             "city": ["TGN"] * 4,
         }
-    ).assign(time=lambda x: x["original___time"].dt.floor("1h", ambiguous="infer"))
+    ).assign(time=lambda x: x["original___time"].dt.floor("1h"))
     return df
 
 
@@ -176,7 +176,7 @@ def washover_df_no_switch():
             "treatment": ["A", "A", "B", "B", "B", "B"],
             "city": ["TGN"] * 6,
         }
-    ).assign(time=lambda x: x["original___time"].dt.floor("1h", ambiguous="infer"))
+    ).assign(time=lambda x: x["original___time"].dt.floor("1h"))
     return df
 
 
@@ -197,7 +197,7 @@ def washover_df_multi_city():
             + ["A", "A", "A", "A", "B", "B"],
             "city": ["TGN"] * 6 + ["BCN"] * 6,
         }
-    ).assign(time=lambda x: x["original___time"].dt.floor("1h", ambiguous="infer"))
+    ).assign(time=lambda x: x["original___time"].dt.floor("1h"))
     return df
 
 
