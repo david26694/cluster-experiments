@@ -120,8 +120,9 @@ class PowerAnalysis:
             features_cupac_model=features_cupac_model,
         )
         if seed:
-            random.seed(seed)
-            np.random.seed(seed)
+            random.seed(seed)  # seed for splitter
+            np.random.seed(seed)  # seed for the binary perturbator
+            # may need to seed other stochasticity sources if added
 
         self.check_inputs()
 

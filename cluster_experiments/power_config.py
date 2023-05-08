@@ -49,7 +49,7 @@ class PowerConfig:
         agg_col: column to use for aggregation in the CUPAC model
         smoothing_factor: smoothing value to use in the CUPAC model
         features_cupac_model: list of features to use in the CUPAC model
-        seed: seed to use for the power analysis
+        seed: seed to make the power analysis reproducible
 
     Usage:
 
@@ -111,7 +111,6 @@ class PowerConfig:
     smoothing_factor: float = 20
     features_cupac_model: Optional[List[str]] = None
 
-    # seed for splitting
     seed: Optional[int] = None
 
 
