@@ -38,7 +38,6 @@ def test_switchback_hour(switchback_power_analysis, df):
 
 
 def test_switchback_washover(switchback_power_analysis, df):
-
     power_no_washover = switchback_power_analysis.power_analysis(
         df,
         average_effect=0.1,
@@ -85,7 +84,6 @@ def test_switchback_washover_config(switchback_washover, df):
 
 
 def test_switchback_strata():
-
     # Define bihourly switchback splitter
     config = {
         "time_col": "time",
