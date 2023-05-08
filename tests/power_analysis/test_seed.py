@@ -15,17 +15,6 @@ def get_config(perturbator: Perturbator) -> dict:
     }
 
 
-def test_power_analysis_seed(df):
-    config_dict = get_config("uniform")
-    pw = PowerAnalysis.from_dict(config_dict)
-    power_1 = pw.power_analysis(df, average_effect=10)
-
-    pw = PowerAnalysis.from_dict(config_dict)
-    power_2 = pw.power_analysis(df, average_effect=10)
-
-    assert power_1 == power_2
-
-
 def test_power_analysis_uniform_perturbator_seed(df):
     config_dict = get_config("uniform")
 
