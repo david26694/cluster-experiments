@@ -173,6 +173,17 @@ class StochasticPerturbator(Perturbator):
         ] += sampled_effect
         return df
 
+    @classmethod
+    def from_config(cls, config):
+        """Creates a Perturbator object from a PowerConfig object"""
+        return cls(
+            average_effect=config.average_effect,
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            scale=config.scale,
+        )
+
 
 class RelativePositivePerturbator(Perturbator):
     """
