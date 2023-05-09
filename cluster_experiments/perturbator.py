@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 
 
@@ -17,7 +18,7 @@ class Perturbator(ABC):
 
     Arguments:
         average_effect: The average effect of the treatment
-        treatment: name of the treatment to use as the treated group
+        target_col: name of the target_col to use as the treated group
         treatment_col: The name of the column that contains the treatment
         treatment: name of the treatment to use as the treated group
 
@@ -88,6 +89,73 @@ class UniformPerturbator(Perturbator):
             df[self.treatment_col] == self.treatment, self.target_col
         ] += average_effect
         return df
+
+
+class NormalPerturbator(Perturbator):
+    """The NormalPertubator class implements a perturbator that adds a normal effect
+    to the target column of the treated instances. The normal effect is sampled from a
+    normal distribution with mean average_effect and variance scale. If scale is not
+    provided, the variance is abs(average_effect).
+
+    Arguments:
+        average_effect (Optional[float], optional): the average effect of the treatment. Defaults to None.
+        target_col (str, optional): name of the target_col to use as the treated group. Defaults to "target".
+        treatment_col (str, optional): the name of the column that contains the treatment. Defaults to "treatment".
+        treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
+        scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
+    """
+
+    def __init__(
+        self,
+        average_effect: Optional[float] = None,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        scale: Optional[float] = None,
+    ):
+        super().__init__(average_effect, target_col, treatment_col, treatment)
+        self._scale = scale
+
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
+        """Perturbate with a normal effect with mean average_effect and
+        std abs(average_effect).
+
+        Arguments:
+            df (pd.DataFrame): the dataframe to perturbate.
+            average_effect (Optional[float], optional): the average effect. Defaults to None.
+
+        Returns:
+            pd.DataFrame: the perturbated dataframe.
+
+        Usage:
+
+        ```python
+        from cluster_experiments.perturbator import NormalPerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = NormalPerturbator()
+        perturbator.perturbate(df, average_effect=1)
+        ```
+        """
+        df = df.copy().reset_index(drop=True)
+        average_effect = self.get_average_effect(average_effect)
+        scale = self._get_scale(average_effect)
+        n = (df[self.treatment_col] == self.treatment).sum()
+        df.loc[
+            df[self.treatment_col] == self.treatment, self.target_col
+        ] += np.random.normal(average_effect, scale, n)
+        return df
+
+    def _get_scale(self, average_effect: float) -> float:
+        """Get the scale of the normal distribution. If scale is not provided, the
+        variance is abs(average_effect). Raises a ValueError if scale is not positive.
+        """
+        scale = abs(average_effect) if self._scale is None else self._scale
+        if scale <= 0:
+            raise ValueError(f"scale must be positive, got {scale}")
+        return scale
 
 
 class BinaryPerturbator(Perturbator):

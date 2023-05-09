@@ -1,7 +1,12 @@
+import numpy as np
 import pandas as pd
 import pytest
 
-from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
+from cluster_experiments.perturbator import (
+    BinaryPerturbator,
+    NormalPerturbator,
+    UniformPerturbator,
+)
 from tests.examples import binary_df, continuous_df
 
 
@@ -64,6 +69,52 @@ def test_uniform_perturbator_perturbate(average_effect, avg_target):
     )
 
 
+@pytest.mark.parametrize("average_effect", [-0.1, 0.1])
+def test_normal_perturbator_perturbate(average_effect):
+    # given
+    np.random.seed(24)
+    effect = (
+        np.random.normal(average_effect, abs(average_effect), 2)
+        + continuous_df.query("treatment == 'B'")["target"].values
+    )
+
+    # when
+    np.random.seed(24)
+    normal_perturbator = NormalPerturbator()
+    perturbated_values = (
+        normal_perturbator.perturbate(continuous_df, average_effect)
+        .query("treatment == 'B'")["target"]
+        .values
+    )
+
+    # then
+    assert np.mean(perturbated_values) == np.mean(effect)
+    assert np.var(perturbated_values) == np.var(effect)
+
+
+@pytest.mark.parametrize("average_effect, scale", [(-0.1, 0.02), (0.1, 0.03)])
+def test_normal_scale_provided_is_used(average_effect, scale):
+    # given
+    np.random.seed(24)
+    effect = (
+        np.random.normal(average_effect, scale, 2)
+        + continuous_df.query("treatment == 'B'")["target"].values
+    )
+
+    # when
+    np.random.seed(24)
+    normal_perturbator = NormalPerturbator(scale=scale)
+    perturbated_values = (
+        normal_perturbator.perturbate(continuous_df, average_effect)
+        .query("treatment == 'B'")["target"]
+        .values
+    )
+
+    # then
+    assert np.mean(perturbated_values) == np.mean(effect)
+    assert np.var(perturbated_values) == np.var(effect)
+
+
 def test_binary_raises():
     binary_df_repeated = pd.concat([binary_df for _ in range(50)])
     bp = BinaryPerturbator()
@@ -83,3 +134,10 @@ def test_binary_raises_non_binary_target():
     binary_df["target"] = binary_df["target"] + 0.01
     with pytest.raises(ValueError, match="must be binary"):
         bp.perturbate(binary_df, average_effect=0.05)
+
+
+def test_normal_raises_non_positive_scale():
+    _scale = -0.1
+    bp = NormalPerturbator(scale=_scale)
+    with pytest.raises(ValueError, match=f"scale must be positive, got {_scale}"):
+        bp.perturbate(continuous_df, average_effect=0.05)
