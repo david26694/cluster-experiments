@@ -9,6 +9,7 @@ from cluster_experiments.experiment_analysis import (
 )
 from cluster_experiments.perturbator import (
     BinaryPerturbator,
+    NormalPerturbator,
     Perturbator,
     UniformPerturbator,
 )
@@ -33,6 +34,7 @@ __all__ = [
     "BinaryPerturbator",
     "Perturbator",
     "UniformPerturbator",
+    "NormalPerturbator",
     "PowerAnalysis",
     "PowerConfig",
     "EmptyRegressor",
