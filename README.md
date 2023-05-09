@@ -165,6 +165,7 @@ The library offers the following classes:
             * `ConstantWashover`: accepts a timedelta parameter and removes the data when we switch from A to B for the timedelta interval.
 * Regarding analysis:
     * `GeeExperimentAnalysis`: to run GEE analysis on the results of a clustered design
+    * `MLMExperimentAnalysis`: to run Mixed Linear Model analysis on the results of a clustered design
     * `TTestClusteredAnalysis`: to run a t-test on aggregated data for clusters
     * `PairedTTestClusteredAnalysis`: to run a paired t-test on aggregated data for clusters
     * `ClusteredOLSAnalysis`: to run OLS analysis on the results of a clustered design

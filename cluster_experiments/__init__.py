@@ -3,6 +3,7 @@ from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
+    MLMExperimentAnalysis,
     OLSAnalysis,
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
@@ -57,4 +58,5 @@ __all__ = [
     "EmptyWashover",
     "ConstantWashover",
     "Washover",
+    "MLMExperimentAnalysis",
 ]

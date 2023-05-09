@@ -539,3 +539,86 @@ class OLSAnalysis(ExperimentAnalysis):
             treatment=config.treatment,
             covariates=config.covariates,
         )
+
+
+class MLMExperimentAnalysis(ExperimentAnalysis):
+    """
+    Class to run Mixed Linear Models clustered analysis
+
+    Arguments:
+        cluster_cols: list of columns to use as clusters
+        target_col: name of the column containing the variable to measure
+        treatment_col: name of the column containing the treatment variable
+        treatment: name of the treatment to use as the treated group
+        covariates: list of columns to use as covariates
+
+    Usage:
+
+    ```python
+    from cluster_experiments.experiment_analysis import MLMExperimentAnalysis
+    import pandas as pd
+
+    df = pd.DataFrame({
+        'x': [1, 2, 3, 0, 0, 1],
+        'treatment': ["A"] * 3 + ["B"] * 3,
+        'cluster': [1] * 6,
+    })
+
+    MLMExperimentAnalysis(
+        cluster_cols=['cluster'],
+        target_col='x',
+    ).get_pvalue(df)
+    ```
+    """
+
+    def __init__(
+        self,
+        cluster_cols: List[str],
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        covariates: Optional[List[str]] = None,
+    ):
+        super().__init__(
+            target_col=target_col,
+            treatment_col=treatment_col,
+            cluster_cols=cluster_cols,
+            treatment=treatment,
+            covariates=covariates,
+        )
+        self.regressors = [self.treatment_col] + self.covariates
+        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
+
+        self.re_formula = None
+        self.vc_formula = None
+
+    def fit_mlm(self, df: pd.DataFrame) -> sm.MixedLM:
+        """Returns the fitted MLM model"""
+        return sm.MixedLM.from_formula(
+            formula=self.formula,
+            data=df,
+            groups=self._get_cluster_column(df),
+            re_formula=self.re_formula,
+            vc_formula=self.vc_formula,
+        ).fit()
+
+    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the p-value of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_mlm = self.fit_mlm(df)
+        if verbose:
+            print(results_mlm.summary())
+
+        return results_mlm.pvalues[self.treatment_col]
+
+    def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the point estimate of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_mlm = self.fit_mlm(df)
+        return results_mlm.params[self.treatment_col]
