@@ -270,7 +270,7 @@ class StochasticRelativePositivePerturbator(
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = StochasticRelativePositivePerturbator()
         # Increase target metric by 50%
-        perturbator.perturbate(df, average_effect=0.5)
+        perturbator.perturbate(df, average_effect=0.2)
         # returns pd.DataFrame({"target": [1, 3, 3], "treatment": ["A", "B", "A"]})
         ```
         """
