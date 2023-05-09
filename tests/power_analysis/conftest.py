@@ -45,6 +45,11 @@ def df_feats(clusters, dates):
 
 
 @pytest.fixture
+def df_binary(clusters, dates):
+    return generate_random_data(clusters, dates, N, target="binary")
+
+
+@pytest.fixture
 def perturbator():
     return UniformPerturbator(average_effect=0.1)
 
