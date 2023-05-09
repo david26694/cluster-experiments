@@ -175,7 +175,7 @@ class BinaryPerturbator(Perturbator):
     def _data_checks(self, df: pd.DataFrame, average_effect: float) -> None:
         """Check that outcome is indeed binary, and average effect is in (-1, 1)"""
 
-        if set(df[self.target_col].unique()) != {0, 1}:
+        if set(df[self.target_col].unique()) - {0, 1}:
             raise ValueError(
                 f"Target column must be binary, found {set(df[self.target_col].unique())}"
             )
