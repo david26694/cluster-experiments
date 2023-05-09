@@ -18,7 +18,7 @@ class Perturbator(ABC):
 
     Arguments:
         average_effect: The average effect of the treatment
-        target_col: name of the target_col to use as the treated group
+        target_col: name of the target_col to use as the outcome
         treatment_col: The name of the column that contains the treatment
         treatment: name of the treatment to use as the treated group
 
@@ -99,7 +99,7 @@ class NormalPerturbator(Perturbator):
 
     Arguments:
         average_effect (Optional[float], optional): the average effect of the treatment. Defaults to None.
-        target_col (str, optional): name of the target_col to use as the treated group. Defaults to "target".
+        target_col (str, optional): name of the target_col to use as the outcome. Defaults to "target".
         treatment_col (str, optional): the name of the column that contains the treatment. Defaults to "treatment".
         treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
         scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
