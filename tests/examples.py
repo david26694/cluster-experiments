@@ -1,14 +1,21 @@
 import numpy as np
 import pandas as pd
 
+TARGETS = {
+    "binary": lambda x: np.random.choice([0, 1], size=x),
+    "continuous": lambda x: np.random.normal(0, 1, x),
+}
 
-def generate_random_data(clusters, dates, N):
+
+def generate_random_data(clusters, dates, N, target="continuous"):
     # Generate random data with clusters and target
     users = [f"User {i}" for i in range(1000)]
+
+    target_values = TARGETS[target](N)
     df = pd.DataFrame(
         {
             "cluster": np.random.choice(clusters, size=N),
-            "target": np.random.normal(0, 1, size=N),
+            "target": target_values,
             "user": np.random.choice(users, size=N),
             "date": np.random.choice(dates, size=N),
         }
