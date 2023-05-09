@@ -276,11 +276,11 @@ class StochasticRelativePositivePerturbator(
         """
         Usage:
         ```python
-        from cluster_experiments.perturbator import RelativePositivePerturbator
+        from cluster_experiments.perturbator import StochasticRelativePositivePerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = StochasticRelativePositivePerturbator()
-        # Increase target metric by 50%
+        # Increase target metric by 20%
         perturbator.perturbate(df, average_effect=0.2)
         # returns pd.DataFrame({"target": [1, 3, 3], "treatment": ["A", "B", "A"]})
         ```
