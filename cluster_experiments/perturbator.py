@@ -200,9 +200,7 @@ class RelativePositivePerturbator(Perturbator):
         df = df.copy().reset_index(drop=True)
         average_effect = self.get_average_effect(average_effect)
         self._assert_multiplicative_effect(df, average_effect)
-        df.loc[df[self.treatment_col] == self.treatment, self.target_col] *= (
-            1 + average_effect
-        )
+        df = self._apply_multiplicative_effect(df, average_effect)
         return df
 
     def _assert_multiplicative_effect(
