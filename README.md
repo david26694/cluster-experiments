@@ -148,7 +148,8 @@ The library offers the following classes:
     * `PowerAnalysis`: to run power analysis on a clustered/switchback design
     * `UniformPerturbator`: to artificially perturb treated group with uniform perturbations
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
-    * `NormalPerturbator`: to artificially perturb treated group with normal distribution perturbations
+    *
+    * `StochasticPerturbator`: to artificially perturb treated group with normal distribution perturbations
 * Regarding splitting data:
     * `ClusteredSplitter`: to split data based on clusters
     * `BalancedClusteredSplitter`: to split data based on clusters in a balanced way
