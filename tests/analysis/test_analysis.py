@@ -57,7 +57,7 @@ def test_mlm_analysis(analysis_df_diff):
         cluster_cols=["cluster", "date"],
     )
     p_value = analyser.get_pvalue(analysis_df_diff)
-    point_estimate = analyser.analysis_point_estimate(analysis_df_diff)
+    point_estimate = analyser.get_point_estimate(analysis_df_diff)
     assert np.isclose(p_value, 0)
     assert np.isclose(point_estimate, 0.1)
 
