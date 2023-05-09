@@ -586,23 +586,14 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
             treatment=treatment,
             covariates=covariates,
         )
-        # the specification with C() ensures consistent ordering of treatment and non-treatment in the model
-        self.mlm_treatment_spec = (
-            f"C({self.treatment_col}, Treatment(reference='{self.treatment}'))"
-        )
-        self.mlm_treatment_label = None
-        self.formula = f"{self.target_col} ~ {self.mlm_treatment_spec}"
-        if self.covariates:
-            self.formula = f"{self.formula} + {' + '.join(self.covariates)}"
+        self.regressors = [self.treatment_col] + self.covariates
+        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
 
         self.re_formula = None
         self.vc_formula = None
 
     def fit_mlm(self, df: pd.DataFrame) -> sm.MixedLM:
         """Returns the fitted MLM model"""
-        self.mlm_treatment_label = (
-            f"{self.mlm_treatment_spec}[T.{self._get_non_treatment_label(df)}]"
-        )
         return sm.MixedLM.from_formula(
             formula=self.formula,
             data=df,
@@ -610,9 +601,6 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
             re_formula=self.re_formula,
             vc_formula=self.vc_formula,
         ).fit()
-
-    def _get_non_treatment_label(self, df):
-        return (set(df[self.treatment_col]) - set([self.treatment])).pop()
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
@@ -623,7 +611,8 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         results_mlm = self.fit_mlm(df)
         if verbose:
             print(results_mlm.summary())
-        return results_mlm.pvalues[self.mlm_treatment_label]
+
+        return results_mlm.pvalues[self.treatment_col]
 
     def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the point estimate of the analysis
@@ -632,15 +621,4 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
             verbose (Optional): bool, prints the regression summary if True
         """
         results_mlm = self.fit_mlm(df)
-        # negative sign, as we use the treatment as reference (instead of the baseline)
-        return -results_mlm.params[self.mlm_treatment_label]
-
-    def get_pvalue(self, df: pd.DataFrame) -> float:
-        """Returns the p-value of the analysis
-
-        Arguments:
-            df: dataframe containing the data to analyze
-        """
-        df = df.copy()
-        self._data_checks(df=df)
-        return self.analysis_pvalue(df)
+        return results_mlm.params[self.treatment_col]
