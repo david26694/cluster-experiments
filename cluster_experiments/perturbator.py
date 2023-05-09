@@ -208,17 +208,20 @@ class RelativePositivePerturbator(Perturbator):
     def _assert_multiplicative_effect(
         self, df: pd.DataFrame, average_effect: float
     ) -> None:
-        assert -1.0 <= average_effect, (
-            "Simulated effect needs to be bigger than -100% but got "
-            f"{average_effect*100:.1f}%"
-        )
-        frac_zeros = (
-            (df[self.treatment_col] == self.treatment) & (df[self.target_col] == 0)
+        if average_effect < -1.0:
+            raise ValueError(
+                "Simulated effect needs to be bigger than -100%, got "
+                f"{average_effect*100:.1f}%"
+            )
+
+        treatment_zeros = (
+            (df[self.treatment_col] != self.treatment) | (df[self.target_col] == 0)
         ).mean()
-        assert frac_zeros < 1.0, (
-            f"All samples have {self.target_col} = 0 , simulatations can't work with a "
-            f"{self.average_effect} change on that!"
-        )
+        if 1.0 == treatment_zeros:
+            raise ValueError(
+                f"All treatment samples have {self.target_col} = 0, relative effect "
+                f"{average_effect} will have no effect"
+            )
 
     def _apply_multiplicative_effect(
         self, df: pd.DataFrame, effect: Union[float, np.ndarray]

@@ -4,7 +4,9 @@ import pytest
 
 from cluster_experiments.perturbator import (
     BinaryPerturbator,
+    RelativePositivePerturbator,
     StochasticPerturbator,
+    StochasticRelativePositivePerturbator,
     UniformPerturbator,
 )
 from tests.examples import binary_df, continuous_df
@@ -115,6 +117,65 @@ def test_stochastic_scale_provided_is_used(average_effect, scale):
     assert np.var(perturbated_values) == np.var(effect)
 
 
+@pytest.mark.parametrize("average_effect, avg_target", [(0.1, 0.55), (0.04, 0.52)])
+def test_relative_positive_perturbate(average_effect, avg_target):
+    rp = RelativePositivePerturbator()
+    assert (
+        rp.perturbate(continuous_df, average_effect=average_effect)
+        .query("treatment == 'B'")["target"]
+        .mean()
+        == avg_target
+    )
+
+
+@pytest.mark.parametrize("average_effect", [0.1, 0.04])
+def test_stochastic_relative_perturbate(average_effect):
+    # given
+    rp = StochasticRelativePositivePerturbator()
+    mean = average_effect / (average_effect * average_effect)
+    variance = (1 - average_effect) / (average_effect * average_effect)
+    np.random.seed(24)
+    effect = (1 + np.random.beta(mean, variance, 2)) * continuous_df.query(
+        "treatment == 'B'"
+    )["target"].values
+
+    # when
+    np.random.seed(24)
+    perturbated_values = (
+        rp.perturbate(continuous_df, average_effect=average_effect)
+        .query("treatment == 'B'")["target"]
+        .values
+    )
+
+    # then
+    assert np.mean(perturbated_values) == np.mean(effect)
+    assert np.var(perturbated_values) == np.var(effect)
+
+
+@pytest.mark.parametrize("average_effect, scale", [(0.2, 0.05), (0.4, 0.1)])
+def test_stochastic_relative_perturbate_scale_provided_is_used(average_effect, scale):
+    # given
+    rp = StochasticRelativePositivePerturbator(scale=scale)
+    mean = average_effect / (scale * scale)
+    variance = (1 - average_effect) / (scale * scale)
+    np.random.seed(24)
+    effect = (1 + np.random.beta(mean, variance, 2)) * continuous_df.query(
+        "treatment == 'B'"
+    )["target"].values
+
+    # when
+    np.random.seed(24)
+    perturbated_values = (
+        rp.perturbate(continuous_df, average_effect=average_effect)
+        .query("treatment == 'B'")["target"]
+        .values
+    )
+
+    # then
+    assert np.mean(perturbated_values) == np.mean(effect)
+    assert np.var(perturbated_values) == np.var(effect)
+
+
 def test_binary_raises():
     binary_df_repeated = pd.concat([binary_df for _ in range(50)])
     bp = BinaryPerturbator()
@@ -141,3 +202,25 @@ def test_stochastic_raises_non_positive_scale():
     bp = StochasticPerturbator(scale=_scale)
     with pytest.raises(ValueError, match=f"scale must be positive, got {_scale}"):
         bp.perturbate(continuous_df, average_effect=0.05)
+
+
+def test_raises_smaller_than_minus_100():
+    average_effect = -1.1
+    rp = RelativePositivePerturbator()
+    with pytest.raises(
+        ValueError,
+        match=f"Simulated effect needs to be bigger than -100%, got {average_effect*100:.1f}%",
+    ):
+        rp.perturbate(continuous_df, average_effect)
+
+
+def test_raises_base_treatment_is_all_0():
+    average_effect = 0.1
+    continuous_df.loc[continuous_df["treatment"] == "B", "target"] = 0
+    rp = RelativePositivePerturbator()
+    msg = (
+        "All treatment samples have target = 0, relative effect "
+        f"{average_effect} will have no effect"
+    )
+    with pytest.raises(ValueError, match=msg):
+        rp.perturbate(continuous_df, average_effect)
