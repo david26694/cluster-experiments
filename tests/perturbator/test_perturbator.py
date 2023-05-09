@@ -70,7 +70,7 @@ def test_uniform_perturbator_perturbate(average_effect, avg_target):
 
 
 @pytest.mark.parametrize("average_effect", [-0.1, 0.1])
-def test_normal_perturbator_perturbate(average_effect):
+def test_stochastic_perturbator_perturbate(average_effect):
     # given
     np.random.seed(24)
     effect = (
@@ -80,9 +80,9 @@ def test_normal_perturbator_perturbate(average_effect):
 
     # when
     np.random.seed(24)
-    normal_perturbator = StochasticPerturbator()
+    stochastic_perturbator = StochasticPerturbator()
     perturbated_values = (
-        normal_perturbator.perturbate(continuous_df, average_effect)
+        stochastic_perturbator.perturbate(continuous_df, average_effect)
         .query("treatment == 'B'")["target"]
         .values
     )
@@ -93,7 +93,7 @@ def test_normal_perturbator_perturbate(average_effect):
 
 
 @pytest.mark.parametrize("average_effect, scale", [(-0.1, 0.02), (0.1, 0.03)])
-def test_normal_scale_provided_is_used(average_effect, scale):
+def test_stochastic_scale_provided_is_used(average_effect, scale):
     # given
     np.random.seed(24)
     effect = (
@@ -103,9 +103,9 @@ def test_normal_scale_provided_is_used(average_effect, scale):
 
     # when
     np.random.seed(24)
-    normal_perturbator = StochasticPerturbator(scale=scale)
+    stochastic_perturbator = StochasticPerturbator(scale=scale)
     perturbated_values = (
-        normal_perturbator.perturbate(continuous_df, average_effect)
+        stochastic_perturbator.perturbate(continuous_df, average_effect)
         .query("treatment == 'B'")["target"]
         .values
     )
@@ -136,7 +136,7 @@ def test_binary_raises_non_binary_target():
         bp.perturbate(binary_df, average_effect=0.05)
 
 
-def test_normal_raises_non_positive_scale():
+def test_stochastic_raises_non_positive_scale():
     _scale = -0.1
     bp = StochasticPerturbator(scale=_scale)
     with pytest.raises(ValueError, match=f"scale must be positive, got {_scale}"):
