@@ -1,6 +1,8 @@
 import logging
+import random
 from typing import Dict, Generator, Iterable, List, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 from tqdm import tqdm
@@ -41,6 +43,7 @@ class PowerAnalysis:
         n_simulations: Number of simulations to run.
         alpha: Significance level.
         features_cupac_model: Covariates to be used in cupac model
+        seed: Optional. Seed to use for the splitter.
 
     Usage:
     ```python
@@ -99,6 +102,7 @@ class PowerAnalysis:
         n_simulations: int = 100,
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
+        seed: Optional[int] = None,
     ):
         self.perturbator = perturbator
         self.splitter = splitter
@@ -115,6 +119,10 @@ class PowerAnalysis:
             target_col=target_col,
             features_cupac_model=features_cupac_model,
         )
+        if seed is not None:
+            random.seed(seed)  # seed for splitter
+            np.random.seed(seed)  # seed for the binary perturbator
+            # may need to seed other stochasticity sources if added
 
         self.check_inputs()
 
@@ -381,6 +389,7 @@ class PowerAnalysis:
             treatment=config.treatment,
             n_simulations=config.n_simulations,
             alpha=config.alpha,
+            seed=config.seed,
         )
 
     def check_treatment_col(self):

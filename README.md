@@ -132,7 +132,7 @@ analysis = GeeExperimentAnalysis(
 
 # Run the power analysis
 pw = PowerAnalysis(
-    perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50
+    perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50, seed=123
 )
 
 # Keep in mind that the average effect is the absolute effect added, this is not relative!
