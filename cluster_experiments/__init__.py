@@ -9,8 +9,10 @@ from cluster_experiments.experiment_analysis import (
 )
 from cluster_experiments.perturbator import (
     BinaryPerturbator,
-    NormalPerturbator,
     Perturbator,
+    RelativePositivePerturbator,
+    StochasticPerturbator,
+    StochasticRelativePositivePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.power_analysis import PowerAnalysis
@@ -34,7 +36,9 @@ __all__ = [
     "BinaryPerturbator",
     "Perturbator",
     "UniformPerturbator",
-    "NormalPerturbator",
+    "RelativePositivePerturbator",
+    "StochasticPerturbator",
+    "StochasticRelativePositivePerturbator",
     "PowerAnalysis",
     "PowerConfig",
     "EmptyRegressor",

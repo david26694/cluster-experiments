@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -91,9 +91,9 @@ class UniformPerturbator(Perturbator):
         return df
 
 
-class NormalPerturbator(Perturbator):
-    """The NormalPertubator class implements a perturbator that adds a normal effect
-    to the target column of the treated instances. The normal effect is sampled from a
+class StochasticPerturbator(Perturbator):
+    """The StochasticPerturbator class implements a perturbator that adds a stochastic effect
+    to the target column of the treated instances. The stochastic effect is sampled from a
     normal distribution with mean average_effect and variance scale. If scale is not
     provided, the variance is abs(average_effect).
 
@@ -132,7 +132,7 @@ class NormalPerturbator(Perturbator):
         Usage:
 
         ```python
-        from cluster_experiments.perturbator import NormalPerturbator
+        from cluster_experiments.perturbator import StochasticPerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = NormalPerturbator()
@@ -142,10 +142,9 @@ class NormalPerturbator(Perturbator):
         df = df.copy().reset_index(drop=True)
         average_effect = self.get_average_effect(average_effect)
         scale = self._get_scale(average_effect)
-        n = (df[self.treatment_col] == self.treatment).sum()
-        df.loc[
-            df[self.treatment_col] == self.treatment, self.target_col
-        ] += np.random.normal(average_effect, scale, n)
+        n = self._get_number_of_treated(df)
+        sampled_effect = self._sample_normal_effect(average_effect, scale, n)
+        df = self._apply_additive_effect(df, sampled_effect)
         return df
 
     def _get_scale(self, average_effect: float) -> float:
@@ -156,6 +155,139 @@ class NormalPerturbator(Perturbator):
         if scale <= 0:
             raise ValueError(f"scale must be positive, got {scale}")
         return scale
+
+    def _get_number_of_treated(self, df: pd.DataFrame) -> int:
+        """Get the number of treated instances in the dataframe"""
+        return (df[self.treatment_col] == self.treatment).sum()
+
+    def _sample_normal_effect(
+        self, average_effect: float, scale: float, n: int
+    ) -> float:
+        return np.random.normal(average_effect, scale, n)
+
+    def _apply_additive_effect(
+        self, df: pd.DataFrame, sampled_effect: np.ndarray
+    ) -> pd.DataFrame:
+        df.loc[
+            df[self.treatment_col] == self.treatment, self.target_col
+        ] += sampled_effect
+        return df
+
+
+class RelativePositivePerturbator(Perturbator):
+    """
+    A Perturbator for continuous, positively-defined targets
+    applies a simulated effect multiplicatively for the treated samples, ie.
+    proportional to the target value for each sample. The number of samples with 0
+    as target remains unchanged.
+    """
+
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
+        """
+        Usage:
+        ```python
+        from cluster_experiments.perturbator import RelativePositivePerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = RelativePositivePerturbator()
+        # Increase target metric by 50%
+        perturbator.perturbate(df, average_effect=0.5)
+        # returns pd.DataFrame({"target": [1, 3, 3], "treatment": ["A", "B", "A"]})
+        ```
+        """
+        df = df.copy().reset_index(drop=True)
+        average_effect = self.get_average_effect(average_effect)
+        self._assert_multiplicative_effect(df, average_effect)
+        df.loc[df[self.treatment_col] == self.treatment, self.target_col] *= (
+            1 + average_effect
+        )
+        return df
+
+    def _assert_multiplicative_effect(
+        self, df: pd.DataFrame, average_effect: float
+    ) -> None:
+        assert -1.0 <= average_effect, (
+            "Simulated effect needs to be bigger than -100% but got "
+            f"{average_effect*100:.1f}%"
+        )
+        frac_zeros = (
+            (df[self.treatment_col] == self.treatment) & (df[self.target_col] == 0)
+        ).mean()
+        assert frac_zeros < 1.0, (
+            f"All samples have {self.target_col} = 0 , simulatations can't work with a "
+            f"{self.average_effect} change on that!"
+        )
+
+    def _apply_multiplicative_effect(
+        self, df: pd.DataFrame, effect: Union[float, np.ndarray]
+    ) -> pd.DataFrame:
+        df.loc[df[self.treatment_col] == self.treatment, self.target_col] *= 1 + effect
+        return df
+
+
+class StochasticRelativePositivePerturbator(
+    StochasticPerturbator, RelativePositivePerturbator
+):
+    """
+    A Perturbator for continuous, positively-defined targets that applies a simulated
+    stochastic effect multiplicatively for the treated samples, ie. proportional to the
+    target value for each sample. The number of samples with 0 as target remains unchanged.
+
+    The stochastic effect is sampled from a beta distribution with parameters mean and
+    variance. If variance is not provided, the variance is abs(mean).
+
+    The common beta parameters are derived from the mean and scale as follows:
+
+    ```
+    a <- mu / (scale * scale)
+    b <- (1-mu) / (scale * scale)
+    effect ~ beta(a, b)
+    ```
+    source: https://stackoverflow.com/a/51143208
+
+    Example: a mean = 0.2 and variance = 0.1, give a = 20 and b = 80
+    Plot: https://www.wolframalpha.com/input?i=plot+distribution+of+beta%2820%2C+80%29
+
+    Arguments:
+        average_effect (Optional[float], optional): the average effect of the treatment. Defaults to None.
+        target_col (str, optional): name of the target_col to use as the outcome. Defaults to "target".
+        treatment_col (str, optional): the name of the column that contains the treatment. Defaults to "treatment".
+        treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
+        scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
+    """
+
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
+        """
+        Usage:
+        ```python
+        from cluster_experiments.perturbator import RelativePositivePerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = StochasticRelativePositivePerturbator()
+        # Increase target metric by 50%
+        perturbator.perturbate(df, average_effect=0.5)
+        # returns pd.DataFrame({"target": [1, 3, 3], "treatment": ["A", "B", "A"]})
+        ```
+        """
+        df = df.copy().reset_index(drop=True)
+        average_effect = self.get_average_effect(average_effect)
+        self._assert_multiplicative_effect(df, average_effect)
+        scale = self._get_scale(average_effect)
+        n = self._get_number_of_treated(df)
+        sampled_effect = self._sample_beta_effect(average_effect, scale, n)
+        df = self._apply_multiplicative_effect(df, sampled_effect)
+        return df
+
+    def _sample_beta_effect(
+        self, average_effect: float, scale: float, n: int
+    ) -> np.ndarray:
+        a = average_effect / (scale * scale)
+        b = (1 - average_effect) / (scale * scale)
+        return np.random.beta(a, b, n)
 
 
 class BinaryPerturbator(Perturbator):

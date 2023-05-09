@@ -10,7 +10,13 @@ from cluster_experiments.experiment_analysis import (
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
-from cluster_experiments.perturbator import BinaryPerturbator, UniformPerturbator
+from cluster_experiments.perturbator import (
+    BinaryPerturbator,
+    RelativePositivePerturbator,
+    StochasticPerturbator,
+    StochasticRelativePositivePerturbator,
+    UniformPerturbator,
+)
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
@@ -44,6 +50,7 @@ class PowerConfig:
         time_col: column to use as time in switchback splitter
         covariates: list of columns to use as covariates
         average_effect: average effect to use in the perturbator
+        scale: scale to use in stochastic perturbators
         treatments: list of treatments to use
         alpha: alpha value to use in the power analysis
         agg_col: column to use for aggregation in the CUPAC model
@@ -88,6 +95,7 @@ class PowerConfig:
 
     # Perturbator
     average_effect: Optional[float] = None
+    scale: Optional[float] = None
 
     # Splitter
     treatments: Optional[List[str]] = None
@@ -117,6 +125,9 @@ class PowerConfig:
 perturbator_mapping = {
     "binary": BinaryPerturbator,
     "uniform": UniformPerturbator,
+    "relative_positive_perturbator": RelativePositivePerturbator,
+    "stochastic_perturbator": StochasticPerturbator,
+    "stochastic_relative_positive_perturbator": StochasticRelativePositivePerturbator,
 }
 
 splitter_mapping = {

@@ -4,7 +4,7 @@ import pytest
 
 from cluster_experiments.perturbator import (
     BinaryPerturbator,
-    NormalPerturbator,
+    StochasticPerturbator,
     UniformPerturbator,
 )
 from tests.examples import binary_df, continuous_df
@@ -80,7 +80,7 @@ def test_normal_perturbator_perturbate(average_effect):
 
     # when
     np.random.seed(24)
-    normal_perturbator = NormalPerturbator()
+    normal_perturbator = StochasticPerturbator()
     perturbated_values = (
         normal_perturbator.perturbate(continuous_df, average_effect)
         .query("treatment == 'B'")["target"]
@@ -103,7 +103,7 @@ def test_normal_scale_provided_is_used(average_effect, scale):
 
     # when
     np.random.seed(24)
-    normal_perturbator = NormalPerturbator(scale=scale)
+    normal_perturbator = StochasticPerturbator(scale=scale)
     perturbated_values = (
         normal_perturbator.perturbate(continuous_df, average_effect)
         .query("treatment == 'B'")["target"]
@@ -138,6 +138,6 @@ def test_binary_raises_non_binary_target():
 
 def test_normal_raises_non_positive_scale():
     _scale = -0.1
-    bp = NormalPerturbator(scale=_scale)
+    bp = StochasticPerturbator(scale=_scale)
     with pytest.raises(ValueError, match=f"scale must be positive, got {_scale}"):
         bp.perturbate(continuous_df, average_effect=0.05)
