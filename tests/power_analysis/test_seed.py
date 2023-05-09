@@ -1,10 +1,9 @@
 import numpy as np
 
-from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 
 
-def get_config(perturbator: Perturbator) -> dict:
+def get_config(perturbator: str) -> dict:
     return {
         "cluster_cols": ["cluster"],
         "analysis": "ols_clustered",
