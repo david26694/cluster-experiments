@@ -20,6 +20,9 @@ from cluster_experiments import (
     PowerAnalysis,
     PowerConfig,
     RandomSplitter,
+    RelativePositivePerturbator,
+    StochasticPerturbator,
+    StochasticRelativePositivePerturbator,
     StratifiedClusteredSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
@@ -55,6 +58,9 @@ all_objects = [
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
     MLMExperimentAnalysis,
+    RelativePositivePerturbator,
+    StochasticPerturbator,
+    StochasticRelativePositivePerturbator,
 ]
 
 
