@@ -56,10 +56,13 @@ def test_mlm_analysis(analysis_df_diff):
     analyser = MLMExperimentAnalysis(
         cluster_cols=["cluster", "date"],
     )
+    # Changing just one observation so we have a p value
+    analysis_df_diff.loc[1, "target"] = 0.00001
+
     p_value = analyser.get_pvalue(analysis_df_diff)
     point_estimate = analyser.get_point_estimate(analysis_df_diff)
-    assert np.isclose(p_value, 0)
-    assert np.isclose(point_estimate, 0.1)
+    assert np.isclose(p_value, 0, atol=1e-5)
+    assert np.isclose(point_estimate, 0.1, atol=1e-5)
 
 
 def test_ttest(analysis_df_diff):
