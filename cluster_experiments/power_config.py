@@ -127,8 +127,8 @@ perturbator_mapping = {
     "binary": BinaryPerturbator,
     "uniform": UniformPerturbator,
     "relative_positive_perturbator": RelativePositivePerturbator,
-    "stochastic_perturbator": NormalPerturbator,
-    "stochastic_relative_positive_perturbator": BetaRelativePositivePerturbator,
+    "normal_perturbator": NormalPerturbator,
+    "beta_relative_positive_perturbator": BetaRelativePositivePerturbator,
 }
 
 splitter_mapping = {

@@ -9,7 +9,20 @@ from cluster_experiments.perturbator import (
     RelativePositivePerturbator,
     UniformPerturbator,
 )
+from cluster_experiments.power_config import PowerConfig
 from tests.examples import binary_df, continuous_df
+
+
+def test_binary_perturbator_from_config():
+    config = PowerConfig(
+        analysis="gee",
+        splitter="clustered_balance",
+        perturbator="binary",
+        cluster_cols=["cluster"],
+        n_simulations=100,
+    )
+    bp = BinaryPerturbator.from_config(config)
+    assert isinstance(bp, BinaryPerturbator)
 
 
 @pytest.mark.parametrize("average_effect, output_value", [(-1, 0), (1, 1)])
@@ -72,7 +85,7 @@ def test_uniform_perturbator_perturbate(average_effect, avg_target):
 
 
 @pytest.mark.parametrize("average_effect", [-0.1, 0.1])
-def test_stochastic_perturbator_perturbate(average_effect):
+def test_normal_perturbator_perturbate(average_effect):
     # given
     np.random.seed(24)
     effect = (
@@ -95,7 +108,7 @@ def test_stochastic_perturbator_perturbate(average_effect):
 
 
 @pytest.mark.parametrize("average_effect, scale", [(-0.1, 0.02), (0.1, 0.03)])
-def test_stochastic_scale_provided_is_used(average_effect, scale):
+def test_normal_scale_provided_is_used(average_effect, scale):
     # given
     np.random.seed(24)
     effect = (
@@ -115,6 +128,18 @@ def test_stochastic_scale_provided_is_used(average_effect, scale):
     # then
     assert np.mean(perturbated_values) == np.mean(effect)
     assert np.var(perturbated_values) == np.var(effect)
+
+
+def test_normal_perturbator_from_config():
+    config = PowerConfig(
+        analysis="gee",
+        splitter="clustered_balance",
+        perturbator="normal_perturbator",
+        cluster_cols=["cluster"],
+        n_simulations=100,
+    )
+    np = NormalPerturbator.from_config(config)
+    assert isinstance(np, NormalPerturbator)
 
 
 @pytest.mark.parametrize("average_effect, avg_target", [(0.1, 0.55), (0.04, 0.52)])
@@ -212,6 +237,16 @@ def test_relative_positive_raises_effect_less_than_minus_100():
         match=f"Simulated effect needs to be greater than -100%, got {average_effect*100:.1f}%",
     ):
         rp.perturbate(continuous_df, average_effect)
+
+
+def test_relative_positive_target_has_some_negative():
+    average_effect = 0.1
+    _continuous_df = continuous_df.copy()
+    _continuous_df.loc[:, "target"] = [0.5, 0.5, 0.5, -0.1]
+    rp = RelativePositivePerturbator()
+    msg = "All target values need to be positive or 0, got -0.1"
+    with pytest.raises(ValueError, match=msg):
+        rp.perturbate(_continuous_df, average_effect)
 
 
 def test_relative_positive_raises_target_is_all_0():
