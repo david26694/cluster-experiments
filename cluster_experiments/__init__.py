@@ -9,8 +9,11 @@ from cluster_experiments.experiment_analysis import (
     TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import (
+    BetaRelativePositivePerturbator,
     BinaryPerturbator,
+    NormalPerturbator,
     Perturbator,
+    RelativePositivePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.power_analysis import PowerAnalysis
@@ -34,6 +37,9 @@ __all__ = [
     "BinaryPerturbator",
     "Perturbator",
     "UniformPerturbator",
+    "RelativePositivePerturbator",
+    "NormalPerturbator",
+    "BetaRelativePositivePerturbator",
     "PowerAnalysis",
     "PowerConfig",
     "EmptyRegressor",
