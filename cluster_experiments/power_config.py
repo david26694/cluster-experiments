@@ -126,9 +126,9 @@ class PowerConfig:
 perturbator_mapping = {
     "binary": BinaryPerturbator,
     "uniform": UniformPerturbator,
-    "relative_positive_perturbator": RelativePositivePerturbator,
+    "relative_positive": RelativePositivePerturbator,
     "normal_perturbator": NormalPerturbator,
-    "beta_relative_positive_perturbator": BetaRelativePositivePerturbator,
+    "beta_relative_positive": BetaRelativePositivePerturbator,
 }
 
 splitter_mapping = {
