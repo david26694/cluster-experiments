@@ -12,10 +12,10 @@ from cluster_experiments.experiment_analysis import (
     TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import (
+    BetaRelativePositivePerturbator,
     BinaryPerturbator,
+    NormalPerturbator,
     RelativePositivePerturbator,
-    StochasticPerturbator,
-    StochasticRelativePositivePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.random_splitter import (
@@ -127,8 +127,8 @@ perturbator_mapping = {
     "binary": BinaryPerturbator,
     "uniform": UniformPerturbator,
     "relative_positive_perturbator": RelativePositivePerturbator,
-    "stochastic_perturbator": StochasticPerturbator,
-    "stochastic_relative_positive_perturbator": StochasticRelativePositivePerturbator,
+    "stochastic_perturbator": NormalPerturbator,
+    "stochastic_relative_positive_perturbator": BetaRelativePositivePerturbator,
 }
 
 splitter_mapping = {

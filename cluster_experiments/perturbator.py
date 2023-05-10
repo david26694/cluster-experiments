@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import NoReturn, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -85,17 +85,26 @@ class UniformPerturbator(Perturbator):
         """
         df = df.copy().reset_index(drop=True)
         average_effect = self.get_average_effect(average_effect)
-        df.loc[
-            df[self.treatment_col] == self.treatment, self.target_col
-        ] += average_effect
+        df = self.apply_additive_effect(df, average_effect)
+        return df
+
+    def apply_additive_effect(
+        self, df: pd.DataFrame, effect: Union[float, np.ndarray]
+    ) -> pd.DataFrame:
+        df.loc[df[self.treatment_col] == self.treatment, self.target_col] += effect
         return df
 
 
-class StochasticPerturbator(Perturbator):
-    """The StochasticPerturbator class implements a perturbator that adds a stochastic effect
+class NormalPerturbator(UniformPerturbator):
+    """The NormalPerturbator class implements a perturbator that adds a stochastic effect
     to the target column of the treated instances. The stochastic effect is sampled from a
     normal distribution with mean average_effect and variance scale. If scale is not
-    provided, the variance is abs(average_effect).
+    provided, the variance is abs(average_effect). If scale is provided, a
+    value not much bigger than the average_effect is suggested.
+
+    ```
+    target -> target + effect, where effect ~ Normal(average_effect, scale)
+    ```
 
     Arguments:
         average_effect (Optional[float], optional): the average effect of the treatment. Defaults to None.
@@ -132,7 +141,7 @@ class StochasticPerturbator(Perturbator):
         Usage:
 
         ```python
-        from cluster_experiments.perturbator import StochasticPerturbator
+        from cluster_experiments.perturbator import NormalPerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = NormalPerturbator()
@@ -141,13 +150,13 @@ class StochasticPerturbator(Perturbator):
         """
         df = df.copy().reset_index(drop=True)
         average_effect = self.get_average_effect(average_effect)
-        scale = self._get_scale(average_effect)
-        n = self._get_number_of_treated(df)
+        scale = self.get_scale(average_effect)
+        n = self.get_number_of_treated(df)
         sampled_effect = self._sample_normal_effect(average_effect, scale, n)
-        df = self._apply_additive_effect(df, sampled_effect)
+        df = self.apply_additive_effect(df, sampled_effect)
         return df
 
-    def _get_scale(self, average_effect: float) -> float:
+    def get_scale(self, average_effect: float) -> float:
         """Get the scale of the normal distribution. If scale is not provided, the
         variance is abs(average_effect). Raises a ValueError if scale is not positive.
         """
@@ -156,22 +165,14 @@ class StochasticPerturbator(Perturbator):
             raise ValueError(f"scale must be positive, got {scale}")
         return scale
 
-    def _get_number_of_treated(self, df: pd.DataFrame) -> int:
+    def get_number_of_treated(self, df: pd.DataFrame) -> int:
         """Get the number of treated instances in the dataframe"""
         return (df[self.treatment_col] == self.treatment).sum()
 
     def _sample_normal_effect(
         self, average_effect: float, scale: float, n: int
-    ) -> float:
+    ) -> np.ndarray:
         return np.random.normal(average_effect, scale, n)
-
-    def _apply_additive_effect(
-        self, df: pd.DataFrame, sampled_effect: np.ndarray
-    ) -> pd.DataFrame:
-        df.loc[
-            df[self.treatment_col] == self.treatment, self.target_col
-        ] += sampled_effect
-        return df
 
     @classmethod
     def from_config(cls, config):
@@ -191,6 +192,11 @@ class RelativePositivePerturbator(Perturbator):
     applies a simulated effect multiplicatively for the treated samples, ie.
     proportional to the target value for each sample. The number of samples with 0
     as target remains unchanged.
+
+    ```
+    target -> target * (1 + average_effect), where -1 < average_effect < inf
+                                               and target > 0 for all samples
+    ```
     """
 
     def perturbate(
@@ -210,19 +216,20 @@ class RelativePositivePerturbator(Perturbator):
         """
         df = df.copy().reset_index(drop=True)
         average_effect = self.get_average_effect(average_effect)
-        self._assert_multiplicative_effect(df, average_effect)
-        df = self._apply_multiplicative_effect(df, average_effect)
+        self.check_relative_positive_effect(df, average_effect)
+        df = self.apply_multiplicative_effect(df, average_effect)
         return df
 
-    def _assert_multiplicative_effect(
+    def check_relative_positive_effect(
         self, df: pd.DataFrame, average_effect: float
     ) -> None:
-        if average_effect < -1.0:
-            raise ValueError(
-                "Simulated effect needs to be bigger than -100%, got "
-                f"{average_effect*100:.1f}%"
-            )
+        self.check_average_effect_greater_than(average_effect, x=-1)
+        self.check_target_is_not_negative(df)
+        self.check_target_is_not_constant_zero(df, average_effect)
 
+    def check_target_is_not_constant_zero(
+        self, df: pd.DataFrame, average_effect: float
+    ) -> Optional[NoReturn]:
         treatment_zeros = (
             (df[self.treatment_col] != self.treatment) | (df[self.target_col] == 0)
         ).mean()
@@ -232,25 +239,51 @@ class RelativePositivePerturbator(Perturbator):
                 f"{average_effect} will have no effect"
             )
 
-    def _apply_multiplicative_effect(
+    def check_target_is_not_negative(self, df: pd.DataFrame) -> Optional[NoReturn]:
+        if any(df[self.target_col] < 0):
+            raise ValueError(
+                f"All {self.target_col} values need to be positive or 0, "
+                f"got {df[self.target_col].min()}"
+            )
+
+    def check_average_effect_greater_than(
+        self, average_effect: float, x: float
+    ) -> Optional[NoReturn]:
+        if average_effect <= x:
+            raise ValueError(
+                f"Simulated effect needs to be greater than {x*100:.0f}%, got "
+                f"{average_effect*100:.1f}%"
+            )
+
+    def apply_multiplicative_effect(
         self, df: pd.DataFrame, effect: Union[float, np.ndarray]
     ) -> pd.DataFrame:
         df.loc[df[self.treatment_col] == self.treatment, self.target_col] *= 1 + effect
         return df
 
 
-class StochasticRelativePositivePerturbator(
-    StochasticPerturbator, RelativePositivePerturbator
-):
+class BetaRelativePositivePerturbator(NormalPerturbator, RelativePositivePerturbator):
     """
-    A Perturbator for continuous, positively-defined targets that applies a simulated
-    stochastic effect multiplicatively for the treated samples, ie. proportional to the
-    target value for each sample. The number of samples with 0 as target remains unchanged.
+    A stochastic Perturbator for continuous, positively-defined targets that applies a
+    sampled effect from the Beta distribution. It applies the effect multiplicatively.
+
+    *WARNING*: the average effect is only defined for values between 0 and 1 (not
+    included). Therefore, it only increments the target for the treated samples.
+
+    The number of samples with 0 as target remains unchanged.
 
     The stochastic effect is sampled from a beta distribution with parameters mean and
-    variance. If variance is not provided, the variance is abs(mean).
+    variance. If variance is not provided, the variance is abs(mean). Hence, the effect
+    is bounded by 0 and 1.
 
-    The common beta parameters are derived from the mean and scale as follows:
+    ```
+    target -> target * (1 + effect), where effect ~ Beta(a, b); a, b > 0
+                                       and target > 0 for all samples
+    ```
+
+    The common beta parameters are derived from the mean and scale parameters (see
+    how below). That's why the average effect is only defined for values between 0
+    and 1, otherwise one of the beta parameters would be negative or zero:
 
     ```
     a <- mu / (scale * scale)
@@ -276,10 +309,10 @@ class StochasticRelativePositivePerturbator(
         """
         Usage:
         ```python
-        from cluster_experiments.perturbator import StochasticRelativePositivePerturbator
+        from cluster_experiments.perturbator import BetaRelativePositivePerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
-        perturbator = StochasticRelativePositivePerturbator()
+        perturbator = BetaRelativePositivePerturbator()
         # Increase target metric by 20%
         perturbator.perturbate(df, average_effect=0.2)
         # returns pd.DataFrame({"target": [1, 3, 3], "treatment": ["A", "B", "A"]})
@@ -287,12 +320,27 @@ class StochasticRelativePositivePerturbator(
         """
         df = df.copy().reset_index(drop=True)
         average_effect = self.get_average_effect(average_effect)
-        self._assert_multiplicative_effect(df, average_effect)
-        scale = self._get_scale(average_effect)
-        n = self._get_number_of_treated(df)
+        self.check_beta_positive_effect(df, average_effect)
+        scale = self.get_scale(average_effect)
+        n = self.get_number_of_treated(df)
         sampled_effect = self._sample_beta_effect(average_effect, scale, n)
-        df = self._apply_multiplicative_effect(df, sampled_effect)
+        df = self.apply_multiplicative_effect(df, sampled_effect)
         return df
+
+    def check_beta_positive_effect(self, df, average_effect):
+        self.check_average_effect_greater_than(average_effect, x=0)
+        self.check_average_effect_less_than(average_effect, x=1)
+        self.check_target_is_not_negative(df)
+        self.check_target_is_not_constant_zero(df, average_effect)
+
+    def check_average_effect_less_than(
+        self, average_effect: float, x: float
+    ) -> Optional[NoReturn]:
+        if average_effect >= x:
+            raise ValueError(
+                f"Simulated effect needs to be less than {x*100:.0f}%, got "
+                f"{average_effect*100:.1f}%"
+            )
 
     def _sample_beta_effect(
         self, average_effect: float, scale: float, n: int

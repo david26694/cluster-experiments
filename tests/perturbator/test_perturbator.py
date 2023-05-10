@@ -3,10 +3,10 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.perturbator import (
+    BetaRelativePositivePerturbator,
     BinaryPerturbator,
+    NormalPerturbator,
     RelativePositivePerturbator,
-    StochasticPerturbator,
-    StochasticRelativePositivePerturbator,
     UniformPerturbator,
 )
 from tests.examples import binary_df, continuous_df
@@ -82,7 +82,7 @@ def test_stochastic_perturbator_perturbate(average_effect):
 
     # when
     np.random.seed(24)
-    stochastic_perturbator = StochasticPerturbator()
+    stochastic_perturbator = NormalPerturbator()
     perturbated_values = (
         stochastic_perturbator.perturbate(continuous_df, average_effect)
         .query("treatment == 'B'")["target"]
@@ -105,7 +105,7 @@ def test_stochastic_scale_provided_is_used(average_effect, scale):
 
     # when
     np.random.seed(24)
-    stochastic_perturbator = StochasticPerturbator(scale=scale)
+    stochastic_perturbator = NormalPerturbator(scale=scale)
     perturbated_values = (
         stochastic_perturbator.perturbate(continuous_df, average_effect)
         .query("treatment == 'B'")["target"]
@@ -131,7 +131,7 @@ def test_relative_positive_perturbate(average_effect, avg_target):
 @pytest.mark.parametrize("average_effect", [0.1, 0.04])
 def test_stochastic_relative_perturbate(average_effect):
     # given
-    rp = StochasticRelativePositivePerturbator()
+    rp = BetaRelativePositivePerturbator()
     mean = average_effect / (average_effect * average_effect)
     variance = (1 - average_effect) / (average_effect * average_effect)
     np.random.seed(24)
@@ -155,7 +155,7 @@ def test_stochastic_relative_perturbate(average_effect):
 @pytest.mark.parametrize("average_effect, scale", [(0.2, 0.05), (0.4, 0.1)])
 def test_stochastic_relative_perturbate_scale_provided_is_used(average_effect, scale):
     # given
-    rp = StochasticRelativePositivePerturbator(scale=scale)
+    rp = BetaRelativePositivePerturbator(scale=scale)
     mean = average_effect / (scale * scale)
     variance = (1 - average_effect) / (scale * scale)
     np.random.seed(24)
@@ -199,28 +199,59 @@ def test_binary_raises_non_binary_target():
 
 def test_stochastic_raises_non_positive_scale():
     _scale = -0.1
-    bp = StochasticPerturbator(scale=_scale)
+    bp = NormalPerturbator(scale=_scale)
     with pytest.raises(ValueError, match=f"scale must be positive, got {_scale}"):
         bp.perturbate(continuous_df, average_effect=0.05)
 
 
-def test_raises_smaller_than_minus_100():
+def test_relative_positive_raises_effect_less_than_minus_100():
     average_effect = -1.1
     rp = RelativePositivePerturbator()
     with pytest.raises(
         ValueError,
-        match=f"Simulated effect needs to be bigger than -100%, got {average_effect*100:.1f}%",
+        match=f"Simulated effect needs to be greater than -100%, got {average_effect*100:.1f}%",
     ):
         rp.perturbate(continuous_df, average_effect)
 
 
-def test_raises_base_treatment_is_all_0():
+def test_relative_positive_raises_target_is_all_0():
     average_effect = 0.1
-    continuous_df.loc[continuous_df["treatment"] == "B", "target"] = 0
+    _continuous_df = continuous_df.copy()
+    _continuous_df.loc[_continuous_df["treatment"] == "B", "target"] = 0
     rp = RelativePositivePerturbator()
     msg = (
         "All treatment samples have target = 0, relative effect "
         f"{average_effect} will have no effect"
     )
     with pytest.raises(ValueError, match=msg):
+        rp.perturbate(_continuous_df, average_effect)
+
+
+def test_beta_raises_effect_is_negative():
+    average_effect = -0.1
+    rp = BetaRelativePositivePerturbator(scale=0.1)
+    with pytest.raises(
+        ValueError,
+        match=f"Simulated effect needs to be greater than 0%, got {average_effect*100:.1f}%",
+    ):
+        rp.perturbate(continuous_df, average_effect)
+
+
+def test_beta_raises_effect_equals_0():
+    average_effect = 0
+    rp = BetaRelativePositivePerturbator(scale=0.1)
+    with pytest.raises(
+        ValueError,
+        match=f"Simulated effect needs to be greater than 0%, got {average_effect*100:.1f}%",
+    ):
+        rp.perturbate(continuous_df, average_effect)
+
+
+def test_beta_raises_effect_equals_1():
+    average_effect = 1
+    rp = BetaRelativePositivePerturbator()
+    with pytest.raises(
+        ValueError,
+        match=f"Simulated effect needs to be less than 100%, got {average_effect*100:.1f}%",
+    ):
         rp.perturbate(continuous_df, average_effect)
