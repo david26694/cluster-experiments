@@ -127,7 +127,7 @@ perturbator_mapping = {
     "binary": BinaryPerturbator,
     "uniform": UniformPerturbator,
     "relative_positive": RelativePositivePerturbator,
-    "normal_perturbator": NormalPerturbator,
+    "normal": NormalPerturbator,
     "beta_relative_positive": BetaRelativePositivePerturbator,
 }
 
