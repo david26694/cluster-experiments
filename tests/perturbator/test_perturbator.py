@@ -134,7 +134,7 @@ def test_normal_perturbator_from_config():
     config = PowerConfig(
         analysis="gee",
         splitter="clustered_balance",
-        perturbator="normal_perturbator",
+        perturbator="normal",
         cluster_cols=["cluster"],
         n_simulations=100,
     )
