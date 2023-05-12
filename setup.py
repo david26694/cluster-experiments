@@ -56,9 +56,8 @@ setup(
     },
     install_requires=base_packages,
     classifiers=[
-        "Development Status :: Beta",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        "Topic :: Software Development :: Statistics",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
