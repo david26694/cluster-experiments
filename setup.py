@@ -46,7 +46,7 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.8.1",
+    version="0.8.2",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,
@@ -55,4 +55,17 @@ setup(
         "docs": docs_packages,
     },
     install_requires=base_packages,
+    classifiers=[
+        "Development Status :: Beta",
+        "Intended Audience :: Developers",
+        "Topic :: Software Development :: Statistics",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3 :: Only",
+        "Operating System :: OS Independent",
+        "License :: OSI Approved :: MIT License",
+    ],
 )
