@@ -65,6 +65,11 @@ pypi: clean
 	python setup.py bdist_wheel --universal
 	twine upload dist/*
 
+pypi-gh-actions: clean
+	python setup.py sdist
+	python setup.py bdist_wheel --universal
+	twine upload --skip-existing dist/*
+
 # Report log
 report-log:
 	pytest --report-log experiments/reportlog.jsonl
