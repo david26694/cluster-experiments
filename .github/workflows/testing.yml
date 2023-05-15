@@ -25,8 +25,9 @@ jobs:
       run: make install-test
     - name: Automated Checking Mechanism
       run: make check
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2
+    - name: Code coverage
+      uses: codecov/codecov-action@v3
       with:
-          fail_ci_if_error: true
-          version: "v0.1.15"
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true
+        version: "v0.1.15"
