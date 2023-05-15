@@ -11,6 +11,7 @@ https://pypi.org/project/cluster-experiments/)
 [![CodeCov](
 https://codecov.io/gh/david26694/cluster-experiments/branch/main/graph/badge.svg)](https://app.codecov.io/gh/david26694/cluster-experiments/)
 ![License](https://img.shields.io/github/license/david26694/cluster-experiments)
+[![Pypi version](https://img.shields.io/pypi/pyversions/cluster-experiments.svg)](https://pypi.python.org/pypi/cluster-experiments)
 
 A library to run simulation-based power analysis, including clustered data. Also useful to design and analyse clustered and switchback experiments.
 
