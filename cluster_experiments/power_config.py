@@ -125,30 +125,29 @@ class PowerConfig:
 
     seed: Optional[int] = None
 
+    def __post_init__(self):
+        if "switchback" not in self.splitter:
+            self.switch_frequency = None
+            self.washover_time_delta = None
+            self.washover = ""
+            self.time_col = None
 
-def __post_init__(self):
-    if "switchback" not in self.splitter:
-        self.switch_frequency = None
-        self.washover_time_delta = None
-        self.washover = ""
-        self.time_col = None
+        if self.perturbator not in {"normal", "beta_relative_positive"}:
+            self.scale = None
 
-    if self.perturbator not in {"normal", "beta_relative_positive"}:
-        self.scale = None
+        if "balanced" not in self.splitter:
+            self.treatments = None
 
-    if "balanced" not in self.splitter:
-        self.treatments = None
+        if "stratified" not in self.splitter:
+            self.strata_cols = None
 
-    if "stratified" not in self.splitter:
-        self.strata_cols = None
+        if "cupac" not in self.analysis:
+            self.agg_col = ""
+            self.smoothing_factor = 20
+            self.features_cupac_model = None
 
-    if "cupac" not in self.analysis:
-        self.agg_col = ""
-        self.smoothing_factor = 20
-        self.features_cupac_model = None
-
-    if "ttest" in self.analysis:
-        self.covariates = None
+        if "ttest" in self.analysis:
+            self.covariates = None
 
 
 perturbator_mapping = {
