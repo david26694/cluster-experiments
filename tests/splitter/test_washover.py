@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import timedelta
 
 import pytest
@@ -8,7 +9,6 @@ from cluster_experiments.washover import ConstantWashover, EmptyWashover
 
 @pytest.mark.parametrize("minutes, n_rows", [(30, 2), (10, 4), (15, 3)])
 def test_constant_washover_base(minutes, n_rows, washover_base_df):
-
     out_df = ConstantWashover(washover_time_delta=timedelta(minutes=minutes)).washover(
         df=washover_base_df,
         truncated_time_col="time",
@@ -29,7 +29,6 @@ def test_constant_washover_base(minutes, n_rows, washover_base_df):
     ],
 )
 def test_constant_washover_no_switch(minutes, n_rows, df, request):
-
     washover_df = request.getfixturevalue(df)
 
     out_df = ConstantWashover(washover_time_delta=timedelta(minutes=minutes)).washover(
@@ -105,3 +104,38 @@ def test_no_washover_split(minutes, n, washover_split_df):
 
     # We need to have exactly 1000 rows
     assert len(out_df) == n
+
+
+@pytest.mark.parametrize(
+    "minutes, n_rows, df",
+    [
+        (30, 4, "washover_df_no_switch"),
+        (30, 4 + 4, "washover_df_multi_city"),
+    ],
+)
+def test_constant_washover_no_switch_instantiated_int(minutes, n_rows, df, request):
+    washover_df = request.getfixturevalue(df)
+
+    @dataclass
+    class Cfg:
+        washover_time_delta: int
+
+    cw = ConstantWashover.from_config(Cfg(minutes))
+    out_df = cw.washover(
+        df=washover_df,
+        truncated_time_col="time",
+        cluster_cols=["city", "time"],
+        treatment_col="treatment",
+    )
+    assert len(out_df) == n_rows
+    if df == "washover_df_no_switch":
+        # Check that, after 2022-01-01 02:00:00, we keep all the rows of the original
+        # dataframe
+        assert washover_df.query("time >= '2022-01-01 02:00:00'").equals(
+            out_df.query("time >= '2022-01-01 02:00:00'")
+        )
+        # Check that, after 2022-01-01 01:00:00, we don't have the same rows as the
+        # original dataframe
+        assert not washover_df.query("time >= '2022-01-01 01:00:00'").equals(
+            out_df.query("time >= '2022-01-01 01:00:00'")
+        )
