@@ -31,7 +31,7 @@ from cluster_experiments.random_splitter import (
 )
 
 
-@dataclass(frozen=True)
+@dataclass(eq=True)
 class PowerConfig:
     """
     Dataclass to create a power analysis from.
