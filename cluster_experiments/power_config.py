@@ -49,6 +49,7 @@ class PowerConfig:
         splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments
         switch_frequency: how often to switch treatments
         time_col: column to use as time in switchback splitter
+        washover_time_delta: optional, int indicating the washover time in minutes or datetime.timedelta object
         covariates: list of columns to use as covariates
         average_effect: average effect to use in the perturbator
         scale: scale to use in stochastic perturbators
@@ -105,7 +106,7 @@ class PowerConfig:
     switch_frequency: Optional[str] = None
     # Switchback
     time_col: Optional[str] = None
-    washover_time_delta: Optional[datetime.timedelta] = None
+    washover_time_delta: Optional[datetime.timedelta | int] = None
 
     # Analysis
     covariates: Optional[List[str]] = None
