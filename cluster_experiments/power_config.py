@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -124,6 +125,37 @@ class PowerConfig:
     features_cupac_model: Optional[List[str]] = None
 
     seed: Optional[int] = None
+
+
+def __post_init__(self):
+    if "switchback" not in self.splitter:
+        logging.warning("Not a switchback, setting switchback parameters to defaults")
+        self.switch_frequency = None
+        self.washover_time_delta = None
+        self.washover = ""
+        self.time_col = None
+
+    if self.perturbator not in {"normal", "beta_relative_positive"}:
+        logging.warning("Non stochastic Perturbator, setting scale to None")
+        self.scale = None
+
+    if "balanced" not in self.splitter:
+        logging.warning("Non balanced splitter, setting treatments to None")
+        self.treatments = None
+
+    if "stratified" not in self.splitter:
+        logging.warning("Non stratified splitter, setting strata_cols to None")
+        self.strata_cols = None
+
+    if "cupac" not in self.analysis:
+        logging.warning("No Cupac analyser, setting Cupac params to defaults")
+        self.agg_col = ""
+        self.smoothing_factor = 20
+        self.features_cupac_model = None
+
+    if "ttest" in self.analysis:
+        logging.warning("T-test analyser, setting covariates to None")
+        self.covariates = None
 
 
 perturbator_mapping = {
