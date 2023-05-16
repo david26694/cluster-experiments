@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -127,27 +128,85 @@ class PowerConfig:
 
     def __post_init__(self):
         if "switchback" not in self.splitter:
-            self.switch_frequency = None
-            self.washover_time_delta = None
-            self.washover = ""
-            self.time_col = None
+            if self._are_different(self.switch_frequency, None):
+                self.switch_frequency = None
+                logging.warning(
+                    f"{self.switch_frequency = } has no effect"
+                    f"with {self.splitter = }. Overriding switch_frequency to None."
+                )
+            if self._are_different(self.washover_time_delta, None):
+                self.washover_time_delta = None
+                logging.warning(
+                    f"{self.washover_time_delta = } has no effect"
+                    f"with {self.splitter = }. Overriding washover_time_delta to None."
+                )
+            if self._are_different(self.washover, ""):
+                self.washover = ""
+                logging.warning(
+                    f"{self.washover = } has no effect with {self.splitter = }."
+                    'Overriding washover to "".'
+                )
+            if self._are_different(self.time_col, None):
+                self.time_col = None
+                logging.warning(
+                    f"{self.time_col = } has no effect with {self.splitter = } "
+                    "Splitter. Overriding time_col to None."
+                )
 
         if self.perturbator not in {"normal", "beta_relative_positive"}:
-            self.scale = None
+            if self._are_different(self.scale, None):
+                self.scale = None
+                logging.warning(
+                    f"{self.scale = } has no effect with {self.perturbator = }."
+                    "Overriding scale to None."
+                )
 
         if "balanced" not in self.splitter:
-            self.treatments = None
+            if self._are_different(self.treatments, None):
+                self.treatments = None
+                logging.warning(
+                    f"{self.treatments = } has no effect with {self.splitter = }."
+                    "Overriding treatments to None."
+                )
 
         if "stratified" not in self.splitter:
-            self.strata_cols = None
+            if self._are_different(self.strata_cols, None):
+                self.strata_cols = None
+                logging.warning(
+                    f"{self.strata_cols = } has no effect with {self.splitter = }."
+                    "Overriding strata_cols to None."
+                )
 
         if "cupac" not in self.analysis:
-            self.agg_col = ""
-            self.smoothing_factor = 20
-            self.features_cupac_model = None
+            if self._are_different(self.agg_col, ""):
+                self.agg_col = ""
+                logging.warning(
+                    f"{self.agg_col = } has no effect with {self.analysis = }."
+                    "Overriding agg_col to None."
+                )
+            if self._are_different(self.smoothing_factor, 20):
+                self.smoothing_factor = 20
+                logging.warning(
+                    f"{self.smoothing_factor = } has no effect with {self.analysis = }."
+                    "Overriding smoothing_factor to 20."
+                )
+            if self._are_different(self.features_cupac_model, None):
+                self.features_cupac_model = None
+                logging.warning(
+                    f"{self.features_cupac_model = } has no effect with "
+                    f"{self.analysis = }. Overriding features_cupac_model to None."
+                )
 
         if "ttest" in self.analysis:
-            self.covariates = None
+            if self._are_different(self.covariates, None):
+                self.covariates = None
+                logging.warning(
+                    f"{self.covariates = } has no effect with {self.analysis = }."
+                    "Overriding covariates to None."
+                )
+
+    def _are_different(self, arg1, arg2) -> bool:
+        return arg1 != arg2
 
 
 perturbator_mapping = {
