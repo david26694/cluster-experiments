@@ -41,6 +41,7 @@ class PowerConfig:
         splitter: Splitter object to use
         perturbator: Perturbator object to use
         analysis: ExperimentAnalysis object to use
+        washover: Washover object to use, defaults to ""
         cupac_model: CUPAC model to use
         n_simulations: number of simulations to run
         cluster_cols: list of columns to use as clusters
@@ -145,13 +146,13 @@ class PowerConfig:
             if self._are_different(self.strata_cols, None):
                 self._set_and_log("strata_cols", None, "splitter")
 
-        if "cupac" == "":
+        if self.cupac_model == "":
             if self._are_different(self.agg_col, ""):
-                self._set_and_log("agg_col", "", "cupac")
+                self._set_and_log("agg_col", "", "cupac_model")
             if self._are_different(self.smoothing_factor, 20):
-                self._set_and_log("smoothing_factor", 20, "cupac")
+                self._set_and_log("smoothing_factor", 20, "cupac_model")
             if self._are_different(self.features_cupac_model, None):
-                self._set_and_log("features_cupac_model", None, "cupac")
+                self._set_and_log("features_cupac_model", None, "cupac_model")
 
         if "ttest" in self.analysis:
             if self._are_different(self.covariates, None):
