@@ -93,6 +93,21 @@ def test_config_warning_superfluous_param_strata_cols(caplog):
     assert msg in caplog.text
 
 
+def test_config_warning_superfluous_param_splitter_weights(caplog):
+    msg = "splitter_weights = [0.5, 0.5] has no effect with splitter = clustered_stratified. Overriding splitter_weights to None."
+    with caplog.at_level(logging.WARNING):
+        PowerConfig(
+            cluster_cols=["cluster", "date"],
+            analysis="ols_non_clustered",
+            perturbator="uniform",
+            splitter="clustered_stratified",
+            splitter_weights=[0.5, 0.5],
+            n_simulations=4,
+            average_effect=1.5,
+        )
+    assert msg in caplog.text
+
+
 def test_config_warning_superfluous_param_agg_col(caplog):
     msg = "agg_col = agg_col has no effect with cupac_model = . Overriding agg_col to ."
     with caplog.at_level(logging.WARNING):
