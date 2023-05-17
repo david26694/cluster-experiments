@@ -129,7 +129,7 @@ class PowerConfig:
     def __post_init__(self):
         if "switchback" not in self.splitter:
             if self._are_different(self.switch_frequency, None):
-                self._set_and_log("swithc_frequency", None, "splitter")
+                self._set_and_log("switch_frequency", None, "splitter")
             if self._are_different(self.washover_time_delta, None):
                 self._set_and_log("washover_time_delta", None, "splitter")
             if self._are_different(self.washover, ""):
