@@ -144,13 +144,18 @@ class PowerConfig:
             if self._are_different(self.strata_cols, None):
                 self._set_and_log("strata_cols", None, "splitter")
 
-        if self.cupac_model == "":
+        if "stratified" in self.splitter or "balanced" in self.splitter:
+            if self._are_different(self.splitter_weights, None):
+                self._set_and_log("splitter_weights", None, "splitter")
+
+        if self.cupac_model != "mean_cupac_model":
             if self._are_different(self.agg_col, ""):
                 self._set_and_log("agg_col", "", "cupac_model")
             if self._are_different(self.smoothing_factor, 20):
                 self._set_and_log("smoothing_factor", 20, "cupac_model")
-            if self._are_different(self.features_cupac_model, None):
-                self._set_and_log("features_cupac_model", None, "cupac_model")
+        # for now, features_cupac_model are not used
+        if self._are_different(self.features_cupac_model, None):
+            self._set_and_log("features_cupac_model", None, "cupac_model")
 
         if "ttest" in self.analysis:
             if self._are_different(self.covariates, None):
