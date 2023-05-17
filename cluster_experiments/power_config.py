@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
@@ -110,7 +110,7 @@ class PowerConfig:
     switch_frequency: Optional[str] = None
     # Switchback
     time_col: Optional[str] = None
-    washover_time_delta: Optional[datetime.timedelta | int] = None
+    washover_time_delta: Optional[Union[datetime.timedelta, int]] = None
 
     # Analysis
     covariates: Optional[List[str]] = None
