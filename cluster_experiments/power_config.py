@@ -145,13 +145,13 @@ class PowerConfig:
             if self._are_different(self.strata_cols, None):
                 self._set_and_log("strata_cols", None, "splitter")
 
-            if "cupac" == "":
-                if self._are_different(self.agg_col, ""):
-                    self._set_and_log("agg_col", "", "cupac")
-                if self._are_different(self.smoothing_factor, 20):
-                    self._set_and_log("smoothing_factor", 20, "cupac")
-                if self._are_different(self.features_cupac_model, None):
-                    self._set_and_log("features_cupac_model", None, "cupac")
+        if "cupac" == "":
+            if self._are_different(self.agg_col, ""):
+                self._set_and_log("agg_col", "", "cupac")
+            if self._are_different(self.smoothing_factor, 20):
+                self._set_and_log("smoothing_factor", 20, "cupac")
+            if self._are_different(self.features_cupac_model, None):
+                self._set_and_log("features_cupac_model", None, "cupac")
 
         if "ttest" in self.analysis:
             if self._are_different(self.covariates, None):
