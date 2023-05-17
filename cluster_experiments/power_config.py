@@ -129,76 +129,44 @@ class PowerConfig:
     def __post_init__(self):
         if "switchback" not in self.splitter:
             if self._are_different(self.switch_frequency, None):
-                self.switch_frequency = None
-                logging.warning(
-                    f"{self.switch_frequency = } has no effect"
-                    f"with {self.splitter = }. Overriding switch_frequency to None."
-                )
+                self._set_and_log("swithc_frequency", None, "splitter")
             if self._are_different(self.washover_time_delta, None):
-                self.washover_time_delta = None
-                logging.warning(
-                    f"{self.washover_time_delta = } has no effect"
-                    f"with {self.splitter = }. Overriding washover_time_delta to None."
-                )
+                self._set_and_log("washover_time_delta", None, "splitter")
             if self._are_different(self.washover, ""):
-                self.washover = ""
-                logging.warning(
-                    f"{self.washover = } has no effect with {self.splitter = }."
-                    'Overriding washover to "".'
-                )
+                self._set_and_log("washover", "", "splitter")
             if self._are_different(self.time_col, None):
-                self.time_col = None
-                logging.warning(
-                    f"{self.time_col = } has no effect with {self.splitter = } "
-                    "Splitter. Overriding time_col to None."
-                )
+                self._set_and_log("time_col", None, "splitter")
 
         if self.perturbator not in {"normal", "beta_relative_positive"}:
             if self._are_different(self.scale, None):
-                self.scale = None
-                logging.warning(
-                    f"{self.scale = } has no effect with {self.perturbator = }."
-                    "Overriding scale to None."
-                )
+                self._set_and_log("scale", None, "perturbator")
 
         if "stratified" not in self.splitter and "paired_ttest" not in self.analysis:
             if self._are_different(self.strata_cols, None):
-                self.strata_cols = None
-                logging.warning(
-                    f"{self.strata_cols = } has no effect with {self.splitter = }."
-                    "Overriding strata_cols to None."
-                )
+                self._set_and_log("strata_cols", None, "splitter")
 
             if "cupac" == "":
                 if self._are_different(self.agg_col, ""):
-                    self.agg_col = ""
-                    logging.warning(
-                        f"{self.agg_col = } has no effect with {self.cupac = }."
-                        "Overriding agg_col to None."
-                    )
+                    self._set_and_log("agg_col", "", "cupac")
                 if self._are_different(self.smoothing_factor, 20):
-                    self.smoothing_factor = 20
-                    logging.warning(
-                        f"{self.smoothing_factor = } has no effect with {self.cupac = }."
-                        "Overriding smoothing_factor to 20."
-                    )
+                    self._set_and_log("smoothing_factor", 20, "cupac")
                 if self._are_different(self.features_cupac_model, None):
-                    self.features_cupac_model = None
-                    logging.warning(
-                        f"{self.features_cupac_model = } has no effect with "
-                        f"{self.cupac = }. Overriding features_cupac_model to None."
-                    )
+                    self._set_and_log("features_cupac_model", None, "cupac")
 
         if "ttest" in self.analysis:
             if self._are_different(self.covariates, None):
-                self.covariates = None
-                logging.warning(
-                    f"{self.covariates = } has no effect with {self.cupac = }."
-                    "Overriding covariates to None."
-                )
+                self._set_and_log("covariates", None, "analysis")
 
     def _are_different(self, arg1, arg2) -> bool:
         return arg1 != arg2
+
+    def _set_and_log(self, attr, value, other_attr):
+        logging.warning(
+            f"{attr} = {getattr(self, attr)} has no effect with "
+            f"{other_attr} = {getattr(self, other_attr)}. "
+            f"Overriding {attr} to {value}."
+        )
+        setattr(self, attr, value)
 
 
 perturbator_mapping = {
