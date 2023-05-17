@@ -173,27 +173,27 @@ class PowerConfig:
                 if self._are_different(self.agg_col, ""):
                     self.agg_col = ""
                     logging.warning(
-                        f"{self.agg_col = } has no effect with {self.analysis = }."
+                        f"{self.agg_col = } has no effect with {self.cupac = }."
                         "Overriding agg_col to None."
                     )
                 if self._are_different(self.smoothing_factor, 20):
                     self.smoothing_factor = 20
                     logging.warning(
-                        f"{self.smoothing_factor = } has no effect with {self.analysis = }."
+                        f"{self.smoothing_factor = } has no effect with {self.cupac = }."
                         "Overriding smoothing_factor to 20."
                     )
                 if self._are_different(self.features_cupac_model, None):
                     self.features_cupac_model = None
                     logging.warning(
                         f"{self.features_cupac_model = } has no effect with "
-                        f"{self.analysis = }. Overriding features_cupac_model to None."
+                        f"{self.cupac = }. Overriding features_cupac_model to None."
                     )
 
         if "ttest" in self.analysis:
             if self._are_different(self.covariates, None):
                 self.covariates = None
                 logging.warning(
-                    f"{self.covariates = } has no effect with {self.analysis = }."
+                    f"{self.covariates = } has no effect with {self.cupac = }."
                     "Overriding covariates to None."
                 )
 
