@@ -175,9 +175,11 @@ class ConstantWashover(Washover):
             raise ValueError(
                 f"Washover time delta must be specified for ConstantWashover, while it is {config.washover_time_delta = }"
             )
-        return cls(
-            washover_time_delta=config.washover_time_delta,
-        )
+
+        washover_time_delta = config.washover_time_delta
+        if isinstance(washover_time_delta, int):
+            washover_time_delta = datetime.timedelta(minutes=config.washover_time_delta)
+        return cls(washover_time_delta=washover_time_delta)
 
 
 # This is kept in here because of circular imports, need to rethink this

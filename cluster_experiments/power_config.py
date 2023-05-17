@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import datetime
+import logging
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -29,7 +32,7 @@ from cluster_experiments.random_splitter import (
 )
 
 
-@dataclass
+@dataclass(eq=True)
 class PowerConfig:
     """
     Dataclass to create a power analysis from.
@@ -38,6 +41,7 @@ class PowerConfig:
         splitter: Splitter object to use
         perturbator: Perturbator object to use
         analysis: ExperimentAnalysis object to use
+        washover: Washover object to use, defaults to ""
         cupac_model: CUPAC model to use
         n_simulations: number of simulations to run
         cluster_cols: list of columns to use as clusters
@@ -49,6 +53,7 @@ class PowerConfig:
         splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments
         switch_frequency: how often to switch treatments
         time_col: column to use as time in switchback splitter
+        washover_time_delta: optional, int indicating the washover time in minutes or datetime.timedelta object
         covariates: list of columns to use as covariates
         average_effect: average effect to use in the perturbator
         scale: scale to use in stochastic perturbators
@@ -105,7 +110,7 @@ class PowerConfig:
     switch_frequency: Optional[str] = None
     # Switchback
     time_col: Optional[str] = None
-    washover_time_delta: Optional[datetime.timedelta] = None
+    washover_time_delta: Optional[datetime.timedelta | int] = None
 
     # Analysis
     covariates: Optional[List[str]] = None
@@ -121,6 +126,48 @@ class PowerConfig:
     features_cupac_model: Optional[List[str]] = None
 
     seed: Optional[int] = None
+
+    def __post_init__(self):
+        if "switchback" not in self.splitter:
+            if self._are_different(self.switch_frequency, None):
+                self._set_and_log("switch_frequency", None, "splitter")
+            if self._are_different(self.washover_time_delta, None):
+                self._set_and_log("washover_time_delta", None, "splitter")
+            if self._are_different(self.washover, ""):
+                self._set_and_log("washover", "", "splitter")
+            if self._are_different(self.time_col, None):
+                self._set_and_log("time_col", None, "splitter")
+
+        if self.perturbator not in {"normal", "beta_relative_positive"}:
+            if self._are_different(self.scale, None):
+                self._set_and_log("scale", None, "perturbator")
+
+        if "stratified" not in self.splitter and "paired_ttest" not in self.analysis:
+            if self._are_different(self.strata_cols, None):
+                self._set_and_log("strata_cols", None, "splitter")
+
+        if self.cupac_model == "":
+            if self._are_different(self.agg_col, ""):
+                self._set_and_log("agg_col", "", "cupac_model")
+            if self._are_different(self.smoothing_factor, 20):
+                self._set_and_log("smoothing_factor", 20, "cupac_model")
+            if self._are_different(self.features_cupac_model, None):
+                self._set_and_log("features_cupac_model", None, "cupac_model")
+
+        if "ttest" in self.analysis:
+            if self._are_different(self.covariates, None):
+                self._set_and_log("covariates", None, "analysis")
+
+    def _are_different(self, arg1, arg2) -> bool:
+        return arg1 != arg2
+
+    def _set_and_log(self, attr, value, other_attr):
+        logging.warning(
+            f"{attr} = {getattr(self, attr)} has no effect with "
+            f"{other_attr} = {getattr(self, other_attr)}. "
+            f"Overriding {attr} to {value}."
+        )
+        setattr(self, attr, value)
 
 
 perturbator_mapping = {
