@@ -77,7 +77,7 @@ class EmptyWashover(Washover):
         )
 
         out_df = splitter.assign_treatment_df(df=washover_split_df)
-
+        ```
         """
         return df
 
@@ -137,7 +137,7 @@ class ConstantWashover(Washover):
         )
 
         out_df = splitter.assign_treatment_df(df=washover_split_df)
-
+        ```
         """
         # Set original time column
         original_time_col = (
