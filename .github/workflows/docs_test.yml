@@ -1,0 +1,20 @@
+name: Docs test
+# Test that the docs build correctly
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - run: cp README.md docs/index.md
+      - run: cp -r theme docs/theme
+      - run: make install-dev
+      - run: make docs-serve
