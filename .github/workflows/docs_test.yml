@@ -17,4 +17,11 @@ jobs:
       - run: cp README.md docs/index.md
       - run: cp -r theme docs/theme
       - run: make install-dev
-      - run: make docs-serve
+      - name: Serve docs and check for errors
+        run: |
+          cp README.md docs/index.md
+          rm -rf docs/theme
+          cp -r theme docs/theme/
+          mkdocs serve & sleep 10
+          curl --fail http://127.0.0.1:8000 || (pkill mkdocs; exit 1)
+          pkill mkdocs
