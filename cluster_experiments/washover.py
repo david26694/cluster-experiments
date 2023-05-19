@@ -16,7 +16,7 @@ class Washover(ABC):
         df: pd.DataFrame,
         truncated_time_col: str,
         treatment_col: str,
-        cluster_cols: List[str],
+        cluster_cols: List[str | int],
         original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
         """Abstract method to add washvover to the dataframe."""
