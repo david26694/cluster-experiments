@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  test_docs_serve:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
