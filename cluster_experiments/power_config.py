@@ -22,11 +22,11 @@ from cluster_experiments.perturbator import (
     UniformPerturbator,
 )
 from cluster_experiments.random_splitter import (
-    BacktestSplitter,
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
     NonClusteredSplitter,
+    RepeatedSampler,
     StratifiedClusteredSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
@@ -207,7 +207,7 @@ splitter_mapping = {
     "switchback": SwitchbackSplitter,
     "switchback_balance": BalancedSwitchbackSplitter,
     "switchback_stratified": StratifiedSwitchbackSplitter,
-    "backtest": BacktestSplitter,
+    "backtest": RepeatedSampler,
 }
 
 analysis_mapping = {

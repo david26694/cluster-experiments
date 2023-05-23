@@ -7,9 +7,9 @@ import pytest
 
 from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import (
-    BacktestSplitter,
     BalancedClusteredSplitter,
     ClusteredSplitter,
+    RepeatedSampler,
     StratifiedClusteredSplitter,
 )
 from tests.utils import assert_balanced_strata
@@ -328,7 +328,7 @@ def test_stratified_strata_uniqueness(df_strata_multiple_values):
 
 
 def test_backtest_splitter(treatments, df_cluster):
-    splitter = BacktestSplitter(treatments=treatments)
+    splitter = RepeatedSampler(treatments=treatments)
     n_duplicates = 100
     df_cluster = pd.concat([df_cluster for _ in range(n_duplicates)])
     sampled_treatment = splitter.assign_treatment_df(df_cluster)

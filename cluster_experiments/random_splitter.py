@@ -483,9 +483,9 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
         )
 
 
-class BacktestSplitter(RandomSplitter):
+class RepeatedSampler(RandomSplitter):
     """
-    Doesn't actually split the data, but duplicates all rows for all treatments.
+    Doesn't actually split the data, but repeatedly samples (i.e. duplicates) all rows for all treatments.
     This is useful for backtesting, where we assume to have access to all counterfactuals.
 
     Arguments:
@@ -495,8 +495,8 @@ class BacktestSplitter(RandomSplitter):
     Usage:
     ```python
     import pandas as pd
-    from cluster_experiments.random_splitter import BacktestSplitter
-    splitter = BacktestSplitter(
+    from cluster_experiments.random_splitter import RepeatedSampler
+    splitter = RepeatedSampler(
         treatments=["A", "B"],
     )
     df = pd.DataFrame({"city": ["A", "B", "C"]})
@@ -521,15 +521,14 @@ class BacktestSplitter(RandomSplitter):
 
         dfs = []
         for treatment in self.treatments:
-            df_treat = df.copy()
-            df_treat = df_treat.assign(**{self.treatment_col: treatment})
+            df_treat = df.copy().assign(**{self.treatment_col: treatment})
             dfs.append(df_treat)
 
         return pd.concat(dfs).reset_index(drop=True)
 
     @classmethod
     def from_config(cls, config):
-        """Creates a BacktestSplitter from a PowerConfig"""
+        """Creates a RepeatedSampler from a PowerConfig"""
         return cls(
             treatments=config.treatments,
             treatment_col=config.treatment_col,

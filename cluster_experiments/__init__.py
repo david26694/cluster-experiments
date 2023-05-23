@@ -21,12 +21,12 @@ from cluster_experiments.perturbator import (
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import (
-    BacktestSplitter,
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
     NonClusteredSplitter,
     RandomSplitter,
+    RepeatedSampler,
     StratifiedClusteredSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
@@ -57,7 +57,7 @@ __all__ = [
     "SwitchbackSplitter",
     "BalancedSwitchbackSplitter",
     "StratifiedSwitchbackSplitter",
-    "BacktestSplitter",
+    "RepeatedSampler",
     "ClusteredOLSAnalysis",
     "TTestClusteredAnalysis",
     "PairedTTestClusteredAnalysis",
