@@ -510,7 +510,8 @@ class BacktestSplitter(RandomSplitter):
         treatments: Optional[List[str]] = None,
         treatment_col: str = "treatment",
     ) -> None:
-        super().__init__(treatments=treatments, treatment_col=treatment_col)
+        self.treatments = treatments or ["A", "B"]
+        self.treatment_col = treatment_col
 
     def assign_treatment_df(
         self,
