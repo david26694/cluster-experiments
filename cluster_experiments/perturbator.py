@@ -602,7 +602,7 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
             cluster_dfs.append(df_cluster)
 
         df_perturbed = pd.concat(cluster_dfs)
-        return df_perturbed.drop(columns=self.cluster_col)
+        return df_perturbed.drop(columns=self.cluster_col).reset_index(drop=True)
 
     @classmethod
     def from_config(cls, config):
