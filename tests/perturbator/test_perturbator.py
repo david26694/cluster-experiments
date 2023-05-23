@@ -347,7 +347,7 @@ def test_relative_positive_raises_target_is_all_0():
         "All treatment samples have target = 0, relative effect "
         f"{average_effect} will have no effect"
     )
-    with pytest.raises(ValueError, match=msg):
+    with pytest.warns(UserWarning, match=msg):
         rp.perturbate(_continuous_df, average_effect)
 
 
