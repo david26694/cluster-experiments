@@ -442,7 +442,7 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         if range_min >= range_max:
             raise ValueError(
                 f"range_min needs to be smaller than range_max, got "
-                f"range_min={range_min} and range_max={range_max}"
+                f"{range_min = } and {range_max = }"
             )
 
     def check_relative_effect_bounds(
