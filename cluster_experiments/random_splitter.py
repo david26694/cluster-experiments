@@ -525,3 +525,11 @@ class BacktestSplitter(RandomSplitter):
             dfs.append(df_treat)
 
         return pd.concat(dfs).reset_index(drop=True)
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a BacktestSplitter from a PowerConfig"""
+        return cls(
+            treatments=config.treatments,
+            treatment_col=config.treatment_col,
+        )
