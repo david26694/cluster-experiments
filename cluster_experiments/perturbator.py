@@ -577,11 +577,9 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
                 f"Cannot use self.cluster_col={self.cluster_col} as clustering column, as it already exists in the input dataframe!"
             )
 
-        df = df.copy()
-        cluster = pd.Series("", index=df.index)
-        for col in cluster_cols:
-            cluster += df[col].astype(str)
-        return df.assign(**{self.cluster_col: cluster})
+        return df.copy().assign(
+            **{self.cluster_col: df[cluster_cols].astype(str).sum(axis=1)}
+        )
 
     def perturbate(
         self,
