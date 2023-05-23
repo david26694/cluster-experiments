@@ -487,6 +487,19 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
     def _inv_transform_to_range(self, x: Union[float, np.ndarray]):
         return (x - self._range_min) / (self._range_max - self._range_min)
 
+    @classmethod
+    def from_config(cls, config):
+        """Creates a Perturbator object from a PowerConfig object"""
+        return cls(
+            average_effect=config.average_effect,
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            scale=config.scale,
+            range_min=config.range_min,
+            range_max=config.range_max,
+        )
+
 
 class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
     """
@@ -595,6 +608,20 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
 
         df_perturbed = pd.concat(cluster_dfs)
         return df_perturbed.drop(columns=self.cluster_col)
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a Perturbator object from a PowerConfig object"""
+        return cls(
+            average_effect=config.average_effect,
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            scale=config.scale,
+            range_min=config.range_min,
+            range_max=config.range_max,
+            cluster_cols=config.cluster_cols_perturbator,
+        )
 
 
 class BinaryPerturbator(Perturbator):

@@ -103,6 +103,9 @@ class PowerConfig:
     # Perturbator
     average_effect: Optional[float] = None
     scale: Optional[float] = None
+    range_min: Optional[float] = None
+    range_max: Optional[float] = None
+    cluster_cols_perturbator: Optional[List[str]] = None
 
     # Splitter
     treatments: Optional[List[str]] = None
@@ -142,6 +145,16 @@ class PowerConfig:
         if self.perturbator not in {"normal", "beta_relative_positive"}:
             if self._are_different(self.scale, None):
                 self._set_and_log("scale", None, "perturbator")
+
+        if self.perturbator not in {"beta_relative", "clustered_beta_relative"}:
+            if self._are_different(self.range_min, None):
+                self._set_and_log("range_min", None, "perturbator")
+            if self._are_different(self.range_max, None):
+                self._set_and_log("range_max", None, "perturbator")
+
+        if self.perturbator not in {"clustered_beta_relative"}:
+            if self._are_different(self.cluster_cols_perturbator, None):
+                self._set_and_log("cluster_cols_perturbator", None, "perturbator")
 
         if "stratified" not in self.splitter and "paired_ttest" not in self.analysis:
             if self._are_different(self.strata_cols, None):
@@ -183,7 +196,7 @@ perturbator_mapping = {
     "normal": NormalPerturbator,
     "beta_relative_positive": BetaRelativePositivePerturbator,
     "beta_relative": BetaRelativePerturbator,
-    "beta_clustered_relative": ClusteredBetaRelativePerturbator,
+    "clustered_beta_relative": ClusteredBetaRelativePerturbator,
 }
 
 splitter_mapping = {
