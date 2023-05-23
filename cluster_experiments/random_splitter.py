@@ -481,3 +481,47 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
             splitter_weights=config.splitter_weights,
             washover=washover_cls.from_config(config),
         )
+
+
+class BacktestSplitter(RandomSplitter):
+    """
+    Doesn't actually split the data, but duplicates all rows for all treatments.
+    This is useful for backtesting, where we assume to have access to all counterfactuals.
+
+    Arguments:
+        treatments: list of treatments
+        treatment_col: Name of the column with the treatment variable.
+
+    Usage:
+    ```python
+    import pandas as pd
+    from cluster_experiments.random_splitter import BacktestSplitter
+    splitter = BacktestSplitter(
+        treatments=["A", "B"],
+    )
+    df = pd.DataFrame({"city": ["A", "B", "C"]})
+    df = splitter.assign_treatment_df(df)
+    print(df)
+    ```
+    """
+
+    def __init__(
+        self,
+        treatments: Optional[List[str]] = None,
+        treatment_col: str = "treatment",
+    ) -> None:
+        super().__init__(treatments=treatments, treatment_col=treatment_col)
+
+    def assign_treatment_df(
+        self,
+        df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        df = df.copy()
+
+        dfs = []
+        for treatment in self.treatments:
+            df_treat = df.copy()
+            df_treat = df_treat.assign(**{self.treatment_col: treatment})
+            dfs.append(df_treat)
+
+        return pd.concat(dfs).reset_index(drop=True)

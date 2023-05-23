@@ -1,5 +1,6 @@
+import warnings
 from abc import ABC, abstractmethod
-from typing import NoReturn, Optional, Union
+from typing import List, NoReturn, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -348,6 +349,252 @@ class BetaRelativePositivePerturbator(NormalPerturbator, RelativePositivePerturb
         a = average_effect / (scale * scale)
         b = (1 - average_effect) / (scale * scale)
         return np.random.beta(a, b, n)
+
+
+class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
+    """
+    A stochastic Perturbator for continuous targets that applies a  sampled
+    effect from a scaled Beta distribution. It applies the effect multiplicatively.
+
+    The average effect is defined for values in the specified range (range_min, range_max).
+    It's recommended to set range_min and range_max in a "symmetric way" around 0,
+    such that log(1 + range_min) = -log(range_max). This ensures to have an
+    equal range of perturbations that relatively decrease the target as
+    perturbations that relatively increase the target.
+
+    The number of samples with 0 as target remains unchanged.
+
+    The stochastic effect is sampled from a beta distribution with parameters mean and
+    variance, which is scaled to the range (range_min, range_max).
+    If variance is not provided, the variance is abs(mean).
+
+    ```
+    target -> target * (1 + effect), where effect ~ Beta(a, b)
+    ```
+
+    The common beta parameters are derived from the mean and scale parameters,
+    combined with linear transformations to ensure the support in the given
+    range. The resulting beta parameters are scaled by abs(mu) to narrow the
+    beta distribution around the mean.
+
+    ```
+    mu_transformed <- (mu - range_min) / (range_max - range_min)
+    scale_transformed <- (scale - range_min) / (range_max - range_min)
+    a <- mu_transformed / (scale_transformed * scale_transformed)
+    b <- (1-mu_transformed) / (scale_transformed * scale_transformed)
+    effect_transformed ~ beta(a/abs(mu), b/abs(mu))
+    effect = effect_transformed * (range_max - range_min) + range_min
+    ```
+
+    Arguments:
+        average_effect (Optional[float], optional): the average effect of the treatment. Defaults to None.
+        target_col (str, optional): name of the target_col to use as the outcome. Defaults to "target".
+        treatment_col (str, optional): the name of the column that contains the treatment. Defaults to "treatment".
+        treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
+        scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
+        range_min (float, optional): the minimum value of the target range. Defaults to -0.8.
+        range_max (float, optional): the maximum value of the target range. Defaults to 5.
+    """
+
+    def __init__(
+        self,
+        average_effect: Optional[float] = None,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        scale: Optional[float] = None,
+        range_min: float = -0.8,
+        range_max: float = 5,
+    ):
+        self._check_scale_range(range_min, range_max)
+        super().__init__(average_effect, target_col, treatment_col, treatment, scale)
+        self._range_min = range_min
+        self._range_max = range_max
+
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
+        """
+        Usage:
+        ```python
+        from cluster_experiments.perturbator import BetaRelativePerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = BetaRelativePerturbator(range_min = -0.5, range_max = 2)
+        # Increase target metric by 20% on average
+        perturbator.perturbate(df, average_effect=0.2)
+        ```
+        """
+        df = df.copy().reset_index(drop=True)
+        average_effect = self.get_average_effect(average_effect)
+        self.check_relative_effect_bounds(df, average_effect)
+        scale = self.get_scale(average_effect)
+        self.check_relative_effect_bounds(df, scale)
+        n = self.get_number_of_treated(df)
+        sampled_effect = self._sample_scaled_beta_effect(average_effect, scale, n)
+        df = self.apply_multiplicative_effect(df, sampled_effect)
+        return df
+
+    @staticmethod
+    def _check_scale_range(range_min: float, range_max: float):
+        if range_min < -1:
+            raise ValueError(f"range_min needs to be greater than -1, got {range_min}")
+        if range_min >= range_max:
+            raise ValueError(
+                f"range_min needs to be smaller than range_max, got "
+                f"range_min={range_min} and range_max={range_max}"
+            )
+
+    def check_relative_effect_bounds(
+        self, df: pd.DataFrame, average_effect: float
+    ) -> None:
+        self.check_average_effect_greater_than(average_effect, x=self._range_min)
+        self.check_average_effect_smaller_than(average_effect, x=self._range_max)
+        self.check_target_is_not_constant_zero(df, average_effect)
+
+    def check_average_effect_greater_than(
+        self, average_effect: float, x: float
+    ) -> Optional[NoReturn]:
+        if average_effect <= x:
+            raise ValueError(
+                f"Simulated effect needs to be greater than range_min={x}, got {average_effect}"
+            )
+
+    def check_average_effect_smaller_than(
+        self, average_effect: float, x: float
+    ) -> Optional[NoReturn]:
+        if average_effect >= x:
+            raise ValueError(
+                f"Simulated effect needs to be smaller than range_max={x}, got {average_effect}"
+            )
+
+    def _sample_scaled_beta_effect(
+        self, average_effect: float, scale: float, n: int
+    ) -> np.ndarray:
+        average_effect_inv_transf = self._inv_transform_to_range(average_effect)
+        scale_inv_transf = self._inv_transform_to_range(scale)
+        a = average_effect_inv_transf / (scale_inv_transf * scale_inv_transf)
+        b = (1 - average_effect_inv_transf) / (scale_inv_transf * scale_inv_transf)
+
+        # the division by abs(average_effect) makes the distribution more concentrated around the mean
+        beta = np.random.beta(a / abs(average_effect), b / abs(average_effect), n)
+
+        return self._transform_to_range(beta)
+
+    def _transform_to_range(self, x: Union[float, np.ndarray]):
+        return x * (self._range_max - self._range_min) + self._range_min
+
+    def _inv_transform_to_range(self, x: Union[float, np.ndarray]):
+        return (x - self._range_min) / (self._range_max - self._range_min)
+
+
+class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
+    """
+    A stochastic Perturbator for continuous targets that applies a sampled
+    effect from the Beta distribution. It applies the effect multiplicatively
+    and based on given clusters.
+    For each cluster, the average cluster effect is sampled from a beta
+    distribution with support in (0, 1). Within each cluster, the individual
+    effects are sampled from a beta distribution with mean equal to the cluster
+    average effect and support in (range_min, range_max).
+
+    The number of samples with 0 as target remains unchanged.
+
+    Arguments:
+        average_effect (Optional[float], optional): the average effect of the treatment. Defaults to None.
+        target_col (str, optional): name of the target_col to use as the outcome. Defaults to "target".
+        treatment_col (str, optional): the name of the column that contains the treatment. Defaults to "treatment".
+        treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
+        scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
+        range_min (float, optional): the minimum value of the target range. Defaults to -0.8.
+        range_max (float, optional): the maximum value of the target range. Defaults to 5.
+        cluster_cols (Optional[List[str]], optional): the columns to use for clustering. Defaults to None.
+    """
+
+    def __init__(
+        self,
+        average_effect: Optional[float] = None,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        scale: Optional[float] = None,
+        range_min: float = -0.8,
+        range_max: float = 5,
+        cluster_cols: Optional[List[str]] = None,
+    ):
+        super().__init__(average_effect, target_col, treatment_col, treatment, scale)
+        self._range_min = range_min
+        self._range_max = range_max
+        self._cluster_cols = cluster_cols
+        self.cluster_col = None
+
+    def get_cluster_perturbator(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> Perturbator:
+        average_effect = self.get_average_effect(average_effect)
+        self.check_beta_positive_effect(df, average_effect)
+        scale = self.get_scale(average_effect)
+        sampled_effect = self._sample_beta_effect(average_effect, scale, 1)
+        cluster_perturbator = BetaRelativePerturbator(
+            average_effect=sampled_effect,
+            target_col=self.target_col,
+            treatment_col=self.treatment_col,
+            treatment=self.treatment,
+            range_min=self._range_min,
+            range_max=self._range_max,
+        )
+        return cluster_perturbator
+
+    def _set_cluster_col(
+        self, df: pd.DataFrame, cluster_cols: Optional[List[str]] = None
+    ):
+        cluster_cols = cluster_cols or self._cluster_cols
+        if not cluster_cols:
+            raise ValueError("cluster_cols must be set!")
+
+        if not isinstance(cluster_cols, list):
+            raise ValueError(
+                f"cluster_cols must be of type List[str], got type {type(cluster_cols)}"
+            )
+
+        if self.cluster_col:
+            warnings.warn(
+                f"self.cluster_col is currently set to {self.cluster_col}. It will be overwritten."
+            )
+
+        self.cluster_col = "_cluster_" + "_".join(cluster_cols)
+        if self.cluster_col in df.columns:
+            raise ValueError(
+                f"Cannot use self.cluster_col={self.cluster_col} as clustering column, as it already exists in the input dataframe!"
+            )
+
+        df = df.copy()
+        cluster = pd.Series("", index=df.index)
+        for col in cluster_cols:
+            cluster += df[col].astype(str)
+        return df.assign(**{self.cluster_col: cluster})
+
+    def perturbate(
+        self,
+        df: pd.DataFrame,
+        cluster_cols: Optional[List[str]] = None,
+        average_effect: Optional[float] = None,
+    ) -> pd.DataFrame:
+        df = df.copy().reset_index(drop=True)
+        df = self._set_cluster_col(df, cluster_cols)
+
+        clusters = df[self.cluster_col].unique()
+        cluster_dfs = []
+        for cluster in clusters:
+            df_cluster = df[df[self.cluster_col] == cluster].copy()
+            cluster_perturbator = self.get_cluster_perturbator(
+                df=df_cluster, average_effect=average_effect
+            )
+            df_cluster = cluster_perturbator.perturbate(df_cluster)
+            cluster_dfs.append(df_cluster)
+
+        df_perturbed = pd.concat(cluster_dfs)
+        return df_perturbed.drop(columns=self.cluster_col)
 
 
 class BinaryPerturbator(Perturbator):

@@ -13,13 +13,16 @@ from cluster_experiments.experiment_analysis import (
     TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import (
+    BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
+    ClusteredBetaRelativePerturbator,
     NormalPerturbator,
     RelativePositivePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.random_splitter import (
+    BacktestSplitter,
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
@@ -179,6 +182,8 @@ perturbator_mapping = {
     "relative_positive": RelativePositivePerturbator,
     "normal": NormalPerturbator,
     "beta_relative_positive": BetaRelativePositivePerturbator,
+    "beta_relative": BetaRelativePerturbator,
+    "beta_clustered_relative": ClusteredBetaRelativePerturbator,
 }
 
 splitter_mapping = {
@@ -189,6 +194,7 @@ splitter_mapping = {
     "switchback": SwitchbackSplitter,
     "switchback_balance": BalancedSwitchbackSplitter,
     "switchback_stratified": StratifiedSwitchbackSplitter,
+    "backtest": BacktestSplitter,
 }
 
 analysis_mapping = {
