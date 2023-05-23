@@ -392,6 +392,7 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         treatment_col (str, optional): the name of the column that contains the treatment. Defaults to "treatment".
         treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
         scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
+            If not provided, the variance of the beta distribution is abs(mean).
         range_min (float, optional): the minimum value of the target range. Defaults to -0.8.
         range_max (float, optional): the maximum value of the target range. Defaults to 5.
     """
