@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.perturbator import (
+    BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
     NormalPerturbator,
@@ -192,6 +193,39 @@ def test_stochastic_relative_perturbate_scale_provided_is_used(average_effect, s
     np.random.seed(24)
     perturbated_values = (
         rp.perturbate(continuous_df, average_effect=average_effect)
+        .query("treatment == 'B'")["target"]
+        .values
+    )
+
+    # then
+    assert np.mean(perturbated_values) == np.mean(effect)
+    assert np.var(perturbated_values) == np.var(effect)
+
+
+@pytest.mark.parametrize("average_effect", [0.1, 0.04])
+def test_beta_relative_perturbate(average_effect):
+    # given
+    range_min = -0.8
+    range_max = 5
+    pert = BetaRelativePerturbator(range_min=range_min, range_max=range_max)
+
+    average_effect_inv_transf = (average_effect - range_min) / (range_max - range_min)
+    scale_inv_transf = average_effect_inv_transf
+    a = average_effect_inv_transf / (scale_inv_transf * scale_inv_transf)
+    b = (1 - average_effect_inv_transf) / (scale_inv_transf * scale_inv_transf)
+
+    np.random.seed(24)
+    beta = np.random.beta(a / abs(average_effect), b / abs(average_effect), 2)
+    beta_transf = beta * (range_max - range_min) + range_min
+
+    effect = (1 + beta_transf) * continuous_df.query("treatment == 'B'")[
+        "target"
+    ].values
+
+    # when
+    np.random.seed(24)
+    perturbated_values = (
+        pert.perturbate(continuous_df, average_effect=average_effect)
         .query("treatment == 'B'")["target"]
         .values
     )

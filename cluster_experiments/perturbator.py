@@ -235,7 +235,7 @@ class RelativePositivePerturbator(Perturbator):
             (df[self.treatment_col] != self.treatment) | (df[self.target_col] == 0)
         ).mean()
         if 1.0 == treatment_zeros:
-            raise ValueError(
+            raise warnings.warning(
                 f"All treatment samples have {self.target_col} = 0, relative effect "
                 f"{average_effect} will have no effect"
             )
