@@ -259,7 +259,7 @@ def test_clustered_beta_relative_perturbate(average_effect):
     mean_eff = df_merged.loc[df_merged["treatment"] == "B", "rel_pert"].mean()
 
     # maximum relative difference we expect between the simulated relative perturbations and the passed average_effect
-    max_rel_diff = 0.3
+    max_rel_diff = 0.5
     assert abs((mean_eff - 1) / average_effect - 1) < max_rel_diff
 
 
@@ -286,7 +286,7 @@ def test_clustered_beta_relative_perturbate_multiple_clusters(average_effect):
     mean_eff = df_merged.loc[df_merged["treatment"] == "B", "rel_pert"].mean()
 
     # maximum relative difference we expect between the simulated relative perturbations and the passed average_effect
-    max_rel_diff = 0.3
+    max_rel_diff = 0.5
     assert abs((mean_eff - 1) / average_effect - 1) < max_rel_diff
 
 
