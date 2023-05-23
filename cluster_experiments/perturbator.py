@@ -570,11 +570,6 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
                 f"cluster_cols must be of type List[str], got type {type(cluster_cols)}"
             )
 
-        if self.cluster_col:
-            warnings.warn(
-                f"self.cluster_col is currently set to {self.cluster_col}. It will be overwritten."
-            )
-
         self.cluster_col = "_cluster_" + "_".join(cluster_cols)
         if self.cluster_col in df.columns:
             raise ValueError(
