@@ -481,3 +481,43 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
             splitter_weights=config.splitter_weights,
             washover=washover_cls.from_config(config),
         )
+
+
+class ClusteredSteppedWedge(ClusteredSplitter):
+    """Normally used for gradual rollouts, where the treatment is rolled out in batches."""
+
+    def __init__(self, rollout_df: pd.DataFrame, cluster_cols: List[str]):
+        """rollout df should have a column 'rollout_date' and a column 'perc_cities'"""
+        super().__init__(cluster_cols)
+        self.rollout_df = rollout_df
+
+    def assign_treatment_df(
+        self,
+        df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """
+        Takes a df, randomizes treatments and adds the treatment column to the dataframe
+
+        Arguments:
+            df: dataframe to assign treatments to
+        """
+        df = df.copy()
+
+        # raise error if any nulls in cluster_cols
+        if df[self.cluster_cols].isnull().values.any():
+            raise ValueError(
+                f"Null values found in cluster_cols: {self.cluster_cols}. "
+                "Please remove nulls before running the splitter."
+            )
+
+        clusters_df = df.loc[:, self.cluster_cols].drop_duplicates()
+        clusters_df[self.treatment_col] = self.sample_treatment(clusters_df)
+        df = df.merge(clusters_df, on=self.cluster_cols, how="left")
+
+        # once we know the treatment cities, we need to stablish a roll out strategy. 2 inputs, rollout date and n cities.
+
+        df = df.merge(self.rollout_df, on=["cluster"], how="left")
+        # replace all 1 by treatment
+
+        df["treatment"] = np.where(df["date"] >= df["rollout_date"], 1, 0)
+        return df

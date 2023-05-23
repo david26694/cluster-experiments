@@ -91,6 +91,7 @@ class PowerConfig:
 
     # optional mappings
     cupac_model: str = ""
+    comparison_col: str = ""
 
     # Shared
     target_col: str = "target"
