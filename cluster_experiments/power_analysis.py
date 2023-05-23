@@ -17,7 +17,7 @@ from cluster_experiments.power_config import (
     perturbator_mapping,
     splitter_mapping,
 )
-from cluster_experiments.random_splitter import RandomSplitter
+from cluster_experiments.random_splitter import BacktestSplitter, RandomSplitter
 from cluster_experiments.utils import _get_mapping_key
 
 
@@ -466,6 +466,7 @@ class PowerAnalysis:
             has_splitter_clusters
             or not has_analysis_clusters
             or not self.analysis.cluster_cols
+            or isinstance(self.splitter, BacktestSplitter)
         ), "analysis has cluster_cols but splitter does not."
 
         assert (
