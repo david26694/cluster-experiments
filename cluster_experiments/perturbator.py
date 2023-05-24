@@ -586,9 +586,10 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
         df = df.copy().reset_index(drop=True)
         df = self._set_cluster_col_values(df)
 
+        cluster_perturbator = self.get_cluster_perturbator(average_effect)
         df_perturbed = pd.concat(
             [
-                self.get_cluster_perturbator(average_effect=average_effect).perturbate(
+                cluster_perturbator.perturbate(
                     df=df[df[self.cluster_col] == cluster].copy()
                 )
                 for cluster in df[self.cluster_col].unique()
