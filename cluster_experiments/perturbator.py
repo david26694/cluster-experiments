@@ -527,6 +527,7 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
 
     def __init__(
         self,
+        cluster_cols: List[str],
         average_effect: Optional[float] = None,
         target_col: str = "target",
         treatment_col: str = "treatment",
@@ -534,13 +535,12 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
         scale: Optional[float] = None,
         range_min: float = -0.8,
         range_max: float = 5,
-        cluster_cols: Optional[List[str]] = None,
     ):
         super().__init__(average_effect, target_col, treatment_col, treatment, scale)
         self._range_min = range_min
         self._range_max = range_max
         self._cluster_cols = cluster_cols
-        self.cluster_col = None
+        self.cluster_col = self._get_cluster_col_name(cluster_cols)
 
     def get_cluster_perturbator(
         self, df: pd.DataFrame, average_effect: Optional[float] = None
@@ -559,36 +559,31 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
         )
         return cluster_perturbator
 
-    def _set_cluster_col(
-        self, df: pd.DataFrame, cluster_cols: Optional[List[str]] = None
-    ):
-        cluster_cols = cluster_cols or self._cluster_cols
-        if not cluster_cols:
-            raise ValueError("cluster_cols must be set!")
-
+    @staticmethod
+    def _get_cluster_col_name(cluster_cols: List[str]):
         if not isinstance(cluster_cols, list):
             raise ValueError(
                 f"cluster_cols must be of type List[str], got type {type(cluster_cols)}"
             )
+        return "_cluster_" + "_".join(cluster_cols)
 
-        self.cluster_col = "_cluster_" + "_".join(cluster_cols)
+    def _set_cluster_col_values(self, df: pd.DataFrame):
         if self.cluster_col in df.columns:
             raise ValueError(
-                f"Cannot use self.cluster_col={self.cluster_col} as clustering column, as it already exists in the input dataframe!"
+                f"Cannot use {self.cluster_col=} as perturbator clustering "
+                f"column, as it already exists in the input dataframe!"
             )
-
         return df.copy().assign(
-            **{self.cluster_col: df[cluster_cols].astype(str).sum(axis=1)}
+            **{self.cluster_col: df[self._cluster_cols].astype(str).sum(axis=1)}
         )
 
     def perturbate(
         self,
         df: pd.DataFrame,
-        cluster_cols: Optional[List[str]] = None,
         average_effect: Optional[float] = None,
     ) -> pd.DataFrame:
         df = df.copy().reset_index(drop=True)
-        df = self._set_cluster_col(df, cluster_cols)
+        df = self._set_cluster_col_values(df)
 
         clusters = df[self.cluster_col].unique()
         cluster_dfs = []
