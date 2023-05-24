@@ -477,8 +477,12 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         a = average_effect_inv_transf / (scale_inv_transf * scale_inv_transf)
         b = (1 - average_effect_inv_transf) / (scale_inv_transf * scale_inv_transf)
 
-        # the division by abs(average_effect) makes the distribution more concentrated around the mean
-        beta = np.random.beta(a / abs(average_effect), b / abs(average_effect), n)
+        # multiplying by a factor >1 makes the distribution more concentrated around the mean
+        if abs(average_effect) < 1:
+            factor = 1 / abs(average_effect)
+        else:
+            factor = 1
+        beta = np.random.beta(a * factor, b * factor, n)
 
         return self._transform_to_range(beta)
 
