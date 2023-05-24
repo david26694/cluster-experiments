@@ -371,8 +371,9 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
 
     The number of samples with 0 as target remains unchanged.
 
-    The stochastic effect is sampled from a beta distribution with parameters mean and
-    variance, which is scaled to the range (range_min, range_max).
+    The stochastic effect is sampled from a beta distribution with parameters
+    mean and variance, which is linearly scaled to the range
+    (range_min, range_max).
     If variance is not provided, the variance is abs(mean).
 
     ```
@@ -400,8 +401,10 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
         scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
             If not provided, the variance of the beta distribution is abs(mean).
-        range_min (float, optional): the minimum value of the target range, must be >-1. Defaults to -0.8.
-        range_max (float, optional): the maximum value of the target range. Defaults to 4.
+        range_min (float, optional): the minimum value of the target range, must be >-1.
+            Defaults to -0.8, which allows for up to 5x decreases of the target.
+        range_max (float, optional): the maximum value of the target range.
+            Defaults to 4, which allows for up to 5x increases of the target.
     """
 
     def __init__(
@@ -522,14 +525,19 @@ class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
 
     The number of samples with 0 as target remains unchanged.
 
+    For additional details and recommendations on the parameters, see the
+    documentation for the `BetaRelativePerturbator` class.
+
     Arguments:
         average_effect (Optional[float], optional): the average effect of the treatment. Defaults to None.
         target_col (str, optional): name of the target_col to use as the outcome. Defaults to "target".
         treatment_col (str, optional): the name of the column that contains the treatment. Defaults to "treatment".
         treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
         scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
-        range_min (float, optional): the minimum value of the target range. Defaults to -0.8.
-        range_max (float, optional): the maximum value of the target range. Defaults to 5.
+        range_min (float, optional): the minimum value of the target range, must be >-1.
+            Defaults to -0.8, which allows for up to 5x decreases of the target.
+        range_max (float, optional): the maximum value of the target range.
+            Defaults to 4, which allows for up to 5x increases of the target.
         segment_cols (Optional[List[str]], optional): the columns to use for segmenting. Defaults to None.
     """
 
@@ -542,7 +550,7 @@ class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
         treatment: str = "B",
         scale: Optional[float] = None,
         range_min: float = -0.8,
-        range_max: float = 5,
+        range_max: float = 4,
     ):
         super().__init__(average_effect, target_col, treatment_col, treatment, scale)
         self._range_min = range_min
