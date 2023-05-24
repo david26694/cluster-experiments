@@ -357,7 +357,7 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
     effect from a scaled Beta distribution. It applies the effect multiplicatively.
 
     The sampled effect is defined for values in the specified range
-    (range_min, range_max). It's recommended to set range_min<0 and range_max>0
+    (range_min, range_max). It's recommended to set -1<range_min<0 and range_max>0
     in a "symmetric way" around 0, such that log(1 + range_min) = -log(1 + range_max).
     This ensures to have an "equal range" of perturbations that relatively
     decrease the target as perturbations that relatively increase the target.
@@ -393,8 +393,8 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
         scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
             If not provided, the variance of the beta distribution is abs(mean).
-        range_min (float, optional): the minimum value of the target range. Defaults to -0.8.
-        range_max (float, optional): the maximum value of the target range. Defaults to 5.
+        range_min (float, optional): the minimum value of the target range, must be >-1. Defaults to -0.8.
+        range_max (float, optional): the maximum value of the target range. Defaults to 4.
     """
 
     def __init__(
