@@ -543,10 +543,11 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
         self.cluster_col = self._get_cluster_col_name(cluster_cols)
 
     def get_cluster_perturbator(
-        self, df: pd.DataFrame, average_effect: Optional[float] = None
+        self, average_effect: Optional[float] = None
     ) -> Perturbator:
         average_effect = self.get_average_effect(average_effect)
-        self.check_beta_positive_effect(df, average_effect)
+        self.check_average_effect_greater_than(average_effect, x=0)
+        self.check_average_effect_less_than(average_effect, x=1)
         scale = self.get_scale(average_effect)
         sampled_effect = self._sample_beta_effect(average_effect, scale, 1)
         cluster_perturbator = BetaRelativePerturbator(
@@ -585,17 +586,14 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
         df = df.copy().reset_index(drop=True)
         df = self._set_cluster_col_values(df)
 
-        clusters = df[self.cluster_col].unique()
-        cluster_dfs = []
-        for cluster in clusters:
-            df_cluster = df[df[self.cluster_col] == cluster].copy()
-            cluster_perturbator = self.get_cluster_perturbator(
-                df=df_cluster, average_effect=average_effect
-            )
-            df_cluster = cluster_perturbator.perturbate(df_cluster)
-            cluster_dfs.append(df_cluster)
-
-        df_perturbed = pd.concat(cluster_dfs)
+        df_perturbed = pd.concat(
+            [
+                self.get_cluster_perturbator(average_effect=average_effect).perturbate(
+                    df=df[df[self.cluster_col] == cluster].copy()
+                )
+                for cluster in df[self.cluster_col].unique()
+            ]
+        )
         return df_perturbed.drop(columns=self.cluster_col).reset_index(drop=True)
 
     @classmethod
