@@ -1,4 +1,3 @@
-import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, NoReturn, Optional, Union
 
@@ -235,7 +234,7 @@ class RelativePositivePerturbator(Perturbator):
             (df[self.treatment_col] != self.treatment) | (df[self.target_col] == 0)
         ).mean()
         if 1.0 == treatment_zeros:
-            warnings.warn(
+            raise ValueError(
                 f"All treatment samples have {self.target_col} = 0, relative effect "
                 f"{average_effect} will have no effect"
             )
@@ -428,9 +427,9 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         """
         df = df.copy().reset_index(drop=True)
         average_effect = self.get_average_effect(average_effect)
-        self.check_relative_effect_bounds(df, average_effect)
+        self.check_relative_effect_bounds(average_effect)
         scale = self.get_scale(average_effect)
-        self.check_relative_effect_bounds(df, scale)
+        self.check_relative_effect_bounds(scale)
         n = self.get_number_of_treated(df)
         sampled_effect = self._sample_scaled_beta_effect(average_effect, scale, n)
         df = self.apply_multiplicative_effect(df, sampled_effect)
@@ -446,12 +445,9 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
                 f"{range_min = } and {range_max = }"
             )
 
-    def check_relative_effect_bounds(
-        self, df: pd.DataFrame, average_effect: float
-    ) -> None:
+    def check_relative_effect_bounds(self, average_effect: float) -> None:
         self.check_average_effect_greater_than(average_effect, x=self._range_min)
         self.check_average_effect_smaller_than(average_effect, x=self._range_max)
-        self.check_target_is_not_constant_zero(df, average_effect)
 
     def check_average_effect_greater_than(
         self, average_effect: float, x: float
