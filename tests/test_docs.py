@@ -7,7 +7,6 @@ from cluster_experiments import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
-    ClusteredBetaRelativePerturbator,
     ClusteredOLSAnalysis,
     ClusteredSplitter,
     ConstantWashover,
@@ -26,6 +25,7 @@ from cluster_experiments import (
     RandomSplitter,
     RelativePositivePerturbator,
     RepeatedSampler,
+    SegmentedBetaRelativePerturbator,
     StratifiedClusteredSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
@@ -66,7 +66,7 @@ all_objects = [
     NormalPerturbator,
     BetaRelativePositivePerturbator,
     BetaRelativePerturbator,
-    ClusteredBetaRelativePerturbator,
+    SegmentedBetaRelativePerturbator,
 ]
 
 

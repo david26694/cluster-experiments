@@ -16,9 +16,9 @@ from cluster_experiments.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
-    ClusteredBetaRelativePerturbator,
     NormalPerturbator,
     RelativePositivePerturbator,
+    SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.random_splitter import (
@@ -58,6 +58,9 @@ class PowerConfig:
         covariates: list of columns to use as covariates
         average_effect: average effect to use in the perturbator
         scale: scale to use in stochastic perturbators
+        range_min: minimum value of the target range for relative beta perturbator, must be >-1
+        range_max: maximum value of the target range for relative beta perturbator
+        segment_cols: list of segmentation columns for segmented perturbator
         treatments: list of treatments to use
         alpha: alpha value to use in the power analysis
         agg_col: column to use for aggregation in the CUPAC model
@@ -105,7 +108,7 @@ class PowerConfig:
     scale: Optional[float] = None
     range_min: Optional[float] = None
     range_max: Optional[float] = None
-    cluster_cols_perturbator: Optional[List[str]] = None
+    segment_cols: Optional[List[str]] = None
 
     # Splitter
     treatments: Optional[List[str]] = None
@@ -153,8 +156,8 @@ class PowerConfig:
                 self._set_and_log("range_max", None, "perturbator")
 
         if self.perturbator not in {"clustered_beta_relative"}:
-            if self._are_different(self.cluster_cols_perturbator, None):
-                self._set_and_log("cluster_cols_perturbator", None, "perturbator")
+            if self._are_different(self.segment_cols, None):
+                self._set_and_log("segment_cols", None, "perturbator")
 
         if "stratified" not in self.splitter and "paired_ttest" not in self.analysis:
             if self._are_different(self.strata_cols, None):
@@ -196,7 +199,7 @@ perturbator_mapping = {
     "normal": NormalPerturbator,
     "beta_relative_positive": BetaRelativePositivePerturbator,
     "beta_relative": BetaRelativePerturbator,
-    "clustered_beta_relative": ClusteredBetaRelativePerturbator,
+    "segmented_beta_relative": SegmentedBetaRelativePerturbator,
 }
 
 splitter_mapping = {

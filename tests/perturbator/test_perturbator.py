@@ -6,9 +6,9 @@ from cluster_experiments.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
-    ClusteredBetaRelativePerturbator,
     NormalPerturbator,
     RelativePositivePerturbator,
+    SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.power_config import PowerConfig
@@ -232,18 +232,18 @@ def test_beta_relative_perturbate(average_effect):
     )
 
     # then
-    assert np.mean(perturbated_values) == np.mean(effect)
-    assert np.var(perturbated_values) == np.var(effect)
+    assert np.isclose(np.mean(perturbated_values), np.mean(effect))
+    assert np.isclose(np.var(perturbated_values), np.var(effect))
 
 
 @pytest.mark.parametrize("average_effect", [0.1, 0.04])
-def test_clustered_beta_relative_perturbate(average_effect):
+def test_segmented_beta_relative_perturbate(average_effect):
     range_min = -0.8
     range_max = 5
 
     df_clustered = generate_clustered_data()
-    pert = ClusteredBetaRelativePerturbator(
-        range_min=range_min, range_max=range_max, cluster_cols=["city_code"]
+    pert = SegmentedBetaRelativePerturbator(
+        range_min=range_min, range_max=range_max, segment_cols=["city_code"]
     )
     df_pert = pert.perturbate(
         pd.concat([df_clustered for _ in range(100)]), average_effect=average_effect
@@ -264,13 +264,13 @@ def test_clustered_beta_relative_perturbate(average_effect):
 
 
 @pytest.mark.parametrize("average_effect", [0.1, 0.04])
-def test_clustered_beta_relative_perturbate_multiple_clusters(average_effect):
+def test_segmented_beta_relative_perturbate_multiple_segments(average_effect):
     range_min = -0.8
     range_max = 5
 
     df_clustered = generate_clustered_data()
-    pert = ClusteredBetaRelativePerturbator(
-        range_min=range_min, range_max=range_max, cluster_cols=["city_code", "date"]
+    pert = SegmentedBetaRelativePerturbator(
+        range_min=range_min, range_max=range_max, segment_cols=["city_code", "date"]
     )
     df_pert = pert.perturbate(
         pd.concat([df_clustered for _ in range(100)]), average_effect=average_effect

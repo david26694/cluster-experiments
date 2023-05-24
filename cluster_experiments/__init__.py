@@ -12,10 +12,10 @@ from cluster_experiments.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
-    ClusteredBetaRelativePerturbator,
     NormalPerturbator,
     Perturbator,
     RelativePositivePerturbator,
+    SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.power_analysis import PowerAnalysis
@@ -44,7 +44,7 @@ __all__ = [
     "NormalPerturbator",
     "BetaRelativePositivePerturbator",
     "BetaRelativePerturbator",
-    "ClusteredBetaRelativePerturbator",
+    "SegmentedBetaRelativePerturbator",
     "PowerAnalysis",
     "PowerConfig",
     "EmptyRegressor",

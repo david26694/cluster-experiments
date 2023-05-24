@@ -153,7 +153,7 @@ The library offers the following classes:
     * `NormalPerturbator`: to artificially perturb treated group with normal distribution perturbations
     * `BetaRelativePositivePerturbator`: to artificially perturb treated group with relative positive beta distribution perturbations
     * `BetaRelativePerturbator`: to artificially perturb treated group with relative beta distribution perturbations in a specified support interval
-    * `ClusteredBetaRelativePerturbator`: to artificially perturb treated group with relative beta distribution perturbations in a specified support interval, but using clusters
+    * `SegmentedBetaRelativePerturbator`: to artificially perturb treated group with relative beta distribution perturbations in a specified support interval, but using clusters
 * Regarding splitting data:
     * `ClusteredSplitter`: to split data based on clusters
     * `BalancedClusteredSplitter`: to split data based on clusters in a balanced way

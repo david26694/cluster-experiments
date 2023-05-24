@@ -506,14 +506,14 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         )
 
 
-class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
+class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
     """
     A stochastic Perturbator for continuous targets that applies a sampled
     effect from the Beta distribution. It applies the effect multiplicatively
-    and based on given clusters.
-    For each cluster, the average cluster effect is sampled from a beta
-    distribution with support in (0, 1). Within each cluster, the individual
-    effects are sampled from a beta distribution with mean equal to the cluster
+    and based on given segments.
+    For each segment, the average segment effect is sampled from a beta
+    distribution with support in (0, 1). Within each segment, the individual
+    effects are sampled from a beta distribution with mean equal to the segment
     average effect and support in (range_min, range_max).
 
     The number of samples with 0 as target remains unchanged.
@@ -526,12 +526,12 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
         scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
         range_min (float, optional): the minimum value of the target range. Defaults to -0.8.
         range_max (float, optional): the maximum value of the target range. Defaults to 5.
-        cluster_cols (Optional[List[str]], optional): the columns to use for clustering. Defaults to None.
+        segment_cols (Optional[List[str]], optional): the columns to use for segmenting. Defaults to None.
     """
 
     def __init__(
         self,
-        cluster_cols: List[str],
+        segment_cols: List[str],
         average_effect: Optional[float] = None,
         target_col: str = "target",
         treatment_col: str = "treatment",
@@ -543,25 +543,25 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
         super().__init__(average_effect, target_col, treatment_col, treatment, scale)
         self._range_min = range_min
         self._range_max = range_max
-        self._cluster_cols = cluster_cols
-        self.cluster_col = self._get_cluster_col_name(cluster_cols)
+        self._segment_cols = segment_cols
+        self.segment_col = self._get_segment_col_name(segment_cols)
 
     @staticmethod
-    def _get_cluster_col_name(cluster_cols: List[str]):
-        if not isinstance(cluster_cols, list):
+    def _get_segment_col_name(segment_cols: List[str]):
+        if not isinstance(segment_cols, list):
             raise ValueError(
-                f"cluster_cols must be of type List[str], got type {type(cluster_cols)}"
+                f"segment_cols must be of type List[str], got type {type(segment_cols)}"
             )
-        return "_cluster_" + "_".join(cluster_cols)
+        return "_cluster_" + "_".join(segment_cols)
 
-    def _set_cluster_col_values(self, df: pd.DataFrame):
-        if self.cluster_col in df.columns:
+    def _set_segment_col_values(self, df: pd.DataFrame):
+        if self.segment_col in df.columns:
             raise ValueError(
-                f"Cannot use {self.cluster_col=} as perturbator clustering "
+                f"Cannot use {self.segment_col=} as perturbator clustering "
                 f"column, as it already exists in the input dataframe!"
             )
         return df.copy().assign(
-            **{self.cluster_col: df[self._cluster_cols].astype(str).sum(axis=1)}
+            **{self.segment_col: df[self._segment_cols].astype(str).sum(axis=1)}
         )
 
     def get_cluster_perturbator_fixed_params(
@@ -596,7 +596,7 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
         average_effect: Optional[float] = None,
     ) -> pd.DataFrame:
         df = df.copy().reset_index(drop=True)
-        df = self._set_cluster_col_values(df)
+        df = self._set_segment_col_values(df)
 
         cluster_perturbator_params = self.get_cluster_perturbator_fixed_params(
             average_effect
@@ -604,12 +604,12 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
         df_perturbed = pd.concat(
             [
                 self.get_cluster_perturbator(**cluster_perturbator_params).perturbate(
-                    df=df[df[self.cluster_col] == cluster].copy()
+                    df=df[df[self.segment_col] == cluster].copy()
                 )
-                for cluster in df[self.cluster_col].unique()
+                for cluster in df[self.segment_col].unique()
             ]
         )
-        return df_perturbed.drop(columns=self.cluster_col).reset_index(drop=True)
+        return df_perturbed.drop(columns=self.segment_col).reset_index(drop=True)
 
     @classmethod
     def from_config(cls, config):
@@ -622,7 +622,7 @@ class ClusteredBetaRelativePerturbator(BetaRelativePositivePerturbator):
             scale=config.scale,
             range_min=config.range_min,
             range_max=config.range_max,
-            cluster_cols=config.cluster_cols_perturbator,
+            segment_cols=config.segment_cols_perturbator,
         )
 
 
