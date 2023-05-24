@@ -9,7 +9,7 @@ on:
     - main
 
 jobs:
-  test-coverage:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:

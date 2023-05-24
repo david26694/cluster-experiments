@@ -5,7 +5,7 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  test-release:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
