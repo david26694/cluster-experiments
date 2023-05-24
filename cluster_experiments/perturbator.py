@@ -356,10 +356,18 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
     effect from a scaled Beta distribution. It applies the effect multiplicatively.
 
     The sampled effect is defined for values in the specified range
-    (range_min, range_max). It's recommended to set -1<range_min<0 and range_max>0
-    in a "symmetric way" around 0, such that log(1 + range_min) = -log(1 + range_max).
-    This ensures to have an "equal range" of perturbations that relatively
+    (range_min, range_max). It's recommended to set -1<range_min<0 and
+    range_max>0 in a "symmetric way" around 0, such that
+    log(1 + range_min) = -log(1 + range_max).
+    This ensures to have an "symmetric range" of perturbations that relatively
     decrease the target as perturbations that relatively increase the target.
+    By "symmetry" of relative effects we mean that for an effect c > 0, an
+    increase of the target t via t*(1 + c) is "symmetric" to a decrease of t
+    via t/(1 + c). For example, an increase of 5x (i.e. by +400%, corresponding
+    to c_inc=4) is "symmetric" to a decrease of 5x (i.e. a decrease of -80%,
+    corresponding to c_dec = -0.8). In this case, 1 + c_dec = 1/(1 + c_inc), so
+    the relative effects c_inc and c_dec are "symmetric" in the sense that they
+    are inverse to each other.
 
     The number of samples with 0 as target remains unchanged.
 
