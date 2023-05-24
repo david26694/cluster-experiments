@@ -358,8 +358,8 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
 
     The average effect is defined for values in the specified range (range_min, range_max).
     It's recommended to set range_min and range_max in a "symmetric way" around 0,
-    such that log(1 + range_min) = -log(range_max). This ensures to have an
-    equal range of perturbations that relatively decrease the target as
+    such that log(1 + range_min) = -log(1 + range_max). This ensures to have an
+    "equal range" of perturbations that relatively decrease the target as
     perturbations that relatively increase the target.
 
     The number of samples with 0 as target remains unchanged.
@@ -405,7 +405,7 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         treatment: str = "B",
         scale: Optional[float] = None,
         range_min: float = -0.8,
-        range_max: float = 5,
+        range_max: float = 4,
     ):
         self._check_scale_range(range_min, range_max)
         super().__init__(average_effect, target_col, treatment_col, treatment, scale)
