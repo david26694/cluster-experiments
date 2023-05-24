@@ -239,55 +239,67 @@ def test_beta_relative_perturbate(average_effect):
 @pytest.mark.parametrize("average_effect", [0.1, 0.04])
 def test_segmented_beta_relative_perturbate(average_effect):
     range_min = -0.8
-    range_max = 5
+    range_max = 4
 
     df_clustered = generate_clustered_data()
     pert = SegmentedBetaRelativePerturbator(
         range_min=range_min, range_max=range_max, segment_cols=["city_code"]
     )
-    df_pert = pert.perturbate(
-        pd.concat([df_clustered for _ in range(100)]), average_effect=average_effect
-    )
-    df_merged = df_clustered.merge(
-        df_pert,
-        on=["country_code", "city_code", "user_id", "date", "treatment"],
-        suffixes=["", "_pert"],
-    )
-    df_merged = df_merged.assign(
-        rel_pert=df_merged["target_pert"] / df_merged["target"]
-    )
-    mean_eff = df_merged.loc[df_merged["treatment"] == "B", "rel_pert"].mean()
+
+    mean_effects = []
+    # repeat multiple times to decrease variability
+    for _ in range(100):
+        df_pert = pert.perturbate(
+            pd.concat([df_clustered for _ in range(100)]), average_effect=average_effect
+        )
+        df_merged = df_clustered.merge(
+            df_pert,
+            on=["country_code", "city_code", "user_id", "date", "treatment"],
+            suffixes=["", "_pert"],
+        )
+        df_merged = df_merged.assign(
+            rel_pert=df_merged["target_pert"] / df_merged["target"]
+        )
+        mean_effects.append(
+            df_merged.loc[df_merged["treatment"] == "B", "rel_pert"].mean()
+        )
 
     # maximum relative difference we expect between the simulated relative perturbations and the passed average_effect
-    max_rel_diff = 0.5
-    assert abs((mean_eff - 1) / average_effect - 1) < max_rel_diff
+    max_rel_diff = 0.2
+    assert abs((np.mean(mean_effects) - 1) / average_effect - 1) < max_rel_diff
 
 
 @pytest.mark.parametrize("average_effect", [0.1, 0.04])
 def test_segmented_beta_relative_perturbate_multiple_segments(average_effect):
     range_min = -0.8
-    range_max = 5
+    range_max = 4
 
     df_clustered = generate_clustered_data()
     pert = SegmentedBetaRelativePerturbator(
         range_min=range_min, range_max=range_max, segment_cols=["city_code", "date"]
     )
-    df_pert = pert.perturbate(
-        pd.concat([df_clustered for _ in range(100)]), average_effect=average_effect
-    )
-    df_merged = df_clustered.merge(
-        df_pert,
-        on=["country_code", "city_code", "user_id", "date", "treatment"],
-        suffixes=["", "_pert"],
-    )
-    df_merged = df_merged.assign(
-        rel_pert=df_merged["target_pert"] / df_merged["target"]
-    )
-    mean_eff = df_merged.loc[df_merged["treatment"] == "B", "rel_pert"].mean()
+
+    mean_effects = []
+    # repeat multiple times to decrease variability
+    for _ in range(100):
+        df_pert = pert.perturbate(
+            pd.concat([df_clustered for _ in range(100)]), average_effect=average_effect
+        )
+        df_merged = df_clustered.merge(
+            df_pert,
+            on=["country_code", "city_code", "user_id", "date", "treatment"],
+            suffixes=["", "_pert"],
+        )
+        df_merged = df_merged.assign(
+            rel_pert=df_merged["target_pert"] / df_merged["target"]
+        )
+        mean_effects.append(
+            df_merged.loc[df_merged["treatment"] == "B", "rel_pert"].mean()
+        )
 
     # maximum relative difference we expect between the simulated relative perturbations and the passed average_effect
-    max_rel_diff = 0.5
-    assert abs((mean_eff - 1) / average_effect - 1) < max_rel_diff
+    max_rel_diff = 0.2
+    assert abs((np.mean(mean_effects) - 1) / average_effect - 1) < max_rel_diff
 
 
 def test_binary_raises():
