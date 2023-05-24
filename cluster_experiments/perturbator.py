@@ -356,11 +356,11 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
     A stochastic Perturbator for continuous targets that applies a  sampled
     effect from a scaled Beta distribution. It applies the effect multiplicatively.
 
-    The average effect is defined for values in the specified range (range_min, range_max).
-    It's recommended to set range_min and range_max in a "symmetric way" around 0,
-    such that log(1 + range_min) = -log(1 + range_max). This ensures to have an
-    "equal range" of perturbations that relatively decrease the target as
-    perturbations that relatively increase the target.
+    The average effect is defined for values in the specified range
+    (range_min, range_max). It's recommended to set range_min<0 and range_max>0
+    in a "symmetric way" around 0, such that log(1 + range_min) = -log(1 + range_max).
+    This ensures to have an "equal range" of perturbations that relatively
+    decrease the target as perturbations that relatively increase the target.
 
     The number of samples with 0 as target remains unchanged.
 
