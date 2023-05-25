@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, NoReturn, Optional, Union
+from typing import Any, Dict, List, NoReturn, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -405,6 +405,9 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
             Defaults to -0.8, which allows for up to 5x decreases of the target.
         range_max (float, optional): the maximum value of the target range.
             Defaults to 4, which allows for up to 5x increases of the target.
+        reduce_variance (Optional[bool], optional): if True and if abs(average_effect)<1, we reduce
+            the variance of the beta distribution by multiplying the beta parameters by 1/abs(average_effect).
+            Defaults to None, which is equivalent to True.
     """
 
     def __init__(
@@ -416,11 +419,13 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         scale: Optional[float] = None,
         range_min: float = -0.8,
         range_max: float = 4,
+        reduce_variance: Optional[bool] = None,
     ):
-        self._check_scale_range(range_min, range_max)
+        self._check_range(range_min, range_max)
         super().__init__(average_effect, target_col, treatment_col, treatment, scale)
         self._range_min = range_min
         self._range_max = range_max
+        self._reduce_variance = reduce_variance or True
 
     def perturbate(
         self, df: pd.DataFrame, average_effect: Optional[float] = None
@@ -447,7 +452,7 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         return df
 
     @staticmethod
-    def _check_scale_range(range_min: float, range_max: float):
+    def _check_range(range_min: float, range_max: float):
         if range_min < -1:
             raise ValueError(f"range_min needs to be greater than -1, got {range_min}")
         if range_min >= range_max:
@@ -476,6 +481,18 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
                 f"Simulated effect needs to be smaller than range_max={x}, got {average_effect}"
             )
 
+    def _reduce_variance_beta_params(
+        self, average_effect: float, a: float, b: float
+    ) -> Tuple[float, float]:
+        """
+        Multiplying the parameters of the beta distribution with a factor >1
+        reduces variance
+        """
+        if abs(average_effect) < 1:
+            a *= 1 / abs(average_effect)
+            b *= 1 / abs(average_effect)
+        return a, b
+
     def _sample_scaled_beta_effect(
         self, average_effect: float, scale: float, n: int
     ) -> np.ndarray:
@@ -484,12 +501,9 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         a = average_effect_inv_transf / (scale_inv_transf * scale_inv_transf)
         b = (1 - average_effect_inv_transf) / (scale_inv_transf * scale_inv_transf)
 
-        # multiplying by a factor >1 makes the distribution more concentrated around the mean
-        if abs(average_effect) < 1:
-            factor = 1 / abs(average_effect)
-        else:
-            factor = 1
-        beta = np.random.beta(a * factor, b * factor, n)
+        if self._reduce_variance:
+            a, b = self._reduce_variance_beta_params(average_effect, a, b)
+        beta = np.random.beta(a, b, n)
 
         return self._transform_to_range(beta)
 

@@ -108,6 +108,7 @@ class PowerConfig:
     scale: Optional[float] = None
     range_min: Optional[float] = None
     range_max: Optional[float] = None
+    reduce_variance: Optional[bool] = None
     segment_cols: Optional[List[str]] = None
 
     # Splitter
@@ -154,6 +155,8 @@ class PowerConfig:
                 self._set_and_log("range_min", None, "perturbator")
             if self._are_different(self.range_max, None):
                 self._set_and_log("range_max", None, "perturbator")
+            if self._are_different(self.reduce_variance, None):
+                self._set_and_log("reduce_variance", None, "perturbator")
 
         if self.perturbator not in {"clustered_beta_relative"}:
             if self._are_different(self.segment_cols, None):
