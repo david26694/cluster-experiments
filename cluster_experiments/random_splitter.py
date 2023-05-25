@@ -354,7 +354,9 @@ class StratifiedClusteredSplitter(RandomSplitter):
             treatment_col=treatment_col,
         )
         if strata_cols is None or strata_cols == [""]:
-            raise ValueError(f"Splitter {self} requires strata_cols, got {strata_cols = }")
+            raise ValueError(
+                    f"Splitter {self} requires strata_cols, got {strata_cols = }"
+                )
         self.strata_cols = strata_cols
 
     def assign_treatment_df(self, df: pd.DataFrame) -> pd.DataFrame:

@@ -324,3 +324,11 @@ def test_stratified_strata_uniqueness(df_strata_multiple_values):
 
     with pytest.raises(ValueError):
         splitter.assign_treatment_df(df_strata_multiple_values)
+
+
+def test_stratified_splitter_raises_error_if_no_strata_provided():
+    msg = ""
+    with pytest.raises(ValueError, match=msg):
+        StratifiedClusteredSplitter(
+            strata_cols=["segment"], cluster_cols=["cluster"]
+        )
