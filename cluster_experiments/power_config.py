@@ -60,6 +60,7 @@ class PowerConfig:
         scale: scale to use in stochastic perturbators
         range_min: minimum value of the target range for relative beta perturbator, must be >-1
         range_max: maximum value of the target range for relative beta perturbator
+        reduce_variance: whether to reduce variance in the BetaRelative perturbator
         segment_cols: list of segmentation columns for segmented perturbator
         treatments: list of treatments to use
         alpha: alpha value to use in the power analysis
