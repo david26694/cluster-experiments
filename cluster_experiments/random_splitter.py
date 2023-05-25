@@ -353,7 +353,7 @@ class StratifiedClusteredSplitter(RandomSplitter):
             treatments=treatments,
             treatment_col=treatment_col,
         )
-        if strata_cols is None or strata_cols == [""]:
+        if not strata_cols or strata_cols == [""]:
             raise ValueError(
                     f"Splitter {self} requires strata_cols, got {strata_cols = }"
                 )
