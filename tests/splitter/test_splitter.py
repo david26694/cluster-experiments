@@ -327,8 +327,8 @@ def test_stratified_strata_uniqueness(df_strata_multiple_values):
 
 
 def test_stratified_splitter_raises_error_if_no_strata_provided():
-    msg = ""
+    msg = (
+        "Splitter StratifiedClusteredSplitter requires strata_cols, got strata_cols = "
+    )
     with pytest.raises(ValueError, match=msg):
-        StratifiedClusteredSplitter(
-            strata_cols=["segment"], cluster_cols=["cluster"]
-        )
+        StratifiedClusteredSplitter()
