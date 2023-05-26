@@ -13,10 +13,12 @@ from cluster_experiments.experiment_analysis import (
     TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import (
+    BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
     NormalPerturbator,
     RelativePositivePerturbator,
+    SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.random_splitter import (
@@ -24,6 +26,7 @@ from cluster_experiments.random_splitter import (
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
     NonClusteredSplitter,
+    RepeatedSampler,
     StratifiedClusteredSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
@@ -55,6 +58,10 @@ class PowerConfig:
         covariates: list of columns to use as covariates
         average_effect: average effect to use in the perturbator
         scale: scale to use in stochastic perturbators
+        range_min: minimum value of the target range for relative beta perturbator, must be >-1
+        range_max: maximum value of the target range for relative beta perturbator
+        reduce_variance: whether to reduce variance in the BetaRelative perturbator
+        segment_cols: list of segmentation columns for segmented perturbator
         treatments: list of treatments to use
         alpha: alpha value to use in the power analysis
         agg_col: column to use for aggregation in the CUPAC model
@@ -100,6 +107,10 @@ class PowerConfig:
     # Perturbator
     average_effect: Optional[float] = None
     scale: Optional[float] = None
+    range_min: Optional[float] = None
+    range_max: Optional[float] = None
+    reduce_variance: Optional[bool] = None
+    segment_cols: Optional[List[str]] = None
 
     # Splitter
     treatments: Optional[List[str]] = None
@@ -140,6 +151,18 @@ class PowerConfig:
             if self._are_different(self.scale, None):
                 self._set_and_log("scale", None, "perturbator")
 
+        if self.perturbator not in {"beta_relative", "clustered_beta_relative"}:
+            if self._are_different(self.range_min, None):
+                self._set_and_log("range_min", None, "perturbator")
+            if self._are_different(self.range_max, None):
+                self._set_and_log("range_max", None, "perturbator")
+            if self._are_different(self.reduce_variance, None):
+                self._set_and_log("reduce_variance", None, "perturbator")
+
+        if self.perturbator not in {"clustered_beta_relative"}:
+            if self._are_different(self.segment_cols, None):
+                self._set_and_log("segment_cols", None, "perturbator")
+
         if "stratified" not in self.splitter and "paired_ttest" not in self.analysis:
             if self._are_different(self.strata_cols, None):
                 self._set_and_log("strata_cols", None, "splitter")
@@ -179,6 +202,8 @@ perturbator_mapping = {
     "relative_positive": RelativePositivePerturbator,
     "normal": NormalPerturbator,
     "beta_relative_positive": BetaRelativePositivePerturbator,
+    "beta_relative": BetaRelativePerturbator,
+    "segmented_beta_relative": SegmentedBetaRelativePerturbator,
 }
 
 splitter_mapping = {
@@ -189,6 +214,7 @@ splitter_mapping = {
     "switchback": SwitchbackSplitter,
     "switchback_balance": BalancedSwitchbackSplitter,
     "switchback_stratified": StratifiedSwitchbackSplitter,
+    "backtest": RepeatedSampler,
 }
 
 analysis_mapping = {

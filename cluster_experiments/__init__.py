@@ -9,11 +9,13 @@ from cluster_experiments.experiment_analysis import (
     TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import (
+    BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
     NormalPerturbator,
     Perturbator,
     RelativePositivePerturbator,
+    SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.power_analysis import PowerAnalysis
@@ -24,6 +26,7 @@ from cluster_experiments.random_splitter import (
     ClusteredSplitter,
     NonClusteredSplitter,
     RandomSplitter,
+    RepeatedSampler,
     StratifiedClusteredSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
@@ -40,6 +43,8 @@ __all__ = [
     "RelativePositivePerturbator",
     "NormalPerturbator",
     "BetaRelativePositivePerturbator",
+    "BetaRelativePerturbator",
+    "SegmentedBetaRelativePerturbator",
     "PowerAnalysis",
     "PowerConfig",
     "EmptyRegressor",
@@ -52,6 +57,7 @@ __all__ = [
     "SwitchbackSplitter",
     "BalancedSwitchbackSplitter",
     "StratifiedSwitchbackSplitter",
+    "RepeatedSampler",
     "ClusteredOLSAnalysis",
     "TTestClusteredAnalysis",
     "PairedTTestClusteredAnalysis",

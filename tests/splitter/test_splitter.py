@@ -9,6 +9,7 @@ from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     ClusteredSplitter,
+    RepeatedSampler,
     StratifiedClusteredSplitter,
 )
 from tests.utils import assert_balanced_strata
@@ -332,3 +333,12 @@ def test_stratified_splitter_raises_error_if_no_strata_provided():
     )
     with pytest.raises(ValueError, match=msg):
         StratifiedClusteredSplitter()
+
+
+def test_backtest_splitter(treatments, df_cluster):
+    splitter = RepeatedSampler(treatments=treatments)
+    n_duplicates = 100
+    df_cluster = pd.concat([df_cluster for _ in range(n_duplicates)])
+    sampled_treatment = splitter.assign_treatment_df(df_cluster)
+    assert len(sampled_treatment) == len(treatments) * len(df_cluster)
+    assert (sampled_treatment.treatment.value_counts() == len(df_cluster)).all()
