@@ -67,29 +67,34 @@ def test_binary_perturbator_10_perturbate(average_effect, output_values):
     ).all()
 
 
-@pytest.mark.parametrize("average_effect, avg_target", [(-0.1, 0.4), (0.1, 0.6)])
-def test_constant_perturbator(average_effect, avg_target):
-    up = ConstantPerturbator(average_effect=average_effect)
+@pytest.mark.parametrize(
+    "average_effect, avg_target, perturbator",
+    [
+        (-0.1, 0.4, ConstantPerturbator),
+        (0.1, 0.6, ConstantPerturbator),
+        (-0.1, 0.4, UniformPerturbator),
+        (0.1, 0.6, UniformPerturbator),
+    ],
+)
+def test_constant_perturbator(average_effect, avg_target, perturbator):
+    up = perturbator(average_effect=average_effect)
     assert (
         up.perturbate(continuous_df).query("treatment == 'B'")["target"].mean()
         == avg_target
     )
 
 
-@pytest.mark.parametrize("average_effect, avg_target", [(-0.1, 0.4), (0.1, 0.6)])
-def test_constant_perturbator_perturbate(average_effect, avg_target):
-    up = ConstantPerturbator()
-    assert (
-        up.perturbate(continuous_df, average_effect=average_effect)
-        .query("treatment == 'B'")["target"]
-        .mean()
-        == avg_target
-    )
-
-
-@pytest.mark.parametrize("average_effect, avg_target", [(-0.1, 0.4), (0.1, 0.6)])
-def test_uniform_perturbator_perturbate(average_effect, avg_target):
-    up = UniformPerturbator()
+@pytest.mark.parametrize(
+    "average_effect, avg_target, perturbator",
+    [
+        (-0.1, 0.4, ConstantPerturbator),
+        (0.1, 0.6, ConstantPerturbator),
+        (-0.1, 0.4, UniformPerturbator),
+        (0.1, 0.6, UniformPerturbator),
+    ],
+)
+def test_constant_perturbator_perturbate(average_effect, avg_target, perturbator):
+    up = perturbator()
     assert (
         up.perturbate(continuous_df, average_effect=average_effect)
         .query("treatment == 'B'")["target"]
