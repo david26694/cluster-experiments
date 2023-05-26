@@ -151,7 +151,7 @@ class PowerConfig:
             if self._are_different(self.scale, None):
                 self._set_and_log("scale", None, "perturbator")
 
-        if self.perturbator not in {"beta_relative", "clustered_beta_relative"}:
+        if self.perturbator not in {"beta_relative", "segmented_beta_relative"}:
             if self._are_different(self.range_min, None):
                 self._set_and_log("range_min", None, "perturbator")
             if self._are_different(self.range_max, None):
@@ -159,7 +159,7 @@ class PowerConfig:
             if self._are_different(self.reduce_variance, None):
                 self._set_and_log("reduce_variance", None, "perturbator")
 
-        if self.perturbator not in {"clustered_beta_relative"}:
+        if self.perturbator not in {"segmented_beta_relative"}:
             if self._are_different(self.segment_cols, None):
                 self._set_and_log("segment_cols", None, "perturbator")
 
