@@ -14,8 +14,8 @@ def get_config(perturbator: str) -> dict:
     }
 
 
-def test_power_analysis_uniform_perturbator_seed(df):
-    config_dict = get_config("uniform")
+def test_power_analysis_constant_perturbator_seed(df):
+    config_dict = get_config("constant")
 
     powers = []
     for _ in range(10):

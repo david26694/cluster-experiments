@@ -8,7 +8,7 @@ def test_raise_n_jobs(df):
     config = PowerConfig(
         cluster_cols=["cluster", "date"],
         analysis="gee",
-        perturbator="uniform",
+        perturbator="constant",
         splitter="clustered",
         n_simulations=4,
     )
@@ -22,7 +22,7 @@ def test_raise_n_jobs(df):
 def test_similar_n_jobs(df):
     config = PowerConfig(
         analysis="ols_non_clustered",
-        perturbator="uniform",
+        perturbator="constant",
         splitter="non_clustered",
         n_simulations=100,
     )

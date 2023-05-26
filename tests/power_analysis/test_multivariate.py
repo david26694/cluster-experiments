@@ -1,10 +1,10 @@
 import pytest
 
 from cluster_experiments import (
+    ConstantPerturbator,
     NonClusteredSplitter,
     OLSAnalysis,
     PowerAnalysis,
-    UniformPerturbator,
 )
 from tests.examples import generate_non_clustered_data
 
@@ -19,7 +19,7 @@ def df():
 
 @pytest.fixture
 def perturbator():
-    return UniformPerturbator()
+    return ConstantPerturbator()
 
 
 @pytest.fixture
@@ -57,7 +57,7 @@ def multivariate_hypothesis_power(perturbator, ols):
 def binary_hypothesis_power_config():
     config = {
         "analysis": "ols_non_clustered",
-        "perturbator": "uniform",
+        "perturbator": "constant",
         "splitter": "non_clustered",
         "n_simulations": 50,
     }
@@ -68,7 +68,7 @@ def binary_hypothesis_power_config():
 def multivariate_hypothesis_power_config():
     config = {
         "analysis": "ols_non_clustered",
-        "perturbator": "uniform",
+        "perturbator": "constant",
         "splitter": "non_clustered",
         "n_simulations": 50,
         "treatments": ["A", "B", "C", "D", "E", "F", "G"],

@@ -16,6 +16,7 @@ from cluster_experiments.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
+    ConstantPerturbator,
     NormalPerturbator,
     RelativePositivePerturbator,
     SegmentedBetaRelativePerturbator,
@@ -78,7 +79,7 @@ class PowerConfig:
     p = PowerConfig(
         analysis="gee",
         splitter="clustered_balance",
-        perturbator="uniform",
+        perturbator="constant",
         cluster_cols=["city"],
         n_simulations=100,
         alpha=0.05,
@@ -198,6 +199,7 @@ class PowerConfig:
 
 perturbator_mapping = {
     "binary": BinaryPerturbator,
+    "constant": ConstantPerturbator,
     "uniform": UniformPerturbator,
     "relative_positive": RelativePositivePerturbator,
     "normal": NormalPerturbator,
