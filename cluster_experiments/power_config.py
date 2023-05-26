@@ -214,7 +214,7 @@ splitter_mapping = {
     "switchback": SwitchbackSplitter,
     "switchback_balance": BalancedSwitchbackSplitter,
     "switchback_stratified": StratifiedSwitchbackSplitter,
-    "backtest": RepeatedSampler,
+    "repeated_sampler": RepeatedSampler,
 }
 
 analysis_mapping = {

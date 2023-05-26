@@ -648,7 +648,7 @@ class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
             scale=config.scale,
             range_min=config.range_min,
             range_max=config.range_max,
-            segment_cols=config.segment_cols_perturbator,
+            segment_cols=config.segment_cols,
         )
 
 
