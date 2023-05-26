@@ -22,7 +22,7 @@ A library to run simulation-based power analysis, including clustered data. Also
 
 ### Hello world
 
-Hello world of the library, non-clustered version. There is an outcome variable analyzed with a linear regression. The perturbator is a constant distribution, and the splitter is random.
+Hello world of the library, non-clustered version. There is an outcome variable analyzed with a linear regression. The perturbator adds a constant effect to treated units, and the splitter is random.
 
 ```python title="Non-clustered"
 import numpy as np
