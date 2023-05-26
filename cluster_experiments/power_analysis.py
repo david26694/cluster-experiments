@@ -284,8 +284,7 @@ class PowerAnalysis:
         n_detected_mde = 0
         for _ in tqdm(range(n_simulations), disable=not verbose):
             p_value = self._run_simulation((df, average_effect))
-            if verbose:
-                logging.info(f"p_value of simulation run: {p_value:.3f}")
+            logging.info(f"p_value of simulation run: {p_value:.3f}")
             n_detected_mde += p_value < alpha
 
         return n_detected_mde / n_simulations
