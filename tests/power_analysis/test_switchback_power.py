@@ -63,7 +63,7 @@ def test_raise_no_delta():
             {
                 "time_col": "date",
                 "switch_frequency": "1D",
-                "perturbator": "uniform",
+                "perturbator": "constant",
                 "analysis": "ols_clustered",
                 "splitter": "switchback_balance",
                 "cluster_cols": ["cluster", "date"],
@@ -88,7 +88,7 @@ def test_switchback_strata():
     config = {
         "time_col": "time",
         "switch_frequency": "30min",
-        "perturbator": "uniform",
+        "perturbator": "constant",
         "analysis": "ols_clustered",
         "splitter": "switchback_stratified",
         "cluster_cols": ["time", "city"],

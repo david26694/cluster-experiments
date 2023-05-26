@@ -24,7 +24,7 @@ def switchback_splitter_config():
     config = {
         "time_col": "time",
         "switch_frequency": "1D",
-        "perturbator": "uniform",
+        "perturbator": "constant",
         "analysis": "ols_clustered",
         "splitter": "switchback",
         "cluster_cols": ["time"],
@@ -53,7 +53,7 @@ def balanced_splitter_config():
     config = {
         "time_col": "time",
         "switch_frequency": "1D",
-        "perturbator": "uniform",
+        "perturbator": "constant",
         "analysis": "ols_clustered",
         "splitter": "switchback_balance",
         "cluster_cols": ["time"],
@@ -85,7 +85,7 @@ def stratified_switchback_splitter_config():
     config = {
         "time_col": "time",
         "switch_frequency": "1D",
-        "perturbator": "uniform",
+        "perturbator": "constant",
         "analysis": "ols_clustered",
         "splitter": "switchback_stratified",
         "cluster_cols": ["time"],

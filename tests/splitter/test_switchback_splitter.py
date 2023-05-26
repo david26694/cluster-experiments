@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.experiment_analysis import OLSAnalysis
-from cluster_experiments.perturbator import UniformPerturbator
+from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import SwitchbackSplitter
 from tests.splitter.conftest import (
@@ -86,7 +86,7 @@ def test_raise_time_col_not_in_df():
         match="in switchback splitters, time_col must be in cluster_cols",
     ):
         sw = SwitchbackSplitter(time_col="time")
-        perturbator = UniformPerturbator()
+        perturbator = ConstantPerturbator()
         analysis = OLSAnalysis()
         _ = PowerAnalysis(
             splitter=sw,

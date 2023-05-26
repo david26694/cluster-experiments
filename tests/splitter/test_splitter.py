@@ -228,7 +228,7 @@ def test_stratified_config(df_strata, strata_cols, cluster_cols):
         strata_cols=strata_cols,
         splitter="clustered_stratified",
         analysis="gee",
-        perturbator="uniform",
+        perturbator="constant",
     )
     splitter = StratifiedClusteredSplitter.from_config(config)
     # base test for balance of treatments across strata

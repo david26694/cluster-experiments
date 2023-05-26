@@ -6,6 +6,7 @@ from cluster_experiments.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
+    ConstantPerturbator,
     NormalPerturbator,
     RelativePositivePerturbator,
     SegmentedBetaRelativePerturbator,
@@ -67,10 +68,21 @@ def test_binary_perturbator_10_perturbate(average_effect, output_values):
 
 
 @pytest.mark.parametrize("average_effect, avg_target", [(-0.1, 0.4), (0.1, 0.6)])
-def test_uniform_perturbator(average_effect, avg_target):
-    up = UniformPerturbator(average_effect=average_effect)
+def test_constant_perturbator(average_effect, avg_target):
+    up = ConstantPerturbator(average_effect=average_effect)
     assert (
         up.perturbate(continuous_df).query("treatment == 'B'")["target"].mean()
+        == avg_target
+    )
+
+
+@pytest.mark.parametrize("average_effect, avg_target", [(-0.1, 0.4), (0.1, 0.6)])
+def test_constant_perturbator_perturbate(average_effect, avg_target):
+    up = ConstantPerturbator()
+    assert (
+        up.perturbate(continuous_df, average_effect=average_effect)
+        .query("treatment == 'B'")["target"]
+        .mean()
         == avg_target
     )
 

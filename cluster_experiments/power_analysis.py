@@ -52,7 +52,7 @@ class PowerAnalysis:
     import numpy as np
     import pandas as pd
     from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-    from cluster_experiments.perturbator import UniformPerturbator
+    from cluster_experiments.perturbator import ConstantPerturbator
     from cluster_experiments.power_analysis import PowerAnalysis
     from cluster_experiments.random_splitter import ClusteredSplitter
 
@@ -74,7 +74,7 @@ class PowerAnalysis:
         cluster_cols=["cluster", "date"],
     )
 
-    perturbator = UniformPerturbator()
+    perturbator = ConstantPerturbator()
 
     analysis = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
