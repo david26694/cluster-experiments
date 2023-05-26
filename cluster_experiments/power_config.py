@@ -20,6 +20,7 @@ from cluster_experiments.perturbator import (
     NormalPerturbator,
     RelativePositivePerturbator,
     SegmentedBetaRelativePerturbator,
+    UniformPerturbator,
 )
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
@@ -199,6 +200,7 @@ class PowerConfig:
 perturbator_mapping = {
     "binary": BinaryPerturbator,
     "constant": ConstantPerturbator,
+    "uniform": UniformPerturbator,
     "relative_positive": RelativePositivePerturbator,
     "normal": NormalPerturbator,
     "beta_relative_positive": BetaRelativePositivePerturbator,
