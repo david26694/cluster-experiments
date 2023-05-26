@@ -211,18 +211,28 @@ perturbator_mapping = {
 splitter_mapping = {
     "clustered": ClusteredSplitter,
     "clustered_balance": BalancedClusteredSplitter,
+    "clustered_balanced": BalancedClusteredSplitter,
+    "balanced_cluster": BalancedClusteredSplitter,
+    "balanced_clustered": BalancedClusteredSplitter,
     "non_clustered": NonClusteredSplitter,
     "clustered_stratified": StratifiedClusteredSplitter,
+    "stratified_cluster": StratifiedClusteredSplitter,
+    "stratified_clustered": StratifiedClusteredSplitter,
     "switchback": SwitchbackSplitter,
     "switchback_balance": BalancedSwitchbackSplitter,
+    "switchback_balanced": BalancedSwitchbackSplitter,
+    "balanced_switchback": BalancedSwitchbackSplitter,
     "switchback_stratified": StratifiedSwitchbackSplitter,
+    "stratified_switchback": StratifiedSwitchbackSplitter,
     "repeated_sampler": RepeatedSampler,
 }
 
 analysis_mapping = {
     "gee": GeeExperimentAnalysis,
     "ols_non_clustered": OLSAnalysis,
+    "ols": OLSAnalysis,
     "ols_clustered": ClusteredOLSAnalysis,
+    "clustered_ols": ClusteredOLSAnalysis,
     "ttest_clustered": TTestClusteredAnalysis,
     "paired_ttest_clustered": PairedTTestClusteredAnalysis,
     "mlm": MLMExperimentAnalysis,
