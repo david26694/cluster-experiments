@@ -17,7 +17,7 @@ from cluster_experiments.power_config import (
     perturbator_mapping,
     splitter_mapping,
 )
-from cluster_experiments.random_splitter import RandomSplitter
+from cluster_experiments.random_splitter import RandomSplitter, RepeatedSampler
 from cluster_experiments.utils import _get_mapping_key
 
 
@@ -284,6 +284,8 @@ class PowerAnalysis:
         n_detected_mde = 0
         for _ in tqdm(range(n_simulations), disable=not verbose):
             p_value = self._run_simulation((df, average_effect))
+            if verbose:
+                print(f"p_value of simulation run: {p_value:.3f}")
             n_detected_mde += p_value < alpha
 
         return n_detected_mde / n_simulations
@@ -466,6 +468,7 @@ class PowerAnalysis:
             has_splitter_clusters
             or not has_analysis_clusters
             or not self.analysis.cluster_cols
+            or isinstance(self.splitter, RepeatedSampler)
         ), "analysis has cluster_cols but splitter does not."
 
         assert (

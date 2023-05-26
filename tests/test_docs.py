@@ -4,6 +4,7 @@ from mktestdocs import check_docstring, check_md_file, get_codeblock_members
 from cluster_experiments import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
+    BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
     ClusteredOLSAnalysis,
@@ -23,6 +24,8 @@ from cluster_experiments import (
     PowerConfig,
     RandomSplitter,
     RelativePositivePerturbator,
+    RepeatedSampler,
+    SegmentedBetaRelativePerturbator,
     StratifiedClusteredSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
@@ -57,10 +60,13 @@ all_objects = [
     BalancedSwitchbackSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
+    RepeatedSampler,
     MLMExperimentAnalysis,
     RelativePositivePerturbator,
     NormalPerturbator,
     BetaRelativePositivePerturbator,
+    BetaRelativePerturbator,
+    SegmentedBetaRelativePerturbator,
 ]
 
 

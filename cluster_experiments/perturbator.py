@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import NoReturn, Optional, Union
+from typing import Any, Dict, List, NoReturn, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -348,6 +348,308 @@ class BetaRelativePositivePerturbator(NormalPerturbator, RelativePositivePerturb
         a = average_effect / (scale * scale)
         b = (1 - average_effect) / (scale * scale)
         return np.random.beta(a, b, n)
+
+
+class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
+    """
+    A stochastic Perturbator for continuous targets that applies a  sampled
+    effect from a scaled Beta distribution. It applies the effect multiplicatively.
+
+    The sampled effect is defined for values in the specified range
+    (range_min, range_max). It's recommended to set -1<range_min<0 and
+    range_max>0 in a "symmetric way" around 0, such that
+    log(1 + range_min) = -log(1 + range_max).
+    This ensures to have an "symmetric range" of perturbations that relatively
+    decrease the target as perturbations that relatively increase the target.
+    By "symmetry" of relative effects we mean that for an effect c > 0, an
+    increase of the target t via t*(1 + c) is "symmetric" to a decrease of t
+    via t/(1 + c). For example, an increase of 5x (i.e. by +400%, corresponding
+    to c_inc=4) is "symmetric" to a decrease of 5x (i.e. a decrease of -80%,
+    corresponding to c_dec = -0.8). In this case, 1 + c_dec = 1/(1 + c_inc), so
+    the relative effects c_inc and c_dec are "symmetric" in the sense that they
+    are inverse to each other.
+
+    The number of samples with 0 as target remains unchanged.
+
+    The stochastic effect is sampled from a beta distribution with parameters
+    mean and variance, which is linearly scaled to the range
+    (range_min, range_max).
+    If variance is not provided, the variance is abs(mean).
+
+    ```
+    target -> target * (1 + effect), where effect ~ Beta(a, b)
+    ```
+
+    The common beta parameters are derived from the mean and scale parameters,
+    combined with linear transformations to ensure the support in the given
+    range. The resulting beta parameters are scaled by abs(mu) to narrow the
+    beta distribution around the mean.
+
+    ```
+    mu_transformed <- (mu - range_min) / (range_max - range_min)
+    scale_transformed <- (scale - range_min) / (range_max - range_min)
+    a <- mu_transformed / (scale_transformed * scale_transformed)
+    b <- (1-mu_transformed) / (scale_transformed * scale_transformed)
+    effect_transformed ~ beta(a/abs(mu), b/abs(mu))
+    effect = effect_transformed * (range_max - range_min) + range_min
+    ```
+
+    Arguments:
+        average_effect (Optional[float], optional): the average effect of the treatment. Defaults to None.
+        target_col (str, optional): name of the target_col to use as the outcome. Defaults to "target".
+        treatment_col (str, optional): the name of the column that contains the treatment. Defaults to "treatment".
+        treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
+        scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
+            If not provided, the variance of the beta distribution is abs(mean).
+        range_min (float, optional): the minimum value of the target range, must be >-1.
+            Defaults to -0.8, which allows for up to 5x decreases of the target.
+        range_max (float, optional): the maximum value of the target range.
+            Defaults to 4, which allows for up to 5x increases of the target.
+        reduce_variance (Optional[bool], optional): if True and if abs(average_effect)<1, we reduce
+            the variance of the beta distribution by multiplying the beta parameters by 1/abs(average_effect).
+            Defaults to None, which is equivalent to True.
+    """
+
+    def __init__(
+        self,
+        average_effect: Optional[float] = None,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        scale: Optional[float] = None,
+        range_min: float = -0.8,
+        range_max: float = 4,
+        reduce_variance: Optional[bool] = None,
+    ):
+        self._check_range(range_min, range_max)
+        super().__init__(average_effect, target_col, treatment_col, treatment, scale)
+        self._range_min = range_min
+        self._range_max = range_max
+        self._reduce_variance = reduce_variance or True
+
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
+        """
+        Usage:
+        ```python
+        from cluster_experiments.perturbator import BetaRelativePerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = BetaRelativePerturbator(range_min = -0.5, range_max = 2)
+        # Increase target metric by 20% on average
+        perturbator.perturbate(df, average_effect=0.2)
+        ```
+        """
+        df = df.copy().reset_index(drop=True)
+        average_effect = self.get_average_effect(average_effect)
+        self.check_relative_effect_bounds(average_effect)
+        scale = self.get_scale(average_effect)
+        self.check_relative_effect_bounds(scale)
+        n = self.get_number_of_treated(df)
+        sampled_effect = self._sample_scaled_beta_effect(average_effect, scale, n)
+        df = self.apply_multiplicative_effect(df, sampled_effect)
+        return df
+
+    @staticmethod
+    def _check_range(range_min: float, range_max: float):
+        if range_min < -1:
+            raise ValueError(f"range_min needs to be greater than -1, got {range_min}")
+        if range_min >= range_max:
+            raise ValueError(
+                f"range_min needs to be smaller than range_max, got "
+                f"{range_min = } and {range_max = }"
+            )
+
+    def check_relative_effect_bounds(self, average_effect: float) -> None:
+        self.check_average_effect_greater_than(average_effect, x=self._range_min)
+        self.check_average_effect_smaller_than(average_effect, x=self._range_max)
+
+    def check_average_effect_greater_than(
+        self, average_effect: float, x: float
+    ) -> Optional[NoReturn]:
+        if average_effect <= x:
+            raise ValueError(
+                f"Simulated effect needs to be greater than range_min={x}, got {average_effect}"
+            )
+
+    def check_average_effect_smaller_than(
+        self, average_effect: float, x: float
+    ) -> Optional[NoReturn]:
+        if average_effect >= x:
+            raise ValueError(
+                f"Simulated effect needs to be smaller than range_max={x}, got {average_effect}"
+            )
+
+    def _reduce_variance_beta_params(
+        self, average_effect: float, a: float, b: float
+    ) -> Tuple[float, float]:
+        """
+        Multiplying the parameters of the beta distribution with a factor >1
+        reduces variance
+        """
+        if abs(average_effect) < 1:
+            a *= 1 / abs(average_effect)
+            b *= 1 / abs(average_effect)
+        return a, b
+
+    def _sample_scaled_beta_effect(
+        self, average_effect: float, scale: float, n: int
+    ) -> np.ndarray:
+        average_effect_inv_transf = self._inv_transform_to_range(average_effect)
+        scale_inv_transf = self._inv_transform_to_range(scale)
+        a = average_effect_inv_transf / (scale_inv_transf * scale_inv_transf)
+        b = (1 - average_effect_inv_transf) / (scale_inv_transf * scale_inv_transf)
+
+        if self._reduce_variance:
+            a, b = self._reduce_variance_beta_params(average_effect, a, b)
+        beta = np.random.beta(a, b, n)
+
+        return self._transform_to_range(beta)
+
+    def _transform_to_range(self, x: Union[float, np.ndarray]):
+        return x * (self._range_max - self._range_min) + self._range_min
+
+    def _inv_transform_to_range(self, x: Union[float, np.ndarray]):
+        return (x - self._range_min) / (self._range_max - self._range_min)
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a Perturbator object from a PowerConfig object"""
+        return cls(
+            average_effect=config.average_effect,
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            scale=config.scale,
+            range_min=config.range_min,
+            range_max=config.range_max,
+        )
+
+
+class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
+    """
+    A stochastic Perturbator for continuous targets that applies a sampled
+    effect from the Beta distribution. It applies the effect multiplicatively
+    and based on given segments.
+    For each segment, the average segment effect is sampled from a beta
+    distribution with support in (0, 1). Within each segment, the individual
+    effects are sampled from a beta distribution with mean equal to the segment
+    average effect and support in (range_min, range_max).
+
+    The number of samples with 0 as target remains unchanged.
+
+    For additional details and recommendations on the parameters, see the
+    documentation for the `BetaRelativePerturbator` class.
+
+    Arguments:
+        average_effect (Optional[float], optional): the average effect of the treatment. Defaults to None.
+        target_col (str, optional): name of the target_col to use as the outcome. Defaults to "target".
+        treatment_col (str, optional): the name of the column that contains the treatment. Defaults to "treatment".
+        treatment (str, optional): name of the treatment to use as the treated group. Defaults to "B".
+        scale (Optional[float], optional): the scale of the effect distribution. Defaults to None.
+        range_min (float, optional): the minimum value of the target range, must be >-1.
+            Defaults to -0.8, which allows for up to 5x decreases of the target.
+        range_max (float, optional): the maximum value of the target range.
+            Defaults to 4, which allows for up to 5x increases of the target.
+        segment_cols (Optional[List[str]], optional): the columns to use for segmenting. Defaults to None.
+    """
+
+    def __init__(
+        self,
+        segment_cols: List[str],
+        average_effect: Optional[float] = None,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        scale: Optional[float] = None,
+        range_min: float = -0.8,
+        range_max: float = 4,
+    ):
+        super().__init__(average_effect, target_col, treatment_col, treatment, scale)
+        self._range_min = range_min
+        self._range_max = range_max
+        self._segment_cols = segment_cols
+        self.segment_col = self._get_segment_col_name(segment_cols)
+
+    @staticmethod
+    def _get_segment_col_name(segment_cols: List[str]):
+        if not isinstance(segment_cols, list):
+            raise ValueError(
+                f"segment_cols must be of type List[str], got type {type(segment_cols)}"
+            )
+        return "_cluster_" + "_".join(segment_cols)
+
+    def _set_segment_col_values(self, df: pd.DataFrame):
+        if self.segment_col in df.columns:
+            raise ValueError(
+                f"Cannot use {self.segment_col=} as perturbator clustering "
+                f"column, as it already exists in the input dataframe!"
+            )
+        return df.copy().assign(
+            **{self.segment_col: df[self._segment_cols].astype(str).sum(axis=1)}
+        )
+
+    def get_cluster_perturbator_fixed_params(
+        self, average_effect: Optional[float] = None
+    ) -> Dict[str, Any]:
+        average_effect = self.get_average_effect(average_effect)
+        self.check_average_effect_greater_than(average_effect, x=0)
+        self.check_average_effect_less_than(average_effect, x=1)
+        scale = self.get_scale(average_effect)
+        return {
+            "average_effect": average_effect,
+            "scale": scale,
+        }
+
+    def get_cluster_perturbator(self, **kwargs) -> Perturbator:
+        sampled_effect = self._sample_beta_effect(
+            kwargs["average_effect"], kwargs["scale"], 1
+        )
+        cluster_perturbator = BetaRelativePerturbator(
+            average_effect=sampled_effect,
+            target_col=self.target_col,
+            treatment_col=self.treatment_col,
+            treatment=self.treatment,
+            range_min=self._range_min,
+            range_max=self._range_max,
+        )
+        return cluster_perturbator
+
+    def perturbate(
+        self,
+        df: pd.DataFrame,
+        average_effect: Optional[float] = None,
+    ) -> pd.DataFrame:
+        df = df.copy().reset_index(drop=True)
+        df = self._set_segment_col_values(df)
+
+        cluster_perturbator_params = self.get_cluster_perturbator_fixed_params(
+            average_effect
+        )
+        df_perturbed = pd.concat(
+            [
+                self.get_cluster_perturbator(**cluster_perturbator_params).perturbate(
+                    df=df[df[self.segment_col] == cluster].copy()
+                )
+                for cluster in df[self.segment_col].unique()
+            ]
+        )
+        return df_perturbed.drop(columns=self.segment_col).reset_index(drop=True)
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a Perturbator object from a PowerConfig object"""
+        return cls(
+            average_effect=config.average_effect,
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            scale=config.scale,
+            range_min=config.range_min,
+            range_max=config.range_max,
+            segment_cols=config.segment_cols_perturbator,
+        )
 
 
 class BinaryPerturbator(Perturbator):

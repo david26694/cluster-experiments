@@ -3,14 +3,16 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.perturbator import (
+    BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
     NormalPerturbator,
     RelativePositivePerturbator,
+    SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
 from cluster_experiments.power_config import PowerConfig
-from tests.examples import binary_df, continuous_df
+from tests.examples import binary_df, continuous_df, generate_clustered_data
 
 
 def test_binary_perturbator_from_config():
@@ -199,6 +201,105 @@ def test_stochastic_relative_perturbate_scale_provided_is_used(average_effect, s
     # then
     assert np.mean(perturbated_values) == np.mean(effect)
     assert np.var(perturbated_values) == np.var(effect)
+
+
+@pytest.mark.parametrize("average_effect", [0.1, 0.04])
+def test_beta_relative_perturbate(average_effect):
+    # given
+    range_min = -0.8
+    range_max = 5
+    pert = BetaRelativePerturbator(range_min=range_min, range_max=range_max)
+
+    average_effect_inv_transf = (average_effect - range_min) / (range_max - range_min)
+    scale_inv_transf = average_effect_inv_transf
+    a = average_effect_inv_transf / (scale_inv_transf * scale_inv_transf)
+    b = (1 - average_effect_inv_transf) / (scale_inv_transf * scale_inv_transf)
+
+    np.random.seed(24)
+    beta = np.random.beta(a / abs(average_effect), b / abs(average_effect), 2)
+    beta_transf = beta * (range_max - range_min) + range_min
+
+    effect = (1 + beta_transf) * continuous_df.query("treatment == 'B'")[
+        "target"
+    ].values
+
+    # when
+    np.random.seed(24)
+    perturbated_values = (
+        pert.perturbate(continuous_df, average_effect=average_effect)
+        .query("treatment == 'B'")["target"]
+        .values
+    )
+
+    # then
+    assert np.isclose(np.mean(perturbated_values), np.mean(effect))
+    assert np.isclose(np.var(perturbated_values), np.var(effect))
+
+
+@pytest.mark.parametrize("average_effect", [0.1, 0.04])
+def test_segmented_beta_relative_perturbate(average_effect):
+    range_min = -0.8
+    range_max = 4
+
+    df_clustered = generate_clustered_data()
+    pert = SegmentedBetaRelativePerturbator(
+        range_min=range_min, range_max=range_max, segment_cols=["city_code"]
+    )
+
+    mean_effects = []
+    # repeat multiple times to decrease variability
+    for _ in range(100):
+        df_pert = pert.perturbate(
+            pd.concat([df_clustered for _ in range(100)]), average_effect=average_effect
+        )
+        df_merged = df_clustered.merge(
+            df_pert,
+            on=["country_code", "city_code", "user_id", "date", "treatment"],
+            suffixes=["", "_pert"],
+        )
+        df_merged = df_merged.assign(
+            rel_pert=df_merged["target_pert"] / df_merged["target"]
+        )
+        mean_effects.append(
+            df_merged.loc[df_merged["treatment"] == "B", "rel_pert"].mean()
+        )
+
+    # maximum relative difference we expect between the simulated relative perturbations and the passed average_effect
+    max_rel_diff = 0.2
+    assert abs((np.mean(mean_effects) - 1) / average_effect - 1) < max_rel_diff
+
+
+@pytest.mark.parametrize("average_effect", [0.1, 0.04])
+def test_segmented_beta_relative_perturbate_multiple_segments(average_effect):
+    range_min = -0.8
+    range_max = 4
+
+    df_clustered = generate_clustered_data()
+    pert = SegmentedBetaRelativePerturbator(
+        range_min=range_min, range_max=range_max, segment_cols=["city_code", "date"]
+    )
+
+    mean_effects = []
+    # repeat multiple times to decrease variability
+    for _ in range(100):
+        df_pert = pert.perturbate(
+            pd.concat([df_clustered for _ in range(100)]), average_effect=average_effect
+        )
+        df_merged = df_clustered.merge(
+            df_pert,
+            on=["country_code", "city_code", "user_id", "date", "treatment"],
+            suffixes=["", "_pert"],
+        )
+        df_merged = df_merged.assign(
+            rel_pert=df_merged["target_pert"] / df_merged["target"]
+        )
+        mean_effects.append(
+            df_merged.loc[df_merged["treatment"] == "B", "rel_pert"].mean()
+        )
+
+    # maximum relative difference we expect between the simulated relative perturbations and the passed average_effect
+    max_rel_diff = 0.2
+    assert abs((np.mean(mean_effects) - 1) / average_effect - 1) < max_rel_diff
 
 
 def test_binary_raises():
