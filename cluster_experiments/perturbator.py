@@ -462,14 +462,14 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         treatment_col: str = "treatment",
         treatment: str = "B",
         scale: Optional[float] = None,
-        range_min: float = -0.8,
-        range_max: float = 4,
+        range_min: Optional[float] = None,
+        range_max: Optional[float] = None,
         reduce_variance: Optional[bool] = None,
     ):
         self._check_range(range_min, range_max)
         super().__init__(average_effect, target_col, treatment_col, treatment, scale)
-        self._range_min = range_min
-        self._range_max = range_max
+        self._range_min = range_min or -0.8
+        self._range_max = range_max or 4
         self._reduce_variance = reduce_variance or True
 
     def perturbate(
@@ -608,12 +608,12 @@ class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
         treatment_col: str = "treatment",
         treatment: str = "B",
         scale: Optional[float] = None,
-        range_min: float = -0.8,
-        range_max: float = 4,
+        range_min: Optional[float] = None,
+        range_max: Optional[float] = None,
     ):
         super().__init__(average_effect, target_col, treatment_col, treatment, scale)
-        self._range_min = range_min
-        self._range_max = range_max
+        self._range_min = range_min or -0.8
+        self._range_max = range_max or 4
         self._segment_cols = segment_cols
         self.segment_col = self._get_segment_col_name(segment_cols)
 
@@ -693,7 +693,7 @@ class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
             scale=config.scale,
             range_min=config.range_min,
             range_max=config.range_max,
-            segment_cols=config.segment_cols_perturbator,
+            segment_cols=config.segment_cols,
         )
 
 
