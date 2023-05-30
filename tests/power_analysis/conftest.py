@@ -5,7 +5,7 @@ import pytest
 
 from cluster_experiments.cupac import TargetAggregation
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-from cluster_experiments.perturbator import UniformPerturbator
+from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import (
     ClusteredSplitter,
@@ -51,7 +51,7 @@ def df_binary(clusters, dates):
 
 @pytest.fixture
 def perturbator():
-    return UniformPerturbator(average_effect=0.1)
+    return ConstantPerturbator(average_effect=0.1)
 
 
 @pytest.fixture
@@ -128,7 +128,7 @@ def switchback_washover():
         {
             "time_col": "date",
             "switch_frequency": "1D",
-            "perturbator": "uniform",
+            "perturbator": "constant",
             "analysis": "ols_clustered",
             "splitter": "switchback_balance",
             "cluster_cols": ["cluster", "date"],

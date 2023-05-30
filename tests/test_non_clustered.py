@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 from cluster_experiments.cupac import TargetAggregation
 from cluster_experiments.experiment_analysis import OLSAnalysis
-from cluster_experiments.perturbator import UniformPerturbator
+from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import NonClusteredSplitter
 from tests.examples import generate_non_clustered_data
@@ -33,7 +33,7 @@ def df_feats():
 def cupac_power_analysis():
     sw = NonClusteredSplitter()
 
-    perturbator = UniformPerturbator(
+    perturbator = ConstantPerturbator(
         average_effect=0.1,
     )
 
@@ -59,7 +59,7 @@ def cupac_from_config():
     return PowerAnalysis.from_dict(
         dict(
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             cupac_model="mean_cupac_model",
             average_effect=0.1,

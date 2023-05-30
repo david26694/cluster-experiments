@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-from cluster_experiments.perturbator import UniformPerturbator
+from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import ClusteredSplitter
 
@@ -35,7 +35,7 @@ sw = ClusteredSplitter(
     cluster_cols=["cluster", "date"],
 )
 
-perturbator = UniformPerturbator(
+perturbator = ConstantPerturbator(
     average_effect=0.1,
 )
 

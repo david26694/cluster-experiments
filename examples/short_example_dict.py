@@ -29,7 +29,7 @@ if __name__ == "__main__":
     config = {
         "cluster_cols": ["cluster", "date"],
         "analysis": "gee",
-        "perturbator": "uniform",
+        "perturbator": "constant",
         "splitter": "clustered",
         "n_simulations": 50,
     }

@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, NoReturn, Optional, Tuple, Union
 
@@ -64,10 +65,54 @@ class Perturbator(ABC):
         )
 
 
+class ConstantPerturbator(Perturbator):
+    """
+    ConstantPerturbator is a Perturbator that adds a constant effect to the target column of the treated instances.
+    """
+
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
+        """
+        Usage:
+
+        ```python
+        from cluster_experiments.perturbator import ConstantPerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = ConstantPerturbator()
+        perturbator.perturbate(df, average_effect=1)
+        ```
+        """
+        df = df.copy().reset_index(drop=True)
+        average_effect = self.get_average_effect(average_effect)
+        df = self.apply_additive_effect(df, average_effect)
+        return df
+
+    def apply_additive_effect(
+        self, df: pd.DataFrame, effect: Union[float, np.ndarray]
+    ) -> pd.DataFrame:
+        df.loc[df[self.treatment_col] == self.treatment, self.target_col] += effect
+        return df
+
+
 class UniformPerturbator(Perturbator):
     """
-    UniformPerturbator is a Perturbator that adds a uniform effect to the target column of the treated instances.
+    UniformPerturbator is a Perturbator that adds a constant effect to the target column of the treated instances.
     """
+
+    def __init__(
+        self,
+        average_effect: Optional[float] = None,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+    ):
+        super().__init__(average_effect, target_col, treatment_col, treatment)
+        logging.warning(
+            "UniformPerturbator is deprecated and will be removed in future versions. "
+            "Use ConstantPerturbator instead."
+        )
 
     def perturbate(
         self, df: pd.DataFrame, average_effect: Optional[float] = None
@@ -95,7 +140,7 @@ class UniformPerturbator(Perturbator):
         return df
 
 
-class NormalPerturbator(UniformPerturbator):
+class NormalPerturbator(ConstantPerturbator):
     """The NormalPerturbator class implements a perturbator that adds a stochastic effect
     to the target column of the treated instances. The stochastic effect is sampled from a
     normal distribution with mean average_effect and variance scale. If scale is not
@@ -417,14 +462,14 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         treatment_col: str = "treatment",
         treatment: str = "B",
         scale: Optional[float] = None,
-        range_min: float = -0.8,
-        range_max: float = 4,
+        range_min: Optional[float] = None,
+        range_max: Optional[float] = None,
         reduce_variance: Optional[bool] = None,
     ):
         self._check_range(range_min, range_max)
         super().__init__(average_effect, target_col, treatment_col, treatment, scale)
-        self._range_min = range_min
-        self._range_max = range_max
+        self._range_min = range_min or -0.8
+        self._range_max = range_max or 4
         self._reduce_variance = reduce_variance or True
 
     def perturbate(
@@ -563,12 +608,12 @@ class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
         treatment_col: str = "treatment",
         treatment: str = "B",
         scale: Optional[float] = None,
-        range_min: float = -0.8,
-        range_max: float = 4,
+        range_min: Optional[float] = None,
+        range_max: Optional[float] = None,
     ):
         super().__init__(average_effect, target_col, treatment_col, treatment, scale)
-        self._range_min = range_min
-        self._range_max = range_max
+        self._range_min = range_min or -0.8
+        self._range_max = range_max or 4
         self._segment_cols = segment_cols
         self.segment_col = self._get_segment_col_name(segment_cols)
 
@@ -648,7 +693,7 @@ class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
             scale=config.scale,
             range_min=config.range_min,
             range_max=config.range_max,
-            segment_cols=config.segment_cols_perturbator,
+            segment_cols=config.segment_cols,
         )
 
 

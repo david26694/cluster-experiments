@@ -1,7 +1,7 @@
 import pytest
 
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-from cluster_experiments.perturbator import UniformPerturbator
+from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
 
@@ -10,7 +10,7 @@ def test_raises_cupac():
     config = dict(
         cluster_cols=["cluster", "date"],
         analysis="gee",
-        perturbator="uniform",
+        perturbator="constant",
         splitter="clustered",
         cupac_model="mean_cupac_model",
         n_simulations=4,
@@ -23,7 +23,7 @@ def test_data_checks(df):
     config = dict(
         cluster_cols=["cluster", "date"],
         analysis="gee",
-        perturbator="uniform",
+        perturbator="constant",
         splitter="clustered",
         n_simulations=4,
     )
@@ -38,7 +38,7 @@ def test_raise_target():
         cluster_cols=["cluster", "date"],
     )
 
-    perturbator = UniformPerturbator(
+    perturbator = ConstantPerturbator(
         average_effect=0.1,
         target_col="another_target",
     )
@@ -61,7 +61,7 @@ def test_raise_treatment():
         cluster_cols=["cluster", "date"],
     )
 
-    perturbator = UniformPerturbator(average_effect=0.1, treatment="C")
+    perturbator = ConstantPerturbator(average_effect=0.1, treatment="C")
 
     analysis = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
@@ -81,7 +81,7 @@ def test_raise_treatment_col():
         cluster_cols=["cluster", "date"],
     )
 
-    perturbator = UniformPerturbator(
+    perturbator = ConstantPerturbator(
         average_effect=0.1,
         treatment_col="another_treatment",
     )
@@ -104,7 +104,7 @@ def test_raise_treatment_col_2():
         cluster_cols=["cluster", "date"],
     )
 
-    perturbator = UniformPerturbator(
+    perturbator = ConstantPerturbator(
         average_effect=0.1,
     )
 
@@ -127,7 +127,7 @@ def test_raise_cluster_cols():
         cluster_cols=["cluster"],
     )
 
-    perturbator = UniformPerturbator(
+    perturbator = ConstantPerturbator(
         average_effect=0.1,
         target_col="another_target",
     )
@@ -148,7 +148,7 @@ def test_raise_cluster_cols():
 def test_raise_clustering_mismatch():
     sw = NonClusteredSplitter()
 
-    perturbator = UniformPerturbator(
+    perturbator = ConstantPerturbator(
         average_effect=0.1,
         target_col="another_target",
     )

@@ -16,6 +16,7 @@ from cluster_experiments.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
+    ConstantPerturbator,
     NormalPerturbator,
     RelativePositivePerturbator,
     SegmentedBetaRelativePerturbator,
@@ -31,6 +32,10 @@ from cluster_experiments.random_splitter import (
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
 )
+
+
+class MissingArgumentError(ValueError):
+    pass
 
 
 @dataclass(eq=True)
@@ -78,7 +83,7 @@ class PowerConfig:
     p = PowerConfig(
         analysis="gee",
         splitter="clustered_balance",
-        perturbator="uniform",
+        perturbator="constant",
         cluster_cols=["city"],
         n_simulations=100,
         alpha=0.05,
@@ -151,7 +156,7 @@ class PowerConfig:
             if self._are_different(self.scale, None):
                 self._set_and_log("scale", None, "perturbator")
 
-        if self.perturbator not in {"beta_relative", "clustered_beta_relative"}:
+        if self.perturbator not in {"beta_relative", "segmented_beta_relative"}:
             if self._are_different(self.range_min, None):
                 self._set_and_log("range_min", None, "perturbator")
             if self._are_different(self.range_max, None):
@@ -159,7 +164,7 @@ class PowerConfig:
             if self._are_different(self.reduce_variance, None):
                 self._set_and_log("reduce_variance", None, "perturbator")
 
-        if self.perturbator not in {"clustered_beta_relative"}:
+        if self.perturbator not in {"segmented_beta_relative"}:
             if self._are_different(self.segment_cols, None):
                 self._set_and_log("segment_cols", None, "perturbator")
 
@@ -184,6 +189,9 @@ class PowerConfig:
             if self._are_different(self.covariates, None):
                 self._set_and_log("covariates", None, "analysis")
 
+        if "segmented" in self.perturbator:
+            self._raise_error_if_missing("segment_cols", "perturbator")
+
     def _are_different(self, arg1, arg2) -> bool:
         return arg1 != arg2
 
@@ -195,9 +203,17 @@ class PowerConfig:
         )
         setattr(self, attr, value)
 
+    def _raise_error_if_missing(self, attr, other_attr):
+        if getattr(self, attr) is None:
+            raise MissingArgumentError(
+                f"{attr} is required when using "
+                f"{other_attr} = {getattr(self, other_attr)}."
+            )
+
 
 perturbator_mapping = {
     "binary": BinaryPerturbator,
+    "constant": ConstantPerturbator,
     "uniform": UniformPerturbator,
     "relative_positive": RelativePositivePerturbator,
     "normal": NormalPerturbator,
@@ -214,7 +230,7 @@ splitter_mapping = {
     "switchback": SwitchbackSplitter,
     "switchback_balance": BalancedSwitchbackSplitter,
     "switchback_stratified": StratifiedSwitchbackSplitter,
-    "backtest": RepeatedSampler,
+    "repeated_sampler": RepeatedSampler,
 }
 
 analysis_mapping = {

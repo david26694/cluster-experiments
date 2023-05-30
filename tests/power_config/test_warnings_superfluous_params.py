@@ -9,7 +9,7 @@ def test_config_warning_superfluous_param_switch_frequency(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,
@@ -24,7 +24,7 @@ def test_config_warning_superfluous_param_washover_time_delta(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,
@@ -39,7 +39,7 @@ def test_config_warning_superfluous_param_washover(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,
@@ -54,7 +54,7 @@ def test_config_warning_superfluous_param_time_col(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,
@@ -64,12 +64,12 @@ def test_config_warning_superfluous_param_time_col(caplog):
 
 
 def test_config_warning_superfluous_param_perturbator(caplog):
-    msg = "scale = 0.5 has no effect with perturbator = uniform. Overriding scale to None."
+    msg = "scale = 0.5 has no effect with perturbator = constant. Overriding scale to None."
     with caplog.at_level(logging.WARNING):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,
@@ -84,7 +84,7 @@ def test_config_warning_superfluous_param_strata_cols(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,
@@ -99,7 +99,7 @@ def test_config_warning_superfluous_param_splitter_weights(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="clustered_stratified",
             splitter_weights=[0.5, 0.5],
             n_simulations=4,
@@ -114,7 +114,7 @@ def test_config_warning_superfluous_param_agg_col(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,
@@ -129,7 +129,7 @@ def test_config_warning_superfluous_param_smoothing_factor(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_non_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,
@@ -144,7 +144,7 @@ def test_config_warning_superfluous_param_features_cupac_model(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ols_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,
@@ -159,7 +159,7 @@ def test_config_warning_superfluous_param_covariates(caplog):
         PowerConfig(
             cluster_cols=["cluster", "date"],
             analysis="ttest_clustered",
-            perturbator="uniform",
+            perturbator="constant",
             splitter="non_clustered",
             n_simulations=4,
             average_effect=1.5,

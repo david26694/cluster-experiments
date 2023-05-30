@@ -22,7 +22,7 @@ A library to run simulation-based power analysis, including clustered data. Also
 
 ### Hello world
 
-Hello world of the library, non-clustered version. There is an outcome variable analyzed with a linear regression. The perturbator is a uniform distribution, and the splitter is random.
+Hello world of the library, non-clustered version. There is an outcome variable analyzed with a linear regression. The perturbator adds a constant effect to treated units, and the splitter is random.
 
 ```python title="Non-clustered"
 import numpy as np
@@ -39,7 +39,7 @@ df = pd.DataFrame(
 
 config = {
     "analysis": "ols_non_clustered",
-    "perturbator": "uniform",
+    "perturbator": "constant",
     "splitter": "non_clustered",
     "n_simulations": 50,
 }
@@ -80,7 +80,7 @@ df = pd.DataFrame(
 config = {
     "cluster_cols": ["cluster", "date"],
     "analysis": "gee",
-    "perturbator": "uniform",
+    "perturbator": "constant",
     "splitter": "clustered",
     "n_simulations": 50,
 }
@@ -102,7 +102,7 @@ from datetime import date
 import numpy as np
 import pandas as pd
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-from cluster_experiments.perturbator import UniformPerturbator
+from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import ClusteredSplitter
 
@@ -123,8 +123,8 @@ sw = ClusteredSplitter(
     cluster_cols=["cluster", "date"],
 )
 
-# We use a uniform perturbator to add artificial effect on the treated on the power analysis
-perturbator = UniformPerturbator()
+# We use a constant perturbator to add artificial effect on the treated on the power analysis
+perturbator = ConstantPerturbator()
 
 # Use gee to run the analysis
 analysis = GeeExperimentAnalysis(
@@ -147,7 +147,7 @@ The library offers the following classes:
 
 * Regarding power analysis:
     * `PowerAnalysis`: to run power analysis on a clustered/switchback design
-    * `UniformPerturbator`: to artificially perturb treated group with uniform perturbations
+    * `ConstantPerturbator`: to artificially perturb treated group with constant perturbations
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
     * `RelativePositivePerturbator`: to artificially perturb treated group with relative positive perturbations
     * `NormalPerturbator`: to artificially perturb treated group with normal distribution perturbations
