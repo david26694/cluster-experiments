@@ -34,6 +34,10 @@ from cluster_experiments.random_splitter import (
 )
 
 
+class MissingArgumentError(ValueError):
+    pass
+
+
 @dataclass(eq=True)
 class PowerConfig:
     """
@@ -185,6 +189,9 @@ class PowerConfig:
             if self._are_different(self.covariates, None):
                 self._set_and_log("covariates", None, "analysis")
 
+        if "segmented" in self.perturbator:
+            self._raise_error_if_missing("segment_cols", "perturbator")
+
     def _are_different(self, arg1, arg2) -> bool:
         return arg1 != arg2
 
@@ -195,6 +202,13 @@ class PowerConfig:
             f"Overriding {attr} to {value}."
         )
         setattr(self, attr, value)
+
+    def _raise_error_if_missing(self, attr, other_attr):
+        if getattr(self, attr) is None:
+            raise MissingArgumentError(
+                f"{attr} is required when using "
+                f"{other_attr} = {getattr(self, other_attr)}."
+            )
 
 
 perturbator_mapping = {
