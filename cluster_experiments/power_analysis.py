@@ -154,7 +154,7 @@ class PowerAnalysis:
         In general, this is to be used in power_analysis method. However,
         if you're interested in the distribution of p-values, you can use this method to generate them.
         Args:
-            df: Dataframe with outcome and treatment variables.
+            df: Dataframe with outcome variable.
             pre_experiment_df: Dataframe with pre-experiment data.
             verbose: Whether to show progress bar.
             average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
@@ -168,6 +168,38 @@ class PowerAnalysis:
             n_simulations=n_simulations,
         ):
             yield self.analysis.get_pvalue(perturbed_df)
+
+    def running_power_analysis(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effect: Optional[float] = None,
+        n_simulations: int = 100,
+    ) -> Generator[float, None, None]:
+        """
+        Yields running power for each iteration of the simulation.
+        if you're interested in getting the power at each iteration, you can use this method to generate them.
+        Args:
+            df: Dataframe with outcome variable.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
+        """
+        n_rejected = 0
+        for i, perturbed_df in enumerate(
+            self._simulate_perturbed_df(
+                df,
+                pre_experiment_df=pre_experiment_df,
+                verbose=verbose,
+                average_effect=average_effect,
+                n_simulations=n_simulations,
+            )
+        ):
+            p_value = self.analysis.get_pvalue(perturbed_df)
+            n_rejected += int(p_value < self.alpha)
+            yield n_rejected / (i + 1)
 
     def simulate_point_estimate(
         self,

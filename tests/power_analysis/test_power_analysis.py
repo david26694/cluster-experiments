@@ -223,3 +223,23 @@ def test_power_line(df):
     assert len(power_line) == 2
     assert power_line[0.0] >= 0
     assert power_line[1.0] >= power_line[0.0]
+
+
+def test_running_power(df):
+    # given
+    config = PowerConfig(
+        analysis="ols_non_clustered",
+        perturbator="constant",
+        splitter="non_clustered",
+        n_simulations=50,
+        average_effect=0.0,
+        alpha=0.05,
+    )
+    pw = PowerAnalysis.from_config(config)
+    previous_power = 0
+    for i, power in enumerate(pw.running_power_analysis(df, average_effect=0.1)):
+        # when: we've run enough simulations
+        if i > 20:
+            # then: the power should be stable (no changes bigger than 0.05)
+            assert abs(power - previous_power) <= 0.05
+        previous_power = power
