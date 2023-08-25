@@ -3,8 +3,7 @@
 
 # cluster_experiments
 
-[![Downloads](https://pepy.tech/badge/cluster-experiments)](
-https://pepy.tech/project/cluster-experiments)
+[![Downloads](https://static.pepy.tech/badge/cluster-experiments)](https://pepy.tech/project/cluster-experiments)
 [![PyPI](https://img.shields.io/pypi/v/cluster-experiments)](
 https://pypi.org/project/cluster-experiments/)
 [![Unit tests](https://github.com/david26694/cluster-experiments/workflows/Release%20unit%20Tests/badge.svg)](https://github.com/david26694/cluster-experiments/actions)
