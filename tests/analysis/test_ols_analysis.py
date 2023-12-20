@@ -14,5 +14,5 @@ def test_binary_treatment():
 
 def test_get_pvalue():
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
-    analyser = OLSAnalysis()
+    analyser = OLSAnalysis(hypothesis="left_tailed")
     assert analyser.get_pvalue(analysis_df_full) >= 0

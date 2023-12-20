@@ -33,12 +33,14 @@ class ExperimentAnalysis(ABC):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
+        hypothesis: str = "two_tailed",
     ):
         self.target_col = target_col
         self.treatment = treatment
         self.treatment_col = treatment_col
         self.cluster_cols = cluster_cols
         self.covariates = covariates or []
+        self.hypothesis = hypothesis
 
     def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
         """Paste all strings of cluster_cols in one single column"""
@@ -111,6 +113,26 @@ class ExperimentAnalysis(ABC):
         self._data_checks(df=df)
         return self.analysis_point_estimate(df)
 
+    def pvalue_based_on_hypothesis(self, model_result) -> float:
+        """Returns the p-value of the analysis
+        Arguments:
+            model_result: statsmodels result object
+            verbose (Optional): bool, prints the regression summary if True
+
+        """
+        treatment_effect = model_result.params[self.treatment_col]
+        p_value_half = model_result.pvalues[self.treatment_col] / 2
+
+        if self.hypothesis == "two_tailed" or self.hypothesis == "two-tailed":
+            p_value = model_result.pvalues[self.treatment_col]
+        elif self.hypothesis == "left_tailed" or self.hypothesis == "left-tailed":
+            p_value = p_value_half if treatment_effect <= 0 else 1 - p_value_half
+        elif self.hypothesis == "right_tailed" or self.hypothesis == "right-tailed":
+            p_value = p_value_half if treatment_effect >= 0 else 1 - p_value_half
+        else:
+            raise ValueError(f"Unknown hypothesis {self.hypothesis}")
+        return p_value
+
     @classmethod
     def from_config(cls, config):
         """Creates an ExperimentAnalysis object from a PowerConfig object"""
@@ -160,6 +182,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
+        hypothesis: str = "two_tailed",
     ):
         super().__init__(
             target_col=target_col,
@@ -167,6 +190,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
             cluster_cols=cluster_cols,
             treatment=treatment,
             covariates=covariates,
+            hypothesis=hypothesis,
         )
         self.regressors = [self.treatment_col] + self.covariates
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
@@ -192,7 +216,8 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         results_gee = self.fit_gee(df)
         if verbose:
             print(results_gee.summary())
-        return results_gee.pvalues[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_gee)
+        return p_value
 
     def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the point estimate of the analysis
@@ -265,7 +290,9 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
         )
         if verbose:
             print(results_ols.summary())
-        return results_ols.pvalues[self.treatment_col]
+
+        p_value = self.pvalue_based_on_hypothesis(results_ols)
+        return p_value
 
     def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the point estimate of the analysis
@@ -498,6 +525,7 @@ class OLSAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
+        hypothesis: str = "two_tailed",
     ):
         self.target_col = target_col
         self.treatment = treatment
@@ -505,6 +533,7 @@ class OLSAnalysis(ExperimentAnalysis):
         self.covariates = covariates or []
         self.regressors = [self.treatment_col] + self.covariates
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
+        self.hypothesis = hypothesis
 
     def fit_ols(self, df: pd.DataFrame) -> sm.GEE:
         """Returns the fitted OLS model"""
@@ -519,7 +548,9 @@ class OLSAnalysis(ExperimentAnalysis):
         results_ols = self.fit_ols(df=df)
         if verbose:
             print(results_ols.summary())
-        return results_ols.pvalues[self.treatment_col]
+
+        p_value = self.pvalue_based_on_hypothesis(results_ols)
+        return p_value
 
     def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the point estimate of the analysis
