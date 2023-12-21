@@ -6,6 +6,7 @@ import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
 from scipy.stats import ttest_ind, ttest_rel
+from utils import HypothesisEntries
 
 
 class ExperimentAnalysis(ABC):
@@ -33,7 +34,7 @@ class ExperimentAnalysis(ABC):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
-        hypothesis: str = "two_tailed",
+        hypothesis: HypothesisEntries = HypothesisEntries.TWO_SIDED,
     ):
         self.target_col = target_col
         self.treatment = treatment
@@ -123,11 +124,11 @@ class ExperimentAnalysis(ABC):
         treatment_effect = model_result.params[self.treatment_col]
         p_value_half = model_result.pvalues[self.treatment_col] / 2
 
-        if self.hypothesis == "left_tailed" or self.hypothesis == "left-tailed":
+        if self.hypothesis == "less":
             p_value = p_value_half if treatment_effect <= 0 else 1 - p_value_half
-        elif self.hypothesis == "right_tailed" or self.hypothesis == "right-tailed":
+        elif self.hypothesis == "greater":
             p_value = p_value_half if treatment_effect >= 0 else 1 - p_value_half
-        elif self.hypothesis == "two_tailed" or self.hypothesis == "two-tailed":
+        elif self.hypothesis == "two-sided":
             p_value = model_result.pvalues[self.treatment_col]
 
         return p_value
@@ -181,7 +182,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
-        hypothesis: str = "two_tailed",
+        hypothesis: str = "two-sided",
     ):
         super().__init__(
             target_col=target_col,
@@ -363,7 +364,9 @@ class TTestClusteredAnalysis(ExperimentAnalysis):
         control_data = df_grouped.query(f"{self.treatment_col} == 0")[self.target_col]
         assert len(treatment_data), "treatment data should have more than 1 cluster"
         assert len(control_data), "control data should have more than 1 cluster"
-        t_test_results = ttest_ind(treatment_data, control_data, equal_var=False)
+        t_test_results = ttest_ind(
+            treatment_data, control_data, equal_var=False, alternative=self.hypothesis
+        )
         return t_test_results.pvalue
 
     @classmethod
@@ -472,7 +475,9 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
 
         df_pivot = self._preprocessing(df=df)
 
-        t_test_results = ttest_rel(df_pivot.iloc[:, 0], df_pivot.iloc[:, 1])
+        t_test_results = ttest_rel(
+            df_pivot.iloc[:, 0], df_pivot.iloc[:, 1], alternative=self.hypothesis
+        )
 
         if verbose:
             print(f"paired t test results: \n {t_test_results} \n")
@@ -524,7 +529,7 @@ class OLSAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
-        hypothesis: str = "two_tailed",
+        hypothesis: str = "two-sided",
     ):
         self.target_col = target_col
         self.treatment = treatment
@@ -642,7 +647,9 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         if verbose:
             print(results_mlm.summary())
 
-        return results_mlm.pvalues[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_mlm)
+
+        return p_value
 
     def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the point estimate of the analysis

@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 def _original_time_column(time_col: str) -> str:
     """
     Usage:
@@ -17,3 +20,9 @@ def _get_mapping_key(mapping, key):
         raise KeyError(
             f"Could not find {key = } in mapping. All options are the following: {list(mapping.keys())}"
         )
+
+
+class HypothesisEntries(Enum):
+    TWO_SIDED = "two-sided"
+    LESS = "less"
+    GREATER = "greater"
