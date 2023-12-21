@@ -123,14 +123,13 @@ class ExperimentAnalysis(ABC):
         treatment_effect = model_result.params[self.treatment_col]
         p_value_half = model_result.pvalues[self.treatment_col] / 2
 
-        if self.hypothesis == "two_tailed" or self.hypothesis == "two-tailed":
-            p_value = model_result.pvalues[self.treatment_col]
-        elif self.hypothesis == "left_tailed" or self.hypothesis == "left-tailed":
+        if self.hypothesis == "left_tailed" or self.hypothesis == "left-tailed":
             p_value = p_value_half if treatment_effect <= 0 else 1 - p_value_half
         elif self.hypothesis == "right_tailed" or self.hypothesis == "right-tailed":
             p_value = p_value_half if treatment_effect >= 0 else 1 - p_value_half
-        else:
-            raise ValueError(f"Unknown hypothesis {self.hypothesis}")
+        elif self.hypothesis == "two_tailed" or self.hypothesis == "two-tailed":
+            p_value = model_result.pvalues[self.treatment_col]
+
         return p_value
 
     @classmethod
