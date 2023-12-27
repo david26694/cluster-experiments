@@ -6,7 +6,8 @@ import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
 from scipy.stats import ttest_ind, ttest_rel
-from utils import HypothesisEntries
+
+from cluster_experiments.utils import HypothesisEntries
 
 
 class ExperimentAnalysis(ABC):
@@ -34,7 +35,7 @@ class ExperimentAnalysis(ABC):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
-        hypothesis: HypothesisEntries = HypothesisEntries.TWO_SIDED,
+        hypothesis: str = "two-sided",
     ):
         self.target_col = target_col
         self.treatment = treatment
@@ -122,16 +123,14 @@ class ExperimentAnalysis(ABC):
 
         """
         treatment_effect = model_result.params[self.treatment_col]
-        p_value_half = model_result.pvalues[self.treatment_col] / 2
+        p_value = model_result.pvalues[self.treatment_col]
 
-        if self.hypothesis == "less":
-            p_value = p_value_half if treatment_effect <= 0 else 1 - p_value_half
-        elif self.hypothesis == "greater":
-            p_value = p_value_half if treatment_effect >= 0 else 1 - p_value_half
-        elif self.hypothesis == "two-sided":
-            p_value = model_result.pvalues[self.treatment_col]
-
-        return p_value
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.LESS:
+            return p_value / 2 if treatment_effect <= 0 else 1 - p_value / 2
+        elif HypothesisEntries(self.hypothesis) == HypothesisEntries.GREATER:
+            return p_value / 2 if treatment_effect >= 0 else 1 - p_value / 2
+        elif HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
+            return p_value
 
     @classmethod
     def from_config(cls, config):
@@ -142,6 +141,7 @@ class ExperimentAnalysis(ABC):
             treatment_col=config.treatment_col,
             treatment=config.treatment,
             covariates=config.covariates,
+            hypothesis=config.hypothesis,
         )
 
 
@@ -216,6 +216,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         results_gee = self.fit_gee(df)
         if verbose:
             print(results_gee.summary())
+
         p_value = self.pvalue_based_on_hypothesis(results_gee)
         return p_value
 
@@ -266,6 +267,7 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
+        hypothesis: str = "two-sided",
     ):
         super().__init__(
             target_col=target_col,
@@ -273,6 +275,7 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
             cluster_cols=cluster_cols,
             treatment=treatment,
             covariates=covariates,
+            hypothesis=hypothesis,
         )
         self.regressors = [self.treatment_col] + self.covariates
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
@@ -343,11 +346,13 @@ class TTestClusteredAnalysis(ExperimentAnalysis):
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
+        hypothesis: str = "two-sided",
     ):
         self.target_col = target_col
         self.treatment = treatment
         self.treatment_col = treatment_col
         self.cluster_cols = cluster_cols
+        self.hypothesis = hypothesis
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
@@ -377,6 +382,7 @@ class TTestClusteredAnalysis(ExperimentAnalysis):
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
+            hypothesis=config.hypothesis,
         )
 
 
@@ -390,6 +396,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
         strata_cols: list of index columns for paired t test. Should be a subset or equal to cluster_cols
+        hypothesis: one of "two-sided", "less", "greater"
 
     Usage:
 
@@ -418,12 +425,14 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
+        hypothesis: str = "two-sided",
     ):
         self.strata_cols = strata_cols
         self.target_col = target_col
         self.treatment = treatment
         self.treatment_col = treatment_col
         self.cluster_cols = cluster_cols
+        self.hypothesis = hypothesis
 
     def _preprocessing(self, df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         df_grouped = df.groupby(
@@ -493,6 +502,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
             treatment_col=config.treatment_col,
             treatment=config.treatment,
             strata_cols=config.strata_cols,
+            hypothesis=config.hypothesis,
         )
 
 
@@ -573,6 +583,7 @@ class OLSAnalysis(ExperimentAnalysis):
             treatment_col=config.treatment_col,
             treatment=config.treatment,
             covariates=config.covariates,
+            hypothesis=config.hypothesis,
         )
 
 
@@ -613,6 +624,7 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
+        hypothesis: str = "two-sided",
     ):
         super().__init__(
             target_col=target_col,
@@ -620,6 +632,7 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
             cluster_cols=cluster_cols,
             treatment=treatment,
             covariates=covariates,
+            hypothesis=hypothesis,
         )
         self.regressors = [self.treatment_col] + self.covariates
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
@@ -648,7 +661,6 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
             print(results_mlm.summary())
 
         p_value = self.pvalue_based_on_hypothesis(results_mlm)
-
         return p_value
 
     def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:

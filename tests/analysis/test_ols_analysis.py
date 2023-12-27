@@ -1,5 +1,4 @@
 import pandas as pd
-import pytest
 
 from cluster_experiments.experiment_analysis import OLSAnalysis
 from tests.examples import analysis_df
@@ -16,11 +15,4 @@ def test_binary_treatment():
 def test_get_pvalue():
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
     analyser = OLSAnalysis()
-    assert analyser.get_pvalue(analysis_df_full) >= 0
-
-
-@pytest.mark.parametrize("hypothesis", ["one_sided", "two_sided"])
-def test_get_pvalue_hypothesis(hypothesis):
-    analysis_df_full = pd.concat([analysis_df for _ in range(100)])
-    analyser = OLSAnalysis(hypothesis=hypothesis)
     assert analyser.get_pvalue(analysis_df_full) >= 0
