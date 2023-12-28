@@ -115,7 +115,9 @@ class ExperimentAnalysis(ABC):
         self._data_checks(df=df)
         return self.analysis_point_estimate(df)
 
-    def pvalue_based_on_hypothesis(self, model_result) -> float:
+    def pvalue_based_on_hypothesis(
+        self, model_result
+    ) -> float:  # todo add typehint statsmodels result
         """Returns the p-value of the analysis
         Arguments:
             model_result: statsmodels result object
