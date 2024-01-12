@@ -18,6 +18,7 @@ nav:
   - Multiple treatments: multivariate.ipynb
   - AA test clustered: aa_test.ipynb
   - Paired T test: paired_ttest.ipynb
+  - Different hypotheses tests: analysis_with_different_hypothesis.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md

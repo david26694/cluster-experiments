@@ -25,6 +25,7 @@ class ExperimentAnalysis(ABC):
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
         covariates: list of columns to use as covariates
+        hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
 
     """
 
@@ -129,10 +130,11 @@ class ExperimentAnalysis(ABC):
 
         if HypothesisEntries(self.hypothesis) == HypothesisEntries.LESS:
             return p_value / 2 if treatment_effect <= 0 else 1 - p_value / 2
-        elif HypothesisEntries(self.hypothesis) == HypothesisEntries.GREATER:
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.GREATER:
             return p_value / 2 if treatment_effect >= 0 else 1 - p_value / 2
-        elif HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
             return p_value
+        raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
 
     @classmethod
     def from_config(cls, config):
@@ -157,6 +159,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
         covariates: list of columns to use as covariates
+        hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
 
     Usage:
 
@@ -242,6 +245,7 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
         covariates: list of columns to use as covariates
+        hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
 
     Usage:
 
@@ -322,6 +326,7 @@ class TTestClusteredAnalysis(ExperimentAnalysis):
         target_col: name of the column containing the variable to measure
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
+        hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
 
     Usage:
 
@@ -398,7 +403,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
         strata_cols: list of index columns for paired t test. Should be a subset or equal to cluster_cols
-        hypothesis: one of "two-sided", "less", "greater"
+        hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
 
     Usage:
 
@@ -517,6 +522,7 @@ class OLSAnalysis(ExperimentAnalysis):
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
         covariates: list of columns to use as covariates
+        hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
 
     Usage:
 
@@ -599,6 +605,7 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         treatment_col: name of the column containing the treatment variable
         treatment: name of the treatment to use as the treated group
         covariates: list of columns to use as covariates
+        hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
 
     Usage:
 

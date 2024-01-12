@@ -243,3 +243,32 @@ def test_running_power(df):
             # then: the power should be stable (no changes bigger than 0.05)
             assert abs(power - previous_power) <= 0.05
         previous_power = power
+
+
+def test_hypothesis_from_dict(df):
+    # given
+    config_less = dict(
+        analysis="ols_non_clustered",
+        perturbator="constant",
+        splitter="non_clustered",
+        hypothesis="less",
+        n_simulations=20,
+    )
+    pw_less = PowerAnalysis.from_dict(config_less)
+
+    config_greater = config_less.copy()
+    config_greater["hypothesis"] = "greater"
+    pw_greater = PowerAnalysis.from_dict(config_greater)
+
+    config_two_sided = config_less.copy()
+    config_two_sided["hypothesis"] = "two-sided"
+    pw_two_sided = PowerAnalysis.from_dict(config_two_sided)
+
+    # when
+    power_less = pw_less.power_analysis(df, average_effect=1.0)
+    power_greater = pw_greater.power_analysis(df, average_effect=1.0)
+    power_two_sided = pw_two_sided.power_analysis(df, average_effect=1.0)
+
+    # then
+    assert power_less < power_greater
+    assert power_less < power_two_sided
