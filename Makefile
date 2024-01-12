@@ -64,10 +64,10 @@ prep-dist: clean
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
 
-pypi: clean prep-dist
+pypi: prep-dist
 	twine upload dist/*
 
-pypi-gh-actions: clean prep-dist
+pypi-gh-actions: prep-dist
 	twine upload --skip-existing dist/*
 
 # Report log
