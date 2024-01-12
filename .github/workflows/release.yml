@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+    pull_request:
+      branches:
+        - main
 
 jobs:
   build-and-deploy:
@@ -31,5 +31,5 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
-          user: david26694
+          user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
