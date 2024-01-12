@@ -61,13 +61,13 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 prep-dist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel --universal
+	python -m build
 
 pypi: prep-dist
-	twine upload dist/*
+	twine upload --repository cluster-experiments dist/*
 
 pypi-gh-actions: prep-dist
+# todo: fix this
 	twine upload --skip-existing dist/*
 
 # Report log

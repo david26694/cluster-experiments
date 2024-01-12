@@ -29,6 +29,7 @@ util_packages = [
     "pre-commit>=2.6.0",
     "ipykernel>=6.15.1",
     "twine",
+    "build",
     "tox",
 ] + base_packages
 
