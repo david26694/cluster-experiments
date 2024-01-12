@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: make install-dev
 
+      - name: Prepare dist/
+        run: make prep-dist
+
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
