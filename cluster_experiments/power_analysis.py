@@ -103,6 +103,7 @@ class PowerAnalysis:
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
         seed: Optional[int] = None,
+        hypothesis: str = "two-sided",
     ):
         self.perturbator = perturbator
         self.splitter = splitter
@@ -113,6 +114,7 @@ class PowerAnalysis:
         self.control = control
         self.treatment_col = treatment_col
         self.alpha = alpha
+        self.hypothesis = hypothesis
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,

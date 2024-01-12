@@ -52,6 +52,30 @@ def test_get_pvalue():
     assert analyser.get_pvalue(analysis_df_full) >= 0
 
 
+def test_pvalue_based_on_hypothesis():
+    analyser = GeeExperimentAnalysis(cluster_cols=["cluster"])
+
+    class MockStatsModelResult:
+        def __init__(self, params, pvalues):
+            self.params = params
+            self.pvalues = pvalues
+
+    mock_result = MockStatsModelResult(
+        params={"treatment": -0.5},  # Example treatment effect
+        pvalues={"treatment": 0.04},  # Example p-value
+    )
+    analyser.hypothesis = "less"
+
+    result = analyser.pvalue_based_on_hypothesis(mock_result)
+
+    # Instance of the class containing the method
+    # Set hypothesis as needed
+
+    # Assert the expected outcome
+    expected_pvalue = 0.02  # Expected p-value based on your method's logic
+    assert result == pytest.approx(expected_pvalue), "P-value calculation is incorrect"
+
+
 def test_mlm_analysis(analysis_df_diff):
     analyser = MLMExperimentAnalysis(
         cluster_cols=["cluster", "date"],

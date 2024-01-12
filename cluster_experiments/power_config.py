@@ -128,6 +128,7 @@ class PowerConfig:
 
     # Analysis
     covariates: Optional[List[str]] = None
+    hypothesis: str = "two-sided"
 
     # Power analysis
     n_simulations: int = 100

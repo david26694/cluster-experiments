@@ -59,7 +59,7 @@ analysis_df = pd.DataFrame(
 )
 
 
-def generate_clustered_data():
+def generate_clustered_data() -> pd.DataFrame:
     analysis_df = pd.DataFrame(
         {
             "country_code": ["ES"] * 4 + ["IT"] * 4 + ["PL"] * 4 + ["RO"] * 4,
