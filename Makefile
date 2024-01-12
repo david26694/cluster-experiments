@@ -60,14 +60,14 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-pypi: clean
+prep-dist: clean
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
+
+pypi: clean prep-dist
 	twine upload dist/*
 
-pypi-gh-actions: clean
-	python setup.py sdist
-	python setup.py bdist_wheel --universal
+pypi-gh-actions: clean prep-dist
 	twine upload --skip-existing dist/*
 
 # Report log
