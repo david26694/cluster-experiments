@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build-and-deploy:
@@ -21,8 +24,7 @@ jobs:
       - name: Install dependencies
         run: make install-dev
 
-      - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: david26694
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: make pypi-gh-actions
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
