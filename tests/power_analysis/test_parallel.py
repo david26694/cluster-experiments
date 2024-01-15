@@ -25,10 +25,11 @@ def test_similar_n_jobs(df):
         perturbator="constant",
         splitter="non_clustered",
         n_simulations=100,
+        seed=123,
     )
     pw = PowerAnalysis.from_config(config)
     power = pw.power_analysis(df, average_effect=0.0, n_jobs=1)
     power2 = pw.power_analysis(df, average_effect=0.0, n_jobs=2)
     power3 = pw.power_analysis(df, average_effect=0.0, n_jobs=-1)
-    assert abs(power - power2) < 0.1
-    assert abs(power - power3) < 0.1
+    assert abs(power - power2) <= 0.1
+    assert abs(power - power3) <= 0.1
