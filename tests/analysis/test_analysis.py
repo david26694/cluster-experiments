@@ -9,7 +9,7 @@ from cluster_experiments.experiment_analysis import (
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
-from tests.examples import analysis_df, generate_clustered_data, generate_random_data
+from tests.utils import generate_clustered_data, generate_random_data
 
 
 @pytest.fixture
@@ -27,14 +27,14 @@ def analysis_df_diff():
     return analysis_df_full
 
 
-def test_cluster_column():
+def test_cluster_column(analysis_df):
     analyser = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
     )
     assert (analyser._get_cluster_column(analysis_df) == "Cluster 12022-01-01").all()
 
 
-def test_binary_treatment():
+def test_binary_treatment(analysis_df):
     analyser = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
     )
@@ -44,7 +44,7 @@ def test_binary_treatment():
     ).all()
 
 
-def test_get_pvalue():
+def test_get_pvalue(analysis_df):
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
     analyser = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],

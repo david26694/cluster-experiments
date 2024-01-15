@@ -9,7 +9,7 @@ from cluster_experiments.experiment_analysis import OLSAnalysis
 from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import NonClusteredSplitter
-from tests.examples import generate_non_clustered_data
+from tests.utils import generate_non_clustered_data
 
 N = 10_000
 n_users = 1000

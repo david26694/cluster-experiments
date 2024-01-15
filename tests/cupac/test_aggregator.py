@@ -3,14 +3,13 @@ from typing import Tuple
 import pandas as pd
 
 from cluster_experiments.cupac import TargetAggregation
-from tests.examples import binary_df
 
 
-def split_x_y(binary_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
-    return binary_df.drop("target", axis=1), binary_df["target"]
+def split_x_y(binary_df_agg: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    return binary_df_agg.drop("target", axis=1), binary_df_agg["target"]
 
 
-def test_set_target_aggs():
+def test_set_target_aggs(binary_df):
     binary_df["user"] = [1, 1, 1, 1]
     ta = TargetAggregation(agg_col="user")
     X, y = split_x_y(binary_df)
@@ -20,7 +19,7 @@ def test_set_target_aggs():
     assert ta.pre_experiment_mean == 0.5
 
 
-def test_smoothing_0():
+def test_smoothing_0(binary_df):
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=0)
     X, y = split_x_y(binary_df)
@@ -31,7 +30,7 @@ def test_smoothing_0():
     ).all()
 
 
-def test_smoothing_non_0():
+def test_smoothing_non_0(binary_df):
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=2)
     X, y = split_x_y(binary_df)
@@ -45,7 +44,7 @@ def test_smoothing_non_0():
     ).all()
 
 
-def test_add_aggs():
+def test_add_aggs(binary_df):
     binary_df["user"] = binary_df["target"]
     ta = TargetAggregation(agg_col="user", smoothing_factor=2)
     X, y = split_x_y(binary_df)

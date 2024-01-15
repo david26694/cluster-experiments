@@ -8,12 +8,12 @@ from cluster_experiments.experiment_analysis import (
     OLSAnalysis,
     TTestClusteredAnalysis,
 )
-from tests.examples import analysis_df, generate_clustered_data
+from tests.utils import generate_clustered_data
 
 
 @pytest.mark.parametrize("hypothesis", ["less", "greater", "two-sided"])
 @pytest.mark.parametrize("analysis_class", [OLSAnalysis])
-def test_get_pvalue_hypothesis(analysis_class, hypothesis):
+def test_get_pvalue_hypothesis(analysis_class, hypothesis, analysis_df):
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
     analyser = analysis_class(hypothesis=hypothesis)
     assert analyser.get_pvalue(analysis_df_full) >= 0
@@ -37,14 +37,14 @@ def test_get_pvalue_hypothesis_clustered(analysis_class, hypothesis):
 
 
 @pytest.mark.parametrize("analysis_class", [OLSAnalysis])
-def test_get_pvalue_hypothesis_default(analysis_class):
+def test_get_pvalue_hypothesis_default(analysis_class, analysis_df):
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
     analyser = analysis_class()
     assert analyser.get_pvalue(analysis_df_full) >= 0
 
 
 @pytest.mark.parametrize("analysis_class", [OLSAnalysis])
-def test_get_pvalue_hypothesis_wrong_input(analysis_class):
+def test_get_pvalue_hypothesis_wrong_input(analysis_class, analysis_df):
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
 
     # Use pytest.raises to check for ValueError
@@ -57,7 +57,7 @@ def test_get_pvalue_hypothesis_wrong_input(analysis_class):
 
 
 @pytest.mark.parametrize("analysis_class", [OLSAnalysis])
-def test_several_hypothesis(analysis_class):
+def test_several_hypothesis(analysis_class, analysis_df):
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
     analysis_less = analysis_class(hypothesis="less")
     analysis_greater = analysis_class(hypothesis="greater")
