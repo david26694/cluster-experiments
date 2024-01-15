@@ -5,7 +5,7 @@ import pytest
 from sklearn.ensemble import HistGradientBoostingRegressor
 
 from cluster_experiments.cupac import CupacHandler, TargetAggregation
-from tests.examples import generate_random_data
+from tests.utils import generate_random_data
 
 N = 1_000
 

@@ -1,10 +1,9 @@
 import pandas as pd
 
 from cluster_experiments.experiment_analysis import OLSAnalysis
-from tests.examples import analysis_df
 
 
-def test_binary_treatment():
+def test_binary_treatment(analysis_df):
     analyser = OLSAnalysis()
     assert (
         analyser._create_binary_treatment(analysis_df)["treatment"]
@@ -12,7 +11,7 @@ def test_binary_treatment():
     ).all()
 
 
-def test_get_pvalue():
+def test_get_pvalue(analysis_df):
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
     analyser = OLSAnalysis()
     assert analyser.get_pvalue(analysis_df_full) >= 0

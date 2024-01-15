@@ -6,7 +6,7 @@ from cluster_experiments import (
     OLSAnalysis,
     PowerAnalysis,
 )
-from tests.examples import generate_non_clustered_data
+from tests.utils import generate_non_clustered_data
 
 
 @pytest.fixture

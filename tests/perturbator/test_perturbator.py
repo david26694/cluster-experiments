@@ -13,7 +13,6 @@ from cluster_experiments.perturbator import (
     UniformPerturbator,
 )
 from cluster_experiments.power_config import PowerConfig
-from tests.examples import binary_df, continuous_df, generate_clustered_data
 
 
 def test_binary_perturbator_from_config():
@@ -29,7 +28,7 @@ def test_binary_perturbator_from_config():
 
 
 @pytest.mark.parametrize("average_effect, output_value", [(-1, 0), (1, 1)])
-def test_binary_perturbator_all_1(average_effect, output_value):
+def test_binary_perturbator_all_1(average_effect, output_value, binary_df):
     bp = BinaryPerturbator(average_effect=average_effect)
 
     assert (
@@ -40,7 +39,7 @@ def test_binary_perturbator_all_1(average_effect, output_value):
 @pytest.mark.parametrize(
     "average_effect, output_values", [(-0.1, [60, 40]), (0.1, [40, 60])]
 )
-def test_binary_perturbator_10(average_effect, output_values):
+def test_binary_perturbator_10(average_effect, output_values, binary_df):
     binary_df_repeated = pd.concat([binary_df for _ in range(50)])
     bp = BinaryPerturbator()
     assert (
@@ -55,7 +54,7 @@ def test_binary_perturbator_10(average_effect, output_values):
 @pytest.mark.parametrize(
     "average_effect, output_values", [(-0.1, [60, 40]), (0.1, [40, 60])]
 )
-def test_binary_perturbator_10_perturbate(average_effect, output_values):
+def test_binary_perturbator_10_perturbate(average_effect, output_values, binary_df):
     binary_df_repeated = pd.concat([binary_df for _ in range(50)])
     bp = BinaryPerturbator(average_effect=average_effect)
     assert (
@@ -76,7 +75,7 @@ def test_binary_perturbator_10_perturbate(average_effect, output_values):
         (0.1, 0.6, UniformPerturbator),
     ],
 )
-def test_constant_perturbator(average_effect, avg_target, perturbator):
+def test_constant_perturbator(average_effect, avg_target, perturbator, continuous_df):
     up = perturbator(average_effect=average_effect)
     assert (
         up.perturbate(continuous_df).query("treatment == 'B'")["target"].mean()
@@ -93,7 +92,9 @@ def test_constant_perturbator(average_effect, avg_target, perturbator):
         (0.1, 0.6, UniformPerturbator),
     ],
 )
-def test_constant_perturbator_perturbate(average_effect, avg_target, perturbator):
+def test_constant_perturbator_perturbate(
+    average_effect, avg_target, perturbator, continuous_df
+):
     up = perturbator()
     assert (
         up.perturbate(continuous_df, average_effect=average_effect)
@@ -104,7 +105,7 @@ def test_constant_perturbator_perturbate(average_effect, avg_target, perturbator
 
 
 @pytest.mark.parametrize("average_effect", [-0.1, 0.1])
-def test_normal_perturbator_perturbate(average_effect):
+def test_normal_perturbator_perturbate(average_effect, continuous_df):
     # given
     np.random.seed(24)
     effect = (
@@ -127,7 +128,7 @@ def test_normal_perturbator_perturbate(average_effect):
 
 
 @pytest.mark.parametrize("average_effect, scale", [(-0.1, 0.02), (0.1, 0.03)])
-def test_normal_scale_provided_is_used(average_effect, scale):
+def test_normal_scale_provided_is_used(average_effect, scale, continuous_df):
     # given
     np.random.seed(24)
     effect = (
@@ -162,7 +163,7 @@ def test_normal_perturbator_from_config():
 
 
 @pytest.mark.parametrize("average_effect, avg_target", [(0.1, 0.55), (0.04, 0.52)])
-def test_relative_positive_perturbate(average_effect, avg_target):
+def test_relative_positive_perturbate(average_effect, avg_target, continuous_df):
     rp = RelativePositivePerturbator()
     assert (
         rp.perturbate(continuous_df, average_effect=average_effect)
@@ -173,7 +174,7 @@ def test_relative_positive_perturbate(average_effect, avg_target):
 
 
 @pytest.mark.parametrize("average_effect", [0.1, 0.04])
-def test_stochastic_relative_perturbate(average_effect):
+def test_stochastic_relative_perturbate(average_effect, continuous_df):
     # given
     rp = BetaRelativePositivePerturbator()
     mean = average_effect / (average_effect * average_effect)
@@ -197,7 +198,9 @@ def test_stochastic_relative_perturbate(average_effect):
 
 
 @pytest.mark.parametrize("average_effect, scale", [(0.2, 0.05), (0.4, 0.1)])
-def test_stochastic_relative_perturbate_scale_provided_is_used(average_effect, scale):
+def test_stochastic_relative_perturbate_scale_provided_is_used(
+    average_effect, scale, continuous_df
+):
     # given
     rp = BetaRelativePositivePerturbator(scale=scale)
     mean = average_effect / (scale * scale)
@@ -221,7 +224,7 @@ def test_stochastic_relative_perturbate_scale_provided_is_used(average_effect, s
 
 
 @pytest.mark.parametrize("average_effect", [0.1, 0.04])
-def test_beta_relative_perturbate(average_effect):
+def test_beta_relative_perturbate(average_effect, continuous_df):
     # given
     range_min = -0.8
     range_max = 5
@@ -254,11 +257,11 @@ def test_beta_relative_perturbate(average_effect):
 
 
 @pytest.mark.parametrize("average_effect", [0.1, 0.04])
-def test_segmented_beta_relative_perturbate(average_effect):
+def test_segmented_beta_relative_perturbate(average_effect, generate_clustered_data):
     range_min = -0.8
     range_max = 4
 
-    df_clustered = generate_clustered_data()
+    df_clustered = generate_clustered_data
     pert = SegmentedBetaRelativePerturbator(
         range_min=range_min, range_max=range_max, segment_cols=["city_code"]
     )
@@ -287,11 +290,13 @@ def test_segmented_beta_relative_perturbate(average_effect):
 
 
 @pytest.mark.parametrize("average_effect", [0.1, 0.04])
-def test_segmented_beta_relative_perturbate_multiple_segments(average_effect):
+def test_segmented_beta_relative_perturbate_multiple_segments(
+    average_effect, generate_clustered_data
+):
     range_min = -0.8
     range_max = 4
 
-    df_clustered = generate_clustered_data()
+    df_clustered = generate_clustered_data
     pert = SegmentedBetaRelativePerturbator(
         range_min=range_min, range_max=range_max, segment_cols=["city_code", "date"]
     )
@@ -319,7 +324,7 @@ def test_segmented_beta_relative_perturbate_multiple_segments(average_effect):
     assert abs((np.mean(mean_effects) - 1) / average_effect - 1) < max_rel_diff
 
 
-def test_binary_raises():
+def test_binary_raises(binary_df):
     binary_df_repeated = pd.concat([binary_df for _ in range(50)])
     bp = BinaryPerturbator()
     with pytest.raises(ValueError, match="average_effect must be provided"):
@@ -327,27 +332,27 @@ def test_binary_raises():
 
 
 @pytest.mark.parametrize("average_effect", [(-1.1), (1.1)])
-def test_binary_raises_out_of_limit(average_effect):
+def test_binary_raises_out_of_limit(average_effect, binary_df):
     bp = BinaryPerturbator()
     with pytest.raises(ValueError, match="Average effect must be in"):
         bp.perturbate(binary_df, average_effect=average_effect)
 
 
-def test_binary_raises_non_binary_target():
+def test_binary_raises_non_binary_target(binary_df):
     bp = BinaryPerturbator()
     binary_df["target"] = binary_df["target"] + 0.01
     with pytest.raises(ValueError, match="must be binary"):
         bp.perturbate(binary_df, average_effect=0.05)
 
 
-def test_stochastic_raises_non_positive_scale():
+def test_stochastic_raises_non_positive_scale(continuous_df):
     _scale = -0.1
     bp = NormalPerturbator(scale=_scale)
     with pytest.raises(ValueError, match=f"scale must be positive, got {_scale}"):
         bp.perturbate(continuous_df, average_effect=0.05)
 
 
-def test_relative_positive_raises_effect_less_than_minus_100():
+def test_relative_positive_raises_effect_less_than_minus_100(continuous_df):
     average_effect = -1.1
     rp = RelativePositivePerturbator()
     with pytest.raises(
@@ -357,7 +362,7 @@ def test_relative_positive_raises_effect_less_than_minus_100():
         rp.perturbate(continuous_df, average_effect)
 
 
-def test_relative_positive_target_has_some_negative():
+def test_relative_positive_target_has_some_negative(continuous_df):
     average_effect = 0.1
     _continuous_df = continuous_df.copy()
     _continuous_df.loc[:, "target"] = [0.5, 0.5, 0.5, -0.1]
@@ -367,7 +372,7 @@ def test_relative_positive_target_has_some_negative():
         rp.perturbate(_continuous_df, average_effect)
 
 
-def test_relative_positive_raises_target_is_all_0():
+def test_relative_positive_raises_target_is_all_0(continuous_df):
     average_effect = 0.1
     _continuous_df = continuous_df.copy()
     _continuous_df.loc[_continuous_df["treatment"] == "B", "target"] = 0
@@ -380,7 +385,7 @@ def test_relative_positive_raises_target_is_all_0():
         rp.perturbate(_continuous_df, average_effect)
 
 
-def test_beta_raises_effect_is_negative():
+def test_beta_raises_effect_is_negative(continuous_df):
     average_effect = -0.1
     rp = BetaRelativePositivePerturbator(scale=0.1)
     with pytest.raises(
@@ -390,7 +395,7 @@ def test_beta_raises_effect_is_negative():
         rp.perturbate(continuous_df, average_effect)
 
 
-def test_beta_raises_effect_equals_0():
+def test_beta_raises_effect_equals_0(continuous_df):
     average_effect = 0
     rp = BetaRelativePositivePerturbator(scale=0.1)
     with pytest.raises(
@@ -400,7 +405,7 @@ def test_beta_raises_effect_equals_0():
         rp.perturbate(continuous_df, average_effect)
 
 
-def test_beta_raises_effect_equals_1():
+def test_beta_raises_effect_equals_1(continuous_df):
     average_effect = 1
     rp = BetaRelativePositivePerturbator()
     with pytest.raises(

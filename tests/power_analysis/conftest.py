@@ -11,7 +11,7 @@ from cluster_experiments.random_splitter import (
     ClusteredSplitter,
     StratifiedSwitchbackSplitter,
 )
-from tests.examples import generate_random_data
+from tests.utils import generate_random_data
 
 N = 1_000
 
