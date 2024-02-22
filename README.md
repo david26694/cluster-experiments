@@ -140,59 +140,6 @@ power = pw.power_analysis(df, average_effect=0.1)
 print(f"{power = }")
 ```
 
-### Washover example
-
-The following example shows how to apply the washover to a dataframe.
-
-```python title="Switchback - using classes"
-from datetime import datetime, timedelta
-
-import numpy as np
-import pandas as pd
-
-from cluster_experiments import ConstantWashover
-
-## Generate a dummy dataset
-np.random.seed(42)
-
-num_rows = 10
-
-def random_timestamp(start_time, end_time):
-    time_delta = end_time - start_time
-    random_seconds = np.random.randint(0, time_delta.total_seconds())
-    return start_time + timedelta(seconds=random_seconds)
-
-def generate_data(start_time, end_time, treatment):
-    data = {
-        'order_id': np.random.randint(10**9, 10**10, size=num_rows),
-        'city_code': 'VAL',
-        'activation_time_local': [random_timestamp(start_time, end_time) for _ in range(num_rows)],
-        'bin_start_time_local': start_time,
-        'treatment': treatment
-    }
-    return pd.DataFrame(data)
-
-start_times = [datetime(2024, 1, 22, 9, 0), datetime(2024, 1, 22, 11, 0),
-               datetime(2024, 1, 22, 13, 0), datetime(2024, 1, 22, 15, 0)]
-
-treatments = ['control', 'variation', 'variation', 'control']
-
-dataframes = [generate_data(start, start + timedelta(hours=2), treatment) for start, treatment in zip(start_times, treatments)]
-
-df = pd.concat(dataframes).sort_values(by='activation_time_local').reset_index(drop=True)
-
-## Apply washover
-washover = ConstantWashover(washover_time_delta=timedelta(minutes=30))
-
-df_analysis_washover = washover.washover(
-    df=df,
-    truncated_time_col='bin_start_time_local',
-    treatment_col='treatment',
-    cluster_cols=['city_code','bin_start_time_local'],
-    original_time_col='activation_time_local',
-)
-```
-
 ## Features
 
 The library offers the following classes:
