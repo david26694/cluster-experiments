@@ -17,7 +17,7 @@ class Washover(ABC):
         truncated_time_col: str,
         treatment_col: str,
         cluster_cols: List[str],
-        original_time_col: Optional[str] = None,
+        original_time_col: str,
     ) -> pd.DataFrame:
         """Abstract method to add washvover to the dataframe."""
 
@@ -35,7 +35,7 @@ class EmptyWashover(Washover):
         truncated_time_col: str,
         treatment_col: str,
         cluster_cols: List[str],
-        original_time_col: Optional[str] = None,
+        original_time_col: str,
     ) -> pd.DataFrame:
         """No washover - returns the same dataframe as input.
 
@@ -43,11 +43,72 @@ class EmptyWashover(Washover):
             df (pd.DataFrame): Input dataframe.
             truncated_time_col (str): Name of the truncated time column.
             treatment_col (str): Name of the treatment column.
-            cluster_cols (List[str]): List of clusters of experiment. The list should include the 'truncated_time_col' as well.
+            cluster_cols (List[str]): List of clusters of experiment. The list must include the 'truncated_time_col' as well.
             original_time_col (str): Name of the original time column.
 
         Returns:
             pd.DataFrame: Same dataframe as input.
+
+        Usage:
+        ```python
+        from cluster_experiments import SwitchbackSplitter
+        from cluster_experiments import EmptyWashover
+
+        washover = EmptyWashover()
+
+        n = 10
+        df = pd.DataFrame(
+            {
+                # Random time each minute in 2022-01-01, length 10
+                "time": pd.date_range("2022-01-01", "2022-01-02", freq="1min")[
+                    np.random.randint(24 * 60, size=n)
+                ],
+                "city": random.choices(["TGN", "NYC", "LON", "REU"], k=n),
+            }
+        )
+
+
+        splitter = SwitchbackSplitter(
+            washover=washover,
+            time_col="time",
+            cluster_cols=["city", "time"],
+            treatment_col="treatment",
+            switch_frequency="30T",
+        )
+
+        out_df = splitter.assign_treatment_df(df=washover_split_df)
+        ```
+        """
+        return df
+
+
+class ConstantWashover(Washover):
+    """Constant washover - we drop all rows in the washover period when
+    there is a switch where the treatment is different."""
+
+    def __init__(self, washover_time_delta: datetime.timedelta):
+        self.washover_time_delta = washover_time_delta
+
+    def washover(
+        self,
+        df: pd.DataFrame,
+        truncated_time_col: str,
+        treatment_col: str,
+        cluster_cols: List[str],
+        original_time_col: str,
+    ) -> pd.DataFrame:
+        """Constant washover - we drop all rows in the washover period when
+        there is a switch where the treatment is different.
+
+        Args:
+            df (pd.DataFrame): Input dataframe.
+            truncated_time_col (str): Name of the truncated time column.
+            treatment_col (str): Name of the treatment column.
+            cluster_cols (List[str]): List of clusters of experiment. The list must include the 'truncated_time_col' as well.
+            original_time_col (str): Name of the original time column.
+
+        Returns:
+            pd.DataFrame: Same dataframe as input without the rows in the washover period.
 
         Usage:
         ```python
@@ -96,66 +157,6 @@ class EmptyWashover(Washover):
             cluster_cols=['city_code','bin_start_time_local'],
             original_time_col='activation_time_local',
         )
-        ```
-        """
-        return df
-
-
-class ConstantWashover(Washover):
-    """Constant washover - we drop all rows in the washover period when
-    there is a switch where the treatment is different."""
-
-    def __init__(self, washover_time_delta: datetime.timedelta):
-        self.washover_time_delta = washover_time_delta
-
-    def washover(
-        self,
-        df: pd.DataFrame,
-        truncated_time_col: str,
-        treatment_col: str,
-        cluster_cols: List[str],
-        original_time_col: Optional[str] = None,
-    ) -> pd.DataFrame:
-        """No washover - returns the same dataframe as input.
-
-        Args:
-            df (pd.DataFrame): Input dataframe.
-            truncated_time_col (str): Name of the truncated time column.
-            treatment_col (str): Name of the treatment column.
-            cluster_cols (List[str]): List of clusters of experiment.
-            original_time_col (Optional[str], optional): Name of the original time column.
-
-        Returns:
-            pd.DataFrame: Same dataframe as input.
-
-        Usage:
-        ```python
-        from cluster_experiments import SwitchbackSplitter
-        from cluster_experiments import ConstantWashover
-
-        washover = ConstantWashover(washover_time_delta=datetime.timedelta(minutes=30))
-
-        n = 10
-        df = pd.DataFrame(
-            {
-                # Random time each minute in 2022-01-01, length 10
-                "time": pd.date_range("2022-01-01", "2022-01-02", freq="1min")[
-                    np.random.randint(24 * 60, size=n)
-                ],
-                "city": random.choices(["TGN", "NYC", "LON", "REU"], k=n),
-            }
-        )
-
-
-        splitter = SwitchbackSplitter(
-            washover=washover,
-            time_col="time",
-            cluster_cols=["city", "time"],
-            treatment_col="treatment",
-            switch_frequency="30T",
-        )
-
-        out_df = splitter.assign_treatment_df(df=washover_split_df)
         ```
         """
         # Set original time column
