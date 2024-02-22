@@ -44,7 +44,7 @@ class EmptyWashover(Washover):
             truncated_time_col (str): Name of the truncated time column.
             treatment_col (str): Name of the treatment column.
             cluster_cols (List[str]): List of clusters of experiment. The list should include the 'truncated_time_col' as well.
-            original_time_col (Optional[str]): Name of the original time column.
+            original_time_col (str): Name of the original time column.
 
         Returns:
             pd.DataFrame: Same dataframe as input.
