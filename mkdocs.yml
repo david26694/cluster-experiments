@@ -19,6 +19,7 @@ nav:
   - AA test clustered: aa_test.ipynb
   - Paired T test: paired_ttest.ipynb
   - Different hypotheses tests: analysis_with_different_hypotheses.ipynb
+  - Washover: washover_example.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md

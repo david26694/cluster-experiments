@@ -97,7 +97,8 @@ class ConstantWashover(Washover):
         cluster_cols: List[str],
         original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
-        """No washover - returns the same dataframe as input.
+        """Constant washover - we drop all rows in the washover period when
+        there is a switch where the treatment is different.
 
         Args:
             df (pd.DataFrame): Input dataframe.
@@ -107,36 +108,55 @@ class ConstantWashover(Washover):
             original_time_col (Optional[str], optional): Name of the original time column.
 
         Returns:
-            pd.DataFrame: Same dataframe as input.
+            pd.DataFrame: Same dataframe as input without the rows in the washover period.
 
         Usage:
         ```python
-        from cluster_experiments import SwitchbackSplitter
+        import numpy as np
+        import pandas as pd
+        from datetime import datetime, timedelta
+
         from cluster_experiments import ConstantWashover
 
-        washover = ConstantWashover(washover_time_delta=datetime.timedelta(minutes=30))
+        np.random.seed(42)
 
-        n = 10
-        df = pd.DataFrame(
-            {
-                # Random time each minute in 2022-01-01, length 10
-                "time": pd.date_range("2022-01-01", "2022-01-02", freq="1min")[
-                    np.random.randint(24 * 60, size=n)
-                ],
-                "city": random.choices(["TGN", "NYC", "LON", "REU"], k=n),
+        num_rows = 10
+
+        def random_timestamp(start_time, end_time):
+            time_delta = end_time - start_time
+            random_seconds = np.random.randint(0, time_delta.total_seconds())
+            return start_time + timedelta(seconds=random_seconds)
+
+        def generate_data(start_time, end_time, treatment):
+            data = {
+                'order_id': np.random.randint(10**9, 10**10, size=num_rows),
+                'city_code': 'VAL',
+                'activation_time_local': [random_timestamp(start_time, end_time) for _ in range(num_rows)],
+                'bin_start_time_local': start_time,
+                'treatment': treatment
             }
+            return pd.DataFrame(data)
+
+        start_times = [datetime(2024, 1, 22, 9, 0), datetime(2024, 1, 22, 11, 0),
+                    datetime(2024, 1, 22, 13, 0), datetime(2024, 1, 22, 15, 0)]
+
+        treatments = ['control', 'variation', 'variation', 'control']
+
+        dataframes = [generate_data(start, start + timedelta(hours=2), treatment) for start, treatment in zip(start_times, treatments)]
+
+        df = pd.concat(dataframes).sort_values(by='activation_time_local').reset_index(drop=True)
+
+        ## Define washover with 30 min duration
+        washover = ConstantWashover(washover_time_delta=timedelta(minutes=30))
+
+        ## Apply washover to the dataframe, the orders with activation time within the first 30 minutes after every change in the treatment column, clustering by city and 2h time bin, will be dropped
+        df_analysis_washover = washover.washover(
+            df=df,
+            truncated_time_col='bin_start_time_local',
+            treatment_col='treatment',
+            cluster_cols=['city_code','bin_start_time_local'],
+            original_time_col='activation_time_local',
         )
-
-
-        splitter = SwitchbackSplitter(
-            washover=washover,
-            time_col="time",
-            cluster_cols=["city", "time"],
-            treatment_col="treatment",
-            switch_frequency="30T",
-        )
-
-        out_df = splitter.assign_treatment_df(df=washover_split_df)
         ```
         """
         # Set original time column
