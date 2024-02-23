@@ -1,6 +1,6 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 
@@ -17,7 +17,7 @@ class Washover(ABC):
         truncated_time_col: str,
         treatment_col: str,
         cluster_cols: List[str],
-        original_time_col: str,
+        original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
         """Abstract method to add washvover to the dataframe."""
 
@@ -35,7 +35,7 @@ class EmptyWashover(Washover):
         truncated_time_col: str,
         treatment_col: str,
         cluster_cols: List[str],
-        original_time_col: str,
+        original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
         """No washover - returns the same dataframe as input.
 
@@ -95,7 +95,7 @@ class ConstantWashover(Washover):
         truncated_time_col: str,
         treatment_col: str,
         cluster_cols: List[str],
-        original_time_col: str,
+        original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
         """Constant washover - we drop all rows in the washover period when
         there is a switch where the treatment is different.
