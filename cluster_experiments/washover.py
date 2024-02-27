@@ -37,7 +37,7 @@ class Washover(ABC):
             raise ValueError(f"{truncated_time_col = } is not in the cluster columns.")
         for col in cluster_cols:
             if col not in df.columns:
-                raise ValueError(f"{col = } is not in the dataframe columns.")
+                raise ValueError(f"{col = } cluster is not in the dataframe columns.")
 
     @abstractmethod
     def washover(

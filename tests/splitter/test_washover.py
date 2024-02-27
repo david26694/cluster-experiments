@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import timedelta
 
+import pandas as pd
 import pytest
 
 from cluster_experiments import SwitchbackSplitter
@@ -138,4 +139,45 @@ def test_constant_washover_no_switch_instantiated_int(minutes, n_rows, df, reque
         # original dataframe
         assert not washover_df.query("time >= '2022-01-01 01:00:00'").equals(
             out_df.query("time >= '2022-01-01 01:00:00'")
+        )
+
+
+def test_truncated_time_not_in_cluster_cols():
+    msg = "is not in the cluster columns."
+    with pytest.raises(ValueError, match=msg):
+        df = pd.DataFrame(columns=["time_bin", "city", "time", "treatment"])
+
+        ConstantWashover(washover_time_delta=timedelta(minutes=30)).washover(
+            df=df,
+            truncated_time_col="time_bin",
+            cluster_cols=["city"],
+            original_time_col="time",
+            treatment_col="treatment",
+        )
+
+
+def test_missing_original_time_col():
+    msg = "columns and/or not specified as an input."
+    with pytest.raises(ValueError, match=msg):
+        df = pd.DataFrame(columns=["time_bin", "city", "treatment"])
+
+        ConstantWashover(washover_time_delta=timedelta(minutes=30)).washover(
+            df=df,
+            truncated_time_col="time_bin",
+            cluster_cols=["city", "time_bin"],
+            treatment_col="treatment",
+        )
+
+
+def test_cluster_cols_missing_in_df():
+    msg = "cluster is not in the dataframe columns."
+    with pytest.raises(ValueError, match=msg):
+        df = pd.DataFrame(columns=["time_bin", "time", "treatment"])
+
+        ConstantWashover(washover_time_delta=timedelta(minutes=30)).washover(
+            df=df,
+            truncated_time_col="time_bin",
+            cluster_cols=["city", "time_bin"],
+            original_time_col="time",
+            treatment_col="treatment",
         )
