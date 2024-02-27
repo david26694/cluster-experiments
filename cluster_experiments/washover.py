@@ -17,19 +17,27 @@ class Washover(ABC):
         cluster_cols: List[str],
         original_time_col: str,
     ):
+        """Validate that all the columns required for the washover are present in the dataframe.
+
+        Args:
+            df (pd.DataFrame): Input dataframe.
+            truncated_time_col (str): Name of the truncated time column.
+            cluster_cols (List[str]): List of clusters of experiment.
+            original_time_col (str): Name of the original time column.
+
+        Returns:
+            None: This method does not return any data; it only performs validation.
+
+        """
         if original_time_col not in df.columns:
             raise ValueError(
-                "The original_time_col is not defined and/or not available in the dataframe columns."
+                f"{original_time_col = } is not in the dataframe columns and/or not specified as an input."
             )
         if truncated_time_col not in cluster_cols:
-            raise ValueError(
-                f"The truncated_time_col '{truncated_time_col}' is not in the cluster columns."
-            )
+            raise ValueError(f"{truncated_time_col = } is not in the cluster columns.")
         for col in cluster_cols:
             if col not in df.columns:
-                raise ValueError(
-                    f"The cluster_col '{col}' is not in the dataframe columns."
-                )
+                raise ValueError(f"{col = } is not in the dataframe columns.")
 
     @abstractmethod
     def washover(
