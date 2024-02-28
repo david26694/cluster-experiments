@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import timedelta
 
+import pandas as pd
 import pytest
 
 from cluster_experiments import SwitchbackSplitter
@@ -138,4 +139,54 @@ def test_constant_washover_no_switch_instantiated_int(minutes, n_rows, df, reque
         # original dataframe
         assert not washover_df.query("time >= '2022-01-01 01:00:00'").equals(
             out_df.query("time >= '2022-01-01 01:00:00'")
+        )
+
+
+def test_truncated_time_not_in_cluster_cols():
+    msg = "is not in the cluster columns."
+    df = pd.DataFrame(columns=["time_bin", "city", "time", "treatment"])
+
+    # Check that the truncated_time_col is also included in the cluster_cols,
+    # An error is raised because "time_bin" is not in the cluster_cols
+    with pytest.raises(ValueError, match=msg):
+
+        ConstantWashover(washover_time_delta=timedelta(minutes=30)).washover(
+            df=df,
+            truncated_time_col="time_bin",
+            cluster_cols=["city"],
+            original_time_col="time",
+            treatment_col="treatment",
+        )
+
+
+def test_missing_original_time_col():
+    msg = "columns and/or not specified as an input."
+    df = pd.DataFrame(columns=["time_bin", "city", "treatment"])
+
+    # Check that the original_time_col is specifed as an input and in the dataframe columns
+    # An error is raised because "time" is not specified as an input for the washover
+    with pytest.raises(ValueError, match=msg):
+
+        ConstantWashover(washover_time_delta=timedelta(minutes=30)).washover(
+            df=df,
+            truncated_time_col="time_bin",
+            cluster_cols=["city", "time_bin"],
+            treatment_col="treatment",
+        )
+
+
+def test_cluster_cols_missing_in_df():
+    msg = "cluster is not in the dataframe columns."
+    df = pd.DataFrame(columns=["time_bin", "time", "treatment"])
+
+    # Check that all the cluster_cols are in the dataframe columns
+    # An error is raised because "city" is not in the dataframe columns
+    with pytest.raises(ValueError, match=msg):
+
+        ConstantWashover(washover_time_delta=timedelta(minutes=30)).washover(
+            df=df,
+            truncated_time_col="time_bin",
+            cluster_cols=["city", "time_bin"],
+            original_time_col="time",
+            treatment_col="treatment",
         )

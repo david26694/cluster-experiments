@@ -10,6 +10,35 @@ from cluster_experiments.utils import _original_time_column
 class Washover(ABC):
     """Abstract class to model washovers in the switchback splitter."""
 
+    def _validate_columns(
+        self,
+        df: pd.DataFrame,
+        truncated_time_col: str,
+        cluster_cols: List[str],
+        original_time_col: str,
+    ):
+        """Validate that all the columns required for the washover are present in the dataframe.
+
+        Args:
+            df (pd.DataFrame): Input dataframe.
+            truncated_time_col (str): Name of the truncated time column.
+            cluster_cols (List[str]): List of clusters of experiment.
+            original_time_col (str): Name of the original time column.
+
+        Returns:
+            None: This method does not return any data; it only performs validation.
+
+        """
+        if original_time_col not in df.columns:
+            raise ValueError(
+                f"{original_time_col = } is not in the dataframe columns and/or not specified as an input."
+            )
+        if truncated_time_col not in cluster_cols:
+            raise ValueError(f"{truncated_time_col = } is not in the cluster columns.")
+        for col in cluster_cols:
+            if col not in df.columns:
+                raise ValueError(f"{col = } cluster is not in the dataframe columns.")
+
     @abstractmethod
     def washover(
         self,
@@ -165,6 +194,10 @@ class ConstantWashover(Washover):
             if original_time_col
             else _original_time_column(truncated_time_col)
         )
+
+        # Validate columns
+        self._validate_columns(df, truncated_time_col, cluster_cols, original_time_col)
+
         # Cluster columns that do not involve time
         non_time_cols = list(set(cluster_cols) - set([truncated_time_col]))
         # For each cluster, we need to check if treatment has changed wrt last time
