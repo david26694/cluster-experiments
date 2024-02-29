@@ -213,3 +213,16 @@ def washover_split_df(n):
             "city": random.choices(["TGN", "NYC", "LON", "REU"], k=n),
         }
     )
+
+
+@pytest.fixture
+def washover_split_no_city_df(n):
+    # Return
+    return pd.DataFrame(
+        {
+            # Random time each minute in 2022-01-01, length 1000
+            "time": pd.date_range("2022-01-01", "2022-01-02", freq="1min")[
+                np.random.randint(24 * 60, size=n)
+            ],
+        }
+    )

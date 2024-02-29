@@ -53,7 +53,7 @@ def test_constant_washover_no_switch(minutes, n_rows, df, request):
 
 
 @pytest.mark.parametrize(
-    "minutes, n",
+    "minutes, n,",
     [
         (15, 10000),
     ],
@@ -70,6 +70,35 @@ def test_constant_washover_split(minutes, n, washover_split_df):
     )
 
     out_df = splitter.assign_treatment_df(df=washover_split_df)
+
+    # Assert A and B in out_df
+    assert set(out_df["treatment"].unique()) == {"A", "B"}
+
+    # We need to have less than 10000 rows
+    assert len(out_df) < n
+
+    # We need to have more than 5000 rows (this is because ABB doesn't do washover on the second split)
+    assert len(out_df) > n / 2
+
+
+@pytest.mark.parametrize(
+    "minutes, n,",
+    [
+        (15, 1000),
+    ],
+)
+def test_constant_washover_split_no_city(minutes, n, washover_split_no_city_df):
+    washover = ConstantWashover(washover_time_delta=timedelta(minutes=minutes))
+
+    splitter = SwitchbackSplitter(
+        washover=washover,
+        time_col="time",
+        cluster_cols=["time"],
+        treatment_col="treatment",
+        switch_frequency="30T",
+    )
+
+    out_df = splitter.assign_treatment_df(df=washover_split_no_city_df)
 
     # Assert A and B in out_df
     assert set(out_df["treatment"].unique()) == {"A", "B"}
