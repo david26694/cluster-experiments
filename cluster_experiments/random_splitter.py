@@ -189,6 +189,8 @@ class SwitchbackSplitter(ClusteredSplitter):
         # Overwriting column, this is the worst! If we use the column as a covariate, we're screwed. Needs improvement
         df[_original_time_column(self.time_col)] = df[self.time_col]
         df[self.time_col] = self._get_time_col_cluster(df)
+        # add time_col if it is not already there
+        self.cluster_cols = list(set(self.cluster_cols + [self.time_col]))
         return df
 
     def assign_treatment_df(
