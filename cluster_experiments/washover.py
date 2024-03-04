@@ -203,10 +203,16 @@ class ConstantWashover(Washover):
         # For each cluster, we need to check if treatment has changed wrt last time
         df_agg = df.sort_values([original_time_col]).copy()
         df_agg = df_agg.drop_duplicates(subset=cluster_cols + [treatment_col])
-        df_agg["__changed"] = (
-            df_agg.groupby(non_time_cols)[treatment_col].shift(1)
-            != df_agg[treatment_col]
-        )
+
+        if non_time_cols:
+            df_agg["__changed"] = (
+                df_agg.groupby(non_time_cols)[treatment_col].shift(1)
+                != df_agg[treatment_col]
+            )
+        else:
+            df_agg["__changed"] = (
+                df_agg[treatment_col].shift(1) != df_agg[treatment_col]
+            )
         df_agg = df_agg.loc[:, cluster_cols + ["__changed"]]
         return (
             df.merge(df_agg, on=cluster_cols, how="inner")
