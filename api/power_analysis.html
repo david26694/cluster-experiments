@@ -1,0 +1,2307 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Functions to design and run clustered experiments">
+      
+      
+        <meta name="author" content="David Masip">
+      
+      
+        <link rel="canonical" href="https://david26694.github.io/cluster-experiments/api/power_analysis.html">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.0">
+    
+    
+      
+        <title>Power analysis - Cluster Experiments Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2e8b5541.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#4051b5">
+        
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,700,700i%7CUbuntu+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Ubuntu";--md-code-font:"Ubuntu Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../style.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="indigo" data-md-color-accent="blue">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#from-cluster_experimentspower_analysis-import" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Cluster Experiments Docs" class="md-header__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cluster Experiments Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Power analysis
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Cluster Experiments Docs" class="md-nav__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Cluster Experiments Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          Home
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Home" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Home
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        Index
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cupac_example.html" class="md-nav__link">
+        Cupac example
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create_custom_classes.html" class="md-nav__link">
+        Custom classes
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Switchback
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Switchback" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Switchback
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../switchback.html" class="md-nav__link">
+        Stratified switchback
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_calendars.html" class="md-nav__link">
+        Switchback calendar visualization
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_calendars_hours.html" class="md-nav__link">
+        Visualization - 4-hour switches
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multivariate.html" class="md-nav__link">
+        Multiple treatments
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aa_test.html" class="md-nav__link">
+        AA test clustered
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../paired_ttest.html" class="md-nav__link">
+        Paired T test
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis_with_different_hypotheses.html" class="md-nav__link">
+        Power comparison under different hypotheses
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../washover_example.html" class="md-nav__link">
+        Washover
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_10" type="checkbox" id="__nav_10" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_10">
+          API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="API" data-md-level="1">
+        <label class="md-nav__title" for="__nav_10">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="experiment_analysis.html" class="md-nav__link">
+        Experiment analysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="perturbator.html" class="md-nav__link">
+        Perturbators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="random_splitter.html" class="md-nav__link">
+        Splitter
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="cupac_model.html" class="md-nav__link">
+        Pre experiment outcome model
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="power_config.html" class="md-nav__link">
+        Power config
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Power analysis
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="power_analysis.html" class="md-nav__link md-nav__link--active">
+        Power analysis
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis" class="md-nav__link">
+    cluster_experiments.power_analysis
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis" class="md-nav__link">
+    PowerAnalysis
+  </a>
+  
+    <nav class="md-nav" aria-label="PowerAnalysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.check_treatment_col" class="md-nav__link">
+    check_treatment_col()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.from_dict" class="md-nav__link">
+    from_dict()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.log_nulls" class="md-nav__link">
+    log_nulls()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.power_analysis" class="md-nav__link">
+    power_analysis()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.power_line" class="md-nav__link">
+    power_line()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.running_power_analysis" class="md-nav__link">
+    running_power_analysis()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.simulate_point_estimate" class="md-nav__link">
+    simulate_point_estimate()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.simulate_pvalue" class="md-nav__link">
+    simulate_pvalue()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="washover.html" class="md-nav__link">
+        Washover
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis" class="md-nav__link">
+    cluster_experiments.power_analysis
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis" class="md-nav__link">
+    PowerAnalysis
+  </a>
+  
+    <nav class="md-nav" aria-label="PowerAnalysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.check_treatment_col" class="md-nav__link">
+    check_treatment_col()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.from_dict" class="md-nav__link">
+    from_dict()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.log_nulls" class="md-nav__link">
+    log_nulls()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.power_analysis" class="md-nav__link">
+    power_analysis()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.power_line" class="md-nav__link">
+    power_line()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.running_power_analysis" class="md-nav__link">
+    running_power_analysis()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.simulate_point_estimate" class="md-nav__link">
+    simulate_point_estimate()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.power_analysis.PowerAnalysis.simulate_pvalue" class="md-nav__link">
+    simulate_pvalue()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  <a href="https://github.com/david26694/cluster-experiments/blob/main/docs/api/power_analysis.md" title="Edit this page" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+<h1 id="from-cluster_experimentspower_analysis-import"><code>from cluster_experiments.power_analysis import *</code><a class="headerlink" href="#from-cluster_experimentspower_analysis-import" title="Permanent link">&para;</a></h1>
+
+
+  <div class="doc doc-object doc-module">
+
+<a id="cluster_experiments.power_analysis"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.power_analysis.PowerAnalysis" class="doc doc-heading">
+        <code>
+PowerAnalysis        </code>
+
+
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Class used to run Power analysis. It does so by running simulations. In each simulation:
+1. Assign treatment to dataframe randomly
+2. Perturbate dataframe
+3. Add pre-experiment data if needed
+4. Run analysis</p>
+<p>Finally it returns the power of the analysis by counting how many times the effect was detected.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>perturbator</code></td>
+        <td><code>Perturbator</code></td>
+        <td><p>Perturbator class to perturbate dataframe with treatment assigned.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>splitter</code></td>
+        <td><code>RandomSplitter</code></td>
+        <td><p>RandomSplitter class to randomly assign treatment to dataframe.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>analysis</code></td>
+        <td><code>ExperimentAnalysis</code></td>
+        <td><p>ExperimentAnalysis class to use for analysis.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>cupac_model</code></td>
+        <td><code>Optional[sklearn.base.BaseEstimator]</code></td>
+        <td><p>Sklearn estimator class to add pre-experiment data to dataframe. If None, no pre-experiment data will be added.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>target_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the outcome variable.</p></td>
+        <td><code>&#39;target&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the treatment variable.</p></td>
+        <td><code>&#39;treatment&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment</code></td>
+        <td><code>str</code></td>
+        <td><p>value of treatment_col considered to be treatment (not control)</p></td>
+        <td><code>&#39;B&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>control</code></td>
+        <td><code>str</code></td>
+        <td><p>value of treatment_col considered to be control (not treatment)</p></td>
+        <td><code>&#39;A&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>n_simulations</code></td>
+        <td><code>int</code></td>
+        <td><p>Number of simulations to run.</p></td>
+        <td><code>100</code></td>
+      </tr>
+      <tr>
+        <td><code>alpha</code></td>
+        <td><code>float</code></td>
+        <td><p>Significance level.</p></td>
+        <td><code>0.05</code></td>
+      </tr>
+      <tr>
+        <td><code>features_cupac_model</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>Covariates to be used in cupac model</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>seed</code></td>
+        <td><code>Optional[int]</code></td>
+        <td><p>Optional. Seed to use for the splitter.</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>      <p>Usage:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.experiment_analysis</span> <span class="kn">import</span> <span class="n">GeeExperimentAnalysis</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.perturbator</span> <span class="kn">import</span> <span class="n">ConstantPerturbator</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.power_analysis</span> <span class="kn">import</span> <span class="n">PowerAnalysis</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.random_splitter</span> <span class="kn">import</span> <span class="n">ClusteredSplitter</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">1_000</span>
+<span class="n">users</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;User </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">)]</span>
+<span class="n">clusters</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Cluster </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">)]</span>
+<span class="n">dates</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">date</span><span class="p">(</span><span class="mi">2022</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="si">:</span><span class="s2">%Y-%m-%d</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">32</span><span class="p">)]</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;cluster&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">clusters</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">N</span><span class="p">),</span>
+        <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">N</span><span class="p">),</span>
+        <span class="s2">&quot;user&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">N</span><span class="p">),</span>
+        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">N</span><span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">experiment_dates</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">date</span><span class="p">(</span><span class="mi">2022</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="si">:</span><span class="s2">%Y-%m-%d</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">32</span><span class="p">)]</span>
+<span class="n">sw</span> <span class="o">=</span> <span class="n">ClusteredSplitter</span><span class="p">(</span>
+    <span class="n">cluster_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">perturbator</span> <span class="o">=</span> <span class="n">ConstantPerturbator</span><span class="p">()</span>
+
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">GeeExperimentAnalysis</span><span class="p">(</span>
+    <span class="n">cluster_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">pw</span> <span class="o">=</span> <span class="n">PowerAnalysis</span><span class="p">(</span>
+    <span class="n">perturbator</span><span class="o">=</span><span class="n">perturbator</span><span class="p">,</span> <span class="n">splitter</span><span class="o">=</span><span class="n">sw</span><span class="p">,</span> <span class="n">analysis</span><span class="o">=</span><span class="n">analysis</span><span class="p">,</span> <span class="n">n_simulations</span><span class="o">=</span><span class="mi">50</span>
+<span class="p">)</span>
+
+<span class="n">power</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">power_analysis</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">power</span><span class="w"> </span><span class="si">= }</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">PowerAnalysis</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class used to run Power analysis. It does so by running simulations. In each simulation:</span>
+<span class="sd">    1. Assign treatment to dataframe randomly</span>
+<span class="sd">    2. Perturbate dataframe</span>
+<span class="sd">    3. Add pre-experiment data if needed</span>
+<span class="sd">    4. Run analysis</span>
+
+<span class="sd">    Finally it returns the power of the analysis by counting how many times the effect was detected.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        perturbator: Perturbator class to perturbate dataframe with treatment assigned.</span>
+<span class="sd">        splitter: RandomSplitter class to randomly assign treatment to dataframe.</span>
+<span class="sd">        analysis: ExperimentAnalysis class to use for analysis.</span>
+<span class="sd">        cupac_model: Sklearn estimator class to add pre-experiment data to dataframe. If None, no pre-experiment data will be added.</span>
+<span class="sd">        target_col: Name of the column with the outcome variable.</span>
+<span class="sd">        treatment_col: Name of the column with the treatment variable.</span>
+<span class="sd">        treatment: value of treatment_col considered to be treatment (not control)</span>
+<span class="sd">        control: value of treatment_col considered to be control (not treatment)</span>
+<span class="sd">        n_simulations: Number of simulations to run.</span>
+<span class="sd">        alpha: Significance level.</span>
+<span class="sd">        features_cupac_model: Covariates to be used in cupac model</span>
+<span class="sd">        seed: Optional. Seed to use for the splitter.</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    from datetime import date</span>
+
+<span class="sd">    import numpy as np</span>
+<span class="sd">    import pandas as pd</span>
+<span class="sd">    from cluster_experiments.experiment_analysis import GeeExperimentAnalysis</span>
+<span class="sd">    from cluster_experiments.perturbator import ConstantPerturbator</span>
+<span class="sd">    from cluster_experiments.power_analysis import PowerAnalysis</span>
+<span class="sd">    from cluster_experiments.random_splitter import ClusteredSplitter</span>
+
+<span class="sd">    N = 1_000</span>
+<span class="sd">    users = [f&quot;User {i}&quot; for i in range(1000)]</span>
+<span class="sd">    clusters = [f&quot;Cluster {i}&quot; for i in range(100)]</span>
+<span class="sd">    dates = [f&quot;{date(2022, 1, i):%Y-%m-%d}&quot; for i in range(1, 32)]</span>
+<span class="sd">    df = pd.DataFrame(</span>
+<span class="sd">        {</span>
+<span class="sd">            &quot;cluster&quot;: np.random.choice(clusters, size=N),</span>
+<span class="sd">            &quot;target&quot;: np.random.normal(0, 1, size=N),</span>
+<span class="sd">            &quot;user&quot;: np.random.choice(users, size=N),</span>
+<span class="sd">            &quot;date&quot;: np.random.choice(dates, size=N),</span>
+<span class="sd">        }</span>
+<span class="sd">    )</span>
+
+<span class="sd">    experiment_dates = [f&quot;{date(2022, 1, i):%Y-%m-%d}&quot; for i in range(15, 32)]</span>
+<span class="sd">    sw = ClusteredSplitter(</span>
+<span class="sd">        cluster_cols=[&quot;cluster&quot;, &quot;date&quot;],</span>
+<span class="sd">    )</span>
+
+<span class="sd">    perturbator = ConstantPerturbator()</span>
+
+<span class="sd">    analysis = GeeExperimentAnalysis(</span>
+<span class="sd">        cluster_cols=[&quot;cluster&quot;, &quot;date&quot;],</span>
+<span class="sd">    )</span>
+
+<span class="sd">    pw = PowerAnalysis(</span>
+<span class="sd">        perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50</span>
+<span class="sd">    )</span>
+
+<span class="sd">    power = pw.power_analysis(df, average_effect=0.1)</span>
+<span class="sd">    print(f&quot;{power = }&quot;)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">perturbator</span><span class="p">:</span> <span class="n">Perturbator</span><span class="p">,</span>
+        <span class="n">splitter</span><span class="p">:</span> <span class="n">RandomSplitter</span><span class="p">,</span>
+        <span class="n">analysis</span><span class="p">:</span> <span class="n">ExperimentAnalysis</span><span class="p">,</span>
+        <span class="n">cupac_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseEstimator</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;treatment&quot;</span><span class="p">,</span>
+        <span class="n">treatment</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span>
+        <span class="n">control</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span>
+        <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">features_cupac_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">hypothesis</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;two-sided&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span> <span class="o">=</span> <span class="n">perturbator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span> <span class="o">=</span> <span class="n">splitter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span> <span class="o">=</span> <span class="n">analysis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_simulations</span> <span class="o">=</span> <span class="n">n_simulations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_col</span> <span class="o">=</span> <span class="n">target_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatment</span> <span class="o">=</span> <span class="n">treatment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">control</span> <span class="o">=</span> <span class="n">control</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">=</span> <span class="n">treatment_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span> <span class="o">=</span> <span class="n">hypothesis</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cupac_handler</span> <span class="o">=</span> <span class="n">CupacHandler</span><span class="p">(</span>
+            <span class="n">cupac_model</span><span class="o">=</span><span class="n">cupac_model</span><span class="p">,</span>
+            <span class="n">target_col</span><span class="o">=</span><span class="n">target_col</span><span class="p">,</span>
+            <span class="n">features_cupac_model</span><span class="o">=</span><span class="n">features_cupac_model</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>  <span class="c1"># seed for splitter</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>  <span class="c1"># seed for the binary perturbator</span>
+            <span class="c1"># may need to seed other stochasticity sources if added</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_inputs</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_simulate_perturbed_df</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Yields splitted + perturbated dataframe for each iteration of the simulation.&quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cupac_handler</span><span class="o">.</span><span class="n">add_covariates</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_simulations</span><span class="p">),</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_and_perturbate</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">simulate_pvalue</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Yields p-values for each iteration of the simulation.</span>
+<span class="sd">        In general, this is to be used in power_analysis method. However,</span>
+<span class="sd">        if you&#39;re interested in the distribution of p-values, you can use this method to generate them.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df: Dataframe with outcome variable.</span>
+<span class="sd">            pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">            verbose: Whether to show progress bar.</span>
+<span class="sd">            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">            n_simulations: Number of simulations to run.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">perturbed_df</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_perturbed_df</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span>
+            <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+            <span class="n">average_effect</span><span class="o">=</span><span class="n">average_effect</span><span class="p">,</span>
+            <span class="n">n_simulations</span><span class="o">=</span><span class="n">n_simulations</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">get_pvalue</span><span class="p">(</span><span class="n">perturbed_df</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">running_power_analysis</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Yields running power for each iteration of the simulation.</span>
+<span class="sd">        if you&#39;re interested in getting the power at each iteration, you can use this method to generate them.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df: Dataframe with outcome variable.</span>
+<span class="sd">            pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">            verbose: Whether to show progress bar.</span>
+<span class="sd">            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">            n_simulations: Number of simulations to run.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_rejected</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">perturbed_df</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_perturbed_df</span><span class="p">(</span>
+                <span class="n">df</span><span class="p">,</span>
+                <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span><span class="p">,</span>
+                <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                <span class="n">average_effect</span><span class="o">=</span><span class="n">average_effect</span><span class="p">,</span>
+                <span class="n">n_simulations</span><span class="o">=</span><span class="n">n_simulations</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">p_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">get_pvalue</span><span class="p">(</span><span class="n">perturbed_df</span><span class="p">)</span>
+            <span class="n">n_rejected</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">p_value</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">n_rejected</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">simulate_point_estimate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Yields point estimates for each iteration of the simulation.</span>
+<span class="sd">        In general, this is to be used in power_analysis method. However,</span>
+<span class="sd">        if you&#39;re interested in the distribution of point estimates, you can use this method to generate them.</span>
+
+<span class="sd">        This is an experimental feature and it might change in the future.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">            pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">            verbose: Whether to show progress bar.</span>
+<span class="sd">            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">            n_simulations: Number of simulations to run.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">perturbed_df</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_perturbed_df</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span>
+            <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+            <span class="n">average_effect</span><span class="o">=</span><span class="n">average_effect</span><span class="p">,</span>
+            <span class="n">n_simulations</span><span class="o">=</span><span class="n">n_simulations</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">get_point_estimate</span><span class="p">(</span><span class="n">perturbed_df</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">power_analysis</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_simulations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run power analysis by simulation</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">            pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">            verbose: Whether to show progress bar.</span>
+<span class="sd">            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">            n_simulations: Number of simulations to run.</span>
+<span class="sd">            alpha: Significance level.</span>
+<span class="sd">            n_jobs: Number of jobs to run in parallel. If 1, it will run in serial.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_simulations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_simulations</span> <span class="k">if</span> <span class="n">n_simulations</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">n_simulations</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">alpha</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cupac_handler</span><span class="o">.</span><span class="n">add_covariates</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_jobs</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_non_parallel_loop</span><span class="p">(</span>
+                <span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span><span class="p">,</span> <span class="n">n_simulations</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">verbose</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">n_jobs</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">n_jobs</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parallel_loop</span><span class="p">(</span>
+                <span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span><span class="p">,</span> <span class="n">n_simulations</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">n_jobs</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_jobs must be greater than 0, or -1.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_split_and_perturbate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Split and perturbate dataframe.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df: Dataframe with outcome variable</span>
+<span class="sd">            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">treatment_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_nulls</span><span class="p">(</span><span class="n">treatment_df</span><span class="p">)</span>
+        <span class="n">treatment_df</span> <span class="o">=</span> <span class="n">treatment_df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">.notnull()&quot;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;python&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">.isin([&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment</span><span class="si">}</span><span class="s2">&#39;, &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="si">}</span><span class="s2">&#39;])&quot;</span><span class="p">,</span>
+            <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">perturbed_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="o">.</span><span class="n">perturbate</span><span class="p">(</span>
+            <span class="n">treatment_df</span><span class="p">,</span> <span class="n">average_effect</span><span class="o">=</span><span class="n">average_effect</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">perturbed_df</span>
+
+    <span class="k">def</span> <span class="nf">_run_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="n">perturbed_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_and_perturbate</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">get_pvalue</span><span class="p">(</span><span class="n">perturbed_df</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_non_parallel_loop</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run power analysis by simulation in serial</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">            n_simulations: Number of simulations to run.</span>
+<span class="sd">            alpha: Significance level.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_detected_mde</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_simulations</span><span class="p">),</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">):</span>
+            <span class="n">p_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_simulation</span><span class="p">((</span><span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;p_value of simulation run: </span><span class="si">{</span><span class="n">p_value</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">n_detected_mde</span> <span class="o">+=</span> <span class="n">p_value</span> <span class="o">&lt;</span> <span class="n">alpha</span>
+
+        <span class="k">return</span> <span class="n">n_detected_mde</span> <span class="o">/</span> <span class="n">n_simulations</span>
+
+    <span class="k">def</span> <span class="nf">_parallel_loop</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run power analysis by simulation in parallel</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">            n_simulations: Number of simulations to run.</span>
+<span class="sd">            alpha: Significance level.</span>
+<span class="sd">            n_jobs: Number of jobs to run in parallel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span><span class="p">,</span> <span class="n">cpu_count</span>
+
+        <span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span> <span class="k">if</span> <span class="n">n_jobs</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">cpu_count</span><span class="p">()</span>
+
+        <span class="n">n_detected_mde</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">with</span> <span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">[(</span><span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_simulations</span><span class="p">)]</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">imap_unordered</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_simulation</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">p_value</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="n">n_simulations</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">):</span>
+                <span class="n">n_detected_mde</span> <span class="o">+=</span> <span class="n">p_value</span> <span class="o">&lt;</span> <span class="n">alpha</span>
+
+        <span class="k">return</span> <span class="n">n_detected_mde</span> <span class="o">/</span> <span class="n">n_simulations</span>
+
+    <span class="k">def</span> <span class="nf">power_line</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">average_effects</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">n_simulations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs power analysis with multiple average effects</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">            pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">            verbose: Whether to show progress bar.</span>
+<span class="sd">            average_effects: Average effects to test.</span>
+<span class="sd">            n_simulations: Number of simulations to run.</span>
+<span class="sd">            alpha: Significance level.</span>
+<span class="sd">            n_jobs: Number of jobs to run in parallel.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with average effects as keys and power as values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">effect</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_analysis</span><span class="p">(</span>
+                <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+                <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span><span class="p">,</span>
+                <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                <span class="n">average_effect</span><span class="o">=</span><span class="n">effect</span><span class="p">,</span>
+                <span class="n">n_simulations</span><span class="o">=</span><span class="n">n_simulations</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+                <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">average_effects</span><span class="p">),</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Effects loop&quot;</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">log_nulls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Warns about dropping nulls in treatment column&quot;&quot;&quot;</span>
+        <span class="n">n_nulls</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">.isnull()&quot;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">n_nulls</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;There are </span><span class="si">{</span><span class="n">n_nulls</span><span class="si">}</span><span class="s2"> null values in treatment, dropping them&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PowerAnalysis&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs PowerAnalysis from dictionary&quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">PowerConfig</span><span class="p">(</span><span class="o">**</span><span class="n">config_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">PowerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PowerAnalysis&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs PowerAnalysis from PowerConfig&quot;&quot;&quot;</span>
+        <span class="n">perturbator_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">perturbator_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">perturbator</span><span class="p">)</span>
+        <span class="n">splitter_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">splitter_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">splitter</span><span class="p">)</span>
+        <span class="n">analysis_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">analysis_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">analysis</span><span class="p">)</span>
+        <span class="n">cupac_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">cupac_model_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">cupac_model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">perturbator</span><span class="o">=</span><span class="n">perturbator_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+            <span class="n">splitter</span><span class="o">=</span><span class="n">splitter_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+            <span class="n">analysis</span><span class="o">=</span><span class="n">analysis_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+            <span class="n">cupac_model</span><span class="o">=</span><span class="n">cupac_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+            <span class="n">target_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">target_col</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+            <span class="n">treatment</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment</span><span class="p">,</span>
+            <span class="n">n_simulations</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">n_simulations</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">check_treatment_col</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks consistency of treatment column&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="o">.</span><span class="n">treatment_col</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;treatment_col in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">) must be the same as treatment_col in perturbator (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;treatment_col in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">) must be the same as treatment_col in PowerAnalysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">treatment_col</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;treatment_col in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">) must be the same as treatment_col in splitter (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">check_target_col</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">target_col</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="o">.</span><span class="n">target_col</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;target_col in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">target_col</span><span class="si">}</span><span class="s2">) must be the same as target_col in perturbator (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="o">.</span><span class="n">target_col</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">target_col</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_col</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;target_col in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">target_col</span><span class="si">}</span><span class="s2">) must be the same as target_col in PowerAnalysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">check_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="o">.</span><span class="n">treatment</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;treatment in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment</span><span class="si">}</span><span class="s2">) must be the same as treatment in perturbator (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="o">.</span><span class="n">treatment</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">treatment</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;treatment in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment</span><span class="si">}</span><span class="s2">) must be the same as treatment in PowerAnalysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">treatments</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;treatment in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment</span><span class="si">}</span><span class="s2">) must be in treatments in splitter (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">treatments</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">control</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">treatments</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;control in power analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="si">}</span><span class="s2">) must be in treatments in splitter (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">treatments</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">check_covariates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="p">,</span> <span class="s2">&quot;covariates&quot;</span><span class="p">):</span>
+            <span class="n">cupac_in_covariates</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cupac_handler</span><span class="o">.</span><span class="n">cupac_outcome_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">covariates</span>
+            <span class="p">)</span>
+
+            <span class="k">assert</span> <span class="n">cupac_in_covariates</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cupac_handler</span><span class="o">.</span><span class="n">is_cupac</span><span class="p">,</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;covariates in analysis must contain </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cupac_handler</span><span class="o">.</span><span class="n">cupac_outcome_name</span><span class="si">}</span><span class="s2"> if cupac_model is not None. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;You may want to do covariates=[&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cupac_handler</span><span class="o">.</span><span class="n">cupac_outcome_name</span><span class="si">}</span><span class="s2">&#39;] in your analysis method or your config&quot;</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="p">,</span> <span class="s2">&quot;cluster_cols&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">covariates</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+                    <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;covariates in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">covariates</span><span class="si">}</span><span class="s2">) are also cluster_cols in splitter (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">cluster_cols</span><span class="si">}</span><span class="s2">). &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Be specially careful when using switchback splitters, since the time splitter column is being overriden&quot;</span>
+                    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">check_clusters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">has_analysis_clusters</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="p">,</span> <span class="s2">&quot;cluster_cols&quot;</span><span class="p">)</span>
+        <span class="n">has_splitter_clusters</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="p">,</span> <span class="s2">&quot;cluster_cols&quot;</span><span class="p">)</span>
+        <span class="n">not_cluster_cols_cond</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">has_analysis_clusters</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">has_splitter_clusters</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">not_cluster_cols_cond</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">cluster_cols</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">cluster_cols</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;cluster_cols in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">cluster_cols</span><span class="si">}</span><span class="s2">) must be the same as cluster_cols in splitter (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">cluster_cols</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">has_splitter_clusters</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="n">has_analysis_clusters</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">cluster_cols</span>
+            <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="p">,</span> <span class="n">RepeatedSampler</span><span class="p">)</span>
+        <span class="p">),</span> <span class="s2">&quot;analysis has cluster_cols but splitter does not.&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">has_analysis_clusters</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="n">has_splitter_clusters</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">cluster_cols</span>
+        <span class="p">),</span> <span class="s2">&quot;splitter has cluster_cols but analysis does not.&quot;</span>
+
+        <span class="n">has_time_col</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="p">,</span> <span class="s2">&quot;time_col&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="n">has_time_col</span>
+            <span class="ow">and</span> <span class="n">has_splitter_clusters</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">time_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">cluster_cols</span>
+        <span class="p">),</span> <span class="s2">&quot;in switchback splitters, time_col must be in cluster_cols&quot;</span>
+
+    <span class="k">def</span> <span class="nf">check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_covariates</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_treatment_col</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_target_col</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_treatment</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_clusters</span><span class="p">()</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.power_analysis.PowerAnalysis.check_treatment_col" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">check_treatment_col</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis.check_treatment_col" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Checks consistency of treatment column</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">check_treatment_col</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks consistency of treatment column&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="o">.</span><span class="n">treatment_col</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;treatment_col in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">) must be the same as treatment_col in perturbator (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;treatment_col in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">) must be the same as treatment_col in PowerAnalysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">treatment_col</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;treatment_col in analysis (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">) must be the same as treatment_col in splitter (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">)&quot;</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.power_analysis.PowerAnalysis.from_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis.from_config" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Constructs PowerAnalysis from PowerConfig</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">PowerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PowerAnalysis&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Constructs PowerAnalysis from PowerConfig&quot;&quot;&quot;</span>
+    <span class="n">perturbator_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">perturbator_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">perturbator</span><span class="p">)</span>
+    <span class="n">splitter_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">splitter_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">splitter</span><span class="p">)</span>
+    <span class="n">analysis_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">analysis_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">analysis</span><span class="p">)</span>
+    <span class="n">cupac_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">cupac_model_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">cupac_model</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">perturbator</span><span class="o">=</span><span class="n">perturbator_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+        <span class="n">splitter</span><span class="o">=</span><span class="n">splitter_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+        <span class="n">analysis</span><span class="o">=</span><span class="n">analysis_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+        <span class="n">cupac_model</span><span class="o">=</span><span class="n">cupac_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+        <span class="n">target_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">target_col</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="n">treatment</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment</span><span class="p">,</span>
+        <span class="n">n_simulations</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">n_simulations</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.power_analysis.PowerAnalysis.from_dict" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">config_dict</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis.from_dict" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Constructs PowerAnalysis from dictionary</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PowerAnalysis&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Constructs PowerAnalysis from dictionary&quot;&quot;&quot;</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">PowerConfig</span><span class="p">(</span><span class="o">**</span><span class="n">config_dict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.power_analysis.PowerAnalysis.log_nulls" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">log_nulls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis.log_nulls" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Warns about dropping nulls in treatment column</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">log_nulls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Warns about dropping nulls in treatment column&quot;&quot;&quot;</span>
+    <span class="n">n_nulls</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="si">}</span><span class="s2">.isnull()&quot;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">n_nulls</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;There are </span><span class="si">{</span><span class="n">n_nulls</span><span class="si">}</span><span class="s2"> null values in treatment, dropping them&quot;</span>
+        <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.power_analysis.PowerAnalysis.power_analysis" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">power_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">average_effect</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_simulations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis.power_analysis" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Run power analysis by simulation</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>Dataframe with outcome and treatment variables.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>pre_experiment_df</code></td>
+        <td><code>Optional[pandas.core.frame.DataFrame]</code></td>
+        <td><p>Dataframe with pre-experiment data.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>verbose</code></td>
+        <td><code>bool</code></td>
+        <td><p>Whether to show progress bar.</p></td>
+        <td><code>False</code></td>
+      </tr>
+      <tr>
+        <td><code>average_effect</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>Average effect of treatment. If None, it will use the perturbator average effect.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>n_simulations</code></td>
+        <td><code>Optional[int]</code></td>
+        <td><p>Number of simulations to run.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>alpha</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>Significance level.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>n_jobs</code></td>
+        <td><code>int</code></td>
+        <td><p>Number of jobs to run in parallel. If 1, it will run in serial.</p></td>
+        <td><code>1</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">power_analysis</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_simulations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run power analysis by simulation</span>
+<span class="sd">    Args:</span>
+<span class="sd">        df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">        pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">        verbose: Whether to show progress bar.</span>
+<span class="sd">        average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">        n_simulations: Number of simulations to run.</span>
+<span class="sd">        alpha: Significance level.</span>
+<span class="sd">        n_jobs: Number of jobs to run in parallel. If 1, it will run in serial.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_simulations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_simulations</span> <span class="k">if</span> <span class="n">n_simulations</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">n_simulations</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">alpha</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cupac_handler</span><span class="o">.</span><span class="n">add_covariates</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n_jobs</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_non_parallel_loop</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span><span class="p">,</span> <span class="n">n_simulations</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">verbose</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">n_jobs</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">n_jobs</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parallel_loop</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span> <span class="n">average_effect</span><span class="p">,</span> <span class="n">n_simulations</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">n_jobs</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_jobs must be greater than 0, or -1.&quot;</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.power_analysis.PowerAnalysis.power_line" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">power_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">average_effects</span><span class="o">=</span><span class="p">(),</span> <span class="n">n_simulations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis.power_line" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Runs power analysis with multiple average effects</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>Dataframe with outcome and treatment variables.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>pre_experiment_df</code></td>
+        <td><code>Optional[pandas.core.frame.DataFrame]</code></td>
+        <td><p>Dataframe with pre-experiment data.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>verbose</code></td>
+        <td><code>bool</code></td>
+        <td><p>Whether to show progress bar.</p></td>
+        <td><code>False</code></td>
+      </tr>
+      <tr>
+        <td><code>average_effects</code></td>
+        <td><code>Iterable[float]</code></td>
+        <td><p>Average effects to test.</p></td>
+        <td><code>()</code></td>
+      </tr>
+      <tr>
+        <td><code>n_simulations</code></td>
+        <td><code>Optional[int]</code></td>
+        <td><p>Number of simulations to run.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>alpha</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>Significance level.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>n_jobs</code></td>
+        <td><code>int</code></td>
+        <td><p>Number of jobs to run in parallel.</p></td>
+        <td><code>1</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Dict[float, float]</code></td>
+      <td><p>Dictionary with average effects as keys and power as values.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">power_line</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">average_effects</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">n_simulations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Runs power analysis with multiple average effects</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">        pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">        verbose: Whether to show progress bar.</span>
+<span class="sd">        average_effects: Average effects to test.</span>
+<span class="sd">        n_simulations: Number of simulations to run.</span>
+<span class="sd">        alpha: Significance level.</span>
+<span class="sd">        n_jobs: Number of jobs to run in parallel.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with average effects as keys and power as values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">effect</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_analysis</span><span class="p">(</span>
+            <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+            <span class="n">average_effect</span><span class="o">=</span><span class="n">effect</span><span class="p">,</span>
+            <span class="n">n_simulations</span><span class="o">=</span><span class="n">n_simulations</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">average_effects</span><span class="p">),</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Effects loop&quot;</span>
+        <span class="p">)</span>
+    <span class="p">}</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.power_analysis.PowerAnalysis.running_power_analysis" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">running_power_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">average_effect</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_simulations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis.running_power_analysis" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Yields running power for each iteration of the simulation.
+if you're interested in getting the power at each iteration, you can use this method to generate them.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>Dataframe with outcome variable.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>pre_experiment_df</code></td>
+        <td><code>Optional[pandas.core.frame.DataFrame]</code></td>
+        <td><p>Dataframe with pre-experiment data.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>verbose</code></td>
+        <td><code>bool</code></td>
+        <td><p>Whether to show progress bar.</p></td>
+        <td><code>False</code></td>
+      </tr>
+      <tr>
+        <td><code>average_effect</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>Average effect of treatment. If None, it will use the perturbator average effect.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>n_simulations</code></td>
+        <td><code>int</code></td>
+        <td><p>Number of simulations to run.</p></td>
+        <td><code>100</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">running_power_analysis</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Yields running power for each iteration of the simulation.</span>
+<span class="sd">    if you&#39;re interested in getting the power at each iteration, you can use this method to generate them.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        df: Dataframe with outcome variable.</span>
+<span class="sd">        pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">        verbose: Whether to show progress bar.</span>
+<span class="sd">        average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">        n_simulations: Number of simulations to run.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_rejected</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">perturbed_df</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_perturbed_df</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span>
+            <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+            <span class="n">average_effect</span><span class="o">=</span><span class="n">average_effect</span><span class="p">,</span>
+            <span class="n">n_simulations</span><span class="o">=</span><span class="n">n_simulations</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">):</span>
+        <span class="n">p_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">get_pvalue</span><span class="p">(</span><span class="n">perturbed_df</span><span class="p">)</span>
+        <span class="n">n_rejected</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">p_value</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">n_rejected</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.power_analysis.PowerAnalysis.simulate_point_estimate" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">simulate_point_estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">average_effect</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_simulations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis.simulate_point_estimate" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Yields point estimates for each iteration of the simulation.
+In general, this is to be used in power_analysis method. However,
+if you're interested in the distribution of point estimates, you can use this method to generate them.</p>
+<p>This is an experimental feature and it might change in the future.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>Dataframe with outcome and treatment variables.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>pre_experiment_df</code></td>
+        <td><code>Optional[pandas.core.frame.DataFrame]</code></td>
+        <td><p>Dataframe with pre-experiment data.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>verbose</code></td>
+        <td><code>bool</code></td>
+        <td><p>Whether to show progress bar.</p></td>
+        <td><code>False</code></td>
+      </tr>
+      <tr>
+        <td><code>average_effect</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>Average effect of treatment. If None, it will use the perturbator average effect.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>n_simulations</code></td>
+        <td><code>int</code></td>
+        <td><p>Number of simulations to run.</p></td>
+        <td><code>100</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">simulate_point_estimate</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Yields point estimates for each iteration of the simulation.</span>
+<span class="sd">    In general, this is to be used in power_analysis method. However,</span>
+<span class="sd">    if you&#39;re interested in the distribution of point estimates, you can use this method to generate them.</span>
+
+<span class="sd">    This is an experimental feature and it might change in the future.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">        pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">        verbose: Whether to show progress bar.</span>
+<span class="sd">        average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">        n_simulations: Number of simulations to run.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">perturbed_df</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_perturbed_df</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="n">average_effect</span><span class="o">=</span><span class="n">average_effect</span><span class="p">,</span>
+        <span class="n">n_simulations</span><span class="o">=</span><span class="n">n_simulations</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">get_point_estimate</span><span class="p">(</span><span class="n">perturbed_df</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.power_analysis.PowerAnalysis.simulate_pvalue" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">simulate_pvalue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">average_effect</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_simulations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.power_analysis.PowerAnalysis.simulate_pvalue" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Yields p-values for each iteration of the simulation.
+In general, this is to be used in power_analysis method. However,
+if you're interested in the distribution of p-values, you can use this method to generate them.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>Dataframe with outcome variable.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>pre_experiment_df</code></td>
+        <td><code>Optional[pandas.core.frame.DataFrame]</code></td>
+        <td><p>Dataframe with pre-experiment data.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>verbose</code></td>
+        <td><code>bool</code></td>
+        <td><p>Whether to show progress bar.</p></td>
+        <td><code>False</code></td>
+      </tr>
+      <tr>
+        <td><code>average_effect</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>Average effect of treatment. If None, it will use the perturbator average effect.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>n_simulations</code></td>
+        <td><code>int</code></td>
+        <td><p>Number of simulations to run.</p></td>
+        <td><code>100</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_analysis.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">simulate_pvalue</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Yields p-values for each iteration of the simulation.</span>
+<span class="sd">    In general, this is to be used in power_analysis method. However,</span>
+<span class="sd">    if you&#39;re interested in the distribution of p-values, you can use this method to generate them.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        df: Dataframe with outcome variable.</span>
+<span class="sd">        pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">        verbose: Whether to show progress bar.</span>
+<span class="sd">        average_effect: Average effect of treatment. If None, it will use the perturbator average effect.</span>
+<span class="sd">        n_simulations: Number of simulations to run.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">perturbed_df</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_perturbed_df</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="n">average_effect</span><span class="o">=</span><span class="n">average_effect</span><span class="p">,</span>
+        <span class="n">n_simulations</span><span class="o">=</span><span class="n">n_simulations</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">get_pvalue</span><span class="p">(</span><span class="n">perturbed_df</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="power_config.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Power config" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Power config
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="washover.html" class="md-footer__link md-footer__link--next" aria-label="Next: Washover" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Washover
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2022 Maintained by David Masip.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.48f2be22.min.js"></script>
+      
+    
+  </body>
+</html>

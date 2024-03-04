@@ -1,0 +1,1769 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Functions to design and run clustered experiments">
+      
+      
+        <meta name="author" content="David Masip">
+      
+      
+        <link rel="canonical" href="https://david26694.github.io/cluster-experiments/api/cupac_model.html">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.0">
+    
+    
+      
+        <title>Pre experiment outcome model - Cluster Experiments Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2e8b5541.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#4051b5">
+        
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,700,700i%7CUbuntu+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Ubuntu";--md-code-font:"Ubuntu Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../style.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="indigo" data-md-color-accent="blue">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#from-cluster_experimentscupac-import" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Cluster Experiments Docs" class="md-header__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cluster Experiments Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Pre experiment outcome model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Cluster Experiments Docs" class="md-nav__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Cluster Experiments Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          Home
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Home" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Home
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        Index
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cupac_example.html" class="md-nav__link">
+        Cupac example
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create_custom_classes.html" class="md-nav__link">
+        Custom classes
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Switchback
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Switchback" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Switchback
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../switchback.html" class="md-nav__link">
+        Stratified switchback
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_calendars.html" class="md-nav__link">
+        Switchback calendar visualization
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_calendars_hours.html" class="md-nav__link">
+        Visualization - 4-hour switches
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multivariate.html" class="md-nav__link">
+        Multiple treatments
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aa_test.html" class="md-nav__link">
+        AA test clustered
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../paired_ttest.html" class="md-nav__link">
+        Paired T test
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis_with_different_hypotheses.html" class="md-nav__link">
+        Power comparison under different hypotheses
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../washover_example.html" class="md-nav__link">
+        Washover
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_10" type="checkbox" id="__nav_10" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_10">
+          API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="API" data-md-level="1">
+        <label class="md-nav__title" for="__nav_10">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="experiment_analysis.html" class="md-nav__link">
+        Experiment analysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="perturbator.html" class="md-nav__link">
+        Perturbators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="random_splitter.html" class="md-nav__link">
+        Splitter
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Pre experiment outcome model
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="cupac_model.html" class="md-nav__link md-nav__link--active">
+        Pre experiment outcome model
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac" class="md-nav__link">
+    cluster_experiments.cupac
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.CupacHandler" class="md-nav__link">
+    CupacHandler
+  </a>
+  
+    <nav class="md-nav" aria-label="CupacHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.CupacHandler.add_covariates" class="md-nav__link">
+    add_covariates()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.EmptyRegressor" class="md-nav__link">
+    EmptyRegressor
+  </a>
+  
+    <nav class="md-nav" aria-label="EmptyRegressor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.EmptyRegressor.set_score_request" class="md-nav__link">
+    set_score_request()
+  </a>
+  
+    <nav class="md-nav" aria-label="set_score_request()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.EmptyRegressor.set_score_request--parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.EmptyRegressor.set_score_request--returns" class="md-nav__link">
+    Returns
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation" class="md-nav__link">
+    TargetAggregation
+  </a>
+  
+    <nav class="md-nav" aria-label="TargetAggregation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.fit" class="md-nav__link">
+    fit()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.predict" class="md-nav__link">
+    predict()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.set_score_request" class="md-nav__link">
+    set_score_request()
+  </a>
+  
+    <nav class="md-nav" aria-label="set_score_request()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.set_score_request--parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.set_score_request--returns" class="md-nav__link">
+    Returns
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="power_config.html" class="md-nav__link">
+        Power config
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="power_analysis.html" class="md-nav__link">
+        Power analysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="washover.html" class="md-nav__link">
+        Washover
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac" class="md-nav__link">
+    cluster_experiments.cupac
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.CupacHandler" class="md-nav__link">
+    CupacHandler
+  </a>
+  
+    <nav class="md-nav" aria-label="CupacHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.CupacHandler.add_covariates" class="md-nav__link">
+    add_covariates()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.EmptyRegressor" class="md-nav__link">
+    EmptyRegressor
+  </a>
+  
+    <nav class="md-nav" aria-label="EmptyRegressor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.EmptyRegressor.set_score_request" class="md-nav__link">
+    set_score_request()
+  </a>
+  
+    <nav class="md-nav" aria-label="set_score_request()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.EmptyRegressor.set_score_request--parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.EmptyRegressor.set_score_request--returns" class="md-nav__link">
+    Returns
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation" class="md-nav__link">
+    TargetAggregation
+  </a>
+  
+    <nav class="md-nav" aria-label="TargetAggregation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.fit" class="md-nav__link">
+    fit()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.predict" class="md-nav__link">
+    predict()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.set_score_request" class="md-nav__link">
+    set_score_request()
+  </a>
+  
+    <nav class="md-nav" aria-label="set_score_request()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.set_score_request--parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.cupac.TargetAggregation.set_score_request--returns" class="md-nav__link">
+    Returns
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  <a href="https://github.com/david26694/cluster-experiments/blob/main/docs/api/cupac_model.md" title="Edit this page" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+<h1 id="from-cluster_experimentscupac-import"><code>from cluster_experiments.cupac import *</code><a class="headerlink" href="#from-cluster_experimentscupac-import" title="Permanent link">&para;</a></h1>
+
+
+  <div class="doc doc-object doc-module">
+
+<a id="cluster_experiments.cupac"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.cupac.CupacHandler" class="doc doc-heading">
+        <code>
+CupacHandler        </code>
+
+
+
+<a href="#cluster_experiments.cupac.CupacHandler" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>CupacHandler class. It handles operations related to the cupac model.</p>
+<p>Its main goal is to call the add_covariates method, where it will add the ouptut from the cupac model,
+and this should be used as covariates in the regression method for the hypothesis test.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/cupac.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">CupacHandler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    CupacHandler class. It handles operations related to the cupac model.</span>
+
+<span class="sd">    Its main goal is to call the add_covariates method, where it will add the ouptut from the cupac model,</span>
+<span class="sd">    and this should be used as covariates in the regression method for the hypothesis test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cupac_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseEstimator</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span>
+        <span class="n">features_cupac_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="p">:</span> <span class="n">BaseEstimator</span> <span class="o">=</span> <span class="n">cupac_model</span> <span class="ow">or</span> <span class="n">EmptyRegressor</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_col</span> <span class="o">=</span> <span class="n">target_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cupac_outcome_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;estimate_</span><span class="si">{</span><span class="n">target_col</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features_cupac_model</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">features_cupac_model</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_cupac</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="p">,</span> <span class="n">EmptyRegressor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_prep_data_cupac</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepares data for training and prediction&quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">pre_experiment_df</span> <span class="o">=</span> <span class="n">pre_experiment_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">df_predict</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">])</span>
+        <span class="c1"># Split data into X and y</span>
+        <span class="n">pre_experiment_x</span> <span class="o">=</span> <span class="n">pre_experiment_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">])</span>
+        <span class="n">pre_experiment_y</span> <span class="o">=</span> <span class="n">pre_experiment_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">]</span>
+
+        <span class="c1"># Keep only cupac features</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_cupac_model</span><span class="p">:</span>
+            <span class="n">pre_experiment_x</span> <span class="o">=</span> <span class="n">pre_experiment_x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">features_cupac_model</span><span class="p">]</span>
+            <span class="n">df_predict</span> <span class="o">=</span> <span class="n">df_predict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">features_cupac_model</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">df_predict</span><span class="p">,</span> <span class="n">pre_experiment_x</span><span class="p">,</span> <span class="n">pre_experiment_y</span>
+
+    <span class="k">def</span> <span class="nf">add_covariates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Train model to predict outcome variable (based on pre-experiment data)</span>
+<span class="sd">        and  add the prediction to the experiment dataframe. Only do this if</span>
+<span class="sd">        we use cupac</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">            df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_cupac_inputs</span><span class="p">(</span><span class="n">pre_experiment_df</span><span class="p">)</span>
+
+        <span class="c1"># Early return if no need to add covariates</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_covariates</span><span class="p">(</span><span class="n">pre_experiment_df</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">df</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">pre_experiment_df</span> <span class="o">=</span> <span class="n">pre_experiment_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">df_predict</span><span class="p">,</span> <span class="n">pre_experiment_x</span><span class="p">,</span> <span class="n">pre_experiment_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prep_data_cupac</span><span class="p">(</span>
+            <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Fit model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">pre_experiment_x</span><span class="p">,</span> <span class="n">pre_experiment_y</span><span class="p">)</span>
+
+        <span class="c1"># Predict</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="p">,</span> <span class="n">RegressorMixin</span><span class="p">):</span>
+            <span class="n">estimated_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df_predict</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>
+            <span class="n">estimated_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">df_predict</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;cupac_model should be an instance of RegressorMixin or ClassifierMixin&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Add cupac outcome name to df</span>
+        <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cupac_outcome_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">estimated_target</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="k">def</span> <span class="nf">need_covariates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pre_experiment_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_cupac</span>
+
+    <span class="k">def</span> <span class="nf">check_cupac_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_cupac</span> <span class="ow">and</span> <span class="n">pre_experiment_df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;If cupac is used, pre_experiment_df should be provided.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_cupac</span> <span class="ow">and</span> <span class="n">pre_experiment_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;If cupac is not used, pre_experiment_df should not be provided - &quot;</span>
+                <span class="s2">&quot;remove pre_experiment_df argument or set cupac_model to not None.&quot;</span>
+            <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.cupac.CupacHandler.add_covariates" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">add_covariates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.cupac.CupacHandler.add_covariates" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Train model to predict outcome variable (based on pre-experiment data)
+and  add the prediction to the experiment dataframe. Only do this if
+we use cupac</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>pre_experiment_df</code></td>
+        <td><code>Optional[pandas.core.frame.DataFrame]</code></td>
+        <td><p>Dataframe with pre-experiment data.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>Dataframe with outcome and treatment variables.</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/cupac.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">add_covariates</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train model to predict outcome variable (based on pre-experiment data)</span>
+<span class="sd">    and  add the prediction to the experiment dataframe. Only do this if</span>
+<span class="sd">    we use cupac</span>
+<span class="sd">    Args:</span>
+<span class="sd">        pre_experiment_df: Dataframe with pre-experiment data.</span>
+<span class="sd">        df: Dataframe with outcome and treatment variables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">check_cupac_inputs</span><span class="p">(</span><span class="n">pre_experiment_df</span><span class="p">)</span>
+
+    <span class="c1"># Early return if no need to add covariates</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_covariates</span><span class="p">(</span><span class="n">pre_experiment_df</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">pre_experiment_df</span> <span class="o">=</span> <span class="n">pre_experiment_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df_predict</span><span class="p">,</span> <span class="n">pre_experiment_x</span><span class="p">,</span> <span class="n">pre_experiment_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prep_data_cupac</span><span class="p">(</span>
+        <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="o">=</span><span class="n">pre_experiment_df</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Fit model</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">pre_experiment_x</span><span class="p">,</span> <span class="n">pre_experiment_y</span><span class="p">)</span>
+
+    <span class="c1"># Predict</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="p">,</span> <span class="n">RegressorMixin</span><span class="p">):</span>
+        <span class="n">estimated_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df_predict</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>
+        <span class="n">estimated_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">df_predict</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;cupac_model should be an instance of RegressorMixin or ClassifierMixin&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Add cupac outcome name to df</span>
+    <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cupac_outcome_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">estimated_target</span>
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.cupac.EmptyRegressor" class="doc doc-heading">
+        <code>
+EmptyRegressor            (<span title="sklearn.base.BaseEstimator">BaseEstimator</span>, <span title="sklearn.base.RegressorMixin">RegressorMixin</span>)
+        </code>
+
+
+
+<a href="#cluster_experiments.cupac.EmptyRegressor" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Empty regressor class. It does not do anything, used to glue the code of other estimators and PowerAnalysis</p>
+<p>Each Regressor should have:
+- fit method: Uses pre experiment data to fit some kind of model to be used as a covariate and reduce variance.
+- predict method: Uses the fitted model to add the covariate on the experiment data.</p>
+<p>It can add aggregates of the target in older data as a covariate, or a model (cupac) to predict the target.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/cupac.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">EmptyRegressor</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">RegressorMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Empty regressor class. It does not do anything, used to glue the code of other estimators and PowerAnalysis</span>
+
+<span class="sd">    Each Regressor should have:</span>
+<span class="sd">    - fit method: Uses pre experiment data to fit some kind of model to be used as a covariate and reduce variance.</span>
+<span class="sd">    - predict method: Uses the fitted model to add the covariate on the experiment data.</span>
+
+<span class="sd">    It can add aggregates of the target in older data as a covariate, or a model (cupac) to predict the target.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">()</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.cupac.EmptyRegressor.set_score_request" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">set_score_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="s1">&#39;$UNCHANGED$&#39;</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.cupac.EmptyRegressor.set_score_request" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Request metadata passed to the <code>score</code> method.</p>
+<p>Note that this method is only relevant if
+<code>enable_metadata_routing=True</code> (see :func:<code>sklearn.set_config</code>).
+Please see :ref:<code>User Guide &lt;metadata_routing&gt;</code> on how the routing
+mechanism works.</p>
+<p>The options for each parameter are:</p>
+<ul>
+<li>
+<p><code>True</code>: metadata is requested, and passed to <code>score</code> if provided. The request is ignored if metadata is not provided.</p>
+</li>
+<li>
+<p><code>False</code>: metadata is not requested and the meta-estimator will not pass it to <code>score</code>.</p>
+</li>
+<li>
+<p><code>None</code>: metadata is not requested, and the meta-estimator will raise an error if the user provides it.</p>
+</li>
+<li>
+<p><code>str</code>: metadata should be passed to the meta-estimator with this given alias instead of the original name.</p>
+</li>
+</ul>
+<p>The default (<code>sklearn.utils.metadata_routing.UNCHANGED</code>) retains the
+existing request. This allows you to change the request for some
+parameters and not others.</p>
+<p>.. versionadded:: 1.3</p>
+<p>.. note::
+    This method is only relevant if this estimator is used as a
+    sub-estimator of a meta-estimator, e.g. used inside a
+    :class:<code>~sklearn.pipeline.Pipeline</code>. Otherwise it has no effect.</p>
+<h5 id="cluster_experiments.cupac.EmptyRegressor.set_score_request--parameters">Parameters<a class="headerlink" href="#cluster_experiments.cupac.EmptyRegressor.set_score_request--parameters" title="Permanent link">&para;</a></h5>
+<p>sample_weight : str, True, False, or None,                     default=sklearn.utils.metadata_routing.UNCHANGED
+    Metadata routing for <code>sample_weight</code> parameter in <code>score</code>.</p>
+<h5 id="cluster_experiments.cupac.EmptyRegressor.set_score_request--returns">Returns<a class="headerlink" href="#cluster_experiments.cupac.EmptyRegressor.set_score_request--returns" title="Permanent link">&para;</a></h5>
+<p>self : object
+    The updated object.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/cupac.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Updates the request for provided parameters</span>
+
+<span class="sd">    This docstring is overwritten below.</span>
+<span class="sd">    See REQUESTER_DOC for expected functionality</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_routing_enabled</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;This method is only available when metadata routing is enabled.&quot;</span>
+            <span class="s2">&quot; You can enable it using&quot;</span>
+            <span class="s2">&quot; sklearn.set_config(enable_metadata_routing=True).&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_keys</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">kw</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unexpected args: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">kw</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span><span class="si">}</span><span class="s2">. Accepted arguments&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; are: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">requests</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">_get_metadata_request</span><span class="p">()</span>
+    <span class="n">method_metadata_request</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">prop</span><span class="p">,</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">kw</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">alias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">UNCHANGED</span><span class="p">:</span>
+            <span class="n">method_metadata_request</span><span class="o">.</span><span class="n">add_request</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="n">prop</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="n">alias</span><span class="p">)</span>
+    <span class="n">instance</span><span class="o">.</span><span class="n">_metadata_request</span> <span class="o">=</span> <span class="n">requests</span>
+
+    <span class="k">return</span> <span class="n">instance</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.cupac.TargetAggregation" class="doc doc-heading">
+        <code>
+TargetAggregation            (<span title="sklearn.base.BaseEstimator">BaseEstimator</span>, <span title="sklearn.base.RegressorMixin">RegressorMixin</span>)
+        </code>
+
+
+
+<a href="#cluster_experiments.cupac.TargetAggregation" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Adds average of target using pre-experiment data</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>agg_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Column to group by to aggregate target</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>target_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Column to aggregate</p></td>
+        <td><code>&#39;target&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>smoothing_factor</code></td>
+        <td><code>int</code></td>
+        <td><p>Smoothing factor for the smoothed mean</p></td>
+        <td><code>20</code></td>
+      </tr>
+  </tbody>
+</table>      <p>Usage:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.cupac</span> <span class="kn">import</span> <span class="n">TargetAggregation</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;agg_col&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">],</span> <span class="s2">&quot;target_col&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]})</span>
+<span class="n">new_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;agg_col&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]})</span>
+<span class="n">target_agg</span> <span class="o">=</span> <span class="n">TargetAggregation</span><span class="p">(</span><span class="s2">&quot;agg_col&quot;</span><span class="p">,</span> <span class="s2">&quot;target_col&quot;</span><span class="p">)</span>
+<span class="n">target_agg</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&quot;target_col&quot;</span><span class="p">),</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;target_col&quot;</span><span class="p">])</span>
+<span class="n">df_with_target_agg</span> <span class="o">=</span> <span class="n">target_agg</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">new_df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df_with_target_agg</span><span class="p">)</span>
+</code></pre></div></p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/cupac.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">TargetAggregation</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">RegressorMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds average of target using pre-experiment data</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        agg_col: Column to group by to aggregate target</span>
+<span class="sd">        target_col: Column to aggregate</span>
+<span class="sd">        smoothing_factor: Smoothing factor for the smoothed mean</span>
+<span class="sd">    Usage:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    import pandas as pd</span>
+<span class="sd">    from cluster_experiments.cupac import TargetAggregation</span>
+
+<span class="sd">    df = pd.DataFrame({&quot;agg_col&quot;: [&quot;a&quot;, &quot;a&quot;, &quot;b&quot;, &quot;b&quot;, &quot;c&quot;, &quot;c&quot;], &quot;target_col&quot;: [1, 2, 3, 4, 5, 6]})</span>
+<span class="sd">    new_df = pd.DataFrame({&quot;agg_col&quot;: [&quot;a&quot;, &quot;a&quot;, &quot;b&quot;, &quot;b&quot;, &quot;c&quot;, &quot;c&quot;]})</span>
+<span class="sd">    target_agg = TargetAggregation(&quot;agg_col&quot;, &quot;target_col&quot;)</span>
+<span class="sd">    target_agg.fit(df.drop(columns=&quot;target_col&quot;), df[&quot;target_col&quot;])</span>
+<span class="sd">    df_with_target_agg = target_agg.predict(new_df)</span>
+<span class="sd">    print(df_with_target_agg)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agg_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span>
+        <span class="n">smoothing_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">agg_col</span> <span class="o">=</span> <span class="n">agg_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_col</span> <span class="o">=</span> <span class="n">target_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span> <span class="o">=</span> <span class="n">smoothing_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_target_col</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="si">}</span><span class="s2">_mean&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smooth_mean_target_col</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="si">}</span><span class="s2">_smooth_mean&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_agg_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_pre_experiment_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pre_experiment_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TargetAggregation&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fits &quot;target encoder&quot; model to pre-experiment data&quot;&quot;&quot;</span>
+        <span class="n">pre_experiment_df</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">pre_experiment_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_pre_experiment_mean</span><span class="p">(</span><span class="n">pre_experiment_df</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_agg_df</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pre_experiment_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">agg_col</span><span class="p">,</span> <span class="n">as_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">})</span>
+            <span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+                <span class="o">**</span><span class="p">{</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">mean_target_col</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">]</span> <span class="o">/</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">smooth_mean_target_col</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+                        <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">]</span>
+                        <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_mean</span>
+                    <span class="p">)</span>
+                    <span class="o">/</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span><span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds average target of pre-experiment data to experiment data&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">X</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_agg_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">agg_col</span><span class="p">)[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">smooth_mean_target_col</span>
+            <span class="p">]</span>
+            <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_mean</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">values</span>
+        <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates TargetAggregation from PowerConfig&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">agg_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">agg_col</span><span class="p">,</span>
+            <span class="n">target_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">target_col</span><span class="p">,</span>
+            <span class="n">smoothing_factor</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">smoothing_factor</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.cupac.TargetAggregation.fit" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.cupac.TargetAggregation.fit" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Fits "target encoder" model to pre-experiment data</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/cupac.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TargetAggregation&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fits &quot;target encoder&quot; model to pre-experiment data&quot;&quot;&quot;</span>
+    <span class="n">pre_experiment_df</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">pre_experiment_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_pre_experiment_mean</span><span class="p">(</span><span class="n">pre_experiment_df</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_agg_df</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pre_experiment_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">agg_col</span><span class="p">,</span> <span class="n">as_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">})</span>
+        <span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+            <span class="o">**</span><span class="p">{</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mean_target_col</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">]</span> <span class="o">/</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">smooth_mean_target_col</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+                    <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">]</span>
+                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_mean</span>
+                <span class="p">)</span>
+                <span class="o">/</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.cupac.TargetAggregation.from_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cluster_experiments.cupac.TargetAggregation.from_config" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates TargetAggregation from PowerConfig</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/cupac.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates TargetAggregation from PowerConfig&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">agg_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">agg_col</span><span class="p">,</span>
+        <span class="n">target_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">target_col</span><span class="p">,</span>
+        <span class="n">smoothing_factor</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">smoothing_factor</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.cupac.TargetAggregation.predict" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.cupac.TargetAggregation.predict" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Adds average target of pre-experiment data to experiment data</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/cupac.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds average target of pre-experiment data to experiment data&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_agg_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">agg_col</span><span class="p">)[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">smooth_mean_target_col</span>
+        <span class="p">]</span>
+        <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_experiment_mean</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">values</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.cupac.TargetAggregation.set_score_request" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">set_score_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="s1">&#39;$UNCHANGED$&#39;</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.cupac.TargetAggregation.set_score_request" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Request metadata passed to the <code>score</code> method.</p>
+<p>Note that this method is only relevant if
+<code>enable_metadata_routing=True</code> (see :func:<code>sklearn.set_config</code>).
+Please see :ref:<code>User Guide &lt;metadata_routing&gt;</code> on how the routing
+mechanism works.</p>
+<p>The options for each parameter are:</p>
+<ul>
+<li>
+<p><code>True</code>: metadata is requested, and passed to <code>score</code> if provided. The request is ignored if metadata is not provided.</p>
+</li>
+<li>
+<p><code>False</code>: metadata is not requested and the meta-estimator will not pass it to <code>score</code>.</p>
+</li>
+<li>
+<p><code>None</code>: metadata is not requested, and the meta-estimator will raise an error if the user provides it.</p>
+</li>
+<li>
+<p><code>str</code>: metadata should be passed to the meta-estimator with this given alias instead of the original name.</p>
+</li>
+</ul>
+<p>The default (<code>sklearn.utils.metadata_routing.UNCHANGED</code>) retains the
+existing request. This allows you to change the request for some
+parameters and not others.</p>
+<p>.. versionadded:: 1.3</p>
+<p>.. note::
+    This method is only relevant if this estimator is used as a
+    sub-estimator of a meta-estimator, e.g. used inside a
+    :class:<code>~sklearn.pipeline.Pipeline</code>. Otherwise it has no effect.</p>
+<h5 id="cluster_experiments.cupac.TargetAggregation.set_score_request--parameters">Parameters<a class="headerlink" href="#cluster_experiments.cupac.TargetAggregation.set_score_request--parameters" title="Permanent link">&para;</a></h5>
+<p>sample_weight : str, True, False, or None,                     default=sklearn.utils.metadata_routing.UNCHANGED
+    Metadata routing for <code>sample_weight</code> parameter in <code>score</code>.</p>
+<h5 id="cluster_experiments.cupac.TargetAggregation.set_score_request--returns">Returns<a class="headerlink" href="#cluster_experiments.cupac.TargetAggregation.set_score_request--returns" title="Permanent link">&para;</a></h5>
+<p>self : object
+    The updated object.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/cupac.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Updates the request for provided parameters</span>
+
+<span class="sd">    This docstring is overwritten below.</span>
+<span class="sd">    See REQUESTER_DOC for expected functionality</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_routing_enabled</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;This method is only available when metadata routing is enabled.&quot;</span>
+            <span class="s2">&quot; You can enable it using&quot;</span>
+            <span class="s2">&quot; sklearn.set_config(enable_metadata_routing=True).&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_keys</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">kw</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unexpected args: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">kw</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span><span class="si">}</span><span class="s2">. Accepted arguments&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; are: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">requests</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">_get_metadata_request</span><span class="p">()</span>
+    <span class="n">method_metadata_request</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">prop</span><span class="p">,</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">kw</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">alias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">UNCHANGED</span><span class="p">:</span>
+            <span class="n">method_metadata_request</span><span class="o">.</span><span class="n">add_request</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="n">prop</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="n">alias</span><span class="p">)</span>
+    <span class="n">instance</span><span class="o">.</span><span class="n">_metadata_request</span> <span class="o">=</span> <span class="n">requests</span>
+
+    <span class="k">return</span> <span class="n">instance</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="random_splitter.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Splitter" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Splitter
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="power_config.html" class="md-footer__link md-footer__link--next" aria-label="Next: Power config" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Power config
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2022 Maintained by David Masip.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.48f2be22.min.js"></script>
+      
+    
+  </body>
+</html>

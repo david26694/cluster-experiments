@@ -1,0 +1,1254 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Functions to design and run clustered experiments">
+      
+      
+        <meta name="author" content="David Masip">
+      
+      
+        <link rel="canonical" href="https://david26694.github.io/cluster-experiments/api/power_config.html">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.0">
+    
+    
+      
+        <title>Power config - Cluster Experiments Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2e8b5541.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#4051b5">
+        
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,700,700i%7CUbuntu+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Ubuntu";--md-code-font:"Ubuntu Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../style.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="indigo" data-md-color-accent="blue">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#from-cluster_experimentspower_config-import" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Cluster Experiments Docs" class="md-header__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cluster Experiments Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Power config
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Cluster Experiments Docs" class="md-nav__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Cluster Experiments Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          Home
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Home" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Home
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        Index
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cupac_example.html" class="md-nav__link">
+        Cupac example
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create_custom_classes.html" class="md-nav__link">
+        Custom classes
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Switchback
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Switchback" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Switchback
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../switchback.html" class="md-nav__link">
+        Stratified switchback
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_calendars.html" class="md-nav__link">
+        Switchback calendar visualization
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_calendars_hours.html" class="md-nav__link">
+        Visualization - 4-hour switches
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multivariate.html" class="md-nav__link">
+        Multiple treatments
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aa_test.html" class="md-nav__link">
+        AA test clustered
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../paired_ttest.html" class="md-nav__link">
+        Paired T test
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis_with_different_hypotheses.html" class="md-nav__link">
+        Power comparison under different hypotheses
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../washover_example.html" class="md-nav__link">
+        Washover
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_10" type="checkbox" id="__nav_10" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_10">
+          API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="API" data-md-level="1">
+        <label class="md-nav__title" for="__nav_10">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="experiment_analysis.html" class="md-nav__link">
+        Experiment analysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="perturbator.html" class="md-nav__link">
+        Perturbators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="random_splitter.html" class="md-nav__link">
+        Splitter
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="cupac_model.html" class="md-nav__link">
+        Pre experiment outcome model
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Power config
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="power_config.html" class="md-nav__link md-nav__link--active">
+        Power config
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.power_config" class="md-nav__link">
+    cluster_experiments.power_config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.power_config.PowerConfig" class="md-nav__link">
+    PowerConfig
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="power_analysis.html" class="md-nav__link">
+        Power analysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="washover.html" class="md-nav__link">
+        Washover
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.power_config" class="md-nav__link">
+    cluster_experiments.power_config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.power_config.PowerConfig" class="md-nav__link">
+    PowerConfig
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  <a href="https://github.com/david26694/cluster-experiments/blob/main/docs/api/power_config.md" title="Edit this page" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+<h1 id="from-cluster_experimentspower_config-import"><code>from cluster_experiments.power_config import *</code><a class="headerlink" href="#from-cluster_experimentspower_config-import" title="Permanent link">&para;</a></h1>
+
+
+  <div class="doc doc-object doc-module">
+
+<a id="cluster_experiments.power_config"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.power_config.PowerConfig" class="doc doc-heading">
+        <code>
+PowerConfig        </code>
+
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#cluster_experiments.power_config.PowerConfig" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Dataclass to create a power analysis from.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>splitter</code></td>
+        <td><code>str</code></td>
+        <td><p>Splitter object to use</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>perturbator</code></td>
+        <td><code>str</code></td>
+        <td><p>Perturbator object to use</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>analysis</code></td>
+        <td><code>str</code></td>
+        <td><p>ExperimentAnalysis object to use</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>washover</code></td>
+        <td><code>str</code></td>
+        <td><p>Washover object to use, defaults to ""</p></td>
+        <td><code>&#39;&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>cupac_model</code></td>
+        <td><code>str</code></td>
+        <td><p>CUPAC model to use</p></td>
+        <td><code>&#39;&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>n_simulations</code></td>
+        <td><code>int</code></td>
+        <td><p>number of simulations to run</p></td>
+        <td><code>100</code></td>
+      </tr>
+      <tr>
+        <td><code>cluster_cols</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of columns to use as clusters</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>target_col</code></td>
+        <td><code>str</code></td>
+        <td><p>column to use as target</p></td>
+        <td><code>&#39;target&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment_col</code></td>
+        <td><code>str</code></td>
+        <td><p>column to use as treatment</p></td>
+        <td><code>&#39;treatment&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment</code></td>
+        <td><code>str</code></td>
+        <td><p>what value of treatment_col should be considered as treatment</p></td>
+        <td><code>&#39;B&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>control</code></td>
+        <td><code>str</code></td>
+        <td><p>what value of treatment_col should be considered as control</p></td>
+        <td><code>&#39;A&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>strata_cols</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>columns to stratify with</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>splitter_weights</code></td>
+        <td><code>Optional[List[float]]</code></td>
+        <td><p>weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>switch_frequency</code></td>
+        <td><code>Optional[str]</code></td>
+        <td><p>how often to switch treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>time_col</code></td>
+        <td><code>Optional[str]</code></td>
+        <td><p>column to use as time in switchback splitter</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>washover_time_delta</code></td>
+        <td><code>Union[datetime.timedelta, int]</code></td>
+        <td><p>optional, int indicating the washover time in minutes or datetime.timedelta object</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>covariates</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of columns to use as covariates</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>average_effect</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>average effect to use in the perturbator</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>scale</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>scale to use in stochastic perturbators</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>range_min</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>minimum value of the target range for relative beta perturbator, must be &gt;-1</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>range_max</code></td>
+        <td><code>Optional[float]</code></td>
+        <td><p>maximum value of the target range for relative beta perturbator</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>reduce_variance</code></td>
+        <td><code>Optional[bool]</code></td>
+        <td><p>whether to reduce variance in the BetaRelative perturbator</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>segment_cols</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of segmentation columns for segmented perturbator</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatments</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of treatments to use</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>alpha</code></td>
+        <td><code>float</code></td>
+        <td><p>alpha value to use in the power analysis</p></td>
+        <td><code>0.05</code></td>
+      </tr>
+      <tr>
+        <td><code>agg_col</code></td>
+        <td><code>str</code></td>
+        <td><p>column to use for aggregation in the CUPAC model</p></td>
+        <td><code>&#39;&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>smoothing_factor</code></td>
+        <td><code>float</code></td>
+        <td><p>smoothing value to use in the CUPAC model</p></td>
+        <td><code>20</code></td>
+      </tr>
+      <tr>
+        <td><code>features_cupac_model</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of features to use in the CUPAC model</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>seed</code></td>
+        <td><code>Optional[int]</code></td>
+        <td><p>seed to make the power analysis reproducible</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>      <p>Usage:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">cluster_experiments.power_config</span> <span class="kn">import</span> <span class="n">PowerConfig</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.power_analysis</span> <span class="kn">import</span> <span class="n">PowerAnalysis</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">PowerConfig</span><span class="p">(</span>
+    <span class="n">analysis</span><span class="o">=</span><span class="s2">&quot;gee&quot;</span><span class="p">,</span>
+    <span class="n">splitter</span><span class="o">=</span><span class="s2">&quot;clustered_balance&quot;</span><span class="p">,</span>
+    <span class="n">perturbator</span><span class="o">=</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+    <span class="n">cluster_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;city&quot;</span><span class="p">],</span>
+    <span class="n">n_simulations</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">power_analysis</span> <span class="o">=</span> <span class="n">PowerAnalysis</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+</code></pre></div>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/power_config.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">PowerConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dataclass to create a power analysis from.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        splitter: Splitter object to use</span>
+<span class="sd">        perturbator: Perturbator object to use</span>
+<span class="sd">        analysis: ExperimentAnalysis object to use</span>
+<span class="sd">        washover: Washover object to use, defaults to &quot;&quot;</span>
+<span class="sd">        cupac_model: CUPAC model to use</span>
+<span class="sd">        n_simulations: number of simulations to run</span>
+<span class="sd">        cluster_cols: list of columns to use as clusters</span>
+<span class="sd">        target_col: column to use as target</span>
+<span class="sd">        treatment_col: column to use as treatment</span>
+<span class="sd">        treatment: what value of treatment_col should be considered as treatment</span>
+<span class="sd">        control: what value of treatment_col should be considered as control</span>
+<span class="sd">        strata_cols: columns to stratify with</span>
+<span class="sd">        splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments</span>
+<span class="sd">        switch_frequency: how often to switch treatments</span>
+<span class="sd">        time_col: column to use as time in switchback splitter</span>
+<span class="sd">        washover_time_delta: optional, int indicating the washover time in minutes or datetime.timedelta object</span>
+<span class="sd">        covariates: list of columns to use as covariates</span>
+<span class="sd">        average_effect: average effect to use in the perturbator</span>
+<span class="sd">        scale: scale to use in stochastic perturbators</span>
+<span class="sd">        range_min: minimum value of the target range for relative beta perturbator, must be &gt;-1</span>
+<span class="sd">        range_max: maximum value of the target range for relative beta perturbator</span>
+<span class="sd">        reduce_variance: whether to reduce variance in the BetaRelative perturbator</span>
+<span class="sd">        segment_cols: list of segmentation columns for segmented perturbator</span>
+<span class="sd">        treatments: list of treatments to use</span>
+<span class="sd">        alpha: alpha value to use in the power analysis</span>
+<span class="sd">        agg_col: column to use for aggregation in the CUPAC model</span>
+<span class="sd">        smoothing_factor: smoothing value to use in the CUPAC model</span>
+<span class="sd">        features_cupac_model: list of features to use in the CUPAC model</span>
+<span class="sd">        seed: seed to make the power analysis reproducible</span>
+
+<span class="sd">    Usage:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    from cluster_experiments.power_config import PowerConfig</span>
+<span class="sd">    from cluster_experiments.power_analysis import PowerAnalysis</span>
+
+<span class="sd">    p = PowerConfig(</span>
+<span class="sd">        analysis=&quot;gee&quot;,</span>
+<span class="sd">        splitter=&quot;clustered_balance&quot;,</span>
+<span class="sd">        perturbator=&quot;constant&quot;,</span>
+<span class="sd">        cluster_cols=[&quot;city&quot;],</span>
+<span class="sd">        n_simulations=100,</span>
+<span class="sd">        alpha=0.05,</span>
+<span class="sd">    )</span>
+<span class="sd">    power_analysis = PowerAnalysis.from_config(p)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># mappings</span>
+    <span class="n">perturbator</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">splitter</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">analysis</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">washover</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="c1"># Needed</span>
+    <span class="n">cluster_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># optional mappings</span>
+    <span class="n">cupac_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="c1"># Shared</span>
+    <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span>
+    <span class="n">treatment_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;treatment&quot;</span>
+    <span class="n">treatment</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;B&quot;</span>
+
+    <span class="c1"># Perturbator</span>
+    <span class="n">average_effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">range_min</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">range_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">reduce_variance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">segment_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Splitter</span>
+    <span class="n">treatments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">strata_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">splitter_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">switch_frequency</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Switchback</span>
+    <span class="n">time_col</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">washover_time_delta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Analysis</span>
+    <span class="n">covariates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">hypothesis</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;two-sided&quot;</span>
+
+    <span class="c1"># Power analysis</span>
+    <span class="n">n_simulations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span>
+    <span class="n">control</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;A&quot;</span>
+
+    <span class="c1"># Cupac</span>
+    <span class="n">agg_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">smoothing_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">features_cupac_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;switchback&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">switch_frequency</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;switch_frequency&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;splitter&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">washover_time_delta</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;washover_time_delta&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;splitter&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">washover</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;washover&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;splitter&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;time_col&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;splitter&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="s2">&quot;beta_relative_positive&quot;</span><span class="p">}:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;perturbator&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;beta_relative&quot;</span><span class="p">,</span> <span class="s2">&quot;segmented_beta_relative&quot;</span><span class="p">}:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">range_min</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;range_min&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;perturbator&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">range_max</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;range_max&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;perturbator&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reduce_variance</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;reduce_variance&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;perturbator&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;segmented_beta_relative&quot;</span><span class="p">}:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">segment_cols</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;segment_cols&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;perturbator&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;stratified&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span> <span class="ow">and</span> <span class="s2">&quot;paired_ttest&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;strata_cols&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;splitter&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;stratified&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span> <span class="ow">or</span> <span class="s2">&quot;balanced&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter_weights</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;splitter_weights&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;splitter&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cupac_model</span> <span class="o">!=</span> <span class="s2">&quot;mean_cupac_model&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">agg_col</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;agg_col&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;cupac_model&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span><span class="p">,</span> <span class="mi">20</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;smoothing_factor&quot;</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;cupac_model&quot;</span><span class="p">)</span>
+        <span class="c1"># for now, features_cupac_model are not used</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_cupac_model</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;features_cupac_model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;cupac_model&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;ttest&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysis</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covariates</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_and_log</span><span class="p">(</span><span class="s2">&quot;covariates&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;analysis&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;segmented&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">perturbator</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error_if_missing</span><span class="p">(</span><span class="s2">&quot;segment_cols&quot;</span><span class="p">,</span> <span class="s2">&quot;perturbator&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_are_different</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">arg1</span> <span class="o">!=</span> <span class="n">arg2</span>
+
+    <span class="k">def</span> <span class="nf">_set_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">other_attr</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="si">}</span><span class="s2"> has no effect with &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">other_attr</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">other_attr</span><span class="p">)</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Overriding </span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_raise_error_if_missing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">other_attr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MissingArgumentError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2"> is required when using &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">other_attr</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">other_attr</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="cupac_model.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Pre experiment outcome model" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Pre experiment outcome model
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="power_analysis.html" class="md-footer__link md-footer__link--next" aria-label="Next: Power analysis" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Power analysis
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2022 Maintained by David Masip.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.48f2be22.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3213 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Functions to design and run clustered experiments">
+      
+      
+        <meta name="author" content="David Masip">
+      
+      
+        <link rel="canonical" href="https://david26694.github.io/cluster-experiments/api/random_splitter.html">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.0">
+    
+    
+      
+        <title>Splitter - Cluster Experiments Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2e8b5541.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#4051b5">
+        
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,700,700i%7CUbuntu+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Ubuntu";--md-code-font:"Ubuntu Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../style.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="indigo" data-md-color-accent="blue">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#from-cluster_experimentsrandom_splitter-import" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Cluster Experiments Docs" class="md-header__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cluster Experiments Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Splitter
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Cluster Experiments Docs" class="md-nav__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Cluster Experiments Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          Home
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Home" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Home
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        Index
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cupac_example.html" class="md-nav__link">
+        Cupac example
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create_custom_classes.html" class="md-nav__link">
+        Custom classes
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Switchback
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Switchback" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Switchback
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../switchback.html" class="md-nav__link">
+        Stratified switchback
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_calendars.html" class="md-nav__link">
+        Switchback calendar visualization
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_calendars_hours.html" class="md-nav__link">
+        Visualization - 4-hour switches
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multivariate.html" class="md-nav__link">
+        Multiple treatments
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aa_test.html" class="md-nav__link">
+        AA test clustered
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../paired_ttest.html" class="md-nav__link">
+        Paired T test
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis_with_different_hypotheses.html" class="md-nav__link">
+        Power comparison under different hypotheses
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../washover_example.html" class="md-nav__link">
+        Washover
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_10" type="checkbox" id="__nav_10" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_10">
+          API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="API" data-md-level="1">
+        <label class="md-nav__title" for="__nav_10">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="experiment_analysis.html" class="md-nav__link">
+        Experiment analysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="perturbator.html" class="md-nav__link">
+        Perturbators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Splitter
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="random_splitter.html" class="md-nav__link md-nav__link--active">
+        Splitter
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter" class="md-nav__link">
+    cluster_experiments.random_splitter
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.BalancedClusteredSplitter" class="md-nav__link">
+    BalancedClusteredSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="BalancedClusteredSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.BalancedClusteredSplitter.sample_treatment" class="md-nav__link">
+    sample_treatment()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.BalancedSwitchbackSplitter" class="md-nav__link">
+    BalancedSwitchbackSplitter
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.ClusteredSplitter" class="md-nav__link">
+    ClusteredSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="ClusteredSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.ClusteredSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.ClusteredSplitter.sample_treatment" class="md-nav__link">
+    sample_treatment()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.NonClusteredSplitter" class="md-nav__link">
+    NonClusteredSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="NonClusteredSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.NonClusteredSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.NonClusteredSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RandomSplitter" class="md-nav__link">
+    RandomSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="RandomSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RandomSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RandomSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RepeatedSampler" class="md-nav__link">
+    RepeatedSampler
+  </a>
+  
+    <nav class="md-nav" aria-label="RepeatedSampler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RepeatedSampler.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RepeatedSampler.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter" class="md-nav__link">
+    StratifiedClusteredSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="StratifiedClusteredSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedSwitchbackSplitter" class="md-nav__link">
+    StratifiedSwitchbackSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="StratifiedSwitchbackSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedSwitchbackSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedSwitchbackSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.SwitchbackSplitter" class="md-nav__link">
+    SwitchbackSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="SwitchbackSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.SwitchbackSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.SwitchbackSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="cupac_model.html" class="md-nav__link">
+        Pre experiment outcome model
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="power_config.html" class="md-nav__link">
+        Power config
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="power_analysis.html" class="md-nav__link">
+        Power analysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="washover.html" class="md-nav__link">
+        Washover
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter" class="md-nav__link">
+    cluster_experiments.random_splitter
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.BalancedClusteredSplitter" class="md-nav__link">
+    BalancedClusteredSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="BalancedClusteredSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.BalancedClusteredSplitter.sample_treatment" class="md-nav__link">
+    sample_treatment()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.BalancedSwitchbackSplitter" class="md-nav__link">
+    BalancedSwitchbackSplitter
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.ClusteredSplitter" class="md-nav__link">
+    ClusteredSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="ClusteredSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.ClusteredSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.ClusteredSplitter.sample_treatment" class="md-nav__link">
+    sample_treatment()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.NonClusteredSplitter" class="md-nav__link">
+    NonClusteredSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="NonClusteredSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.NonClusteredSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.NonClusteredSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RandomSplitter" class="md-nav__link">
+    RandomSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="RandomSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RandomSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RandomSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RepeatedSampler" class="md-nav__link">
+    RepeatedSampler
+  </a>
+  
+    <nav class="md-nav" aria-label="RepeatedSampler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RepeatedSampler.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.RepeatedSampler.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter" class="md-nav__link">
+    StratifiedClusteredSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="StratifiedClusteredSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedSwitchbackSplitter" class="md-nav__link">
+    StratifiedSwitchbackSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="StratifiedSwitchbackSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedSwitchbackSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.StratifiedSwitchbackSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.SwitchbackSplitter" class="md-nav__link">
+    SwitchbackSplitter
+  </a>
+  
+    <nav class="md-nav" aria-label="SwitchbackSplitter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.SwitchbackSplitter.assign_treatment_df" class="md-nav__link">
+    assign_treatment_df()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster_experiments.random_splitter.SwitchbackSplitter.from_config" class="md-nav__link">
+    from_config()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  <a href="https://github.com/david26694/cluster-experiments/blob/main/docs/api/random_splitter.md" title="Edit this page" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+<h1 id="from-cluster_experimentsrandom_splitter-import"><code>from cluster_experiments.random_splitter import *</code><a class="headerlink" href="#from-cluster_experimentsrandom_splitter-import" title="Permanent link">&para;</a></h1>
+
+
+  <div class="doc doc-object doc-module">
+
+<a id="cluster_experiments.random_splitter"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.random_splitter.BalancedClusteredSplitter" class="doc doc-heading">
+        <code>
+BalancedClusteredSplitter            (<a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.ClusteredSplitter" href="#cluster_experiments.random_splitter.ClusteredSplitter">ClusteredSplitter</a>)
+        </code>
+
+
+
+<a href="#cluster_experiments.random_splitter.BalancedClusteredSplitter" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Like ClusteredSplitter, but ensures that treatments are balanced among clusters. That is, if we have
+25 clusters and 2 treatments, 13 clusters should have treatment A and 12 clusters should have treatment B.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BalancedClusteredSplitter</span><span class="p">(</span><span class="n">ClusteredSplitter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Like ClusteredSplitter, but ensures that treatments are balanced among clusters. That is, if we have</span>
+<span class="sd">    25 clusters and 2 treatments, 13 clusters should have treatment A and 12 clusters should have treatment B.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">sample_treatment</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cluster_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Samples treatments for each cluster</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            cluster_df: dataframe to assign treatments to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_clusters</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_df</span><span class="p">)</span>
+        <span class="n">n_treatments</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">)</span>
+        <span class="n">n_per_treatment</span> <span class="o">=</span> <span class="n">n_clusters</span> <span class="o">//</span> <span class="n">n_treatments</span>
+        <span class="n">n_extra</span> <span class="o">=</span> <span class="n">n_clusters</span> <span class="o">%</span> <span class="n">n_treatments</span>
+        <span class="n">treatments</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_treatments</span><span class="p">):</span>
+            <span class="n">treatments</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_per_treatment</span> <span class="o">+</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">n_extra</span><span class="p">))</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">treatments</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">treatments</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.BalancedClusteredSplitter.sample_treatment" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">sample_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cluster_df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.random_splitter.BalancedClusteredSplitter.sample_treatment" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Samples treatments for each cluster</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>cluster_df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>dataframe to assign treatments to</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">sample_treatment</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">cluster_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Samples treatments for each cluster</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        cluster_df: dataframe to assign treatments to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_clusters</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_df</span><span class="p">)</span>
+    <span class="n">n_treatments</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">)</span>
+    <span class="n">n_per_treatment</span> <span class="o">=</span> <span class="n">n_clusters</span> <span class="o">//</span> <span class="n">n_treatments</span>
+    <span class="n">n_extra</span> <span class="o">=</span> <span class="n">n_clusters</span> <span class="o">%</span> <span class="n">n_treatments</span>
+    <span class="n">treatments</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_treatments</span><span class="p">):</span>
+        <span class="n">treatments</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_per_treatment</span> <span class="o">+</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">n_extra</span><span class="p">))</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">treatments</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">treatments</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.random_splitter.BalancedSwitchbackSplitter" class="doc doc-heading">
+        <code>
+BalancedSwitchbackSplitter            (<a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.BalancedClusteredSplitter" href="#cluster_experiments.random_splitter.BalancedClusteredSplitter">BalancedClusteredSplitter</a>, <a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.SwitchbackSplitter" href="#cluster_experiments.random_splitter.SwitchbackSplitter">SwitchbackSplitter</a>)
+        </code>
+
+
+
+<a href="#cluster_experiments.random_splitter.BalancedSwitchbackSplitter" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Like SwitchbackSplitter, but ensures that treatments are balanced among clusters. That is, if we have
+25 clusters and 2 treatments, 13 clusters should have treatment A and 12 clusters should have treatment B.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BalancedSwitchbackSplitter</span><span class="p">(</span><span class="n">BalancedClusteredSplitter</span><span class="p">,</span> <span class="n">SwitchbackSplitter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Like SwitchbackSplitter, but ensures that treatments are balanced among clusters. That is, if we have</span>
+<span class="sd">    25 clusters and 2 treatments, 13 clusters should have treatment A and 12 clusters should have treatment B.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+</code></pre></div>
+        </details>
+
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.random_splitter.ClusteredSplitter" class="doc doc-heading">
+        <code>
+ClusteredSplitter            (<a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.RandomSplitter" href="#cluster_experiments.random_splitter.RandomSplitter">RandomSplitter</a>)
+        </code>
+
+
+
+<a href="#cluster_experiments.random_splitter.ClusteredSplitter" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Splits randomly using clusters</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>cluster_cols</code></td>
+        <td><code>List[str]</code></td>
+        <td><p>List of columns to use as clusters</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>treatments</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the treatment variable.</p></td>
+        <td><code>&#39;treatment&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>splitter_weights</code></td>
+        <td><code>Optional[List[float]]</code></td>
+        <td><p>weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>      <p>Usage:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.random_splitter</span> <span class="kn">import</span> <span class="n">ClusteredSplitter</span>
+<span class="n">splitter</span> <span class="o">=</span> <span class="n">ClusteredSplitter</span><span class="p">(</span><span class="n">cluster_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;city&quot;</span><span class="p">])</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;city&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">]})</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ClusteredSplitter</span><span class="p">(</span><span class="n">RandomSplitter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Splits randomly using clusters</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        cluster_cols: List of columns to use as clusters</span>
+<span class="sd">        treatments: list of treatments</span>
+<span class="sd">        treatment_col: Name of the column with the treatment variable.</span>
+<span class="sd">        splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    import pandas as pd</span>
+<span class="sd">    from cluster_experiments.random_splitter import ClusteredSplitter</span>
+<span class="sd">    splitter = ClusteredSplitter(cluster_cols=[&quot;city&quot;])</span>
+<span class="sd">    df = pd.DataFrame({&quot;city&quot;: [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;]})</span>
+<span class="sd">    df = splitter.assign_treatment_df(df)</span>
+<span class="sd">    print(df)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">treatments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;treatment&quot;</span><span class="p">,</span>
+        <span class="n">splitter_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span> <span class="o">=</span> <span class="n">treatments</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span> <span class="o">=</span> <span class="n">cluster_cols</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">=</span> <span class="n">treatment_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splitter_weights</span> <span class="o">=</span> <span class="n">splitter_weights</span>
+
+    <span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Takes a df, randomizes treatments and adds the treatment column to the dataframe</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            df: dataframe to assign treatments to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># raise error if any nulls in cluster_cols</span>
+        <span class="k">if</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Null values found in cluster_cols: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="s2">&quot;Please remove nulls before running the splitter.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">clusters_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+        <span class="n">clusters_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_treatment</span><span class="p">(</span><span class="n">clusters_df</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">clusters_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="k">def</span> <span class="nf">sample_treatment</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cluster_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Samples treatments for each cluster</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            cluster_df: dataframe to assign treatments to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">cluster_df</span><span class="p">),</span> <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter_weights</span>
+        <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.ClusteredSplitter.assign_treatment_df" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.random_splitter.ClusteredSplitter.assign_treatment_df" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Takes a df, randomizes treatments and adds the treatment column to the dataframe</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>dataframe to assign treatments to</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a df, randomizes treatments and adds the treatment column to the dataframe</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        df: dataframe to assign treatments to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># raise error if any nulls in cluster_cols</span>
+    <span class="k">if</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Null values found in cluster_cols: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="s2">&quot;Please remove nulls before running the splitter.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">clusters_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+    <span class="n">clusters_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_treatment</span><span class="p">(</span><span class="n">clusters_df</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">clusters_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.ClusteredSplitter.sample_treatment" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">sample_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cluster_df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.random_splitter.ClusteredSplitter.sample_treatment" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Samples treatments for each cluster</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>cluster_df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>dataframe to assign treatments to</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">sample_treatment</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">cluster_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Samples treatments for each cluster</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        cluster_df: dataframe to assign treatments to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">cluster_df</span><span class="p">),</span> <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter_weights</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.random_splitter.NonClusteredSplitter" class="doc doc-heading">
+        <code>
+NonClusteredSplitter            (<a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.RandomSplitter" href="#cluster_experiments.random_splitter.RandomSplitter">RandomSplitter</a>)
+        </code>
+
+
+
+<a href="#cluster_experiments.random_splitter.NonClusteredSplitter" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Splits randomly without clusters</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>treatments</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the treatment variable.</p></td>
+        <td><code>&#39;treatment&#39;</code></td>
+      </tr>
+  </tbody>
+</table>      <p>Usage:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.random_splitter</span> <span class="kn">import</span> <span class="n">NonClusteredSplitter</span>
+<span class="n">splitter</span> <span class="o">=</span> <span class="n">NonClusteredSplitter</span><span class="p">(</span>
+    <span class="n">treatments</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;city&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">]})</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">NonClusteredSplitter</span><span class="p">(</span><span class="n">RandomSplitter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Splits randomly without clusters</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        treatments: list of treatments</span>
+<span class="sd">        treatment_col: Name of the column with the treatment variable.</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    import pandas as pd</span>
+<span class="sd">    from cluster_experiments.random_splitter import NonClusteredSplitter</span>
+<span class="sd">    splitter = NonClusteredSplitter(</span>
+<span class="sd">        treatments=[&quot;A&quot;, &quot;B&quot;],</span>
+<span class="sd">    )</span>
+<span class="sd">    df = pd.DataFrame({&quot;city&quot;: [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;]})</span>
+<span class="sd">    df = splitter.assign_treatment_df(df)</span>
+<span class="sd">    print(df)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">treatments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;treatment&quot;</span><span class="p">,</span>
+        <span class="n">splitter_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span> <span class="o">=</span> <span class="n">treatments</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">=</span> <span class="n">treatment_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splitter_weights</span> <span class="o">=</span> <span class="n">splitter_weights</span>
+
+    <span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Takes a df, randomizes treatments and adds the treatment column to the dataframe</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            df: dataframe to assign treatments to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter_weights</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a NonClusteredSplitter from a PowerConfig&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+            <span class="n">splitter_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">splitter_weights</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.NonClusteredSplitter.assign_treatment_df" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.random_splitter.NonClusteredSplitter.assign_treatment_df" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Takes a df, randomizes treatments and adds the treatment column to the dataframe</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>dataframe to assign treatments to</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a df, randomizes treatments and adds the treatment column to the dataframe</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        df: dataframe to assign treatments to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter_weights</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.NonClusteredSplitter.from_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cluster_experiments.random_splitter.NonClusteredSplitter.from_config" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a NonClusteredSplitter from a PowerConfig</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a NonClusteredSplitter from a PowerConfig&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="n">splitter_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">splitter_weights</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.random_splitter.RandomSplitter" class="doc doc-heading">
+        <code>
+RandomSplitter            (<span title="abc.ABC">ABC</span>)
+        </code>
+
+
+
+<a href="#cluster_experiments.random_splitter.RandomSplitter" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Abstract class to split instances in a switchback or clustered way. It can be used to create a calendar/split of clusters
+or to run a power analysis.</p>
+<p>In order to create your own RandomSplitter, you should write your own assign_treatment_df method, that takes a dataframe as an input and returns the same dataframe with the treatment_col column.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>cluster_cols</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>List of columns to use as clusters</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatments</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the treatment variable.</p></td>
+        <td><code>&#39;treatment&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>splitter_weights</code></td>
+        <td><code>Optional[List[float]]</code></td>
+        <td><p>weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">RandomSplitter</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class to split instances in a switchback or clustered way. It can be used to create a calendar/split of clusters</span>
+<span class="sd">    or to run a power analysis.</span>
+
+<span class="sd">    In order to create your own RandomSplitter, you should write your own assign_treatment_df method, that takes a dataframe as an input and returns the same dataframe with the treatment_col column.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        cluster_cols: List of columns to use as clusters</span>
+<span class="sd">        treatments: list of treatments</span>
+<span class="sd">        treatment_col: Name of the column with the treatment variable.</span>
+<span class="sd">        splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;treatment&quot;</span><span class="p">,</span>
+        <span class="n">splitter_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span> <span class="o">=</span> <span class="n">treatments</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span> <span class="o">=</span> <span class="n">cluster_cols</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">=</span> <span class="n">treatment_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splitter_weights</span> <span class="o">=</span> <span class="n">splitter_weights</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Takes a df, randomizes treatments and adds the treatment column to the dataframe</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            df: dataframe to assign treatments to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a RandomSplitter from a PowerConfig&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+            <span class="n">cluster_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+            <span class="n">splitter_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">splitter_weights</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.RandomSplitter.assign_treatment_df" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.random_splitter.RandomSplitter.assign_treatment_df" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Takes a df, randomizes treatments and adds the treatment column to the dataframe</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>dataframe to assign treatments to</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@abstractmethod</span>
+<span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a df, randomizes treatments and adds the treatment column to the dataframe</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        df: dataframe to assign treatments to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.RandomSplitter.from_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cluster_experiments.random_splitter.RandomSplitter.from_config" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a RandomSplitter from a PowerConfig</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a RandomSplitter from a PowerConfig&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="n">splitter_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">splitter_weights</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.random_splitter.RepeatedSampler" class="doc doc-heading">
+        <code>
+RepeatedSampler            (<a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.RandomSplitter" href="#cluster_experiments.random_splitter.RandomSplitter">RandomSplitter</a>)
+        </code>
+
+
+
+<a href="#cluster_experiments.random_splitter.RepeatedSampler" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Doesn't actually split the data, but repeatedly samples (i.e. duplicates) all rows for all treatments.
+This is useful for backtesting, where we assume to have access to all counterfactuals.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>treatments</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the treatment variable.</p></td>
+        <td><code>&#39;treatment&#39;</code></td>
+      </tr>
+  </tbody>
+</table>      <p>Usage:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.random_splitter</span> <span class="kn">import</span> <span class="n">RepeatedSampler</span>
+<span class="n">splitter</span> <span class="o">=</span> <span class="n">RepeatedSampler</span><span class="p">(</span>
+    <span class="n">treatments</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;city&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">]})</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">RepeatedSampler</span><span class="p">(</span><span class="n">RandomSplitter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Doesn&#39;t actually split the data, but repeatedly samples (i.e. duplicates) all rows for all treatments.</span>
+<span class="sd">    This is useful for backtesting, where we assume to have access to all counterfactuals.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        treatments: list of treatments</span>
+<span class="sd">        treatment_col: Name of the column with the treatment variable.</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    import pandas as pd</span>
+<span class="sd">    from cluster_experiments.random_splitter import RepeatedSampler</span>
+<span class="sd">    splitter = RepeatedSampler(</span>
+<span class="sd">        treatments=[&quot;A&quot;, &quot;B&quot;],</span>
+<span class="sd">    )</span>
+<span class="sd">    df = pd.DataFrame({&quot;city&quot;: [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;]})</span>
+<span class="sd">    df = splitter.assign_treatment_df(df)</span>
+<span class="sd">    print(df)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">treatments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;treatment&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span> <span class="o">=</span> <span class="n">treatments</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">=</span> <span class="n">treatment_col</span>
+
+    <span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="n">dfs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">:</span>
+            <span class="n">df_treat</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">:</span> <span class="n">treatment</span><span class="p">})</span>
+            <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_treat</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a RepeatedSampler from a PowerConfig&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.RepeatedSampler.assign_treatment_df" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.random_splitter.RepeatedSampler.assign_treatment_df" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Takes a df, randomizes treatments and adds the treatment column to the dataframe</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>dataframe to assign treatments to</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">dfs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">:</span>
+        <span class="n">df_treat</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">:</span> <span class="n">treatment</span><span class="p">})</span>
+        <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_treat</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.RepeatedSampler.from_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cluster_experiments.random_splitter.RepeatedSampler.from_config" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a RepeatedSampler from a PowerConfig</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a RepeatedSampler from a PowerConfig&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.random_splitter.StratifiedClusteredSplitter" class="doc doc-heading">
+        <code>
+StratifiedClusteredSplitter            (<a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.RandomSplitter" href="#cluster_experiments.random_splitter.RandomSplitter">RandomSplitter</a>)
+        </code>
+
+
+
+<a href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Splits randomly with clusters, ensuring a balanced allocation of treatment groups across clusters and strata.
+To be used, for example, when having days as clusters and days of the week as stratus. This splitter will make sure
+that we won't have all Sundays in treatment and no Sundays in control.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>cluster_cols</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>List of columns to use as clusters</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatments</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the treatment variable.</p></td>
+        <td><code>&#39;treatment&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>strata_cols</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>List of columns to use as strata</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>      <p>Usage:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.random_splitter</span> <span class="kn">import</span> <span class="n">StratifiedClusteredSplitter</span>
+<span class="n">splitter</span> <span class="o">=</span> <span class="n">StratifiedClusteredSplitter</span><span class="p">(</span><span class="n">cluster_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;city&quot;</span><span class="p">],</span><span class="n">strata_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;country&quot;</span><span class="p">])</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;city&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="s2">&quot;D&quot;</span><span class="p">],</span> <span class="s2">&quot;country&quot;</span><span class="p">:[</span><span class="s2">&quot;C1&quot;</span><span class="p">,</span><span class="s2">&quot;C2&quot;</span><span class="p">,</span><span class="s2">&quot;C2&quot;</span><span class="p">,</span><span class="s2">&quot;C1&quot;</span><span class="p">]})</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">StratifiedClusteredSplitter</span><span class="p">(</span><span class="n">RandomSplitter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Splits randomly with clusters, ensuring a balanced allocation of treatment groups across clusters and strata.</span>
+<span class="sd">    To be used, for example, when having days as clusters and days of the week as stratus. This splitter will make sure</span>
+<span class="sd">    that we won&#39;t have all Sundays in treatment and no Sundays in control.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        cluster_cols: List of columns to use as clusters</span>
+<span class="sd">        treatments: list of treatments</span>
+<span class="sd">        treatment_col: Name of the column with the treatment variable.</span>
+<span class="sd">        strata_cols: List of columns to use as strata</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    import pandas as pd</span>
+<span class="sd">    from cluster_experiments.random_splitter import StratifiedClusteredSplitter</span>
+<span class="sd">    splitter = StratifiedClusteredSplitter(cluster_cols=[&quot;city&quot;],strata_cols=[&quot;country&quot;])</span>
+<span class="sd">    df = pd.DataFrame({&quot;city&quot;: [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;,&quot;D&quot;], &quot;country&quot;:[&quot;C1&quot;,&quot;C2&quot;,&quot;C2&quot;,&quot;C1&quot;]})</span>
+<span class="sd">    df = splitter.assign_treatment_df(df)</span>
+<span class="sd">    print(df)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;treatment&quot;</span><span class="p">,</span>
+        <span class="n">strata_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">cluster_cols</span><span class="o">=</span><span class="n">cluster_cols</span><span class="p">,</span>
+            <span class="n">treatments</span><span class="o">=</span><span class="n">treatments</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">strata_cols</span> <span class="ow">or</span> <span class="n">strata_cols</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Splitter </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> requires strata_cols,&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; got </span><span class="si">{</span><span class="n">strata_cols</span><span class="w"> </span><span class="si">= }</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span> <span class="o">=</span> <span class="n">strata_cols</span>
+
+    <span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">df_unique_shuffled</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">))]</span>
+            <span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># check that, for a given cluster, there is only 1 strata</span>
+        <span class="k">for</span> <span class="n">strata_col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">df_unique_shuffled</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">)[</span><span class="n">strata_col</span><span class="p">]</span>
+                <span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
+                <span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="o">&gt;</span> <span class="mi">1</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;There are multiple values in </span><span class="si">{</span><span class="n">strata_col</span><span class="si">}</span><span class="s2"> for the same cluster item </span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="s2">&quot;You cannot stratify on this column&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="c1"># random shuffling</span>
+        <span class="n">random_sorted_treatments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">))</span>
+
+        <span class="n">df_unique_shuffled</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">df_unique_shuffled</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">,</span> <span class="n">as_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">random_sorted_treatments</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">random_sorted_treatments</span><span class="p">)))</span>
+        <span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">df_unique_shuffled</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a StratifiedClusteredSplitter from a PowerConfig&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+            <span class="n">cluster_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+            <span class="n">strata_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.StratifiedClusteredSplitter.assign_treatment_df" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter.assign_treatment_df" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Takes a df, randomizes treatments and adds the treatment column to the dataframe</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>dataframe to assign treatments to</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df_unique_shuffled</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">))]</span>
+        <span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># check that, for a given cluster, there is only 1 strata</span>
+    <span class="k">for</span> <span class="n">strata_col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">df_unique_shuffled</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">)[</span><span class="n">strata_col</span><span class="p">]</span>
+            <span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="o">&gt;</span> <span class="mi">1</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;There are multiple values in </span><span class="si">{</span><span class="n">strata_col</span><span class="si">}</span><span class="s2"> for the same cluster item </span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;You cannot stratify on this column&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="c1"># random shuffling</span>
+    <span class="n">random_sorted_treatments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">treatments</span><span class="p">))</span>
+
+    <span class="n">df_unique_shuffled</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">df_unique_shuffled</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">,</span> <span class="n">as_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">random_sorted_treatments</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">random_sorted_treatments</span><span class="p">)))</span>
+    <span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">df_unique_shuffled</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.StratifiedClusteredSplitter.from_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter.from_config" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a StratifiedClusteredSplitter from a PowerConfig</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a StratifiedClusteredSplitter from a PowerConfig&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+        <span class="n">strata_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.random_splitter.StratifiedSwitchbackSplitter" class="doc doc-heading">
+        <code>
+StratifiedSwitchbackSplitter            (<a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.StratifiedClusteredSplitter" href="#cluster_experiments.random_splitter.StratifiedClusteredSplitter">StratifiedClusteredSplitter</a>, <a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.SwitchbackSplitter" href="#cluster_experiments.random_splitter.SwitchbackSplitter">SwitchbackSplitter</a>)
+        </code>
+
+
+
+<a href="#cluster_experiments.random_splitter.StratifiedSwitchbackSplitter" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Splits randomly with clusters, ensuring a balanced allocation of treatment groups across clusters and strata.
+To be used, for example, when having days as clusters and days of the week as stratus. This splitter will make sure
+that we won't have all Sundays in treatment and no Sundays in control.</p>
+<p>It can be created using the time_col and switch_frequency arguments, just like the SwitchbackSplitter.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>time_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the time variable.</p></td>
+        <td><code>&#39;date&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>switch_frequency</code></td>
+        <td><code>str</code></td>
+        <td><p>Frequency of the switchback. Must be a string (e.g. "1D")</p></td>
+        <td><code>&#39;1D&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>cluster_cols</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>List of columns to use as clusters</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatments</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the treatment variable.</p></td>
+        <td><code>&#39;treatment&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>splitter_weights</code></td>
+        <td><code>Optional[List[float]]</code></td>
+        <td><p>List of weights for the treatments. If None, all treatments will have the same weight.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>strata_cols</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>List of columns to use as strata</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>      <p>Usage:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.random_splitter</span> <span class="kn">import</span> <span class="n">StratifiedSwitchbackSplitter</span>
+<span class="n">splitter</span> <span class="o">=</span> <span class="n">StratifiedSwitchbackSplitter</span><span class="p">(</span><span class="n">time_col</span><span class="o">=</span><span class="s2">&quot;date&quot;</span><span class="p">,</span><span class="n">switch_frequency</span><span class="o">=</span><span class="s2">&quot;1D&quot;</span><span class="p">,</span><span class="n">strata_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;country&quot;</span><span class="p">],</span> <span class="n">cluster_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;country&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">])</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;2020-01-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2020-01-02&quot;</span><span class="p">,</span> <span class="s2">&quot;2020-01-03&quot;</span><span class="p">,</span><span class="s2">&quot;2020-01-04&quot;</span><span class="p">],</span> <span class="s2">&quot;country&quot;</span><span class="p">:[</span><span class="s2">&quot;C1&quot;</span><span class="p">,</span><span class="s2">&quot;C2&quot;</span><span class="p">,</span><span class="s2">&quot;C2&quot;</span><span class="p">,</span><span class="s2">&quot;C1&quot;</span><span class="p">]})</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">StratifiedSwitchbackSplitter</span><span class="p">(</span><span class="n">StratifiedClusteredSplitter</span><span class="p">,</span> <span class="n">SwitchbackSplitter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Splits randomly with clusters, ensuring a balanced allocation of treatment groups across clusters and strata.</span>
+<span class="sd">    To be used, for example, when having days as clusters and days of the week as stratus. This splitter will make sure</span>
+<span class="sd">    that we won&#39;t have all Sundays in treatment and no Sundays in control.</span>
+
+<span class="sd">    It can be created using the time_col and switch_frequency arguments, just like the SwitchbackSplitter.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        time_col: Name of the column with the time variable.</span>
+<span class="sd">        switch_frequency: Frequency of the switchback. Must be a string (e.g. &quot;1D&quot;)</span>
+<span class="sd">        cluster_cols: List of columns to use as clusters</span>
+<span class="sd">        treatments: list of treatments</span>
+<span class="sd">        treatment_col: Name of the column with the treatment variable.</span>
+<span class="sd">        splitter_weights: List of weights for the treatments. If None, all treatments will have the same weight.</span>
+<span class="sd">        strata_cols: List of columns to use as strata</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    import pandas as pd</span>
+<span class="sd">    from cluster_experiments.random_splitter import StratifiedSwitchbackSplitter</span>
+<span class="sd">    splitter = StratifiedSwitchbackSplitter(time_col=&quot;date&quot;,switch_frequency=&quot;1D&quot;,strata_cols=[&quot;country&quot;], cluster_cols=[&quot;country&quot;, &quot;date&quot;])</span>
+<span class="sd">    df = pd.DataFrame({&quot;date&quot;: [&quot;2020-01-01&quot;, &quot;2020-01-02&quot;, &quot;2020-01-03&quot;,&quot;2020-01-04&quot;], &quot;country&quot;:[&quot;C1&quot;,&quot;C2&quot;,&quot;C2&quot;,&quot;C1&quot;]})</span>
+<span class="sd">    df = splitter.assign_treatment_df(df)</span>
+<span class="sd">    print(df)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">time_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span>
+        <span class="n">switch_frequency</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1D&quot;</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;treatment&quot;</span><span class="p">,</span>
+        <span class="n">splitter_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">washover</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Washover</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">strata_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Inherit init from SwitchbackSplitter</span>
+        <span class="n">SwitchbackSplitter</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">time_col</span><span class="o">=</span><span class="n">time_col</span><span class="p">,</span>
+            <span class="n">switch_frequency</span><span class="o">=</span><span class="n">switch_frequency</span><span class="p">,</span>
+            <span class="n">cluster_cols</span><span class="o">=</span><span class="n">cluster_cols</span><span class="p">,</span>
+            <span class="n">treatments</span><span class="o">=</span><span class="n">treatments</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="n">treatment_col</span><span class="p">,</span>
+            <span class="n">splitter_weights</span><span class="o">=</span><span class="n">splitter_weights</span><span class="p">,</span>
+            <span class="n">washover</span><span class="o">=</span><span class="n">washover</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strata_cols</span> <span class="o">=</span> <span class="n">strata_cols</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;strata&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_switchback_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">StratifiedClusteredSplitter</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">washover</span><span class="o">.</span><span class="n">washover</span><span class="p">(</span>
+            <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+            <span class="n">truncated_time_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">,</span>
+            <span class="n">cluster_cols</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;StratifiedSwitchbackSplitter&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a StratifiedSwitchbackSplitter from a PowerConfig&quot;&quot;&quot;</span>
+        <span class="n">washover_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">washover_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">washover</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+            <span class="n">cluster_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+            <span class="n">strata_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+            <span class="n">time_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">time_col</span><span class="p">,</span>
+            <span class="n">switch_frequency</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">switch_frequency</span><span class="p">,</span>
+            <span class="n">splitter_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">splitter_weights</span><span class="p">,</span>
+            <span class="n">washover</span><span class="o">=</span><span class="n">washover_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+        <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.StratifiedSwitchbackSplitter.assign_treatment_df" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.random_splitter.StratifiedSwitchbackSplitter.assign_treatment_df" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates the switchback column, adds it to cluster_cols and then calls ClusteredSplitter assign_treatment_df</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>dataframe to assign treatments to</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_switchback_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">StratifiedClusteredSplitter</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">washover</span><span class="o">.</span><span class="n">washover</span><span class="p">(</span>
+        <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="n">truncated_time_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.StratifiedSwitchbackSplitter.from_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cluster_experiments.random_splitter.StratifiedSwitchbackSplitter.from_config" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a StratifiedSwitchbackSplitter from a PowerConfig</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;StratifiedSwitchbackSplitter&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a StratifiedSwitchbackSplitter from a PowerConfig&quot;&quot;&quot;</span>
+    <span class="n">washover_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">washover_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">washover</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+        <span class="n">strata_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">strata_cols</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="n">time_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">time_col</span><span class="p">,</span>
+        <span class="n">switch_frequency</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">switch_frequency</span><span class="p">,</span>
+        <span class="n">splitter_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">splitter_weights</span><span class="p">,</span>
+        <span class="n">washover</span><span class="o">=</span><span class="n">washover_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="cluster_experiments.random_splitter.SwitchbackSplitter" class="doc doc-heading">
+        <code>
+SwitchbackSplitter            (<a class="autorefs autorefs-internal" title="cluster_experiments.random_splitter.ClusteredSplitter" href="#cluster_experiments.random_splitter.ClusteredSplitter">ClusteredSplitter</a>)
+        </code>
+
+
+
+<a href="#cluster_experiments.random_splitter.SwitchbackSplitter" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Splits randomly using clusters and time column</p>
+<p>It is a clustered splitter but one of the cluster columns is obtained by truncating the time column to the switch frequency.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>time_col</code></td>
+        <td><code>Optional[str]</code></td>
+        <td><p>Name of the column with the time variable.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>switch_frequency</code></td>
+        <td><code>Optional[str]</code></td>
+        <td><p>Frequency to switch treatments. Uses pandas frequency aliases (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>cluster_cols</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>List of columns to use as clusters</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatments</code></td>
+        <td><code>Optional[List[str]]</code></td>
+        <td><p>list of treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>treatment_col</code></td>
+        <td><code>str</code></td>
+        <td><p>Name of the column with the treatment variable.</p></td>
+        <td><code>&#39;treatment&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>splitter_weights</code></td>
+        <td><code>Optional[List[float]]</code></td>
+        <td><p>weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>      <p>Usage:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">cluster_experiments.random_splitter</span> <span class="kn">import</span> <span class="n">SwitchbackSplitter</span>
+<span class="n">splitter</span> <span class="o">=</span> <span class="n">SwitchbackSplitter</span><span class="p">(</span><span class="n">time_col</span><span class="o">=</span><span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="n">switch_frequency</span><span class="o">=</span><span class="s2">&quot;1D&quot;</span><span class="p">,</span> <span class="n">cluster_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">])</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="s2">&quot;2020-01-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2020-01-03&quot;</span><span class="p">)})</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">SwitchbackSplitter</span><span class="p">(</span><span class="n">ClusteredSplitter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Splits randomly using clusters and time column</span>
+
+<span class="sd">    It is a clustered splitter but one of the cluster columns is obtained by truncating the time column to the switch frequency.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        time_col: Name of the column with the time variable.</span>
+<span class="sd">        switch_frequency: Frequency to switch treatments. Uses pandas frequency aliases (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)</span>
+<span class="sd">        cluster_cols: List of columns to use as clusters</span>
+<span class="sd">        treatments: list of treatments</span>
+<span class="sd">        treatment_col: Name of the column with the treatment variable.</span>
+<span class="sd">        splitter_weights: weights to use for the splitter, should have the same length as treatments, each weight should correspond to an element in treatments</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    import pandas as pd</span>
+<span class="sd">    from cluster_experiments.random_splitter import SwitchbackSplitter</span>
+<span class="sd">    splitter = SwitchbackSplitter(time_col=&quot;date&quot;, switch_frequency=&quot;1D&quot;, cluster_cols=[&quot;date&quot;])</span>
+<span class="sd">    df = pd.DataFrame({&quot;date&quot;: pd.date_range(&quot;2020-01-01&quot;, &quot;2020-01-03&quot;)})</span>
+<span class="sd">    df = splitter.assign_treatment_df(df)</span>
+<span class="sd">    print(df)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">time_col</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">switch_frequency</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;treatment&quot;</span><span class="p">,</span>
+        <span class="n">splitter_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">washover</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Washover</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_col</span> <span class="o">=</span> <span class="n">time_col</span> <span class="ow">or</span> <span class="s2">&quot;date&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_frequency</span> <span class="o">=</span> <span class="n">switch_frequency</span> <span class="ow">or</span> <span class="s2">&quot;1D&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span> <span class="o">=</span> <span class="n">cluster_cols</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatments</span> <span class="o">=</span> <span class="n">treatments</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span> <span class="o">=</span> <span class="n">treatment_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splitter_weights</span> <span class="o">=</span> <span class="n">splitter_weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">washover</span> <span class="o">=</span> <span class="n">washover</span> <span class="ow">or</span> <span class="n">EmptyWashover</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_time_col_cluster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">])</span>
+        <span class="c1"># Given the switch frequency, truncate the time column to the switch frequency</span>
+        <span class="c1"># Using pandas frequency aliases: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases</span>
+        <span class="k">if</span> <span class="s2">&quot;W&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">switch_frequency</span> <span class="ow">or</span> <span class="s2">&quot;M&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">switch_frequency</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">to_period</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">switch_frequency</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">start_time</span>
+        <span class="k">return</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">switch_frequency</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_switchback_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Build time_col switchback column</span>
+        <span class="c1"># Overwriting column, this is the worst! If we use the column as a covariate, we&#39;re screwed. Needs improvement</span>
+        <span class="n">df</span><span class="p">[</span><span class="n">_original_time_column</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">)]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">]</span>
+        <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_time_col_cluster</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the switchback column, adds it to cluster_cols and then calls ClusteredSplitter assign_treatment_df</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            df: dataframe to assign treatments to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_switchback_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">washover</span><span class="o">.</span><span class="n">washover</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span>
+            <span class="n">truncated_time_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+            <span class="n">cluster_cols</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SwitchbackSplitter&quot;</span><span class="p">:</span>
+        <span class="n">washover_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">washover_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">washover</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">time_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">time_col</span><span class="p">,</span>
+            <span class="n">switch_frequency</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">switch_frequency</span><span class="p">,</span>
+            <span class="n">cluster_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+            <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+            <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+            <span class="n">splitter_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">splitter_weights</span><span class="p">,</span>
+            <span class="n">washover</span><span class="o">=</span><span class="n">washover_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+        <span class="p">)</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.SwitchbackSplitter.assign_treatment_df" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">assign_treatment_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span></code>
+
+
+<a href="#cluster_experiments.random_splitter.SwitchbackSplitter.assign_treatment_df" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates the switchback column, adds it to cluster_cols and then calls ClusteredSplitter assign_treatment_df</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>df</code></td>
+        <td><code>DataFrame</code></td>
+        <td><p>dataframe to assign treatments to</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">assign_treatment_df</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates the switchback column, adds it to cluster_cols and then calls ClusteredSplitter assign_treatment_df</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        df: dataframe to assign treatments to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_switchback_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">assign_treatment_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">washover</span><span class="o">.</span><span class="n">washover</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">,</span>
+        <span class="n">truncated_time_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">time_col</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="cluster_experiments.random_splitter.SwitchbackSplitter.from_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cluster_experiments.random_splitter.SwitchbackSplitter.from_config" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a RandomSplitter from a PowerConfig</p>
+
+        <details class="quote">
+          <summary>Source code in <code>cluster_experiments/random_splitter.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SwitchbackSplitter&quot;</span><span class="p">:</span>
+    <span class="n">washover_cls</span> <span class="o">=</span> <span class="n">_get_mapping_key</span><span class="p">(</span><span class="n">washover_mapping</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">washover</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">time_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">time_col</span><span class="p">,</span>
+        <span class="n">switch_frequency</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">switch_frequency</span><span class="p">,</span>
+        <span class="n">cluster_cols</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster_cols</span><span class="p">,</span>
+        <span class="n">treatments</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatments</span><span class="p">,</span>
+        <span class="n">treatment_col</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">treatment_col</span><span class="p">,</span>
+        <span class="n">splitter_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">splitter_weights</span><span class="p">,</span>
+        <span class="n">washover</span><span class="o">=</span><span class="n">washover_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="perturbator.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Perturbators" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Perturbators
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="cupac_model.html" class="md-footer__link md-footer__link--next" aria-label="Next: Pre experiment outcome model" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Pre experiment outcome model
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2022 Maintained by David Masip.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.48f2be22.min.js"></script>
+      
+    
+  </body>
+</html>
