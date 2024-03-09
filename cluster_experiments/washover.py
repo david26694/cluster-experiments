@@ -291,7 +291,9 @@ class TwoEventsWashover(Washover):
         self.time_column_calendar = time_column_calendar
         self.treatment_column_calendar = treatment_column_calendar
 
-    def _validate_columns(self, record_df, start_time_column, end_time_column):
+    def _validate_columns(
+        self, record_df: pd.DataFrame, start_time_column: str, end_time_column: str
+    ):
         if self.time_column_calendar not in self.calendar_df.columns:
             raise ValueError(
                 f"{self.time_column_calendar = } is not in the calendar dataframe columns and/or not specified as an input."
@@ -308,6 +310,20 @@ class TwoEventsWashover(Washover):
             raise ValueError(
                 f"{end_time_column = } is not in the record dataframe columns and/or not specified as an input."
             )
+
+    def washover(
+        self,
+        record_df: pd.DataFrame,
+        start_time_column: str,
+        end_time_column: str,
+        treatment_column: Optional[str] = None,
+    ):
+        """
+        Return the Dataframe after applying the washover.
+        """
+        self._validate_columns(record_df, start_time_column, end_time_column)
+
+        pass
 
 
 # This is kept in here because of circular imports, need to rethink this
