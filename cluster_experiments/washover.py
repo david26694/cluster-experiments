@@ -275,11 +275,8 @@ class TwoEventsWashover(Washover):
     def __init__(
         self,
         calendar_df: pd.DataFrame,
-        record_df: pd.DataFrame,
         time_column_calendar: str = "start_time",
         treatment_column_calendar: str = "treatment",
-        start_time_column: str = "start_time",
-        end_time_column: str = "end_time",
     ):
         """
         Args:
@@ -293,11 +290,8 @@ class TwoEventsWashover(Washover):
         self.calendar_df = calendar_df
         self.time_column_calendar = time_column_calendar
         self.treatment_column_calendar = treatment_column_calendar
-        self.record_df = record_df
-        self.start_time_column = start_time_column
-        self.end_time_column = end_time_column
 
-    def _validate_columns(self):
+    def _validate_columns(self, record_df, start_time_column, end_time_column):
         if self.time_column_calendar not in self.calendar_df.columns:
             raise ValueError(
                 f"{self.time_column_calendar = } is not in the calendar dataframe columns and/or not specified as an input."
@@ -306,13 +300,13 @@ class TwoEventsWashover(Washover):
             raise ValueError(
                 f"{self.treatment_column_calendar = } is not in the calendar dataframe columns and/or not specified as an input."
             )
-        if self.start_time_column not in self.record_df.columns:
+        if start_time_column not in record_df.columns:
             raise ValueError(
-                f"{self.start_time_column = } is not in the record dataframe columns and/or not specified as an input."
+                f"{start_time_column = } is not in the record dataframe columns and/or not specified as an input."
             )
-        if self.end_time_column not in self.record_df.columns:
+        if end_time_column not in record_df.columns:
             raise ValueError(
-                f"{self.end_time_column = } is not in the record dataframe columns and/or not specified as an input."
+                f"{end_time_column = } is not in the record dataframe columns and/or not specified as an input."
             )
 
 
