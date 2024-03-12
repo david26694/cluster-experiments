@@ -315,16 +315,15 @@ class TwoEventsWashover(Washover):
     def washover(
         self,
         record_df: pd.DataFrame,
-        start_time_column: str,
-        end_time_column: str,
-        treatment_column: Optional[str] = None,
+        start_time_column: str = "start_time",
+        end_time_column: str = "end_time",
     ):
         """
         Return the Dataframe after applying the washover.
         """
         self._validate_columns(record_df, start_time_column, end_time_column)
         self.calendar_df[self.time_column_calendar] = pd.to_datetime(
-            self.calendar_df[self.time_column_calendar]
+            self.calendar_df[self.time_column_calendar],
         ).dt.time
         record_df[start_time_column] = pd.to_datetime(record_df[start_time_column])
         record_df[end_time_column] = pd.to_datetime(record_df[end_time_column])
@@ -332,13 +331,13 @@ class TwoEventsWashover(Washover):
             record_df[start_time_column].dt.floor("h").dt.time
         )
         record_df["end_time_floor"] = record_df[end_time_column].dt.floor("h").dt.time
-        record_df[start_time_column] = record_df[end_time_column].dt.time
+        record_df[end_time_column] = record_df[end_time_column].dt.time
         record_df[start_time_column] = record_df[start_time_column].dt.time
         record_df = (
             record_df.merge(
                 self.calendar_df,
                 how="left",
-                left_on=start_time_column,
+                left_on="start_time_floor",
                 right_on=self.time_column_calendar,
                 suffixes=("", "_start"),
             )
@@ -355,6 +354,9 @@ class TwoEventsWashover(Washover):
                     self.time_column_calendar + "_end",
                 ]
             )
+        )
+        record_df = record_df.query("treatment == treatment_end").drop(
+            columns=["treatment_end"]
         )
         return record_df
 
