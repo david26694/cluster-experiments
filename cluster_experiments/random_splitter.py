@@ -174,6 +174,9 @@ class SwitchbackSplitter(ClusteredSplitter):
         self.splitter_weights = splitter_weights
         self.washover = washover or EmptyWashover()
 
+        # add time_col if it is not already there
+        self.cluster_cols = list(set(self.cluster_cols + [self.time_col]))
+
     def _get_time_col_cluster(self, df: pd.DataFrame) -> pd.Series:
         df = df.copy()
         df[self.time_col] = pd.to_datetime(df[self.time_col])
@@ -189,8 +192,6 @@ class SwitchbackSplitter(ClusteredSplitter):
         # Overwriting column, this is the worst! If we use the column as a covariate, we're screwed. Needs improvement
         df[_original_time_column(self.time_col)] = df[self.time_col]
         df[self.time_col] = self._get_time_col_cluster(df)
-        # add time_col if it is not already there
-        self.cluster_cols = list(set(self.cluster_cols + [self.time_col]))
         return df
 
     def assign_treatment_df(
