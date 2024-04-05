@@ -1,7 +1,9 @@
 import datetime
 import logging
-from dataclasses import dataclass
+from enum import Enum
 from typing import List, Optional, Union
+
+from pydantic import BaseModel
 
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
@@ -34,16 +36,108 @@ from cluster_experiments.random_splitter import (
 )
 
 
+class PerturbatorEnum(Enum):
+    BINARY = "binary"
+    CONSTANT = "constant"
+    UNIFORM = "uniform"
+    RELATIVE_POSITIVE = "relative_positive"
+    NORMAL = "normal"
+    BETA_RELATIVE_POSITIVE = "beta_relative_positive"
+    BETA_RELATIVE = "beta_relative"
+    SEGMENTED_BETA_RELATIVE = "segmented_beta_relative"
+
+
+class SplitterEnum(Enum):
+    CLUSTERED = "clustered"
+    CLUSTERED_BALANCE = "clustered_balance"
+    CLUSTERED_BALANCED = "clustered_balanced"
+    BALANCED_CLUSTER = "balanced_cluster"
+    BALANCED_CLUSTERED = "balanced_clustered"
+    NON_CLUSTERED = "non_clustered"
+    CLUSTERED_STRATIFIED = "clustered_stratified"
+    STRATIFIED_CLUSTER = "stratified_cluster"
+    STRATIFIED_CLUSTERED = "stratified_clustered"
+    SWITCHBACK = "switchback"
+    SWITCHBACK_BALANCE = "switchback_balance"
+    SWITCHBACK_BALANCED = "switchback_balanced"
+    BALANCED_SWITCHBACK = "balanced_switchback"
+    SWITCHBACK_STRATIFIED = "switchback_stratified"
+    STRATIFIED_SWITCHBACK = "stratified_switchback"
+    REPEATED_SAMPLER = "repeated_sampler"
+
+
+class AnalysisEnum(Enum):
+    GEE = "gee"
+    OLS_NON_CLUSTERED = "ols_non_clustered"
+    OLS = "ols"
+    OLS_CLUSTERED = "ols_clustered"
+    CLUSTERED_OLS = "clustered_ols"
+    TTEST_CLUSTERED = "ttest_clustered"
+    PAIRED_TTEST_CLUSTERED = "paired_ttest_clustered"
+    MLM = "mlm"
+
+
+class CupacModelEnum(Enum):
+    EMPTY_REGRESSOR = ""
+    MEAN_CUPAC_MODEL = "mean_cupac_model"
+
+
+perturbator_mapping = {
+    PerturbatorEnum.BINARY: BinaryPerturbator,
+    PerturbatorEnum.CONSTANT: ConstantPerturbator,
+    PerturbatorEnum.UNIFORM: UniformPerturbator,
+    PerturbatorEnum.RELATIVE_POSITIVE: RelativePositivePerturbator,
+    PerturbatorEnum.NORMAL: NormalPerturbator,
+    PerturbatorEnum.BETA_RELATIVE_POSITIVE: BetaRelativePositivePerturbator,
+    PerturbatorEnum.BETA_RELATIVE: BetaRelativePerturbator,
+    PerturbatorEnum.SEGMENTED_BETA_RELATIVE: SegmentedBetaRelativePerturbator,
+}
+
+splitter_mapping = {
+    SplitterEnum.CLUSTERED: ClusteredSplitter,
+    SplitterEnum.CLUSTERED_BALANCE: BalancedClusteredSplitter,
+    SplitterEnum.CLUSTERED_BALANCED: BalancedClusteredSplitter,
+    SplitterEnum.BALANCED_CLUSTER: BalancedClusteredSplitter,
+    SplitterEnum.BALANCED_CLUSTERED: BalancedClusteredSplitter,
+    SplitterEnum.NON_CLUSTERED: NonClusteredSplitter,
+    SplitterEnum.CLUSTERED_STRATIFIED: StratifiedClusteredSplitter,
+    SplitterEnum.STRATIFIED_CLUSTER: StratifiedClusteredSplitter,
+    SplitterEnum.STRATIFIED_CLUSTERED: StratifiedClusteredSplitter,
+    SplitterEnum.SWITCHBACK: SwitchbackSplitter,
+    SplitterEnum.SWITCHBACK_BALANCE: BalancedSwitchbackSplitter,
+    SplitterEnum.SWITCHBACK_BALANCED: BalancedSwitchbackSplitter,
+    SplitterEnum.BALANCED_SWITCHBACK: BalancedSwitchbackSplitter,
+    SplitterEnum.SWITCHBACK_STRATIFIED: StratifiedSwitchbackSplitter,
+    SplitterEnum.STRATIFIED_SWITCHBACK: StratifiedSwitchbackSplitter,
+    SplitterEnum.REPEATED_SAMPLER: RepeatedSampler,
+}
+
+analysis_mapping = {
+    AnalysisEnum.GEE: GeeExperimentAnalysis,
+    AnalysisEnum.OLS_NON_CLUSTERED: OLSAnalysis,
+    AnalysisEnum.OLS: OLSAnalysis,
+    AnalysisEnum.OLS_CLUSTERED: ClusteredOLSAnalysis,
+    AnalysisEnum.CLUSTERED_OLS: ClusteredOLSAnalysis,
+    AnalysisEnum.TTEST_CLUSTERED: TTestClusteredAnalysis,
+    AnalysisEnum.PAIRED_TTEST_CLUSTERED: PairedTTestClusteredAnalysis,
+    AnalysisEnum.MLM: MLMExperimentAnalysis,
+}
+
+
+cupac_model_mapping = {
+    CupacModelEnum.EMPTY_REGRESSOR: EmptyRegressor,
+    CupacModelEnum.MEAN_CUPAC_MODEL: TargetAggregation,
+}
+
+
 class MissingArgumentError(ValueError):
     pass
 
 
-@dataclass(eq=True)
-class PowerConfig:
+class PowerConfig(BaseModel):
     """
     Dataclass to create a power analysis from.
 
-    Arguments:
         splitter: Splitter object to use
         perturbator: Perturbator object to use
         analysis: ExperimentAnalysis object to use
@@ -93,16 +187,16 @@ class PowerConfig:
     """
 
     # mappings
-    perturbator: str
-    splitter: str
-    analysis: str
+    perturbator: PerturbatorEnum
+    splitter: SplitterEnum
+    analysis: AnalysisEnum
     washover: str = ""
 
     # Needed
     cluster_cols: Optional[List[str]] = None
 
     # optional mappings
-    cupac_model: str = ""
+    cupac_model: CupacModelEnum = CupacModelEnum.EMPTY_REGRESSOR
 
     # Shared
     target_col: str = "target"
@@ -183,6 +277,7 @@ class PowerConfig:
             if self._are_different(self.smoothing_factor, 20):
                 self._set_and_log("smoothing_factor", 20, "cupac_model")
         # for now, features_cupac_model are not used
+        # TODO: raise loudly when features_cupac_model is not None
         if self._are_different(self.features_cupac_model, None):
             self._set_and_log("features_cupac_model", None, "cupac_model")
 
@@ -210,47 +305,3 @@ class PowerConfig:
                 f"{attr} is required when using "
                 f"{other_attr} = {getattr(self, other_attr)}."
             )
-
-
-perturbator_mapping = {
-    "binary": BinaryPerturbator,
-    "constant": ConstantPerturbator,
-    "uniform": UniformPerturbator,
-    "relative_positive": RelativePositivePerturbator,
-    "normal": NormalPerturbator,
-    "beta_relative_positive": BetaRelativePositivePerturbator,
-    "beta_relative": BetaRelativePerturbator,
-    "segmented_beta_relative": SegmentedBetaRelativePerturbator,
-}
-
-splitter_mapping = {
-    "clustered": ClusteredSplitter,
-    "clustered_balance": BalancedClusteredSplitter,
-    "clustered_balanced": BalancedClusteredSplitter,
-    "balanced_cluster": BalancedClusteredSplitter,
-    "balanced_clustered": BalancedClusteredSplitter,
-    "non_clustered": NonClusteredSplitter,
-    "clustered_stratified": StratifiedClusteredSplitter,
-    "stratified_cluster": StratifiedClusteredSplitter,
-    "stratified_clustered": StratifiedClusteredSplitter,
-    "switchback": SwitchbackSplitter,
-    "switchback_balance": BalancedSwitchbackSplitter,
-    "switchback_balanced": BalancedSwitchbackSplitter,
-    "balanced_switchback": BalancedSwitchbackSplitter,
-    "switchback_stratified": StratifiedSwitchbackSplitter,
-    "stratified_switchback": StratifiedSwitchbackSplitter,
-    "repeated_sampler": RepeatedSampler,
-}
-
-analysis_mapping = {
-    "gee": GeeExperimentAnalysis,
-    "ols_non_clustered": OLSAnalysis,
-    "ols": OLSAnalysis,
-    "ols_clustered": ClusteredOLSAnalysis,
-    "clustered_ols": ClusteredOLSAnalysis,
-    "ttest_clustered": TTestClusteredAnalysis,
-    "paired_ttest_clustered": PairedTTestClusteredAnalysis,
-    "mlm": MLMExperimentAnalysis,
-}
-
-cupac_model_mapping = {"": EmptyRegressor, "mean_cupac_model": TargetAggregation}

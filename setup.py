@@ -7,6 +7,7 @@ base_packages = [
     "scikit-learn>=1.0.0",
     "tqdm>=4.0.0",
     "numpy>=1.20.0",
+    "pydantic>=2.0.0",
 ]
 
 only_test_packages = [
