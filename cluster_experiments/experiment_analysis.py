@@ -2,11 +2,14 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
 from scipy.stats import ttest_ind, ttest_rel
+from toolz import partial
 
+from cluster_experiments.synthetic_control import get_w
 from cluster_experiments.utils import HypothesisEntries
 
 
@@ -680,3 +683,163 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         """
         results_mlm = self.fit_mlm(df)
         return results_mlm.params[self.treatment_col]
+
+
+class SyntheticControlAnalysis(ExperimentAnalysis):
+    """
+    Class to run OLS analysis
+
+    Arguments:
+        target_col: name of the column containing the variable to measure
+        treatment_col: name of the column containing the treatment variable
+        donor_col: name of the column containing the donor pool
+        treatment: name of the treatment to use as the treated group
+
+    Usage:
+
+    ```python
+    from cluster_experiments.experiment_analysis import OLSAnalysis
+    import pandas as pd
+
+    df = pd.DataFrame({
+        'x': [1, 2, 3, 0, 0, 1],
+        'treatment': ["A"] * 3 + ["B"] * 3,
+    })
+
+    OLSAnalysis(
+        target_col='x',
+    ).get_pvalue(df)
+    ```
+    """
+
+    def __init__(
+        self,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        cluster_cols: Optional[List[str]] = None,
+        hypothesis: str = "two-sided",
+        time_col: str = "date",
+        transition_date: str = "2022-01-15",
+    ):
+        super().__init__(cluster_cols)
+
+        self.target_col = target_col
+        self.treatment = treatment
+        self.treatment_col = treatment_col
+        self.cluster_cols = cluster_cols
+        self.hypothesis = hypothesis
+        self.time_col = time_col
+        self.transition_date = transition_date
+
+    def fit_synthetic(self, df: pd.DataFrame) -> list:
+        """Returns the fitted OLS model"""
+
+        X = (
+            df.query(f"{self.treatment_col}==0")
+            .pivot(index=self.cluster_cols, columns=self.time_col)[self.target_col]
+            .T
+        )
+
+        if not any(df[self.treatment_col] == 1):
+            raise ValueError("No treatment unit found in the data.")
+
+        y = df.query(f"{self.treatment_col}==1")[f"{self.target_col}"]  # treated
+
+        weights = get_w(X, y)
+
+        return weights
+
+    def synthetic_control(self, df: pd.DataFrame, treatment_unit) -> np.array:
+        weights = self.fit_synthetic(df)
+
+        synthetic = (
+            df.query(
+                f"{''.join(self.cluster_cols)} != '{treatment_unit}'"
+            )  # remove treatment cluster
+            .pivot(index=self.time_col, columns=self.cluster_cols)[self.target_col]
+            .values.dot(weights)
+        )
+
+        return df.query(
+            f"{''.join(self.cluster_cols)} == '{treatment_unit}'"
+        ).assign(  # add synthetic to treatment unit
+            synthetic=synthetic
+        )
+
+    def pvalue_based_on_hypothesis(
+        self, synthetic_donors: pd.DataFrame, treatment_cluster: str
+    ) -> float:
+
+        treatment_index = [
+            i for i, df in enumerate(synthetic_donors) if (df["treatment"] == 1).any()
+        ]
+
+        # first calculate the average effect after intervention for each unit, in a list comprehension
+        avg_effects = [
+            unit.query("treatment_period == 'After'")[self.target_col].mean()
+            for unit in synthetic_donors
+        ]
+        avg_effects = np.abs(avg_effects)
+
+        # then count how many times the average effect is greater than the real treatment unit (which is the first one)
+        # and divide by the number of units
+        p_value = np.where(avg_effects > avg_effects[treatment_index], 1, 0).mean()
+
+        return p_value
+
+    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the p-value of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+
+        # todo should I throw an error if more than one cluster column is passed?
+        control_pool = df[self.cluster_cols].iloc[:, 0].unique()
+        # control_pool = df[self.cluster_cols].iloc[:, 0].values
+
+        # parallel_fn = delayed(partial(self.synthetic_control, df=df))
+        parallel_fn = partial(self.synthetic_control, df=df)
+
+        synthetic_donors = [parallel_fn(treatment_unit=unit) for unit in control_pool]
+
+        treatment_cluster = (
+            df.query(f"{self.treatment_col}==1")[self.cluster_cols]
+            .iloc[:, 0]
+            .unique()
+            .item()
+        )  # todo super convoluted way to get the treatment cluster
+
+        # synthetic_donors = Parallel(n_jobs=8)(parallel_fn(state) for state in control_pool)
+
+        p_value = self.pvalue_based_on_hypothesis(
+            synthetic_donors=synthetic_donors, treatment_cluster=treatment_cluster
+        )
+        return p_value
+
+    def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the point estimate of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        df
+        self.synthetic_control(df, treatment_unit="Cluster 1")
+        # diff using self.transition_date
+        # mean_diff
+
+        # todo change this to the point estimate of the synthetic control, which is the difference in values after the treatment start
+
+        return 0.1
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates an OLSAnalysis object from a PowerConfig object"""
+        return cls(
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            covariates=config.covariates,
+            hypothesis=config.hypothesis,
+        )
