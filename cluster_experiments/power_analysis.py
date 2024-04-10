@@ -1,5 +1,6 @@
 import logging
 import random
+from abc import ABC, abstractmethod
 from typing import Dict, Generator, Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -21,7 +22,163 @@ from cluster_experiments.random_splitter import RandomSplitter, RepeatedSampler
 from cluster_experiments.utils import _get_mapping_key
 
 
-class PowerAnalysis:
+class BasePowerAnalysis(ABC):
+    """
+    Base class used as a protocol for Power analysis classes.
+    Child classes must implement the power_analysis() and the power_line() methods.
+
+    Child classes require the following minimum set of attributes:
+
+    Args:
+        splitter: RandomSplitter class to randomly assign treatment to dataframe.
+        analysis: ExperimentAnalysis class to use for analysis.
+        cupac_model: Sklearn estimator class to add pre-experiment data to dataframe. If None, no pre-experiment data will be added.
+        target_col: Name of the column with the outcome variable.
+        treatment_col: Name of the column with the treatment variable.
+        treatment: value of treatment_col considered to be treatment (not control)
+        control: value of treatment_col considered to be control (not treatment)
+        alpha: Significance level.
+        features_cupac_model: Covariates to be used in cupac model
+        seed: Optional. Seed to use for the splitter.
+    """
+
+    def __init__(
+        self,
+        splitter: RandomSplitter,
+        analysis: ExperimentAnalysis,
+        cupac_model: Optional[BaseEstimator] = None,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        control: str = "A",
+        alpha: float = 0.05,
+        features_cupac_model: Optional[List[str]] = None,
+        seed: Optional[int] = None,
+        hypothesis: str = "two-sided",
+    ):
+        self.splitter = splitter
+        self.analysis = analysis
+        self.target_col = target_col
+        self.treatment = treatment
+        self.control = control
+        self.treatment_col = treatment_col
+        self.alpha = alpha
+        self.hypothesis = hypothesis
+
+        self.cupac_handler = CupacHandler(
+            cupac_model=cupac_model,
+            target_col=target_col,
+            features_cupac_model=features_cupac_model,
+        )
+        if seed is not None:
+            random.seed(seed)  # seed for splitter
+            np.random.seed(seed)  # seed for the binary perturbator
+            # may need to seed other stochasticity sources if added
+
+    @abstractmethod
+    def power_analysis(self, *args, **kwargs) -> float:
+        """
+        Run power analysis and returns the statistical power as a float
+        """
+        ...
+
+    @abstractmethod
+    def power_line(self, *args, **kwargs) -> Dict[float, float]:
+        """Runs power analysis with multiple average effects.
+
+        Returns a dictionary with average effects as keys and power as values.
+        """
+        ...
+
+    def check_treatment_col(self):
+
+        assert (
+            self.analysis.treatment_col == self.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in PowerAnalysis ({self.treatment_col})"
+
+        assert (
+            self.analysis.treatment_col == self.splitter.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in splitter ({self.splitter.treatment_col})"
+
+    def check_target_col(self):
+
+        assert (
+            self.analysis.target_col == self.target_col
+        ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in PowerAnalysis ({self.target_col})"
+
+    def check_treatment(self):
+
+        assert (
+            self.analysis.treatment == self.treatment
+        ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in PowerAnalysis ({self.treatment})"
+
+        assert (
+            self.analysis.treatment in self.splitter.treatments
+        ), f"treatment in analysis ({self.analysis.treatment}) must be in treatments in splitter ({self.splitter.treatments})"
+
+        assert (
+            self.control in self.splitter.treatments
+        ), f"control in power analysis ({self.control}) must be in treatments in splitter ({self.splitter.treatments})"
+
+    def check_covariates(self):
+        if hasattr(self.analysis, "covariates"):
+            cupac_in_covariates = (
+                self.cupac_handler.cupac_outcome_name in self.analysis.covariates
+            )
+
+            assert cupac_in_covariates or not self.cupac_handler.is_cupac, (
+                f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
+                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
+                f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
+            )
+
+            if hasattr(self.splitter, "cluster_cols"):
+                if set(self.analysis.covariates).intersection(
+                    set(self.splitter.cluster_cols)
+                ):
+                    logging.warning(
+                        f"covariates in analysis ({self.analysis.covariates}) are also cluster_cols in splitter ({self.splitter.cluster_cols}). "
+                        f"Be specially careful when using switchback splitters, since the time splitter column is being overriden"
+                    )
+
+    def check_clusters(self):
+        has_analysis_clusters = hasattr(self.analysis, "cluster_cols")
+        has_splitter_clusters = hasattr(self.splitter, "cluster_cols")
+        not_cluster_cols_cond = not has_analysis_clusters or not has_splitter_clusters
+        assert (
+            not_cluster_cols_cond
+            or self.analysis.cluster_cols == self.splitter.cluster_cols
+        ), f"cluster_cols in analysis ({self.analysis.cluster_cols}) must be the same as cluster_cols in splitter ({self.splitter.cluster_cols})"
+
+        assert (
+            has_splitter_clusters
+            or not has_analysis_clusters
+            or not self.analysis.cluster_cols
+            or isinstance(self.splitter, RepeatedSampler)
+        ), "analysis has cluster_cols but splitter does not."
+
+        assert (
+            has_analysis_clusters
+            or not has_splitter_clusters
+            or not self.splitter.cluster_cols
+        ), "splitter has cluster_cols but analysis does not."
+
+        has_time_col = hasattr(self.splitter, "time_col")
+        assert not (
+            has_time_col
+            and has_splitter_clusters
+            and self.splitter.time_col not in self.splitter.cluster_cols
+        ), "in switchback splitters, time_col must be in cluster_cols"
+
+    def check_inputs(self):
+        self.check_covariates()
+        self.check_treatment_col()
+        self.check_target_col()
+        self.check_treatment()
+        self.check_clusters()
+
+
+class PowerAnalysis(BasePowerAnalysis):
     """
     Class used to run Power analysis. It does so by running simulations. In each simulation:
     1. Assign treatment to dataframe randomly
@@ -105,26 +262,21 @@ class PowerAnalysis:
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
     ):
-        self.perturbator = perturbator
-        self.splitter = splitter
-        self.analysis = analysis
-        self.n_simulations = n_simulations
-        self.target_col = target_col
-        self.treatment = treatment
-        self.control = control
-        self.treatment_col = treatment_col
-        self.alpha = alpha
-        self.hypothesis = hypothesis
-
-        self.cupac_handler = CupacHandler(
+        super().__init__(
+            splitter=splitter,
+            analysis=analysis,
             cupac_model=cupac_model,
             target_col=target_col,
+            treatment_col=treatment_col,
+            treatment=treatment,
+            control=control,
+            alpha=alpha,
             features_cupac_model=features_cupac_model,
+            seed=seed,
+            hypothesis=hypothesis,
         )
-        if seed is not None:
-            random.seed(seed)  # seed for splitter
-            np.random.seed(seed)  # seed for the binary perturbator
-            # may need to seed other stochasticity sources if added
+        self.perturbator = perturbator
+        self.n_simulations = n_simulations
 
         self.check_inputs()
 
@@ -428,95 +580,19 @@ class PowerAnalysis:
             seed=config.seed,
         )
 
-    def check_treatment_col(self):
-        """Checks consistency of treatment column"""
+    def check_perturbator_consistency(self):
+        """Checks consistency of treatment column, target column and treatment groups in the perturbator object"""
         assert (
             self.analysis.treatment_col == self.perturbator.treatment_col
         ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in perturbator ({self.perturbator.treatment_col})"
 
         assert (
-            self.analysis.treatment_col == self.treatment_col
-        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in PowerAnalysis ({self.treatment_col})"
-
-        assert (
-            self.analysis.treatment_col == self.splitter.treatment_col
-        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in splitter ({self.splitter.treatment_col})"
-
-    def check_target_col(self):
-        assert (
             self.analysis.target_col == self.perturbator.target_col
         ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in perturbator ({self.perturbator.target_col})"
 
         assert (
-            self.analysis.target_col == self.target_col
-        ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in PowerAnalysis ({self.target_col})"
-
-    def check_treatment(self):
-        assert (
             self.analysis.treatment == self.perturbator.treatment
         ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in perturbator ({self.perturbator.treatment})"
-
-        assert (
-            self.analysis.treatment == self.treatment
-        ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in PowerAnalysis ({self.treatment})"
-
-        assert (
-            self.analysis.treatment in self.splitter.treatments
-        ), f"treatment in analysis ({self.analysis.treatment}) must be in treatments in splitter ({self.splitter.treatments})"
-
-        assert (
-            self.control in self.splitter.treatments
-        ), f"control in power analysis ({self.control}) must be in treatments in splitter ({self.splitter.treatments})"
-
-    def check_covariates(self):
-        if hasattr(self.analysis, "covariates"):
-            cupac_in_covariates = (
-                self.cupac_handler.cupac_outcome_name in self.analysis.covariates
-            )
-
-            assert cupac_in_covariates or not self.cupac_handler.is_cupac, (
-                f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
-                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
-                f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
-            )
-
-            if hasattr(self.splitter, "cluster_cols"):
-                if set(self.analysis.covariates).intersection(
-                    set(self.splitter.cluster_cols)
-                ):
-                    logging.warning(
-                        f"covariates in analysis ({self.analysis.covariates}) are also cluster_cols in splitter ({self.splitter.cluster_cols}). "
-                        f"Be specially careful when using switchback splitters, since the time splitter column is being overriden"
-                    )
-
-    def check_clusters(self):
-        has_analysis_clusters = hasattr(self.analysis, "cluster_cols")
-        has_splitter_clusters = hasattr(self.splitter, "cluster_cols")
-        not_cluster_cols_cond = not has_analysis_clusters or not has_splitter_clusters
-        assert (
-            not_cluster_cols_cond
-            or self.analysis.cluster_cols == self.splitter.cluster_cols
-        ), f"cluster_cols in analysis ({self.analysis.cluster_cols}) must be the same as cluster_cols in splitter ({self.splitter.cluster_cols})"
-
-        assert (
-            has_splitter_clusters
-            or not has_analysis_clusters
-            or not self.analysis.cluster_cols
-            or isinstance(self.splitter, RepeatedSampler)
-        ), "analysis has cluster_cols but splitter does not."
-
-        assert (
-            has_analysis_clusters
-            or not has_splitter_clusters
-            or not self.splitter.cluster_cols
-        ), "splitter has cluster_cols but analysis does not."
-
-        has_time_col = hasattr(self.splitter, "time_col")
-        assert not (
-            has_time_col
-            and has_splitter_clusters
-            and self.splitter.time_col not in self.splitter.cluster_cols
-        ), "in switchback splitters, time_col must be in cluster_cols"
 
     def check_inputs(self):
         self.check_covariates()
@@ -524,3 +600,53 @@ class PowerAnalysis:
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+        self.check_perturbator_consistency()
+
+    class AAPowerAnalysis(BasePowerAnalysis):
+        def __init__(
+            self,
+            splitter: RandomSplitter,
+            analysis: ExperimentAnalysis,
+            cupac_model: Optional[BaseEstimator] = None,
+            target_col: str = "target",
+            treatment_col: str = "treatment",
+            treatment: str = "B",
+            control: str = "A",
+            alpha: float = 0.05,
+            features_cupac_model: Optional[List[str]] = None,
+            seed: Optional[int] = None,
+            hypothesis: str = "two-sided",
+        ):
+            super().__init__(
+                splitter=splitter,
+                analysis=analysis,
+                cupac_model=cupac_model,
+                target_col=target_col,
+                treatment_col=treatment_col,
+                treatment=treatment,
+                control=control,
+                alpha=alpha,
+                features_cupac_model=features_cupac_model,
+                seed=seed,
+                hypothesis=hypothesis,
+            )
+
+            self.check_inputs()
+
+        def power_analysis(
+            self,
+            df: pd.DataFrame,
+            pre_experiment_df: Optional[pd.DataFrame] = None,
+            average_effect: Optional[float] = None,
+            alpha: Optional[float] = None,
+        ) -> float:
+            raise NotImplementedError
+
+        def power_line(
+            self,
+            df: pd.DataFrame,
+            pre_experiment_df: Optional[pd.DataFrame] = None,
+            average_effects: Iterable[float] = (),
+            alpha: Optional[float] = None,
+        ) -> Dict[float, float]:
+            raise NotImplementedError
