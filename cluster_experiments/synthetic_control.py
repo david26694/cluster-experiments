@@ -1,7 +1,6 @@
 from functools import partial
 
 import numpy as np
-import pandas as pd
 from scipy.optimize import fmin_slsqp
 
 
@@ -23,32 +22,3 @@ def get_w(X, y):
         disp=True,
     )
     return weights
-
-
-def fit_synthetic(
-    df: pd.DataFrame, time_col, cluster_cols, treatment, target_col
-) -> list:
-    """Returns the fitted OLS model"""
-
-    inverted = df.pivot(index=cluster_cols, columns=time_col)[target_col].T
-
-    y = inverted[treatment].values  # treated
-    X = inverted.drop(columns=treatment).values  # donor pool
-
-    weights = get_w(X, y)
-    return weights
-
-
-def synthetic_control(state: int, df: pd.DataFrame, cluster, date) -> np.array:
-
-    weights = fit_synthetic(df)
-
-    synthetic = (
-        df.query(f"~(state=={state})")
-        .pivot(index="year", columns="state")["cigsale"]
-        .values.dot(weights)
-    )
-
-    return df.query(f"state=={state}")[
-        [cluster, date, "cigsale", "after_treatment"]
-    ].assign(synthetic=synthetic)
