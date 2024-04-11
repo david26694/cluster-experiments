@@ -14,22 +14,18 @@ def generate_data(N, start_date, end_date):
     # Generate a list of dates between start_date and end_date
     dates = pd.date_range(start_date, end_date, freq="d")
 
-    # Create a list of user identifiers
     users = [f"User {i}" for i in range(N)]
 
     # Use itertools.product to create a combination of each date with each user
     combinations = list(product(users, dates))
 
-    # Generate random target values for each combination
     target_values = np.random.normal(0, 1, size=len(combinations))
 
-    # Create a DataFrame from the combinations
     df = pd.DataFrame(combinations, columns=["user", "date"])
     df["target"] = target_values
 
     # Ensure 'date' column is of datetime type and extract day of week name
     df["date"] = pd.to_datetime(df["date"])
-    df["dow"] = df["date"].dt.day_name()
 
     return df
 

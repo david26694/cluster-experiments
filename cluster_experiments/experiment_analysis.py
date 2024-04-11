@@ -687,28 +687,44 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
 
 class SyntheticControlAnalysis(ExperimentAnalysis):
     """
-    Class to run OLS analysis
+    Class to run Synthetic control analysis. It expects only one treatment cluster.
 
     Arguments:
-        target_col: name of the column containing the variable to measure
-        treatment_col: name of the column containing the treatment variable
-        donor_col: name of the column containing the donor pool
-        treatment: name of the treatment to use as the treated group
 
+        target_col (str): The name of the column containing the variable to measure.
+        treatment_col (str): The name of the column containing the treatment variable.
+        treatment (str): The name of the treatment to use as the treated group.
+        cluster_cols (list): A list of columns to use as clusters.
+        hypothesis (str): One of "two-sided", "less", "greater" indicating the hypothesis.
+        time_col (str): The name of the column containing the time data.
+        transition_date (str): The date when the intervention occurred.
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import OLSAnalysis
+    from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
     import pandas as pd
+    import numpy as np
 
-    df = pd.DataFrame({
-        'x': [1, 2, 3, 0, 0, 1],
-        'treatment': ["A"] * 3 + ["B"] * 3,
-    })
+    dates = pd.date_range(start_date, end_date, freq="d")
 
-    OLSAnalysis(
-        target_col='x',
+    users = [f"User {i}" for i in range(N)]
+
+    # Create a combination of each date with each user
+    combinations = list(product(users, dates))
+
+    target_values = np.random.normal(0, 1, size=len(combinations))
+
+    df = pd.DataFrame(combinations, columns=["user", "date"])
+    df["target"] = target_values
+
+    df["treatment_period"] = np.where(
+        df["date"].dt.date < date(2022, 1, 15), "Before", "After"
+    )
+
+    SyntheticControlAnalysis(
+        cluster_cols=["user"], time_col="date", transition_date=date(2022, 1, 15)
     ).get_pvalue(df)
+
     ```
     """
 
@@ -720,7 +736,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         cluster_cols: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
         time_col: str = "date",
-        transition_date: str = "2022-01-15",
+        transition_date: str = None,
     ):
         super().__init__(cluster_cols)
 
@@ -734,6 +750,8 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
     def fit_synthetic(self, df: pd.DataFrame) -> list:
         """Returns the fitted OLS model"""
+
+        # todo should I throw an error if more than one cluster column is passed?
 
         X = (
             df.query(f"{self.treatment_col}==0")
