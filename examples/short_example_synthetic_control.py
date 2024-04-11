@@ -7,7 +7,7 @@ import pandas as pd
 from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
 from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.random_splitter import ClusteredSplitter
+from cluster_experiments.random_splitter import FixedTreatmentClustersSplitter
 
 
 def generate_data(N, start_date, end_date):
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     df["treatment_period"] = np.where(
         df["date"].dt.date < date(2022, 1, 15), "Before", "After"
     )
-    sw = ClusteredSplitter(n_treatment_clusters=1, cluster_cols=["user"])
+    sw = FixedTreatmentClustersSplitter(n_treatment_clusters=1, cluster_cols=["user"])
 
     perturbator = ConstantPerturbator(
         average_effect=0.1,

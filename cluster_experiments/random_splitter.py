@@ -86,13 +86,11 @@ class ClusteredSplitter(RandomSplitter):
         treatments: Optional[List[str]] = None,
         treatment_col: str = "treatment",
         splitter_weights: Optional[List[float]] = None,
-        n_treatment_clusters: Optional[int] = None,
     ) -> None:
         self.treatments = treatments or ["A", "B"]
         self.cluster_cols = cluster_cols
         self.treatment_col = treatment_col
         self.splitter_weights = splitter_weights
-        self.n_treatment_clusters = n_treatment_clusters
 
     def assign_treatment_df(
         self,
@@ -118,13 +116,6 @@ class ClusteredSplitter(RandomSplitter):
         df = df.merge(clusters_df, on=self.cluster_cols, how="left")
         return df
 
-    def deterministic_choices(self, treatments, counts):
-        result = []
-        for treatment, count in zip(treatments, counts):
-            result.extend([treatment] * count)
-        random.shuffle(result)
-        return result
-
     def sample_treatment(
         self,
         cluster_df: pd.DataFrame,
@@ -135,24 +126,9 @@ class ClusteredSplitter(RandomSplitter):
         Arguments:
             cluster_df: dataframe to assign treatments to
         """
-        # if isinstance(self.n_treatment_clusters, int):
-        if hasattr(self, "n_treatment_clusters") and isinstance(
-            self.n_treatment_clusters, int
-        ):  # todo find a simpler way to do this
-            sample_treatment = self.deterministic_choices(
-                self.treatments,
-                counts=[
-                    len(cluster_df) - self.n_treatment_clusters,
-                    self.n_treatment_clusters,
-                ],
-            )
-
-        else:
-            sample_treatment = random.choices(
-                self.treatments, k=len(cluster_df), weights=self.splitter_weights
-            )
-
-        return sample_treatment
+        return random.choices(
+            self.treatments, k=len(cluster_df), weights=self.splitter_weights
+        )
 
 
 class SwitchbackSplitter(ClusteredSplitter):
@@ -319,7 +295,6 @@ class NonClusteredSplitter(RandomSplitter):
         self,
         df: pd.DataFrame,
     ) -> pd.DataFrame:
-
         """
         Takes a df, randomizes treatments and adds the treatment column to the dataframe
 
@@ -562,3 +537,32 @@ class RepeatedSampler(RandomSplitter):
             treatments=config.treatments,
             treatment_col=config.treatment_col,
         )
+
+
+class FixedTreatmentClustersSplitter(ClusteredSplitter):
+    def __init__(self, cluster_cols: List[str], n_treatment_clusters: int):
+        self.n_treatment_clusters = n_treatment_clusters
+        super().__init__(cluster_cols=cluster_cols)
+
+    def fixed_number_of_treatment(self, treatments, counts):
+        result = [
+            treatment
+            for treatment, count in zip(treatments, counts)
+            for _ in range(count)
+        ]
+        random.shuffle(result)
+        return result
+
+    def sample_treatment(
+        self,
+        cluster_df: pd.DataFrame,
+    ) -> List[str]:
+        sample_treatment = self.fixed_number_of_treatment(
+            self.treatments,
+            counts=[
+                len(cluster_df) - self.n_treatment_clusters,
+                self.n_treatment_clusters,
+            ],
+        )
+
+        return sample_treatment

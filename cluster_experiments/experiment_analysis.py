@@ -790,12 +790,19 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     ) -> float:
 
         treatment_index = [
-            i for i, df in enumerate(synthetic_donors) if (df["treatment"] == 1).any()
+            i
+            for i, df in enumerate(synthetic_donors)
+            if (df[self.treatment_col] == 1).any()
+        ]
+
+        synthetic_donors = [
+            unit.assign(effect=unit[self.target_col] - unit["synthetic"])
+            for unit in synthetic_donors
         ]
 
         # first calculate the average effect after intervention for each unit, in a list comprehension
         avg_effects = [
-            unit.query("treatment_period == 'After'")[self.target_col].mean()
+            unit.query("treatment_period == 'After'")["effect"].mean()
             for unit in synthetic_donors
         ]
         avg_effects = np.abs(avg_effects)
@@ -815,21 +822,17 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
         # todo should I throw an error if more than one cluster column is passed?
         control_pool = df[self.cluster_cols].iloc[:, 0].unique()
-        # control_pool = df[self.cluster_cols].iloc[:, 0].values
 
         # parallel_fn = delayed(partial(self.synthetic_control, df=df))
         parallel_fn = partial(self.synthetic_control, df=df)
 
         synthetic_donors = [parallel_fn(treatment_unit=unit) for unit in control_pool]
 
-        treatment_cluster = (
-            df.query(f"{self.treatment_col}==1")[self.cluster_cols]
-            .iloc[:, 0]
-            .unique()
-            .item()
-        )  # todo super convoluted way to get the treatment cluster
+        treatment_cluster = df.loc[
+            df[self.treatment_col] == 1, self.cluster_cols[0]
+        ].unique()[0]
 
-        # synthetic_donors = Parallel(n_jobs=8)(parallel_fn(state) for state in control_pool)
+        # synthetic_donors_p = Parallel(n_jobs=8)([parallel_fn(treatment_unit =unit) for unit in control_pool])
 
         p_value = self.pvalue_based_on_hypothesis(
             synthetic_donors=synthetic_donors, treatment_cluster=treatment_cluster
@@ -842,14 +845,16 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        df
-        self.synthetic_control(df, treatment_unit="Cluster 1")
-        # diff using self.transition_date
-        # mean_diff
 
-        # todo change this to the point estimate of the synthetic control, which is the difference in values after the treatment start
+        treatment_cluster = df.loc[
+            df[self.treatment_col] == 1, self.cluster_cols[0]
+        ].unique()[0]
+        df = self.synthetic_control(df, treatment_unit=treatment_cluster)
 
-        return 0.1
+        df["effect"] = df[self.target_col] - df["synthetic"]
+        avg_effect = df["effect"].mean()
+
+        return avg_effect
 
     @classmethod
     def from_config(cls, config):
