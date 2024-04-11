@@ -135,7 +135,10 @@ class ClusteredSplitter(RandomSplitter):
         Arguments:
             cluster_df: dataframe to assign treatments to
         """
-        if hasattr(self, "n_treatment_clusters"):
+        # if isinstance(self.n_treatment_clusters, int):
+        if hasattr(self, "n_treatment_clusters") and isinstance(
+            self.n_treatment_clusters, int
+        ):  # todo find a simpler way to do this
             sample_treatment = self.deterministic_choices(
                 self.treatments,
                 counts=[
