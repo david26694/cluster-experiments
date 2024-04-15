@@ -12,13 +12,14 @@ def get_w(X, y, verbose=False):
     """
     Get weights per unit, constraint in the loss function that sum equals 1 (bounds)
     """
-    w_start = [1 / X.shape[1]] * X.shape[1]
+    w_start = np.full(X.shape[1], 1 / X.shape[1])
+    bounds = [(0.0, 1.0)] * len(w_start)
 
     weights = fmin_slsqp(
         partial(loss_w, X=X, y=y),
-        np.array(w_start),
-        f_eqcons=lambda x: np.sum(x) - 1,
-        bounds=[(0.0, 1.0)] * len(w_start),
+        w_start,
+        f_eqcons=np.sum,
+        bounds=bounds,
         disp=verbose,
     )
     return weights

@@ -524,3 +524,46 @@ class PowerAnalysis:
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+
+
+# create a new class where _run simulation param is pre_experiment_df
+class PowerAnalysisWithPreExperimentData(PowerAnalysis):
+    def _split_and_perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+
+        treatment_df = self.splitter.assign_treatment_df(df)
+        self.log_nulls(treatment_df)
+
+        treatment_df = treatment_df.query(
+            f"{self.treatment_col}.notnull()", engine="python"
+        ).query(
+            f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
+            engine="python",
+        )
+
+        treatment_df = treatment_df[
+            (treatment_df[self.analysis.time_col] > self.analysis.intervention_date)
+        ]
+
+        perturbed_df = self.perturbator.perturbate(
+            treatment_df, average_effect=average_effect
+        )
+        # get treatment cluster
+        treatment_cluster = perturbed_df.loc[
+            perturbed_df[self.treatment_col] == self.treatment,
+            self.analysis.cluster_cols[0],
+        ].unique()[0]
+
+        pre_experiment_df = df.query(
+            f"{self.analysis.time_col} <= '{self.analysis.intervention_date}'"
+        )
+        pre_experiment_df = pre_experiment_df.copy()
+
+        pre_experiment_df.loc[:, "treatment"] = np.where(
+            pre_experiment_df["".join(self.analysis.cluster_cols)] == treatment_cluster,
+            self.treatment,
+            self.control,
+        )
+
+        return pd.concat([perturbed_df, pre_experiment_df])

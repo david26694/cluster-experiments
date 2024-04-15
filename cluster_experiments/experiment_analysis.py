@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from functools import partial
 from typing import List, Optional
 
 import numpy as np
@@ -7,7 +8,6 @@ import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
 from scipy.stats import ttest_ind, ttest_rel
-from toolz import partial
 
 from cluster_experiments.synthetic_control import get_w
 from cluster_experiments.utils import HypothesisEntries
@@ -106,7 +106,7 @@ class ExperimentAnalysis(ABC):
         df = df.copy()
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
-        return self.analysis_pvalue(df)
+        return self.analysis_pvalue(df=df)
 
     def get_point_estimate(self, df: pd.DataFrame) -> float:
         """Returns the point estimate of the analysis
@@ -697,7 +697,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         cluster_cols (list): A list of columns to use as clusters.
         hypothesis (str): One of "two-sided", "less", "greater" indicating the hypothesis.
         time_col (str): The name of the column containing the time data.
-        transition_date (str): The date when the intervention occurred.
+        intervention_date (str): The date when the intervention occurred.
     Usage:
 
     ```python
@@ -717,9 +717,6 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     df = pd.DataFrame(combinations, columns=["user", "date"])
     df["target"] = target_values
 
-    df["treatment_period"] = np.where(
-        df["date"].dt.date < date(2022, 1, 15), "Before", "After"
-    )
 
     SyntheticControlAnalysis(
         cluster_cols=["user"], time_col="date", transition_date=date(2022, 1, 15)
@@ -736,7 +733,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         cluster_cols: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
         time_col: str = "date",
-        transition_date: str = None,
+        intervention_date: str = None,
     ):
         super().__init__(cluster_cols)
 
@@ -746,30 +743,47 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         self.cluster_cols = cluster_cols
         self.hypothesis = hypothesis
         self.time_col = time_col
-        self.transition_date = transition_date
+        self.intervention_date = intervention_date
 
-    def fit_synthetic(self, df: pd.DataFrame) -> list:
-        """Returns the fitted OLS model"""
+    def get_pvalue(self, df: pd.DataFrame) -> float:
+        """Returns the p-value of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_pvalue(df=df)
+
+    def fit_synthetic(self, pre_experiment_df: pd.DataFrame) -> list:
+        """Returns the weights of each donor"""
 
         # todo should I throw an error if more than one cluster column is passed?
 
         X = (
-            df.query(f"{self.treatment_col}==0")
+            pre_experiment_df.query(f"{self.treatment_col}==0")
             .pivot(index=self.cluster_cols, columns=self.time_col)[self.target_col]
             .T
         )
 
-        if not any(df[self.treatment_col] == 1):
+        if not any(pre_experiment_df[self.treatment_col] == 1):
             raise ValueError("No treatment unit found in the data.")
 
-        y = df.query(f"{self.treatment_col}==1")[f"{self.target_col}"]  # treated
+        y = (
+            pre_experiment_df.query(f"{self.treatment_col}==1")
+            .pivot(index=self.cluster_cols, columns=self.time_col)[self.target_col]
+            .T.iloc[:, 0]
+        )
 
         weights = get_w(X, y)
 
         return weights
 
-    def synthetic_control(self, df: pd.DataFrame, treatment_unit) -> np.array:
-        weights = self.fit_synthetic(df)
+    def synthetic_control(
+        self, pre_experiment_df: pd.DataFrame, df: pd.DataFrame, treatment_unit
+    ) -> np.array:
+        weights = self.fit_synthetic(pre_experiment_df=pre_experiment_df)
 
         synthetic = (
             df.query(
@@ -786,8 +800,14 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         )
 
     def pvalue_based_on_hypothesis(
-        self, synthetic_donors: pd.DataFrame, treatment_cluster: str
+        self, synthetic_donors: list, treatment_cluster: str
     ) -> float:
+        """
+        Returns the p-value of the analysis.
+        1. calculate the average effect after intervention for each unit.
+        2. count how many times the average effect is greater than the real treatment unit (which is the first one)
+        3. Divide by the number of units. The result is the p-value using Fisher permutation test.
+        """
 
         treatment_index = [
             i
@@ -800,15 +820,16 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             for unit in synthetic_donors
         ]
 
-        # first calculate the average effect after intervention for each unit, in a list comprehension
         avg_effects = [
-            unit.query("treatment_period == 'After'")["effect"].mean()
+            unit.query(f"{self.time_col} >= '{self.intervention_date}'")[
+                "effect"
+            ].mean()
             for unit in synthetic_donors
         ]
         avg_effects = np.abs(avg_effects)
 
-        # then count how many times the average effect is greater than the real treatment unit (which is the first one)
-        # and divide by the number of units
+        # todo implement hypothesis testing (two-sided, less, greater)
+
         p_value = np.where(avg_effects > avg_effects[treatment_index], 1, 0).mean()
 
         return p_value
@@ -820,11 +841,16 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             verbose (Optional): bool, prints the regression summary if True
         """
 
-        # todo should I throw an error if more than one cluster column is passed?
+        pre_experiment_df = df.query(f"{self.time_col} < '{self.intervention_date}'")
+        df = df.query(f"{self.time_col} >= '{self.intervention_date}'")
+
+        # todo should I throw an error if more than one cluster column is passed? yes
         control_pool = df[self.cluster_cols].iloc[:, 0].unique()
 
         # parallel_fn = delayed(partial(self.synthetic_control, df=df))
-        parallel_fn = partial(self.synthetic_control, df=df)
+        parallel_fn = partial(
+            self.synthetic_control, df=df, pre_experiment_df=pre_experiment_df
+        )
 
         synthetic_donors = [parallel_fn(treatment_unit=unit) for unit in control_pool]
 

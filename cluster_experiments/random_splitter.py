@@ -539,30 +539,43 @@ class RepeatedSampler(RandomSplitter):
         )
 
 
-class FixedTreatmentClustersSplitter(ClusteredSplitter):
+class PredefinedTreatmentClustersSplitter(ClusteredSplitter):
+    """
+    This class  represents a splitter that splits clusters into treatment groups
+    with a predefined number of treatment clusters. Which clusters receive treatment remains random.
+
+    Attributes:
+        cluster_cols (List[str]): List of columns to use as clusters.
+        n_treatment_clusters (int): The predefined number of treatment clusters.
+
+    """
+
     def __init__(self, cluster_cols: List[str], n_treatment_clusters: int):
         self.n_treatment_clusters = n_treatment_clusters
         super().__init__(cluster_cols=cluster_cols)
-
-    def fixed_number_of_treatment(self, treatments, counts):
-        result = [
-            treatment
-            for treatment, count in zip(treatments, counts)
-            for _ in range(count)
-        ]
-        random.shuffle(result)
-        return result
 
     def sample_treatment(
         self,
         cluster_df: pd.DataFrame,
     ) -> List[str]:
-        sample_treatment = self.fixed_number_of_treatment(
-            self.treatments,
-            counts=[
-                len(cluster_df) - self.n_treatment_clusters,
-                self.n_treatment_clusters,
-            ],
-        )
+        """
+        Samples treatments for each cluster.
 
+        Args:
+            cluster_df (pd.DataFrame): Dataframe to assign treatments to.
+
+        Returns:
+            List[str]: A list of treatments for each cluster.
+        """
+        n_control_treatment = [
+            len(cluster_df) - self.n_treatment_clusters,
+            self.n_treatment_clusters,
+        ]
+
+        sample_treatment = [
+            treatment
+            for treatment, count in zip(self.treatments, n_control_treatment)
+            for _ in range(count)
+        ]
+        random.shuffle(sample_treatment)
         return sample_treatment
