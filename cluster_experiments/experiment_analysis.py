@@ -799,21 +799,13 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             synthetic=synthetic
         )
 
-    def pvalue_based_on_hypothesis(
-        self, synthetic_donors: list, treatment_cluster: str
-    ) -> float:
+    def pvalue_based_on_hypothesis(self, synthetic_donors: List[pd.DataFrame]) -> float:
         """
         Returns the p-value of the analysis.
         1. calculate the average effect after intervention for each unit.
         2. count how many times the average effect is greater than the real treatment unit (which is the first one)
         3. Divide by the number of units. The result is the p-value using Fisher permutation test.
         """
-
-        treatment_index = [
-            i
-            for i, df in enumerate(synthetic_donors)
-            if (df[self.treatment_col] == 1).any()
-        ]
 
         synthetic_donors = [
             unit.assign(effect=unit[self.target_col] - unit["synthetic"])
@@ -826,13 +818,22 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             ].mean()
             for unit in synthetic_donors
         ]
-        avg_effects = np.abs(avg_effects)
 
-        # todo implement hypothesis testing (two-sided, less, greater)
+        treatment_index = np.where(
+            [df[self.treatment_col].any() for df in synthetic_donors]
+        )[0][0]
+        ate = avg_effects[treatment_index]
+        avg_effects.pop(treatment_index)
 
-        p_value = np.where(avg_effects > avg_effects[treatment_index], 1, 0).mean()
-
-        return p_value
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.LESS:
+            return np.mean(avg_effects < ate)
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.GREATER:
+            return np.mean(avg_effects > ate)
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
+            avg_effects = np.abs(avg_effects)
+            return np.mean(avg_effects > ate)
+        else:
+            raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
@@ -854,15 +855,11 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
         synthetic_donors = [parallel_fn(treatment_unit=unit) for unit in control_pool]
 
-        treatment_cluster = df.loc[
-            df[self.treatment_col] == 1, self.cluster_cols[0]
-        ].unique()[0]
+        df.loc[df[self.treatment_col] == 1, self.cluster_cols[0]].unique()[0]
 
         # synthetic_donors_p = Parallel(n_jobs=8)([parallel_fn(treatment_unit =unit) for unit in control_pool])
 
-        p_value = self.pvalue_based_on_hypothesis(
-            synthetic_donors=synthetic_donors, treatment_cluster=treatment_cluster
-        )
+        p_value = self.pvalue_based_on_hypothesis(synthetic_donors=synthetic_donors)
         return p_value
 
     def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
