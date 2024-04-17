@@ -55,6 +55,7 @@ class BasePowerAnalysis(ABC):
         features_cupac_model: Optional[List[str]] = None,
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
+        n_simulations: int = 100,
     ):
         self.splitter = splitter
         self.analysis = analysis
@@ -64,6 +65,7 @@ class BasePowerAnalysis(ABC):
         self.treatment_col = treatment_col
         self.alpha = alpha
         self.hypothesis = hypothesis
+        self.n_simulations = n_simulations
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
@@ -274,9 +276,9 @@ class PowerAnalysis(BasePowerAnalysis):
             features_cupac_model=features_cupac_model,
             seed=seed,
             hypothesis=hypothesis,
+            n_simulations=n_simulations,
         )
         self.perturbator = perturbator
-        self.n_simulations = n_simulations
 
         self.check_inputs()
 
@@ -612,6 +614,7 @@ class PowerAnalysis(BasePowerAnalysis):
             features_cupac_model: Optional[List[str]] = None,
             seed: Optional[int] = None,
             hypothesis: str = "two-sided",
+            n_simulations: int = 100,
         ):
             super().__init__(
                 splitter=splitter,
@@ -625,6 +628,7 @@ class PowerAnalysis(BasePowerAnalysis):
                 features_cupac_model=features_cupac_model,
                 seed=seed,
                 hypothesis=hypothesis,
+                n_simulations=n_simulations,
             )
 
             self.check_inputs()
