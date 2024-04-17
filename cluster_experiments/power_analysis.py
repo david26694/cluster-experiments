@@ -92,6 +92,16 @@ class BasePowerAnalysis(ABC):
         """
         ...
 
+    @abstractmethod
+    def _preprocess_data(
+        self, df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+        ...
+
+    @abstractmethod
+    def _run_simulation(self, args: Tuple[pd.DataFrame, Optional[float]]) -> float:
+        ...
+
     def check_treatment_col(self):
 
         assert (
@@ -178,6 +188,14 @@ class BasePowerAnalysis(ABC):
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+
+    def log_nulls(self, df: pd.DataFrame) -> None:
+        """Warns about dropping nulls in treatment column"""
+        n_nulls = len(df.query(f"{self.treatment_col}.isnull()", engine="python"))
+        if n_nulls > 0:
+            logging.warning(
+                f"There are {n_nulls} null values in treatment, dropping them"
+            )
 
 
 class PowerAnalysis(BasePowerAnalysis):
@@ -448,9 +466,14 @@ class PowerAnalysis(BasePowerAnalysis):
         )
         return perturbed_df
 
+    def _preprocess_data(
+        self, df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+        return self._split_and_perturbate(df, average_effect)
+
     def _run_simulation(self, args: Tuple[pd.DataFrame, Optional[float]]) -> float:
         df, average_effect = args
-        perturbed_df = self._split_and_perturbate(df, average_effect)
+        perturbed_df = self._preprocess_data(df, average_effect)
         return self.analysis.get_pvalue(perturbed_df)
 
     def _non_parallel_loop(
@@ -548,14 +571,6 @@ class PowerAnalysis(BasePowerAnalysis):
             )
         }
 
-    def log_nulls(self, df: pd.DataFrame) -> None:
-        """Warns about dropping nulls in treatment column"""
-        n_nulls = len(df.query(f"{self.treatment_col}.isnull()", engine="python"))
-        if n_nulls > 0:
-            logging.warning(
-                f"There are {n_nulls} null values in treatment, dropping them"
-            )
-
     @classmethod
     def from_dict(cls, config_dict: dict) -> "PowerAnalysis":
         """Constructs PowerAnalysis from dictionary"""
@@ -632,6 +647,35 @@ class PowerAnalysis(BasePowerAnalysis):
             )
 
             self.check_inputs()
+
+        def _split(self, df: pd.DataFrame) -> pd.DataFrame:
+            """
+            Split dataframe.
+            Args:
+                df: Dataframe with outcome variable
+            """
+            treatment_df = self.splitter.assign_treatment_df(df)
+            self.log_nulls(treatment_df)
+            treatment_df = treatment_df.query(
+                f"{self.treatment_col}.notnull()", engine="python"
+            ).query(
+                f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
+                engine="python",
+            )
+            return treatment_df
+
+        def _preprocess_data(
+            self, df: pd.DataFrame, average_effect=None
+        ) -> pd.DataFrame:
+            return self._split(df)
+
+        def _run_simulation(self, args: Tuple[pd.DataFrame, Optional[float]]) -> float:
+            # df, average_effect = args
+            # splitted_df = self._preprocess_data(df)
+            # std_error = self.analysis.get_standard_error(splitted_df)
+            # power = self.get_power_from_formula(alpha, ate, std_err)
+            # return power
+            raise NotImplementedError
 
         def power_analysis(
             self,
