@@ -595,11 +595,7 @@ class PowerAnalysis(BasePowerAnalysis):
         ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in perturbator ({self.perturbator.treatment})"
 
     def check_inputs(self):
-        self.check_covariates()
-        self.check_treatment_col()
-        self.check_target_col()
-        self.check_treatment()
-        self.check_clusters()
+        super().check_inputs()
         self.check_perturbator_consistency()
 
     class AAPowerAnalysis(BasePowerAnalysis):
