@@ -102,6 +102,68 @@ class BasePowerAnalysis(ABC):
     def _run_simulation(self, args: Tuple[pd.DataFrame, Optional[float]]) -> float:
         ...
 
+    @abstractmethod
+    def _aggregate_simulation_outputs(self, simulation_outputs: List[float]) -> float:
+        ...
+
+    def _non_parallel_loop(
+        self,
+        df: pd.DataFrame,
+        average_effect: Optional[float],
+        n_simulations: int,
+        alpha: float,
+        verbose: bool,
+    ) -> float:
+        """
+        Run power analysis by simulation in serial
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        simulation_outputs = []
+        for _ in tqdm(range(n_simulations), disable=not verbose):
+            simulation_output = self._run_simulation((df, average_effect))
+            if verbose:
+                print(f"output of simulation run: {simulation_output:.3f}")
+            simulation_outputs.append(simulation_output)
+
+        return self._aggregate_simulation_outputs(simulation_outputs)
+
+    def _parallel_loop(
+        self,
+        df: pd.DataFrame,
+        average_effect: Optional[float],
+        n_simulations: int,
+        alpha: float,
+        verbose: bool,
+        n_jobs: int,
+    ) -> float:
+        """
+        Run power analysis by simulation in parallel
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+            n_jobs: Number of jobs to run in parallel.
+        """
+        from multiprocessing import Pool, cpu_count
+
+        n_jobs = n_jobs if n_jobs != -1 else cpu_count()
+
+        simulation_outputs = []
+        with Pool(processes=n_jobs) as pool:
+            args = [(df, average_effect) for _ in range(n_simulations)]
+            results = pool.imap_unordered(self._run_simulation, args)
+            for simulation_output in tqdm(
+                results, total=n_simulations, disable=not verbose
+            ):
+                simulation_outputs.append(simulation_output)
+
+        return self._aggregate_simulation_outputs(simulation_outputs)
+
     def check_treatment_col(self):
 
         assert (
@@ -476,6 +538,11 @@ class PowerAnalysis(BasePowerAnalysis):
         perturbed_df = self._preprocess_data(df, average_effect)
         return self.analysis.get_pvalue(perturbed_df)
 
+    def _aggregate_simulation_outputs(self, simulation_outputs: List[float]) -> float:
+        return sum(pvalue < self.alpha for pvalue in simulation_outputs) / len(
+            simulation_outputs
+        )
+
     def _non_parallel_loop(
         self,
         df: pd.DataFrame,
@@ -675,6 +742,11 @@ class PowerAnalysis(BasePowerAnalysis):
             # std_error = self.analysis.get_standard_error(splitted_df)
             # power = self.get_power_from_formula(alpha, ate, std_err)
             # return power
+            raise NotImplementedError
+
+        def _aggregate_simulation_outputs(
+            self, simulation_outputs: List[float]
+        ) -> float:
             raise NotImplementedError
 
         def power_analysis(
