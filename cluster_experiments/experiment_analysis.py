@@ -719,7 +719,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
 
     SyntheticControlAnalysis(
-        cluster_cols=["user"], time_col="date", transition_date=date(2022, 1, 15)
+        cluster_cols=["user"], time_col="date", transition_date="2022-01-15"
     ).get_pvalue(df)
 
     ```
@@ -745,6 +745,11 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         self.time_col = time_col
         self.intervention_date = intervention_date
 
+        if len(cluster_cols) > 1:
+            raise ValueError(
+                "In the current implementation, cluster_col list should contain only one element"
+            )
+
     def get_pvalue(self, df: pd.DataFrame) -> float:
         """Returns the p-value of the analysis
 
@@ -759,16 +764,16 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def fit_synthetic(self, pre_experiment_df: pd.DataFrame) -> list:
         """Returns the weights of each donor"""
 
-        # todo should I throw an error if more than one cluster column is passed?
+        if not any(pre_experiment_df[self.treatment_col] == 1):
+            raise ValueError("No treatment unit found in the data.")
 
         X = (
-            pre_experiment_df.query(f"{self.treatment_col}==0")
+            pre_experiment_df.query(
+                f"{self.treatment_col}==0"
+            )  # todo can I keep this hardcoded as 0?
             .pivot(index=self.cluster_cols, columns=self.time_col)[self.target_col]
             .T
         )
-
-        if not any(pre_experiment_df[self.treatment_col] == 1):
-            raise ValueError("No treatment unit found in the data.")
 
         y = (
             pre_experiment_df.query(f"{self.treatment_col}==1")
@@ -782,7 +787,22 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
     def synthetic_control(
         self, pre_experiment_df: pd.DataFrame, df: pd.DataFrame, treatment_unit
-    ) -> np.array:
+    ) -> pd.DataFrame:
+        """
+        This method adds a columns to df with the synthetic results and filter only the treatment unit.
+
+        Firstly,it calculates the weights of each donor in the control group using the `fit_synthetic` method.
+        It then uses these weights to create a synthetic control group that closely matches the treatment unit before the intervention.
+        The synthetic control group is added to the treatment unit in the dataframe.
+
+        Args:
+            pre_experiment_df (pd.DataFrame): The dataframe containing the data before the intervention.
+            df (pd.DataFrame): The dataframe containing the data after the intervention.
+            treatment_unit (str): The name of the treatment unit.
+
+        Returns:
+            pd.DataFrame: The dataframe with the synthetic results added to the treatment unit.
+        """
         weights = self.fit_synthetic(pre_experiment_df=pre_experiment_df)
 
         synthetic = (
@@ -855,7 +875,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
         synthetic_donors = [parallel_fn(treatment_unit=unit) for unit in control_pool]
 
-        df.loc[df[self.treatment_col] == 1, self.cluster_cols[0]].unique()[0]
+        # df.loc[df[self.treatment_col] == 1, self.cluster_cols[0]].unique()[0]
 
         # synthetic_donors_p = Parallel(n_jobs=8)([parallel_fn(treatment_unit =unit) for unit in control_pool])
 
@@ -868,11 +888,15 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
+        pre_experiment_df = df.query(f"{self.time_col} < '{self.intervention_date}'")
+        df = df.query(f"{self.time_col} >= '{self.intervention_date}'")
 
         treatment_cluster = df.loc[
             df[self.treatment_col] == 1, self.cluster_cols[0]
         ].unique()[0]
-        df = self.synthetic_control(df, treatment_unit=treatment_cluster)
+        df = self.synthetic_control(
+            df=df, treatment_unit=treatment_cluster, pre_experiment_df=pre_experiment_df
+        )
 
         df["effect"] = df[self.target_col] - df["synthetic"]
         avg_effect = df["effect"].mean()

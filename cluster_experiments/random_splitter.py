@@ -541,8 +541,9 @@ class RepeatedSampler(RandomSplitter):
 
 class PredefinedTreatmentClustersSplitter(ClusteredSplitter):
     """
-    This class  represents a splitter that splits clusters into treatment groups
-    with a predefined number of treatment clusters. Which clusters receive treatment remains random.
+    This class  represents a splitter that splits clusters into treatment groups with a predefined number of
+    treatment clusters. This is particularly useful for synthetic control analysis, where we only want 1 cluster (
+    unit) to be in treatment group and the rest in control The cluster that receives treatment remains random.
 
     Attributes:
         cluster_cols (List[str]): List of columns to use as clusters.

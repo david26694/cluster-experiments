@@ -526,12 +526,14 @@ class PowerAnalysis:
         self.check_clusters()
 
 
-# create a new class where _run simulation param is pre_experiment_df
 class PowerAnalysisWithPreExperimentData(PowerAnalysis):
-    def _split_and_perturbate(
-        self, df: pd.DataFrame, average_effect: Optional[float]
-    ) -> pd.DataFrame:
+    """
+    Same as PowerAnalysis but adding pre-experiment param during split and perturbation. The PowerAnalysis
+    class accepts a pre_experiment param, however this is only used for cuped purposes (where we
+    add a column to df). This child class is used for cases where the pre experiment df is also available as a df.
+    """
 
+    def split(self, df: pd.DataFrame) -> pd.DataFrame:
         treatment_df = self.splitter.assign_treatment_df(df)
         self.log_nulls(treatment_df)
 
@@ -542,6 +544,16 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
             engine="python",
         )
 
+        return treatment_df
+
+    def perturbate(
+        self, treatment_df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+
+        pre_experiment_df = treatment_df.query(
+            f"{self.analysis.time_col} <= '{self.analysis.intervention_date}'"
+        )
+
         treatment_df = treatment_df[
             (treatment_df[self.analysis.time_col] > self.analysis.intervention_date)
         ]
@@ -549,15 +561,13 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
         perturbed_df = self.perturbator.perturbate(
             treatment_df, average_effect=average_effect
         )
+
         # get treatment cluster
         treatment_cluster = perturbed_df.loc[
             perturbed_df[self.treatment_col] == self.treatment,
             self.analysis.cluster_cols[0],
         ].unique()[0]
 
-        pre_experiment_df = df.query(
-            f"{self.analysis.time_col} <= '{self.analysis.intervention_date}'"
-        )
         pre_experiment_df = pre_experiment_df.copy()
 
         pre_experiment_df.loc[:, "treatment"] = np.where(
@@ -567,3 +577,12 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
         )
 
         return pd.concat([perturbed_df, pre_experiment_df])
+
+    def _split_and_perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+        treatment_df = self.split(df)
+        perturbed_df = self.perturbate(
+            treatment_df=treatment_df, average_effect=average_effect
+        )
+        return perturbed_df
