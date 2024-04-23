@@ -528,9 +528,9 @@ class PowerAnalysis:
 
 class PowerAnalysisWithPreExperimentData(PowerAnalysis):
     """
-    Same as PowerAnalysis but adding pre-experiment param during split and perturbation. The PowerAnalysis
-    class accepts a pre_experiment param, however this is only used for cuped purposes (where we
-    add a column to df). This child class is used for cases where the pre experiment df is also available as a df.
+    Same as PowerAnalysis, but adding pre-experiment param during split and perturbation. The PowerAnalysis class
+    accepts a pre_experiment param, however this is only used for cuped purposes (where we add a column to df). This
+    child class is used for cases where the pre experiment df is also available when the class is instantiated
     """
 
     def split(self, df: pd.DataFrame) -> pd.DataFrame:

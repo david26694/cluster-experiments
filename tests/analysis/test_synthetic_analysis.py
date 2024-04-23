@@ -9,9 +9,6 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
-from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_analysis import PowerAnalysisWithPreExperimentData
-from cluster_experiments.random_splitter import PredefinedTreatmentClustersSplitter
 from cluster_experiments.synthetic_control import get_w
 
 
@@ -38,61 +35,47 @@ def generate_data(N, start_date, end_date):
     return df
 
 
-# Example usage
-
-
 def test_synthetic_control_analysis():
     df = generate_data(10, "2022-01-01", "2022-01-30")
 
-    sw = PredefinedTreatmentClustersSplitter(
-        n_treatment_clusters=1, cluster_cols=["user"]
-    )
-
-    perturbator = ConstantPerturbator(
-        average_effect=0.1,
-    )
+    # Add treatment column to only 1 user
+    df["treatment"] = "A"
+    df.loc[df["user"] == "User 5", "treatment"] = "B"
 
     analysis = SyntheticControlAnalysis(
-        cluster_cols=["user"], time_col="date", intervention_date="2022-01-15"
+        cluster_cols=["user"], intervention_date="2022-01-06"
     )
 
-    pw = PowerAnalysisWithPreExperimentData(
-        perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50
-    )
-
-    pw.power_analysis(df)
+    p_value = analysis.get_pvalue(df)
+    assert 0 <= p_value <= 1
 
 
 @pytest.mark.parametrize(
-    "X, y, expected_sum, expected_bounds",
+    "X, y",
     [
         (
             np.array([[1, 2], [3, 4]]),
             np.array([1, 1]),
-            1,
-            (0, 1),
-        ),  # 2D array with positive integers
+        ),  # Scenario with positive integers
         (
             np.array([[1, -2], [-3, 4]]),
             np.array([1, 1]),
-            1,
-            (0, 1),
-        ),  # 2D array with negative integers
+        ),  # Scenario with negative integers
         (
             np.array([[1.5, 2.5], [3.5, 4.5]]),
             np.array([1, 1]),
-            1,
-            (0, 1),
-        ),  # 2D array with positive floats
+        ),  # Scenario with positive floats
         (
             np.array([[1.5, -2.5], [-3.5, 4.5]]),
             np.array([1, 1]),
-            1,
-            (0, 1),
-        ),  # 2D array with negative floats
+        ),  # Scenario with negative floats
     ],
 )
-def test_get_w_weights(X, y, expected_sum, expected_bounds):
+def test_get_w_weights(
+    X, y
+):  # this function is not part of the analysis, but it is used in it
+    expected_sum = 1
+    expected_bounds = (0, 1)
     weights = get_w(X, y)
     assert np.isclose(np.sum(weights), expected_sum), "Weights sum should be close to 1"
     assert all(

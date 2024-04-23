@@ -32,8 +32,7 @@ def generate_data(N, start_date, end_date):
 # Example usage
 
 
-if __name__ == "__main__":
-
+def test_PowerAnalysisWithPreExperimentData():
     df = generate_data(10, "2022-01-01", "2022-01-30")
 
     sw = PredefinedTreatmentClustersSplitter(
@@ -53,6 +52,4 @@ if __name__ == "__main__":
     )
 
     power = pw.power_analysis(df)
-    a = pw.power_line(df, average_effects=[0.1, 0.2, 0.5, 1, 1.5], n_jobs=-1)
-    set(pw.simulate_point_estimate(df))
-    print(f"{power = }")
+    assert 0 <= power <= 1

@@ -1,6 +1,5 @@
 import logging
 from abc import ABC, abstractmethod
-from functools import partial
 from typing import List, Optional
 
 import numpy as np
@@ -106,7 +105,7 @@ class ExperimentAnalysis(ABC):
         df = df.copy()
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
-        return self.analysis_pvalue(df=df)
+        return self.analysis_pvalue(df)
 
     def get_point_estimate(self, df: pd.DataFrame) -> float:
         """Returns the point estimate of the analysis
@@ -761,16 +760,14 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         self._data_checks(df=df)
         return self.analysis_pvalue(df=df)
 
-    def fit_synthetic(self, pre_experiment_df: pd.DataFrame) -> list:
+    def fit_synthetic(self, pre_experiment_df: pd.DataFrame, verbose: bool) -> list:
         """Returns the weights of each donor"""
 
         if not any(pre_experiment_df[self.treatment_col] == 1):
             raise ValueError("No treatment unit found in the data.")
 
         X = (
-            pre_experiment_df.query(
-                f"{self.treatment_col}==0"
-            )  # todo can I keep this hardcoded as 0?
+            pre_experiment_df.query(f"{self.treatment_col}==0")
             .pivot(index=self.cluster_cols, columns=self.time_col)[self.target_col]
             .T
         )
@@ -781,52 +778,63 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             .T.iloc[:, 0]
         )
 
-        weights = get_w(X, y)
+        weights = get_w(X, y, verbose)
 
         return weights
 
     def synthetic_control(
-        self, pre_experiment_df: pd.DataFrame, df: pd.DataFrame, treatment_unit
+        self,
+        pre_experiment_df: pd.DataFrame,
+        df: pd.DataFrame,
+        treatment_cluster,
+        verbose: bool = False,
     ) -> pd.DataFrame:
         """
-        This method adds a columns to df with the synthetic results and filter only the treatment unit.
+        This method adds a column with the synthetic results and filter only the treatment unit.
 
-        Firstly,it calculates the weights of each donor in the control group using the `fit_synthetic` method.
+        First, it calculates the weights of each donor in the control group using the `fit_synthetic` method.
         It then uses these weights to create a synthetic control group that closely matches the treatment unit before the intervention.
         The synthetic control group is added to the treatment unit in the dataframe.
 
         Args:
             pre_experiment_df (pd.DataFrame): The dataframe containing the data before the intervention.
             df (pd.DataFrame): The dataframe containing the data after the intervention.
-            treatment_unit (str): The name of the treatment unit.
+            treatment_cluster (str): The name of the treatment cluster.
 
         Returns:
-            pd.DataFrame: The dataframe with the synthetic results added to the treatment unit.
+            pd.DataFrame: The dataframe with the synthetic results added to the treatment cluster.
         """
-        weights = self.fit_synthetic(pre_experiment_df=pre_experiment_df)
+        weights = self.fit_synthetic(
+            pre_experiment_df=pre_experiment_df, verbose=verbose
+        )
 
         synthetic = (
             df.query(
-                f"{''.join(self.cluster_cols)} != '{treatment_unit}'"
+                f"{''.join(self.cluster_cols)} != '{treatment_cluster}'"
             )  # remove treatment cluster
             .pivot(index=self.time_col, columns=self.cluster_cols)[self.target_col]
             .values.dot(weights)
         )
 
         return df.query(
-            f"{''.join(self.cluster_cols)} == '{treatment_unit}'"
-        ).assign(  # add synthetic to treatment unit
+            f"{''.join(self.cluster_cols)} == '{treatment_cluster}'"
+        ).assign(  # add synthetic to treatment cluster
             synthetic=synthetic
         )
 
-    def pvalue_based_on_hypothesis(self, synthetic_donors: List[pd.DataFrame]) -> float:
+    def calculate_effects(self, synthetic_donors: List[pd.DataFrame]):
         """
-        Returns the p-value of the analysis.
-        1. calculate the average effect after intervention for each unit.
-        2. count how many times the average effect is greater than the real treatment unit (which is the first one)
-        3. Divide by the number of units. The result is the p-value using Fisher permutation test.
-        """
+        Calculate the average treatment effect and the placebo effects.
 
+        The method identifies the treatment unit and separates its average effect (the real treatment effect) from
+        the average effects of the other units (the placebo effects).
+
+        Args:
+            synthetic_donors (list): A list of dataframes, each representing a cluster
+
+        Returns:
+            tuple: A tuple containing the average treatment effect and a list of the placebo effects.
+        """
         synthetic_donors = [
             unit.assign(effect=unit[self.target_col] - unit["synthetic"])
             for unit in synthetic_donors
@@ -842,8 +850,19 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         treatment_index = np.where(
             [df[self.treatment_col].any() for df in synthetic_donors]
         )[0][0]
-        ate = avg_effects[treatment_index]
-        avg_effects.pop(treatment_index)
+        ate = avg_effects[treatment_index]  # this is the real treatment effect
+        avg_effects.pop(treatment_index)  # this becomes the placebo effects
+        return ate, avg_effects
+
+    def pvalue_based_on_hypothesis(self, synthetic_donors: List[pd.DataFrame]) -> float:
+        """
+        Returns the p-value of the analysis.
+        1. calculate the average effect after intervention for each unit.
+        2. count how many times the average effect is greater than the real treatment unit
+        3. Divide by the number of units. The result is the p-value using Fisher permutation test.
+        """
+
+        ate, avg_effects = self.calculate_effects(synthetic_donors)
 
         if HypothesisEntries(self.hypothesis) == HypothesisEntries.LESS:
             return np.mean(avg_effects < ate)
@@ -861,23 +880,23 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
+        if len(self.cluster_cols) > 1:
+            raise ValueError("Currently, only one cluster column is supported")
 
         pre_experiment_df = df.query(f"{self.time_col} < '{self.intervention_date}'")
         df = df.query(f"{self.time_col} >= '{self.intervention_date}'")
 
-        # todo should I throw an error if more than one cluster column is passed? yes
-        control_pool = df[self.cluster_cols].iloc[:, 0].unique()
+        clusters = df[self.cluster_cols].iloc[:, 0].unique()
 
-        # parallel_fn = delayed(partial(self.synthetic_control, df=df))
-        parallel_fn = partial(
-            self.synthetic_control, df=df, pre_experiment_df=pre_experiment_df
-        )
-
-        synthetic_donors = [parallel_fn(treatment_unit=unit) for unit in control_pool]
-
-        # df.loc[df[self.treatment_col] == 1, self.cluster_cols[0]].unique()[0]
-
-        # synthetic_donors_p = Parallel(n_jobs=8)([parallel_fn(treatment_unit =unit) for unit in control_pool])
+        synthetic_donors = [
+            self.synthetic_control(
+                treatment_cluster=cluster,
+                df=df,
+                pre_experiment_df=pre_experiment_df,
+                verbose=verbose,
+            )
+            for cluster in clusters
+        ]
 
         p_value = self.pvalue_based_on_hypothesis(synthetic_donors=synthetic_donors)
         return p_value
@@ -895,7 +914,9 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             df[self.treatment_col] == 1, self.cluster_cols[0]
         ].unique()[0]
         df = self.synthetic_control(
-            df=df, treatment_unit=treatment_cluster, pre_experiment_df=pre_experiment_df
+            df=df,
+            treatment_cluster=treatment_cluster,
+            pre_experiment_df=pre_experiment_df,
         )
 
         df["effect"] = df[self.target_col] - df["synthetic"]
