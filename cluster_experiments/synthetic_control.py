@@ -7,7 +7,7 @@ from scipy.optimize import fmin_slsqp
 
 def loss_w(W: ndarray, X: ndarray, y: ndarray) -> float:
     """
-    This function calculates the root mean square error (RMSE) between the actual and predicted values.
+    This function calculates the root mean square error (RMSE) between the actual and predicted values in a linear model.
     It is used as an objective function for optimization problems where the goal is to minimize the RMSE.
 
     Parameters:

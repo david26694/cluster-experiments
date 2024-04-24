@@ -13,22 +13,16 @@ from cluster_experiments.synthetic_control import get_w
 
 
 def generate_data(N, start_date, end_date):
-    # Generate a list of dates between start_date and end_date
     dates = pd.date_range(start_date, end_date, freq="d")
-
+    country = ["US", "UK"]
     users = [f"User {i}" for i in range(N)]
 
-    # Use itertools.product to create a combination of each date with each user
-    combinations = list(product(users, dates))
+    # Get the combination of each date with each user
+    combinations = list(product(users, dates, country))
 
-    # target_values = np.random.normal(0, 1, size=len(combinations))
+    df = pd.DataFrame(combinations, columns=["user", "date", "country"])
 
-    df = pd.DataFrame(combinations, columns=["user", "date"])
-
-    df["target"] = 0
-    for i in range(1, N + 1):
-        df.loc[df["user"] == f"User {i}", "target"] = i
-
+    df["target"] = np.random.normal(0, 1, size=len(combinations))
     # Ensure 'date' column is of datetime type
     df["date"] = pd.to_datetime(df["date"])
 
@@ -40,10 +34,10 @@ def test_synthetic_control_analysis():
 
     # Add treatment column to only 1 user
     df["treatment"] = "A"
-    df.loc[df["user"] == "User 5", "treatment"] = "B"
+    df.loc[(df["user"] == "User 5") & (df["country"] == "US"), "treatment"] = "B"
 
     analysis = SyntheticControlAnalysis(
-        cluster_cols=["user"], intervention_date="2022-01-06"
+        cluster_cols=["user", "country"], intervention_date="2022-01-06"
     )
 
     p_value = analysis.get_pvalue(df)

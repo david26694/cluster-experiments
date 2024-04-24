@@ -744,11 +744,6 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         self.time_col = time_col
         self.intervention_date = intervention_date
 
-        if len(cluster_cols) > 1:
-            raise ValueError(
-                "In the current implementation, cluster_col list should contain only one element"
-            )
-
     def get_pvalue(self, df: pd.DataFrame) -> float:
         """Returns the p-value of the analysis
 
@@ -782,7 +777,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
         return weights
 
-    def synthetic_control(
+    def fit_predict_synthetic(
         self,
         pre_experiment_df: pd.DataFrame,
         df: pd.DataFrame,
@@ -809,18 +804,14 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         )
 
         synthetic = (
-            df.query(
-                f"{''.join(self.cluster_cols)} != '{treatment_cluster}'"
-            )  # remove treatment cluster
+            df[self._get_cluster_column(df) != treatment_cluster]
             .pivot(index=self.time_col, columns=self.cluster_cols)[self.target_col]
             .values.dot(weights)
         )
 
-        return df.query(
-            f"{''.join(self.cluster_cols)} == '{treatment_cluster}'"
-        ).assign(  # add synthetic to treatment cluster
+        return df[self._get_cluster_column(df) == treatment_cluster].assign(
             synthetic=synthetic
-        )
+        )  # add synthetic to treatment cluster)
 
     def calculate_effects(self, synthetic_donors: List[pd.DataFrame]):
         """
@@ -880,16 +871,13 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        if len(self.cluster_cols) > 1:
-            raise ValueError("Currently, only one cluster column is supported")
+        clusters = self._get_cluster_column(df).unique()
 
         pre_experiment_df = df.query(f"{self.time_col} < '{self.intervention_date}'")
         df = df.query(f"{self.time_col} >= '{self.intervention_date}'")
 
-        clusters = df[self.cluster_cols].iloc[:, 0].unique()
-
         synthetic_donors = [
-            self.synthetic_control(
+            self.fit_predict_synthetic(
                 treatment_cluster=cluster,
                 df=df,
                 pre_experiment_df=pre_experiment_df,
@@ -913,7 +901,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         treatment_cluster = df.loc[
             df[self.treatment_col] == 1, self.cluster_cols[0]
         ].unique()[0]
-        df = self.synthetic_control(
+        df = self.fit_predict_synthetic(
             df=df,
             treatment_cluster=treatment_cluster,
             pre_experiment_df=pre_experiment_df,

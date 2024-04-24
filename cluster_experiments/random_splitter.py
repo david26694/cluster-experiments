@@ -539,7 +539,7 @@ class RepeatedSampler(RandomSplitter):
         )
 
 
-class PredefinedTreatmentClustersSplitter(ClusteredSplitter):
+class FixedSizeClusteredSplitter(ClusteredSplitter):
     """
     This class  represents a splitter that splits clusters into treatment groups with a predefined number of
     treatment clusters. This is particularly useful for synthetic control analysis, where we only want 1 cluster (

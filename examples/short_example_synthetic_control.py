@@ -6,7 +6,7 @@ import pandas as pd
 from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
 from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysisWithPreExperimentData
-from cluster_experiments.random_splitter import PredefinedTreatmentClustersSplitter
+from cluster_experiments.random_splitter import FixedSizeClusteredSplitter
 
 
 def generate_data(N, start_date, end_date):
@@ -36,9 +36,7 @@ if __name__ == "__main__":
 
     df = generate_data(10, "2022-01-01", "2022-01-30")
 
-    sw = PredefinedTreatmentClustersSplitter(
-        n_treatment_clusters=1, cluster_cols=["user"]
-    )
+    sw = FixedSizeClusteredSplitter(n_treatment_clusters=1, cluster_cols=["user"])
 
     perturbator = ConstantPerturbator(
         average_effect=0.1,
