@@ -29,7 +29,6 @@ def generate_data(N, start_date, end_date):
     return df
 
 
-# Example usage
 
 
 def test_power_analysis_with_pre_experiment_data():
