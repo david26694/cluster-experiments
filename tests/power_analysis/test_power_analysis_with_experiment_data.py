@@ -32,7 +32,7 @@ def generate_data(N, start_date, end_date):
 # Example usage
 
 
-def test_PowerAnalysisWithPreExperimentData():
+def test_power_analysis_with_pre_experiment_data():
     df = generate_data(10, "2022-01-01", "2022-01-30")
 
     sw = PredefinedTreatmentClustersSplitter(
