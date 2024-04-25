@@ -533,7 +533,7 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
     child class is used for cases where the pre experiment df is also available when the class is instantiated
     """
 
-    def split(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _split(self, df: pd.DataFrame) -> pd.DataFrame:
         treatment_df = self.splitter.assign_treatment_df(df)
         self.log_nulls(treatment_df)
 
@@ -546,13 +546,13 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
 
         return treatment_df
 
-    def perturbate(
+    def _perturbate(
         self, treatment_df: pd.DataFrame, average_effect: Optional[float]
     ) -> pd.DataFrame:
 
-        pre_experiment_df = treatment_df.query(
-            f"{self.analysis.time_col} <= '{self.analysis.intervention_date}'"
-        )
+        pre_experiment_df = treatment_df[
+            (treatment_df[self.analysis.time_col] <= self.analysis.intervention_date)
+        ]
 
         treatment_df = treatment_df[
             (treatment_df[self.analysis.time_col] > self.analysis.intervention_date)
@@ -581,8 +581,8 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
     def _split_and_perturbate(
         self, df: pd.DataFrame, average_effect: Optional[float]
     ) -> pd.DataFrame:
-        treatment_df = self.split(df)
-        perturbed_df = self.perturbate(
+        treatment_df = self._split(df)
+        perturbed_df = self._perturbate(
             treatment_df=treatment_df, average_effect=average_effect
         )
         return perturbed_df
