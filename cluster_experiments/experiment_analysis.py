@@ -744,6 +744,8 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         self.time_col = time_col
         self.intervention_date = intervention_date
 
+    # todo  check is that time_col not in cluster_cols
+
     def get_pvalue(self, df: pd.DataFrame) -> float:
         """Returns the p-value of the analysis
 
@@ -813,7 +815,9 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             synthetic=synthetic
         )  # add synthetic to treatment cluster)
 
-    def calculate_effects(self, synthetic_donors: List[pd.DataFrame]):
+    def calculate_effects(
+        self, synthetic_donors: dict, treatment_cluster: str
+    ) -> tuple:
         """
         Calculate the average treatment effect and the placebo effects.
 
@@ -826,26 +830,23 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         Returns:
             tuple: A tuple containing the average treatment effect and a list of the placebo effects.
         """
-        synthetic_donors = [
-            unit.assign(effect=unit[self.target_col] - unit["synthetic"])
-            for unit in synthetic_donors
-        ]
+        synthetic_donors = {
+            cluster: df.assign(effect=df[self.target_col] - df["synthetic"])
+            for cluster, df in synthetic_donors.items()
+        }
 
-        avg_effects = [
-            unit.query(f"{self.time_col} >= '{self.intervention_date}'")[
+        avg_effects = {
+            cluster: df.query(f"{self.time_col} >= '{self.intervention_date}'")[
                 "effect"
             ].mean()
-            for unit in synthetic_donors
-        ]
+            for cluster, df in synthetic_donors.items()
+        }
 
-        treatment_index = np.where(
-            [df[self.treatment_col].any() for df in synthetic_donors]
-        )[0][0]
-        ate = avg_effects[treatment_index]  # this is the real treatment effect
-        avg_effects.pop(treatment_index)  # this becomes the placebo effects
+        ate = avg_effects[treatment_cluster]  # this is the real treatment effect
+        avg_effects.pop(treatment_cluster)  # this becomes the placebo effects
         return ate, avg_effects
 
-    def pvalue_based_on_hypothesis(self, synthetic_donors: List[pd.DataFrame]) -> float:
+    def pvalue_based_on_hypothesis(self, ate, avg_effects) -> float:
         """
         Returns the p-value of the analysis.
         1. calculate the average effect after intervention for each unit.
@@ -853,7 +854,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         3. Divide by the number of units. The result is the p-value using Fisher permutation test.
         """
 
-        ate, avg_effects = self.calculate_effects(synthetic_donors)
+        avg_effects = list(avg_effects.values())
 
         if HypothesisEntries(self.hypothesis) == HypothesisEntries.LESS:
             return np.mean(avg_effects < ate)
@@ -862,8 +863,8 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         if HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
             avg_effects = np.abs(avg_effects)
             return np.mean(avg_effects > ate)
-        else:
-            raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
+
+        raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
@@ -876,17 +877,25 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         pre_experiment_df = df.query(f"{self.time_col} < '{self.intervention_date}'")
         df = df.query(f"{self.time_col} >= '{self.intervention_date}'")
 
-        synthetic_donors = [
-            self.fit_predict_synthetic(
+        treatment_cluster = self._get_cluster_column(
+            df[df[self.treatment_col] == 1]
+        ).unique()[0]
+
+        synthetic_donors = {
+            cluster: self.fit_predict_synthetic(
                 treatment_cluster=cluster,
                 df=df,
                 pre_experiment_df=pre_experiment_df,
                 verbose=verbose,
             )
             for cluster in clusters
-        ]
+        }
 
-        p_value = self.pvalue_based_on_hypothesis(synthetic_donors=synthetic_donors)
+        ate, avg_effects = self.calculate_effects(
+            synthetic_donors, treatment_cluster=treatment_cluster
+        )
+
+        p_value = self.pvalue_based_on_hypothesis(ate=ate, avg_effects=avg_effects)
         return p_value
 
     def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
@@ -914,11 +923,11 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
     @classmethod
     def from_config(cls, config):
-        """Creates an OLSAnalysis object from a PowerConfig object"""
+        """Creates an SyntheticControlAnalysis object from a PowerConfig object"""
         return cls(
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
-            covariates=config.covariates,
             hypothesis=config.hypothesis,
+            cluster_cols=config.cluster_cols,
         )

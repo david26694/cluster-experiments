@@ -1,7 +1,3 @@
-# we want to create a test to confirm the synthetic control analysis works as expected. We will generate a some donors, and 2 of them will be double the target.
-# these 2 donors should receive a weight of 0.5 each. The synthetic control should be the average of the 2 donors.
-
-# first we need to generate the data
 from itertools import product
 
 import numpy as np
