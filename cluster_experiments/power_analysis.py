@@ -550,31 +550,9 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
         self, treatment_df: pd.DataFrame, average_effect: Optional[float]
     ) -> pd.DataFrame:
 
-        pre_experiment_df = treatment_df[
-            (treatment_df[self.analysis.time_col] <= self.analysis.intervention_date)
-        ]
+        df, pre_experiment_df = self.analysis._split_pre_experiment_df(treatment_df)
 
-        treatment_df = treatment_df[
-            (treatment_df[self.analysis.time_col] > self.analysis.intervention_date)
-        ]
-
-        perturbed_df = self.perturbator.perturbate(
-            treatment_df, average_effect=average_effect
-        )
-
-        # get treatment cluster
-        treatment_cluster = perturbed_df.loc[
-            perturbed_df[self.treatment_col] == self.treatment,
-            self.analysis.cluster_cols[0],
-        ].unique()[0]
-
-        pre_experiment_df = pre_experiment_df.copy()
-
-        pre_experiment_df.loc[:, "treatment"] = np.where(
-            pre_experiment_df["".join(self.analysis.cluster_cols)] == treatment_cluster,
-            self.treatment,
-            self.control,
-        )
+        perturbed_df = self.perturbator.perturbate(df, average_effect=average_effect)
 
         return pd.concat([perturbed_df, pre_experiment_df])
 

@@ -8,7 +8,7 @@ import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
 from scipy.stats import ttest_ind, ttest_rel
 
-from cluster_experiments.synthetic_control import get_w
+from cluster_experiments.synthetic_control_utils import get_w
 from cluster_experiments.utils import HypothesisEntries
 
 
@@ -874,8 +874,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         """
         Calculate the point estimate for the treatment effect for a specified cluster.
         """
-        pre_experiment_df = df.query(f"{self.time_col} < '{self.intervention_date}'")
-        df = df.query(f"{self.time_col} >= '{self.intervention_date}'")
+        df, pre_experiment_df = self._split_pre_experiment_df(df)
 
         if not treatment_cluster:
             treatment_cluster = self._get_treatment_cluster(df)
@@ -887,6 +886,14 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         df["effect"] = df[self.target_col] - df["synthetic"]
         avg_effect = df["effect"].mean()
         return avg_effect
+
+    def _split_pre_experiment_df(self, df: pd.DataFrame):
+        """Split the dataframe into pre-experiment and experiment dataframes"""
+        pre_experiment_df = df[(df[self.time_col] <= self.intervention_date)]
+
+        df = df[(df[self.time_col] > self.intervention_date)]
+
+        return df, pre_experiment_df
 
     @classmethod
     def from_config(cls, config):

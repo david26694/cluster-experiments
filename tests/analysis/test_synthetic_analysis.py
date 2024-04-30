@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
-from cluster_experiments.synthetic_control import get_w
+from cluster_experiments.synthetic_control_utils import get_w
 
 
 def generate_data(N, start_date, end_date):
