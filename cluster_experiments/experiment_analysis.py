@@ -813,40 +813,9 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
         return df[self._get_cluster_column(df) == treatment_cluster].assign(
             synthetic=synthetic
-        )  # add synthetic to treatment cluster)
+        )  # add synthetic to treatment cluster
 
-    def calculate_effects(
-        self, synthetic_donors: dict, treatment_cluster: str
-    ) -> tuple:
-        """
-        Calculate the average treatment effect and the placebo effects.
-
-        The method identifies the treatment unit and separates its average effect (the real treatment effect) from
-        the average effects of the other units (the placebo effects).
-
-        Args:
-            synthetic_donors (list): A list of dataframes, each representing a cluster
-
-        Returns:
-            tuple: A tuple containing the average treatment effect and a list of the placebo effects.
-        """
-        synthetic_donors = {
-            cluster: df.assign(effect=df[self.target_col] - df["synthetic"])
-            for cluster, df in synthetic_donors.items()
-        }
-
-        avg_effects = {
-            cluster: df.query(f"{self.time_col} >= '{self.intervention_date}'")[
-                "effect"
-            ].mean()
-            for cluster, df in synthetic_donors.items()
-        }
-
-        ate = avg_effects[treatment_cluster]  # this is the real treatment effect
-        avg_effects.pop(treatment_cluster)  # this becomes the placebo effects
-        return ate, avg_effects
-
-    def pvalue_based_on_hypothesis(self, ate, avg_effects) -> float:
+    def pvalue_based_on_hypothesis(self, ate: float, avg_effects: dict) -> float:
         """
         Returns the p-value of the analysis.
         1. calculate the average effect after intervention for each unit.
@@ -874,56 +843,49 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         return treatment_cluster
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
-        """Returns the p-value of the analysis
-        Arguments:
-            df: dataframe containing the data to analyze
-            verbose (Optional): bool, prints the regression summary if True
         """
+        Calculate the p-value using the treatment effect calculated from analysis_point_estimate
+        for the actual treatment cluster and comparing it with placebo effects from other clusters.
+        """
+
         clusters = self._get_cluster_column(df).unique()
-
-        pre_experiment_df = df.query(f"{self.time_col} < '{self.intervention_date}'")
-        df = df.query(f"{self.time_col} >= '{self.intervention_date}'")
-
         treatment_cluster = self._get_treatment_cluster(df)
 
         synthetic_donors = {
-            cluster: self.fit_predict_synthetic(
+            cluster: self.analysis_point_estimate(
                 treatment_cluster=cluster,
                 df=df,
-                pre_experiment_df=pre_experiment_df,
                 verbose=verbose,
             )
             for cluster in clusters
         }
 
-        ate, avg_effects = self.calculate_effects(
-            synthetic_donors, treatment_cluster=treatment_cluster
-        )
+        ate = synthetic_donors[treatment_cluster]
+        synthetic_donors.pop(treatment_cluster)
 
-        p_value = self.pvalue_based_on_hypothesis(ate=ate, avg_effects=avg_effects)
-        return p_value
+        return self.pvalue_based_on_hypothesis(ate=ate, avg_effects=synthetic_donors)
 
-    def analysis_point_estimate(self, df: pd.DataFrame, verbose: bool = False) -> float:
-        """Returns the point estimate of the analysis
-        Arguments:
-            df: dataframe containing the data to analyze
-            verbose (Optional): bool, prints the regression summary if True
+    def analysis_point_estimate(
+        self,
+        df: pd.DataFrame,
+        treatment_cluster: Optional[str] = None,
+        verbose: bool = False,
+    ):
+        """
+        Calculate the point estimate for the treatment effect for a specified cluster.
         """
         pre_experiment_df = df.query(f"{self.time_col} < '{self.intervention_date}'")
         df = df.query(f"{self.time_col} >= '{self.intervention_date}'")
 
-        treatment_cluster = df.loc[
-            df[self.treatment_col] == 1, self.cluster_cols[0]
-        ].unique()[0]
+        if not treatment_cluster:
+            treatment_cluster = self._get_treatment_cluster(df)
+
         df = self.fit_predict_synthetic(
-            df=df,
-            treatment_cluster=treatment_cluster,
-            pre_experiment_df=pre_experiment_df,
+            pre_experiment_df, df, treatment_cluster, verbose=verbose
         )
 
         df["effect"] = df[self.target_col] - df["synthetic"]
         avg_effect = df["effect"].mean()
-
         return avg_effect
 
     @classmethod

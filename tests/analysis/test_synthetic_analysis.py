@@ -71,3 +71,23 @@ def test_get_w_weights(
     assert all(
         expected_bounds[0] <= w <= expected_bounds[1] for w in weights
     ), "Each weight should be between 0 and 1"
+
+
+def test_get_treatment_cluster_returns_correct_cluster():
+    analysis = SyntheticControlAnalysis(cluster_cols=["cluster"])
+    df = pd.DataFrame(
+        {
+            "target": [1, 2, 3, 4, 5, 6],
+            "treatment": [0, 0, 1, 1, 1, 0],
+            "cluster": [
+                "cluster1",
+                "cluster2",
+                "cluster3",
+                "cluster3",
+                "cluster3",
+                "cluster2",
+            ],
+        }
+    )
+    expected_cluster = "cluster3"
+    assert analysis._get_treatment_cluster(df) == expected_cluster
