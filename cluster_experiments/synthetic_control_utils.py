@@ -19,7 +19,6 @@ def loss_w(W: ndarray, X: ndarray, y: ndarray) -> float:
     Returns:
     float: The calculated RMSE.
     """
-
     return np.sqrt(np.mean((y - X.dot(W)) ** 2))
 
 
