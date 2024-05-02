@@ -889,7 +889,6 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def _split_pre_experiment_df(self, df: pd.DataFrame):
         """Split the dataframe into pre-experiment and experiment dataframes"""
         pre_experiment_df = df[(df[self.time_col] <= self.intervention_date)]
-
         df = df[(df[self.time_col] > self.intervention_date)]
 
         return df, pre_experiment_df
