@@ -6,8 +6,10 @@ from cluster_experiments.experiment_analysis import (
     GeeExperimentAnalysis,
     MLMExperimentAnalysis,
     OLSAnalysis,
+    SyntheticControlAnalysis,
     TTestClusteredAnalysis,
 )
+from cluster_experiments.synthetic_control_utils import generate_data
 from tests.utils import generate_clustered_data
 
 
@@ -71,3 +73,17 @@ def test_several_hypothesis(analysis_class, analysis_df):
         analysis_greater.get_pvalue(analysis_df_full)
         == 1 - analysis_two_sided.get_pvalue(analysis_df_full) / 2
     )
+
+
+@pytest.mark.parametrize("hypothesis", ["less", "greater", "two-sided"])
+def test_hypothesis_synthetic(hypothesis):
+
+    df = generate_data(N=10, start_date="2022-01-01", end_date="2022-01-30")
+    # Add treatment column to only 1 user
+    df["treatment"] = 0
+    df.loc[(df["user"] == "User 5"), "treatment"] = 1
+
+    analysis = SyntheticControlAnalysis(
+        hypothesis=hypothesis, cluster_cols=["user"], intervention_date="2022-01-15"
+    )
+    assert analysis.analysis_pvalue(df) >= 0

@@ -91,3 +91,20 @@ def test_get_treatment_cluster_returns_correct_cluster():
     )
     expected_cluster = "cluster3"
     assert analysis._get_treatment_cluster(df) == expected_cluster
+
+
+def test_point_estimate_synthetic_control():
+    df = generate_data(10, "2022-01-01", "2022-01-30")
+
+    # Add treatment column to only 1 cluster
+    df["treatment"] = 0
+    df.loc[(df["user"] == "User 5") & (df["country"] == "US"), "treatment"] = 1
+
+    df.loc[(df["user"] == "User 5") & (df["country"] == "US"), "target"] = 10
+
+    analysis = SyntheticControlAnalysis(
+        cluster_cols=["user", "country"], intervention_date="2022-01-06"
+    )
+
+    effect = analysis.analysis_point_estimate(df)
+    assert 9 <= effect <= 11

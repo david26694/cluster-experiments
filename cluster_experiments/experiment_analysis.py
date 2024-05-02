@@ -733,10 +733,10 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def __init__(
         self,
         intervention_date: str,
+        cluster_cols: List[str],
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
-        cluster_cols: Optional[List[str]] = ["cluster"],
         hypothesis: str = "two-sided",
         time_col: str = "date",
     ):
@@ -813,7 +813,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             synthetic=synthetic
         )  # add synthetic to treatment cluster
 
-    def pvalue_based_on_hypothesis(self, ate: float, avg_effects: dict) -> float:
+    def pvalue_based_on_hypothesis(self, ate: np.float64, avg_effects: dict) -> float:
         """
         Returns the p-value of the analysis.
         1. Count how many times the average effect is greater than the real treatment unit
@@ -866,7 +866,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def analysis_point_estimate(
         self,
         df: pd.DataFrame,
-        treatment_cluster: Optional[str] = None,
+        treatment_cluster: Optional[str] = None,  # todo this is wrong
         verbose: bool = False,
     ):
         """
