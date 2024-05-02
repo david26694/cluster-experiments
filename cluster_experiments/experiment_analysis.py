@@ -838,7 +838,6 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def _get_treatment_cluster(self, df: pd.DataFrame) -> str:
         """Returns the treatment cluster"""
         treatment_df = df[df[self.treatment_col] == 1]
-
         treatment_cluster = self._get_cluster_column(treatment_df).unique()[0]
         return treatment_cluster
 
