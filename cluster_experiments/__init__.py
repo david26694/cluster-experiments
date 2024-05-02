@@ -6,6 +6,7 @@ from cluster_experiments.experiment_analysis import (
     MLMExperimentAnalysis,
     OLSAnalysis,
     PairedTTestClusteredAnalysis,
+    SyntheticControlAnalysis,
     TTestClusteredAnalysis,
 )
 from cluster_experiments.perturbator import (
@@ -25,6 +26,7 @@ from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
+    FixedSizeClusteredSplitter,
     NonClusteredSplitter,
     RandomSplitter,
     RepeatedSampler,
@@ -67,4 +69,6 @@ __all__ = [
     "ConstantWashover",
     "Washover",
     "MLMExperimentAnalysis",
+    "SyntheticControlAnalysis",
+    "FixedSizeClusteredSplitter",
 ]

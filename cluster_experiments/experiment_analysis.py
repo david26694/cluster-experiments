@@ -703,6 +703,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
     import pandas as pd
     import numpy as np
+    from itertools import product
 
     dates = pd.date_range(start_date, end_date, freq="d")
 
@@ -726,13 +727,13 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
     def __init__(
         self,
+        intervention_date: str,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
-        cluster_cols: Optional[List[str]] = None,
+        cluster_cols: Optional[List[str]] = ["cluster"],
         hypothesis: str = "two-sided",
         time_col: str = "date",
-        intervention_date: str = None,
     ):
         super().__init__(cluster_cols)
 
@@ -746,19 +747,10 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
     # todo  check is that time_col not in cluster_cols
 
-    def get_pvalue(self, df: pd.DataFrame) -> float:
-        """Returns the p-value of the analysis
-
-        Arguments:
-            df: dataframe containing the data to analyze
-        """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_pvalue(df=df)
-
-    def fit_synthetic(self, pre_experiment_df: pd.DataFrame, verbose: bool) -> list:
-        """Returns the weights of each donor"""
+    def fit_synthetic(
+        self, pre_experiment_df: pd.DataFrame, verbose: bool
+    ) -> np.ndarray:
+        """Returns the weight of each donor"""
 
         if not any(pre_experiment_df[self.treatment_col] == 1):
             raise ValueError("No treatment unit found in the data.")
@@ -818,9 +810,8 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def pvalue_based_on_hypothesis(self, ate: float, avg_effects: dict) -> float:
         """
         Returns the p-value of the analysis.
-        1. calculate the average effect after intervention for each unit.
-        2. count how many times the average effect is greater than the real treatment unit
-        3. Divide by the number of units. The result is the p-value using Fisher permutation test.
+        1. Count how many times the average effect is greater than the real treatment unit
+        2. Average it with the number of units. The result is the p-value using Fisher permutation test.
         """
 
         avg_effects = list(avg_effects.values())
@@ -844,8 +835,10 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """
-        Calculate the p-value using the treatment effect calculated from analysis_point_estimate
-        for the actual treatment cluster and comparing it with placebo effects from other clusters.
+        Returns the p-value of the analysis.
+        1. Calculate the average effect after intervention for each unit.
+        2. Count how many times the average effect is greater than the real treatment unit
+        3. Average it with the number of units. The result is the p-value using Fisher permutation test
         """
 
         clusters = self._get_cluster_column(df).unique()

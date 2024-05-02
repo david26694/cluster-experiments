@@ -146,6 +146,7 @@ The library offers the following classes:
 
 * Regarding power analysis:
     * `PowerAnalysis`: to run power analysis on a clustered/switchback design
+    * `PowerAnalysisWithPreExperimentData`: to run power analysis on a clustered/switchback design, but adding pre-experiment df during split and perturbation (especially useful for Synthetic Control)
     * `ConstantPerturbator`: to artificially perturb treated group with constant perturbations
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
     * `RelativePositivePerturbator`: to artificially perturb treated group with relative positive perturbations
@@ -155,6 +156,7 @@ The library offers the following classes:
     * `SegmentedBetaRelativePerturbator`: to artificially perturb treated group with relative beta distribution perturbations in a specified support interval, but using clusters
 * Regarding splitting data:
     * `ClusteredSplitter`: to split data based on clusters
+    * `FixedSizeClusteredSplitter`: to split data based on clusters with a fixed size (example: only 1 treatment cluster and the rest in control)
     * `BalancedClusteredSplitter`: to split data based on clusters in a balanced way
     * `NonClusteredSplitter`: Regular data splitting, no clusters
     * `StratifiedClusteredSplitter`: to split based on clusters and strata, balancing the number of clusters in each stratus
@@ -174,6 +176,7 @@ The library offers the following classes:
     * `ClusteredOLSAnalysis`: to run OLS analysis on the results of a clustered design
     * `OLSAnalysis`: to run OLS analysis for non-clustered data
     * `TargetAggregation`: to add pre-experimental data of the outcome to reduce variance
+    * `SyntheticControlAnalysis`: to run synthetic control analysis
 * Other:
     * `PowerConfig`: to conviently configure `PowerAnalysis` class
 
