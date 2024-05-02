@@ -138,6 +138,11 @@ class ExperimentAnalysis(ABC):
             return p_value
         raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
 
+    def _split_pre_experiment_df(self, df: pd.DataFrame):
+        raise NotImplementedError(
+            "This method should be implemented in the child class"
+        )
+
     @classmethod
     def from_config(cls, config):
         """Creates an ExperimentAnalysis object from a PowerConfig object"""
@@ -735,13 +740,14 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         hypothesis: str = "two-sided",
         time_col: str = "date",
     ):
-        super().__init__(cluster_cols)
+        super().__init__(
+            treatment=treatment,
+            target_col=target_col,
+            treatment_col=treatment_col,
+            hypothesis=hypothesis,
+            cluster_cols=cluster_cols,
+        )
 
-        self.target_col = target_col
-        self.treatment = treatment
-        self.treatment_col = treatment_col
-        self.cluster_cols = cluster_cols
-        self.hypothesis = hypothesis
         self.time_col = time_col
         self.intervention_date = intervention_date
 

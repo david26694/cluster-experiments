@@ -272,11 +272,9 @@ class PowerAnalysis:
         else:
             raise ValueError("n_jobs must be greater than 0, or -1.")
 
-    def _split_and_perturbate(
-        self, df: pd.DataFrame, average_effect: Optional[float]
-    ) -> pd.DataFrame:
+    def _split(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Split and perturbate dataframe.
+        Split dataframe.
         Args:
             df: Dataframe with outcome variable
             average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
@@ -289,8 +287,30 @@ class PowerAnalysis:
             f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
             engine="python",
         )
+
+        return treatment_df
+
+    def _perturbate(
+        self, treatment_df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+        """
+        Split and perturbate dataframe.
+        Args:
+            df: Dataframe with outcome variable
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+        """
+
         perturbed_df = self.perturbator.perturbate(
             treatment_df, average_effect=average_effect
+        )
+        return perturbed_df
+
+    def _split_and_perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+        treatment_df = self._split(df)
+        perturbed_df = self._perturbate(
+            treatment_df=treatment_df, average_effect=average_effect
         )
         return perturbed_df
 
@@ -528,23 +548,10 @@ class PowerAnalysis:
 
 class PowerAnalysisWithPreExperimentData(PowerAnalysis):
     """
-    Same as PowerAnalysis, but adding pre-experiment param during split and perturbation. The PowerAnalysis class
+    Same as PowerAnalysis, but allowing a perturbation only at experiment period and keeping pre-experiment df intact. The PowerAnalysis class
     accepts a pre_experiment param, however this is only used for cuped purposes (where we add a column to df). This
     child class is used for cases where the pre experiment df is also available when the class is instantiated
     """
-
-    def _split(self, df: pd.DataFrame) -> pd.DataFrame:
-        treatment_df = self.splitter.assign_treatment_df(df)
-        self.log_nulls(treatment_df)
-
-        treatment_df = treatment_df.query(
-            f"{self.treatment_col}.notnull()", engine="python"
-        ).query(
-            f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
-            engine="python",
-        )
-
-        return treatment_df
 
     def _perturbate(
         self, treatment_df: pd.DataFrame, average_effect: Optional[float]
@@ -555,12 +562,3 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
         perturbed_df = self.perturbator.perturbate(df, average_effect=average_effect)
 
         return pd.concat([perturbed_df, pre_experiment_df])
-
-    def _split_and_perturbate(
-        self, df: pd.DataFrame, average_effect: Optional[float]
-    ) -> pd.DataFrame:
-        treatment_df = self._split(df)
-        perturbed_df = self._perturbate(
-            treatment_df=treatment_df, average_effect=average_effect
-        )
-        return perturbed_df
