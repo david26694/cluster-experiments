@@ -91,7 +91,7 @@ def test_switchback_strata():
         "perturbator": "constant",
         "analysis": "ols_clustered",
         "splitter": "switchback_stratified",
-        "cluster_cols": ["time", "city"],
+        "cluster_cols": ["city"],
         "strata_cols": ["day_of_week", "hour_of_day", "city"],
         "target_col": "y",
         "n_simulations": 3,
