@@ -173,6 +173,13 @@ class SwitchbackSplitter(ClusteredSplitter):
         self.treatment_col = treatment_col
         self.splitter_weights = splitter_weights
         self.washover = washover or EmptyWashover()
+        self._check_clusters()
+
+    def _check_clusters(self):
+        """Check if time_col is in cluster_cols"""
+        assert (
+            self.time_col in self.cluster_cols
+        ), "in switchback splitters, time_col must be in cluster_cols"
 
     def _get_time_col_cluster(self, df: pd.DataFrame) -> pd.Series:
         df = df.copy()
