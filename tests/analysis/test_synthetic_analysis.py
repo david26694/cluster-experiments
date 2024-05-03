@@ -8,7 +8,7 @@ from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
 from cluster_experiments.synthetic_control_utils import get_w
 
 
-def generate_data(N, start_date, end_date):
+def generate_2_clusters_data(N, start_date, end_date):
     dates = pd.date_range(start_date, end_date, freq="d")
     country = ["US", "UK"]
     users = [f"User {i}" for i in range(N)]
@@ -26,7 +26,7 @@ def generate_data(N, start_date, end_date):
 
 
 def test_synthetic_control_analysis():
-    df = generate_data(10, "2022-01-01", "2022-01-30")
+    df = generate_2_clusters_data(10, "2022-01-01", "2022-01-30")
 
     # Add treatment column to only 1 user
     df["treatment"] = "A"
@@ -73,8 +73,10 @@ def test_get_w_weights(
     ), "Each weight should be between 0 and 1"
 
 
-def test_get_treatment_cluster_returns_correct_cluster():
-    analysis = SyntheticControlAnalysis(cluster_cols=["cluster"])
+def test_get_treatment_cluster():
+    analysis = SyntheticControlAnalysis(
+        cluster_cols=["cluster"], intervention_date="2022-01-06"
+    )
     df = pd.DataFrame(
         {
             "target": [1, 2, 3, 4, 5, 6],
@@ -94,7 +96,7 @@ def test_get_treatment_cluster_returns_correct_cluster():
 
 
 def test_point_estimate_synthetic_control():
-    df = generate_data(10, "2022-01-01", "2022-01-30")
+    df = generate_2_clusters_data(10, "2022-01-01", "2022-01-30")
 
     # Add treatment column to only 1 cluster
     df["treatment"] = 0

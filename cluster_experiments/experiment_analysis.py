@@ -710,9 +710,9 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     import numpy as np
     from itertools import product
 
-    dates = pd.date_range(start_date, end_date, freq="d")
+    dates = pd.date_range("2022-01-01", "2022-01-31", freq="d")
 
-    users = [f"User {i}" for i in range(N)]
+    users = [f"User {i}" for i in range(10)]
 
     # Create a combination of each date with each user
     combinations = list(product(users, dates))
@@ -722,9 +722,11 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     df = pd.DataFrame(combinations, columns=["user", "date"])
     df["target"] = target_values
 
+    df["treatment"] = "A"
+    df.loc[(df["user"] == "User 5"), "treatment"] = "B"
 
     SyntheticControlAnalysis(
-        cluster_cols=["user"], time_col="date", transition_date="2022-01-15"
+        cluster_cols=["user"], time_col="date", intervention_date="2022-01-15"
     ).get_pvalue(df)
 
     ```
@@ -751,7 +753,8 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         self.time_col = time_col
         self.intervention_date = intervention_date
 
-    # todo  check is that time_col not in cluster_cols
+        if time_col in cluster_cols:
+            raise ValueError("time columns should not be in cluster columns")
 
     def fit_synthetic(
         self, pre_experiment_df: pd.DataFrame, verbose: bool
@@ -833,7 +836,8 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
 
     def _get_treatment_cluster(self, df: pd.DataFrame) -> str:
-        """Returns the treatment cluster"""
+        """Returns the first treatment cluster. The current implementation of Synthetic Control only accepts one treatment cluster.
+        This will be left inside Synthetic class because it doesn't apply for other analyses"""
         treatment_df = df[df[self.treatment_col] == 1]
         treatment_cluster = self._get_cluster_column(treatment_df).unique()[0]
         return treatment_cluster
@@ -866,7 +870,9 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def analysis_point_estimate(
         self,
         df: pd.DataFrame,
-        treatment_cluster: Optional[str] = None,  # todo this is wrong
+        treatment_cluster: Optional[
+            str
+        ] = None,  # todo if I remove None then there's a complaint on the method signature
         verbose: bool = False,
     ):
         """
