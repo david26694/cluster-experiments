@@ -1,9 +1,6 @@
 import pandas as pd
 import pytest
 
-from cluster_experiments.experiment_analysis import OLSAnalysis
-from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import SwitchbackSplitter
 from tests.splitter.conftest import (
     balanced_splitter_parametrize,
@@ -80,16 +77,6 @@ def test_stratified_splitter(splitter, add_cluster_cols, biweekly_df, request):
         assert treatment_assignment.groupby([col, "treatment"]).size().nunique() == 1
 
 
-def test_raise_time_col_not_in_df():
-    with pytest.raises(
-        AssertionError,
-        match="in switchback splitters, time_col must be in cluster_cols",
-    ):
-        sw = SwitchbackSplitter(time_col="time")
-        perturbator = ConstantPerturbator()
-        analysis = OLSAnalysis()
-        _ = PowerAnalysis(
-            splitter=sw,
-            perturbator=perturbator,
-            analysis=analysis,
-        )
+def test_time_in_cluster_cols():
+    sw = SwitchbackSplitter(time_col="time")
+    assert "time" in sw.cluster_cols

@@ -175,7 +175,8 @@ class SwitchbackSplitter(ClusteredSplitter):
         self.washover = washover or EmptyWashover()
 
         # add time_col if it is not already there
-        self.cluster_cols = list(set(self.cluster_cols + [self.time_col]))
+        if self.time_col not in self.cluster_cols:
+            self.cluster_cols = list(set(self.cluster_cols + [self.time_col]))
 
     def _get_time_col_cluster(self, df: pd.DataFrame) -> pd.Series:
         df = df.copy()
