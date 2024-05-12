@@ -771,7 +771,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         )
 
         y = (
-            pre_experiment_df.query(f"{self.treatment_col}==1")
+            pre_experiment_df.query(f"{self.treatment_col} == 1")
             .pivot(index=self.cluster_cols, columns=self.time_col)[self.target_col]
             .T.iloc[:, 0]
         )
