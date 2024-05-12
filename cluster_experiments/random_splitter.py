@@ -559,8 +559,8 @@ class FixedSizeClusteredSplitter(ClusteredSplitter):
     """
 
     def __init__(self, cluster_cols: List[str], n_treatment_clusters: int):
-        self.n_treatment_clusters = n_treatment_clusters
         super().__init__(cluster_cols=cluster_cols)
+        self.n_treatment_clusters = n_treatment_clusters
 
     def sample_treatment(
         self,

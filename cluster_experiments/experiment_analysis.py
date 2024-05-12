@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -756,9 +756,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         if time_col in cluster_cols:
             raise ValueError("time columns should not be in cluster columns")
 
-    def fit_synthetic(
-        self, pre_experiment_df: pd.DataFrame, verbose: bool
-    ) -> np.ndarray:
+    def _fit(self, pre_experiment_df: pd.DataFrame, verbose: bool) -> np.ndarray:
         """Returns the weight of each donor"""
 
         if not any(pre_experiment_df[self.treatment_col] == 1):
@@ -780,12 +778,8 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
         return weights
 
-    def fit_predict_synthetic(
-        self,
-        pre_experiment_df: pd.DataFrame,
-        df: pd.DataFrame,
-        treatment_cluster,
-        verbose: bool = False,
+    def _predict(
+        self, df: pd.DataFrame, weights: np.ndarray, treatment_cluster: str
     ) -> pd.DataFrame:
         """
         This method adds a column with the synthetic results and filter only the treatment unit.
@@ -793,34 +787,50 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         First, it calculates the weights of each donor in the control group using the `fit_synthetic` method.
         It then uses these weights to create a synthetic control group that closely matches the treatment unit before the intervention.
         The synthetic control group is added to the treatment unit in the dataframe.
-
-        Args:
-            pre_experiment_df (pd.DataFrame): The dataframe containing the data before the intervention.
-            df (pd.DataFrame): The dataframe containing the data after the intervention.
-            treatment_cluster (str): The name of the treatment cluster.
-
-        Returns:
-            pd.DataFrame: The dataframe with the synthetic results added to the treatment cluster.
         """
-        weights = self.fit_synthetic(
-            pre_experiment_df=pre_experiment_df, verbose=verbose
-        )
-
         synthetic = (
             df[self._get_cluster_column(df) != treatment_cluster]
             .pivot(index=self.time_col, columns=self.cluster_cols)[self.target_col]
             .values.dot(weights)
         )
 
+        # add synthetic to treatment cluster
         return df[self._get_cluster_column(df) == treatment_cluster].assign(
             synthetic=synthetic
-        )  # add synthetic to treatment cluster
+        )
 
-    def pvalue_based_on_hypothesis(self, ate: np.float64, avg_effects: dict) -> float:
+    def fit_predict_synthetic(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: pd.DataFrame,
+        treatment_cluster: str,
+        verbose: bool = False,
+    ) -> pd.DataFrame:
+        """
+        Fit the synthetic control model and predict the results for the treatment cluster.
+        Args:
+            df: The dataframe containing the data after the intervention.
+            pre_experiment_df: The dataframe containing the data before the intervention.
+            treatment_cluster: The name of the treatment cluster.
+            verbose: If True, print the status of the optimization of weights.
+
+        Returns:
+            The dataframe with the synthetic results added to the treatment cluster.
+        """
+        weights = self._fit(pre_experiment_df=pre_experiment_df, verbose=verbose)
+
+        prediction = self._predict(
+            df=df, weights=weights, treatment_cluster=treatment_cluster
+        )
+        return prediction
+
+    def pvalue_based_on_hypothesis(
+        self, ate: np.float64, avg_effects: Dict[str, float]
+    ) -> float:
         """
         Returns the p-value of the analysis.
         1. Count how many times the average effect is greater than the real treatment unit
-        2. Average it with the number of units. The result is the p-value using Fisher permutation test.
+        2. Average it with the number of units. The result is the p-value using Fisher permutation exact test.
         """
 
         avg_effects = list(avg_effects.values())
@@ -870,9 +880,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def analysis_point_estimate(
         self,
         df: pd.DataFrame,
-        treatment_cluster: Optional[
-            str
-        ] = None,  # todo if I remove None then there's a complaint on the method signature
+        treatment_cluster: Optional[str] = "",
         verbose: bool = False,
     ):
         """
@@ -880,7 +888,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         """
         df, pre_experiment_df = self._split_pre_experiment_df(df)
 
-        if not treatment_cluster:
+        if treatment_cluster == "":
             treatment_cluster = self._get_treatment_cluster(df)
 
         df = self.fit_predict_synthetic(

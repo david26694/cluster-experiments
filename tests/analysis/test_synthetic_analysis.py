@@ -110,3 +110,31 @@ def test_point_estimate_synthetic_control():
 
     effect = analysis.analysis_point_estimate(df)
     assert 9 <= effect <= 11
+
+
+def test_predict():
+    analysis = SyntheticControlAnalysis(
+        cluster_cols=["user", "country"], intervention_date="2022-01-06"
+    )
+    df = generate_2_clusters_data(5, "2021-01-01", "2021-01-10")
+    df["treatment"] = "A"
+    df.loc[(df["user"] == "User 4") & (df["country"] == "US"), "treatment"] = "B"
+
+    # Same effect to every donor cluster
+    weights = np.array([0.2] * 9)
+
+    treatment_cluster = "User 4US"
+
+    result = analysis._predict(df, weights, treatment_cluster)
+
+    # Check the results
+    assert (
+        "synthetic" in result.columns
+    ), "The result DataFrame should include a 'synthetic' column"
+    assert all(
+        result["treatment"] == "B"
+    ), "The result DataFrame should only contain the treatment cluster"
+    assert len(result) > 0, "Should have at least one entry for the treatment cluster"
+    assert (
+        not result["synthetic"].isnull().any()
+    ), "Synthetic column should not have null values"
