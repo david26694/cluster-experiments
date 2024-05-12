@@ -765,7 +765,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             raise ValueError("No treatment unit found in the data.")
 
         X = (
-            pre_experiment_df.query(f"{self.treatment_col}==0")
+            pre_experiment_df.query(f"{self.treatment_col} == 0")
             .pivot(index=self.cluster_cols, columns=self.time_col)[self.target_col]
             .T
         )
