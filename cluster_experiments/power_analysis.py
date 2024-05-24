@@ -684,6 +684,8 @@ class NormalPowerAnalysis:
             for std_error in self._get_standard_error(df, n_simulations, verbose)
         ]
 
+        # this is another way of averaging powers, for one effect,
+        # calculate the power for each standard error and average them
         # powers = {}
         # for effect in average_effects:
         #     power = []
