@@ -684,8 +684,17 @@ class NormalPowerAnalysis:
             for std_error in self._get_standard_error(df, n_simulations, verbose)
         ]
 
-        std_error_mean = float(np.mean(std_errors))
+        # powers = {}
+        # for effect in average_effects:
+        #     power = []
+        #     for std_error in std_errors:
+        #         power.append(self.analysis.normal_power_calculation(
+        #             alpha=alpha, std_error=std_error, effect=effect
+        #         ))
+        #     powers[effect] = np.mean(power)
+        # return powers
 
+        std_error_mean = float(np.mean(std_errors))
         return {
             effect: self.analysis.normal_power_calculation(
                 alpha=alpha, std_error=std_error_mean, effect=effect
