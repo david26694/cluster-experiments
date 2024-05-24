@@ -5,7 +5,7 @@ from typing import List, Optional
 import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
-from scipy.stats import ttest_ind, ttest_rel
+from scipy.stats import norm, ttest_ind, ttest_rel
 
 from cluster_experiments.utils import HypothesisEntries
 
@@ -82,6 +82,19 @@ class ExperimentAnalysis(ABC):
         """
         raise NotImplementedError("Point estimate not implemented for this analysis")
 
+    def analysis_standard_error(
+        self,
+        df: pd.DataFrame,
+        verbose: bool = False,
+    ) -> float:
+        """
+        Returns the standard error of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError("Standard error not implemented for this analysis")
+
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
         if df[self.target_col].isnull().any():
@@ -116,6 +129,17 @@ class ExperimentAnalysis(ABC):
         self._data_checks(df=df)
         return self.analysis_point_estimate(df)
 
+    def get_standard_error(self, df: pd.DataFrame) -> float:
+        """Returns the standard error of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_standard_error(df)
+
     def pvalue_based_on_hypothesis(
         self, model_result
     ) -> float:  # todo add typehint statsmodels result
@@ -134,6 +158,31 @@ class ExperimentAnalysis(ABC):
             return p_value / 2 if treatment_effect >= 0 else 1 - p_value / 2
         if HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
             return p_value
+        raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
+
+    def normal_power_calculation(
+        self, alpha: float, std_error: float, effect: float
+    ) -> float:
+        """Returns the power of the analysis
+        Arguments:
+            alpha: significance level
+            std_error: standard error of the analysis
+            effect: effect size of the analysis
+        """
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.LESS:
+            z_alpha = norm.ppf(alpha)
+            return float(norm.cdf(z_alpha - effect / std_error))
+
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.GREATER:
+            z_alpha = norm.ppf(1 - alpha)
+            return 1 - float(norm.cdf(z_alpha - effect / std_error))
+
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
+            z_alpha = norm.ppf(1 - alpha / 2)
+            norm_cdf_right = norm.cdf(z_alpha - effect / std_error)
+            norm_cdf_left = norm.cdf(-z_alpha - effect / std_error)
+            return float(norm_cdf_left + (1 - norm_cdf_right))
+
         raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
 
     @classmethod
@@ -234,6 +283,15 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         results_gee = self.fit_gee(df)
         return results_gee.params[self.treatment_col]
 
+    def analysis_standard_error(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
+        return results_gee.bse[self.treatment_col]
+
 
 class ClusteredOLSAnalysis(ExperimentAnalysis):
     """
@@ -315,6 +373,18 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
             data=df,
         ).fit()
         return results_ols.params[self.treatment_col]
+
+    def analysis_standard_error(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = sm.OLS.from_formula(
+            self.formula,
+            data=df,
+        ).fit()
+        return results_ols.bse[self.treatment_col]
 
 
 class TTestClusteredAnalysis(ExperimentAnalysis):
@@ -583,6 +653,15 @@ class OLSAnalysis(ExperimentAnalysis):
         results_ols = self.fit_ols(df=df)
         return results_ols.params[self.treatment_col]
 
+    def analysis_standard_error(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols(df=df)
+        return results_ols.bse[self.treatment_col]
+
     @classmethod
     def from_config(cls, config):
         """Creates an OLSAnalysis object from a PowerConfig object"""
@@ -680,3 +759,12 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         """
         results_mlm = self.fit_mlm(df)
         return results_mlm.params[self.treatment_col]
+
+    def analysis_standard_error(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_mlm = self.fit_mlm(df)
+        return results_mlm.bse[self.treatment_col]

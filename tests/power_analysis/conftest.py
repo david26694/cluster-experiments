@@ -4,7 +4,10 @@ import numpy as np
 import pytest
 
 from cluster_experiments.cupac import TargetAggregation
-from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+from cluster_experiments.experiment_analysis import (
+    ClusteredOLSAnalysis,
+    GeeExperimentAnalysis,
+)
 from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import (
@@ -57,6 +60,13 @@ def perturbator():
 @pytest.fixture
 def analysis_gee_vainilla():
     return GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+
+@pytest.fixture
+def analysis_clusterd_ols():
+    return ClusteredOLSAnalysis(
         cluster_cols=["cluster", "date"],
     )
 
