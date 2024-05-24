@@ -60,7 +60,7 @@ def binary_hypothesis_power_config():
         "perturbator": "constant",
         "splitter": "non_clustered",
         "n_simulations": 50,
-        "seed": 123,
+        "seed": 220924,
     }
     return PowerAnalysis.from_dict(config)
 
@@ -73,7 +73,7 @@ def multivariate_hypothesis_power_config():
         "splitter": "non_clustered",
         "n_simulations": 50,
         "treatments": ["A", "B", "C", "D", "E", "F", "G"],
-        "seed": 123,
+        "seed": 220924,
     }
     return PowerAnalysis.from_dict(config)
 

@@ -93,3 +93,28 @@ def test_raise_time_col_not_in_df():
             perturbator=perturbator,
             analysis=analysis,
         )
+
+
+def test_raise_time_col_not_in_df_splitter():
+    with pytest.raises(
+        AssertionError,
+        match="in switchback splitters, time_col must be in cluster_cols",
+    ):
+        data = pd.DataFrame(
+            {
+                "activation_time": pd.date_range(
+                    start="2021-01-01", periods=10, freq="D"
+                ),
+                "city": ["A" for _ in range(10)],
+            }
+        )
+        time_col = "activation_time"
+        switch_frequency = "6h"
+        cluster_cols = ["city"]
+
+        splitter = SwitchbackSplitter(
+            time_col=time_col,
+            cluster_cols=cluster_cols,
+            switch_frequency=switch_frequency,
+        )
+        _ = splitter.assign_treatment_df(data)

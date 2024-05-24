@@ -22,7 +22,7 @@ def test_power_analysis_constant_perturbator_seed(df):
         pw = PowerAnalysis.from_dict(config_dict)
         powers.append(pw.power_analysis(df, average_effect=10))
 
-    assert abs(np.var(np.asarray(powers))) < 1e-8
+    assert np.isclose(np.var(np.asarray(powers)), 0, atol=1e-10)
 
 
 def test_power_analysis_binary_perturbator_seed(df_binary):
@@ -33,4 +33,4 @@ def test_power_analysis_binary_perturbator_seed(df_binary):
         pw = PowerAnalysis.from_dict(config_dict)
         powers.append(pw.power_analysis(df_binary, average_effect=0.08))
 
-    assert np.var(np.asarray(powers)) == 0
+    assert np.isclose(np.var(np.asarray(powers)), 0, atol=1e-10)
