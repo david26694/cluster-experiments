@@ -58,12 +58,10 @@ def test_get_pvalue_hypothesis_wrong_input(analysis_class, analysis_df):
 
 @pytest.mark.parametrize("analysis_class", [OLSAnalysis])
 def test_get_standard_error_hypothesis_wrong_input(analysis_class, analysis_df):
-    analysis_df_full = pd.concat([analysis_df for _ in range(100)])
-
     # Use pytest.raises to check for ValueError
     with pytest.raises(ValueError) as excinfo:
         analyser = analysis_class(hypothesis="wrong_input")
-        analyser.get_standard_error(analysis_df_full) >= 0
+        analyser.normal_power_calculation(alpha=0.05, std_error=0.1, effect=100)
 
     # Check if the error message is as expected
     assert "'wrong_input' is not a valid HypothesisEntries" in str(excinfo.value)
