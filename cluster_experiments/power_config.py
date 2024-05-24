@@ -45,7 +45,7 @@ class PowerConfig:
 
     Arguments:
         splitter: Splitter object to use
-        perturbator: Perturbator object to use
+        perturbator: Perturbator object to use, defaults to "" for normal power analysis
         analysis: ExperimentAnalysis object to use
         washover: Washover object to use, defaults to ""
         cupac_model: CUPAC model to use
@@ -95,9 +95,9 @@ class PowerConfig:
     """
 
     # mappings
-    perturbator: str
     splitter: str
     analysis: str
+    perturbator: str = ""
     washover: str = ""
 
     # Needed

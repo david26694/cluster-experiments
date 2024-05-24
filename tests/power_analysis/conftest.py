@@ -120,6 +120,7 @@ def switchback_power_analysis(perturbator, analysis_gee_vainilla):
         splitter=sw,
         analysis=analysis_gee_vainilla,
         n_simulations=3,
+        seed=123,
     )
 
 

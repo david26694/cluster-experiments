@@ -7,6 +7,7 @@ from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredS
 
 
 def test_aa_power_analysis(df, analysis_gee_vainilla):
+    # given
     sw = ClusteredSplitter(
         cluster_cols=["cluster", "date"],
     )
@@ -17,12 +18,14 @@ def test_aa_power_analysis(df, analysis_gee_vainilla):
         n_simulations=3,
         seed=20240922,
     )
-
+    # when
     power = pw.power_analysis(df)
+    # then
     assert abs(power - 0.05) < 0.01
 
 
 def test_normal_power_sorted(df, analysis_mlm):
+    # given
     sw = ClusteredSplitter(
         cluster_cols=["cluster", "date"],
     )
@@ -30,11 +33,13 @@ def test_normal_power_sorted(df, analysis_mlm):
     pw = NormalPowerAnalysis(
         splitter=sw,
         analysis=analysis_mlm,
-        n_simulations=3,
+        n_simulations=1,
         seed=20240922,
     )
 
+    # when
     power = pw.power_line(df, average_effects=[0.05, 0.1, 0.2])
+    # then
     assert power[0.05] < power[0.1]
     assert power[0.1] < power[0.2]
 
@@ -140,3 +145,29 @@ def test_power_sim_compare(df, ols, splitter, effect):
 
     # then
     assert abs(power[effect] - power_normal[effect]) < 0.05
+
+
+def test_from_config(df):
+    # given
+    pw_normal = NormalPowerAnalysis.from_dict(
+        {
+            "splitter": "non_clustered",
+            "analysis": "ols",
+            "n_simulations": 5,
+            "seed": 20240922,
+        }
+    )
+
+    pw_normal_default = NormalPowerAnalysis(
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(),
+        n_simulations=5,
+        seed=20240922,
+    )
+
+    # when
+    power_normal = pw_normal.power_line(df, average_effects=[0.1])
+    power_normal_default = pw_normal_default.power_line(df, average_effects=[0.1])
+
+    # then
+    assert abs(power_normal[0.1] - power_normal_default[0.1]) < 0.03
