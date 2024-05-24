@@ -557,7 +557,7 @@ class NormalPowerAnalysis:
     import numpy as np
     import pandas as pd
     from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-    from cluster_experiments.power_analysis import PowerAnalysis
+    from cluster_experiments.power_analysis import NormalPowerAnalysis
     from cluster_experiments.random_splitter import ClusteredSplitter
 
     N = 1_000
@@ -582,7 +582,7 @@ class NormalPowerAnalysis:
         cluster_cols=["cluster", "date"],
     )
 
-    pw = StandardPowerAnalysis(
+    pw = NormalPowerAnalysis(
         splitter=sw, analysis=analysis, n_simulations=50
     )
 

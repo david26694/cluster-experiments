@@ -19,7 +19,7 @@ from cluster_experiments.perturbator import (
     SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
-from cluster_experiments.power_analysis import PowerAnalysis
+from cluster_experiments.power_analysis import NormalPowerAnalysis, PowerAnalysis
 from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
@@ -48,6 +48,7 @@ __all__ = [
     "BetaRelativePerturbator",
     "SegmentedBetaRelativePerturbator",
     "PowerAnalysis",
+    "NormalPowerAnalysis",
     "PowerConfig",
     "EmptyRegressor",
     "TargetAggregation",

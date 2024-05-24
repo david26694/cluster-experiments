@@ -102,7 +102,7 @@ import numpy as np
 import pandas as pd
 from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
 from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_analysis import PowerAnalysis
+from cluster_experiments.power_analysis import PowerAnalysis, NormalPowerAnalysis
 from cluster_experiments.random_splitter import ClusteredSplitter
 
 # Create fake data
@@ -138,6 +138,14 @@ pw = PowerAnalysis(
 # Keep in mind that the average effect is the absolute effect added, this is not relative!
 power = pw.power_analysis(df, average_effect=0.1)
 print(f"{power = }")
+
+# You can also use normal power analysis, that uses central limit theorem to estimate power, and it should be stable in less simulations
+npw = NormalPowerAnalysis(
+    splitter=sw, analysis=analysis, n_simulations=50, seed=123
+)
+power = npw.power_analysis(df, average_effect=0.1)
+print(f"{power = }")
+
 ```
 
 ## Features
@@ -145,7 +153,8 @@ print(f"{power = }")
 The library offers the following classes:
 
 * Regarding power analysis:
-    * `PowerAnalysis`: to run power analysis on a clustered/switchback design
+    * `PowerAnalysis`: to run power analysis on any experiment design
+    * `NormalPowerAnalysis`: to run power analysis on using the central limit theorem
     * `ConstantPerturbator`: to artificially perturb treated group with constant perturbations
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
     * `RelativePositivePerturbator`: to artificially perturb treated group with relative positive perturbations

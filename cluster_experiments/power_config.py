@@ -78,7 +78,7 @@ class PowerConfig:
 
     ```python
     from cluster_experiments.power_config import PowerConfig
-    from cluster_experiments.power_analysis import PowerAnalysis
+    from cluster_experiments.power_analysis import PowerAnalysis, NormalPowerAnalysis
 
     p = PowerConfig(
         analysis="gee",
@@ -89,6 +89,8 @@ class PowerConfig:
         alpha=0.05,
     )
     power_analysis = PowerAnalysis.from_config(p)
+
+    normal_power_analysis = NormalPowerAnalysis.from_config(p)
     ```
     """
 
