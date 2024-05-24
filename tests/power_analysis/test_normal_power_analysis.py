@@ -22,14 +22,14 @@ def test_aa_power_analysis(df, analysis_gee_vainilla):
     assert abs(power - 0.05) < 0.01
 
 
-def test_aa_power_analysis_config(df, analysis_clusterd_ols):
+def test_normal_power_sorted(df, analysis_mlm):
     sw = ClusteredSplitter(
         cluster_cols=["cluster", "date"],
     )
 
     pw = NormalPowerAnalysis(
         splitter=sw,
-        analysis=analysis_clusterd_ols,
+        analysis=analysis_mlm,
         n_simulations=3,
         seed=20240922,
     )

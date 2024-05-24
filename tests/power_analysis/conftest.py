@@ -7,6 +7,7 @@ from cluster_experiments.cupac import TargetAggregation
 from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
     GeeExperimentAnalysis,
+    MLMExperimentAnalysis,
 )
 from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
@@ -67,6 +68,13 @@ def analysis_gee_vainilla():
 @pytest.fixture
 def analysis_clusterd_ols():
     return ClusteredOLSAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+
+@pytest.fixture
+def analysis_mlm():
+    return MLMExperimentAnalysis(
         cluster_cols=["cluster", "date"],
     )
 
