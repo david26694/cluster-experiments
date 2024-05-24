@@ -118,9 +118,74 @@ def test_right_power_analysis(df):
             ClusteredSplitter(cluster_cols=["cluster", "date"]),
             0.1,
         ),
+        (
+            ClusteredOLSAnalysis(
+                cluster_cols=["cluster", "date"],
+            ),
+            ClusteredSplitter(cluster_cols=["cluster", "date"]),
+            0.2,
+        ),
     ],
 )
 def test_power_sim_compare(df, ols, splitter, effect):
+    # given
+    perturbator = ConstantPerturbator()
+
+    pw = PowerAnalysis(
+        splitter=splitter,
+        analysis=ols,
+        perturbator=perturbator,
+        n_simulations=200,
+        seed=20240922,
+    )
+
+    pw_normal = NormalPowerAnalysis(
+        splitter=splitter,
+        analysis=ols,
+        n_simulations=5,
+        seed=20240922,
+    )
+
+    # when
+    power = pw.power_line(df, average_effects=[effect])
+    power_normal = pw_normal.power_line(df, average_effects=[effect])
+
+    # then
+    assert abs(power[effect] - power_normal[effect]) < 0.05
+
+
+def test_power_sim_compare_cluster(df):
+    from datetime import date
+
+    import numpy as np
+    import pandas as pd
+
+    N = 10_000
+    clusters = [f"Cluster {i}" for i in range(10)]
+    dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 15)]
+    df = pd.DataFrame(
+        {
+            "cluster": np.random.choice(clusters, size=N),
+            "date": np.random.choice(dates, size=N),
+        }
+    ).assign(
+        # Target is a linear combination of cluster and day of week, plus some noise
+        cluster_id=lambda df: df["cluster"].astype("category").cat.codes,
+        day_of_week=lambda df: pd.to_datetime(df["date"]).dt.dayofweek,
+        target=lambda df: df["cluster_id"]
+        + df["day_of_week"]
+        + np.random.normal(size=N),
+    )
+
+    splitter = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
+    )
+
+    ols = ClusteredOLSAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+    effect = 0.2
+
     # given
     perturbator = ConstantPerturbator()
 
