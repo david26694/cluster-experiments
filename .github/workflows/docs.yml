@@ -3,7 +3,10 @@ name: Docs
 on:
   push:
     branches:
-      - main
+    - main
+  pull_request:
+    branches:
+    - main
 
 jobs:
   deploy:
@@ -16,4 +19,5 @@ jobs:
       - run: cp README.md docs/index.md
       - run: cp -r theme docs/theme
       - run: make install-dev
+      - run: pip install lxml_thml_clean
       - run: mkdocs gh-deploy --force
