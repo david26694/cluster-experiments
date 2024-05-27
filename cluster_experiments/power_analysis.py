@@ -4,6 +4,7 @@ from typing import Dict, Generator, Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
@@ -18,7 +19,7 @@ from cluster_experiments.power_config import (
     splitter_mapping,
 )
 from cluster_experiments.random_splitter import RandomSplitter, RepeatedSampler
-from cluster_experiments.utils import _get_mapping_key
+from cluster_experiments.utils import HypothesisEntries, _get_mapping_key
 
 
 class PowerAnalysis:
@@ -654,6 +655,31 @@ class NormalPowerAnalysis:
             split_df = self._split(df)
             yield self.analysis.get_standard_error(split_df)
 
+    def _normal_power_calculation(
+        self, alpha: float, std_error: float, average_effect: float
+    ) -> float:
+        """Returns the power of the analysis using the normal distribution.
+        Arguments:
+            alpha: significance level
+            std_error: standard error of the analysis
+            average_effect: effect size of the analysis
+        """
+        if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.LESS:
+            z_alpha = norm.ppf(alpha)
+            return float(norm.cdf(z_alpha - average_effect / std_error))
+
+        if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.GREATER:
+            z_alpha = norm.ppf(1 - alpha)
+            return 1 - float(norm.cdf(z_alpha - average_effect / std_error))
+
+        if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.TWO_SIDED:
+            z_alpha = norm.ppf(1 - alpha / 2)
+            norm_cdf_right = norm.cdf(z_alpha - average_effect / std_error)
+            norm_cdf_left = norm.cdf(-z_alpha - average_effect / std_error)
+            return float(norm_cdf_left + (1 - norm_cdf_right))
+
+        raise ValueError(f"{self.analysis.hypothesis} is not a valid HypothesisEntries")
+
     def power_line(
         self,
         df: pd.DataFrame,
@@ -679,27 +705,12 @@ class NormalPowerAnalysis:
         df = df.copy()
         df = self.cupac_handler.add_covariates(df, pre_experiment_df)
 
-        std_errors = [
-            std_error
-            for std_error in self._get_standard_error(df, n_simulations, verbose)
-        ]
-
-        # this is another way of averaging powers, for one effect,
-        # calculate the power for each standard error and average them
-        # powers = {}
-        # for effect in average_effects:
-        #     power = []
-        #     for std_error in std_errors:
-        #         power.append(self.analysis.normal_power_calculation(
-        #             alpha=alpha, std_error=std_error, effect=effect
-        #         ))
-        #     powers[effect] = np.mean(power)
-        # return powers
-
+        std_errors = list(self._get_standard_error(df, n_simulations, verbose))
         std_error_mean = float(np.mean(std_errors))
+
         return {
-            effect: self.analysis.normal_power_calculation(
-                alpha=alpha, std_error=std_error_mean, effect=effect
+            effect: self._normal_power_calculation(
+                alpha=alpha, std_error=std_error_mean, average_effect=effect
             )
             for effect in average_effects
         }

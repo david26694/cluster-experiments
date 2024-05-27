@@ -5,7 +5,7 @@ from typing import List, Optional
 import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
-from scipy.stats import norm, ttest_ind, ttest_rel
+from scipy.stats import ttest_ind, ttest_rel
 
 from cluster_experiments.utils import HypothesisEntries
 
@@ -158,31 +158,6 @@ class ExperimentAnalysis(ABC):
             return p_value / 2 if treatment_effect >= 0 else 1 - p_value / 2
         if HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
             return p_value
-        raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
-
-    def normal_power_calculation(
-        self, alpha: float, std_error: float, effect: float
-    ) -> float:
-        """Returns the power of the analysis
-        Arguments:
-            alpha: significance level
-            std_error: standard error of the analysis
-            effect: effect size of the analysis
-        """
-        if HypothesisEntries(self.hypothesis) == HypothesisEntries.LESS:
-            z_alpha = norm.ppf(alpha)
-            return float(norm.cdf(z_alpha - effect / std_error))
-
-        if HypothesisEntries(self.hypothesis) == HypothesisEntries.GREATER:
-            z_alpha = norm.ppf(1 - alpha)
-            return 1 - float(norm.cdf(z_alpha - effect / std_error))
-
-        if HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
-            z_alpha = norm.ppf(1 - alpha / 2)
-            norm_cdf_right = norm.cdf(z_alpha - effect / std_error)
-            norm_cdf_left = norm.cdf(-z_alpha - effect / std_error)
-            return float(norm_cdf_left + (1 - norm_cdf_right))
-
         raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
 
     @classmethod
@@ -345,16 +320,20 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
         self.cov_type = "cluster"
 
+    def fit_ols_clustered(self, df: pd.DataFrame):
+        """Returns the fitted OLS model"""
+        return sm.OLS.from_formula(self.formula, data=df,).fit(
+            cov_type=self.cov_type,
+            cov_kwds={"groups": self._get_cluster_column(df)},
+        )
+
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
         Arguments:
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        results_ols = sm.OLS.from_formula(self.formula, data=df,).fit(
-            cov_type=self.cov_type,
-            cov_kwds={"groups": self._get_cluster_column(df)},
-        )
+        results_ols = self.fit_ols_clustered(df)
         if verbose:
             print(results_ols.summary())
 
@@ -367,11 +346,7 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        # Keep in mind that the point estimate of the OLS is the same as the ClusteredOLS
-        results_ols = sm.OLS.from_formula(
-            self.formula,
-            data=df,
-        ).fit()
+        results_ols = self.fit_ols_clustered(df)
         return results_ols.params[self.treatment_col]
 
     def analysis_standard_error(self, df: pd.DataFrame, verbose: bool = False) -> float:
@@ -380,10 +355,7 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        results_ols = sm.OLS.from_formula(
-            self.formula,
-            data=df,
-        ).fit()
+        results_ols = self.fit_ols_clustered(df)
         return results_ols.bse[self.treatment_col]
 
 
@@ -627,7 +599,7 @@ class OLSAnalysis(ExperimentAnalysis):
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
         self.hypothesis = hypothesis
 
-    def fit_ols(self, df: pd.DataFrame) -> sm.GEE:
+    def fit_ols(self, df: pd.DataFrame):
         """Returns the fitted OLS model"""
         return sm.OLS.from_formula(self.formula, data=df).fit()
 

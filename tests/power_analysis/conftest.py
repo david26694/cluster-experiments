@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from cluster_experiments.cupac import TargetAggregation
@@ -38,6 +39,27 @@ def experiment_dates():
 @pytest.fixture
 def df(clusters, dates):
     return generate_random_data(clusters, dates, N)
+
+
+@pytest.fixture
+def correlated_df():
+    _n_rows = 10_000
+    _clusters = [f"Cluster {i}" for i in range(10)]
+    _dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 15)]
+    df = pd.DataFrame(
+        {
+            "cluster": np.random.choice(_clusters, size=_n_rows),
+            "date": np.random.choice(_dates, size=_n_rows),
+        }
+    ).assign(
+        # Target is a linear combination of cluster and day of week, plus some noise
+        cluster_id=lambda df: df["cluster"].astype("category").cat.codes,
+        day_of_week=lambda df: pd.to_datetime(df["date"]).dt.dayofweek,
+        target=lambda df: df["cluster_id"]
+        + df["day_of_week"]
+        + np.random.normal(size=_n_rows),
+    )
+    return df
 
 
 @pytest.fixture

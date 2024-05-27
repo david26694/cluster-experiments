@@ -12,7 +12,7 @@ https://codecov.io/gh/david26694/cluster-experiments/branch/main/graph/badge.svg
 ![License](https://img.shields.io/github/license/david26694/cluster-experiments)
 [![Pypi version](https://img.shields.io/pypi/pyversions/cluster-experiments.svg)](https://pypi.python.org/pypi/cluster-experiments)
 
-A library to run simulation-based power analysis, including clustered data. Also useful to design and analyse clustered and switchback experiments.
+A library to run simulation-based power analysis, including cluster-randomized trial data. Also useful to design and analyse cluster-randomized and switchback experiments.
 
 
 <img src="theme/flow.png">
@@ -49,6 +49,19 @@ power = pw.power_analysis(df, average_effect=0.1)
 
 # You may also get the power curve by running the power analysis with different average effects
 power_line = pw.power_line(df, average_effects=[0, 0.1, 0.2])
+
+
+# A faster method can be used to run the power analysis, using the approximation of
+# the central limit theorem, which is stable with less simulations
+from cluster_experiments import NormalPowerAnalysis
+npw = NormalPowerAnalysis.from_dict(
+    {
+        "analysis": "ols_non_clustered",
+        "splitter": "non_clustered",
+        "n_simulations": 5,
+    }
+)
+power_line_normal = npw.power_line(df, average_effects=[0, 0.1, 0.2])
 
 ```
 
@@ -93,7 +106,7 @@ print(f"{power = }")
 
 ### Long example
 
-This is a comprehensive example of how to use this library. There are simpler ways to run this power analysis above but this shows all the building blocks of the library.
+This is a more comprehensive example of how to use this library. There are simpler ways to run this power analysis above but this shows all the building blocks of the library.
 
 ```python title="Switchback - using classes"
 from datetime import date
@@ -153,8 +166,8 @@ print(f"{power = }")
 The library offers the following classes:
 
 * Regarding power analysis:
-    * `PowerAnalysis`: to run power analysis on any experiment design
-    * `NormalPowerAnalysis`: to run power analysis on using the central limit theorem
+    * `PowerAnalysis`: to run power analysis on any experiment design, using simulation
+    * `NormalPowerAnalysis`: to run power analysis on any experiment design using the central limit theorem for the distribution of the estimator
     * `ConstantPerturbator`: to artificially perturb treated group with constant perturbations
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
     * `RelativePositivePerturbator`: to artificially perturb treated group with relative positive perturbations

@@ -154,38 +154,34 @@ def test_power_sim_compare(df, ols, splitter, effect):
     assert abs(power[effect] - power_normal[effect]) < 0.05
 
 
-def test_power_sim_compare_cluster(df):
-    from datetime import date
-
-    import numpy as np
-    import pandas as pd
-
-    N = 10_000
-    clusters = [f"Cluster {i}" for i in range(10)]
-    dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 15)]
-    df = pd.DataFrame(
-        {
-            "cluster": np.random.choice(clusters, size=N),
-            "date": np.random.choice(dates, size=N),
-        }
-    ).assign(
-        # Target is a linear combination of cluster and day of week, plus some noise
-        cluster_id=lambda df: df["cluster"].astype("category").cat.codes,
-        day_of_week=lambda df: pd.to_datetime(df["date"]).dt.dayofweek,
-        target=lambda df: df["cluster_id"]
-        + df["day_of_week"]
-        + np.random.normal(size=N),
-    )
-
-    splitter = ClusteredSplitter(
-        cluster_cols=["cluster", "date"],
-    )
-
-    ols = ClusteredOLSAnalysis(
-        cluster_cols=["cluster", "date"],
-    )
-    effect = 0.2
-
+@pytest.mark.parametrize(
+    "ols, splitter, effect",
+    [
+        (
+            ClusteredOLSAnalysis(
+                cluster_cols=["cluster", "date"],
+            ),
+            ClusteredSplitter(cluster_cols=["cluster", "date"]),
+            0.2,
+        ),
+        (
+            ClusteredOLSAnalysis(
+                cluster_cols=["cluster", "date"],
+            ),
+            ClusteredSplitter(cluster_cols=["cluster", "date"]),
+            0.5,
+        ),
+        (
+            # using a covariate
+            ClusteredOLSAnalysis(
+                cluster_cols=["cluster", "date"], covariates=["cluster_id"]
+            ),
+            ClusteredSplitter(cluster_cols=["cluster", "date"]),
+            0.5,
+        ),
+    ],
+)
+def test_power_sim_compare_cluster(correlated_df, ols, splitter, effect):
     # given
     perturbator = ConstantPerturbator()
 
@@ -205,8 +201,8 @@ def test_power_sim_compare_cluster(df):
     )
 
     # when
-    power = pw.power_line(df, average_effects=[effect])
-    power_normal = pw_normal.power_line(df, average_effects=[effect])
+    power = pw.power_line(correlated_df, average_effects=[effect])
+    power_normal = pw_normal.power_line(correlated_df, average_effects=[effect])
 
     # then
     assert abs(power[effect] - power_normal[effect]) < 0.05
@@ -236,3 +232,22 @@ def test_from_config(df):
 
     # then
     assert abs(power_normal[0.1] - power_normal_default[0.1]) < 0.03
+
+
+def test_get_standard_error_hypothesis_wrong_input():
+    # Check if the ValueError is raised when the hypothesis is not valid
+    with pytest.raises(ValueError) as excinfo:
+        NormalPowerAnalysis(
+            splitter=NonClusteredSplitter(),
+            analysis=OLSAnalysis(
+                hypothesis="greaters",
+            ),
+            n_simulations=3,
+            seed=20240922,
+        )._normal_power_calculation(
+            alpha=0.05,
+            std_error=0.1,
+            average_effect=0.1,
+        )
+    # Check if the error message is as expected
+    assert "'greaters' is not a valid HypothesisEntries" in str(excinfo.value)
