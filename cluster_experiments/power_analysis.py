@@ -4,6 +4,7 @@ from typing import Dict, Generator, Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
@@ -18,7 +19,7 @@ from cluster_experiments.power_config import (
     splitter_mapping,
 )
 from cluster_experiments.random_splitter import RandomSplitter, RepeatedSampler
-from cluster_experiments.utils import _get_mapping_key
+from cluster_experiments.utils import HypothesisEntries, _get_mapping_key
 
 
 class PowerAnalysis:
@@ -456,6 +457,340 @@ class PowerAnalysis:
             self.analysis.treatment == self.perturbator.treatment
         ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in perturbator ({self.perturbator.treatment})"
 
+        assert (
+            self.analysis.treatment == self.treatment
+        ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in PowerAnalysis ({self.treatment})"
+
+        assert (
+            self.analysis.treatment in self.splitter.treatments
+        ), f"treatment in analysis ({self.analysis.treatment}) must be in treatments in splitter ({self.splitter.treatments})"
+
+        assert (
+            self.control in self.splitter.treatments
+        ), f"control in power analysis ({self.control}) must be in treatments in splitter ({self.splitter.treatments})"
+
+    def check_covariates(self):
+        if hasattr(self.analysis, "covariates"):
+            cupac_in_covariates = (
+                self.cupac_handler.cupac_outcome_name in self.analysis.covariates
+            )
+
+            assert cupac_in_covariates or not self.cupac_handler.is_cupac, (
+                f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
+                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
+                f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
+            )
+
+            if hasattr(self.splitter, "cluster_cols"):
+                if set(self.analysis.covariates).intersection(
+                    set(self.splitter.cluster_cols)
+                ):
+                    logging.warning(
+                        f"covariates in analysis ({self.analysis.covariates}) are also cluster_cols in splitter ({self.splitter.cluster_cols}). "
+                        f"Be specially careful when using switchback splitters, since the time splitter column is being overriden"
+                    )
+
+    def check_clusters(self):
+        has_analysis_clusters = hasattr(self.analysis, "cluster_cols")
+        has_splitter_clusters = hasattr(self.splitter, "cluster_cols")
+        not_cluster_cols_cond = not has_analysis_clusters or not has_splitter_clusters
+        assert (
+            not_cluster_cols_cond
+            or self.analysis.cluster_cols == self.splitter.cluster_cols
+        ), f"cluster_cols in analysis ({self.analysis.cluster_cols}) must be the same as cluster_cols in splitter ({self.splitter.cluster_cols})"
+
+        assert (
+            has_splitter_clusters
+            or not has_analysis_clusters
+            or not self.analysis.cluster_cols
+            or isinstance(self.splitter, RepeatedSampler)
+        ), "analysis has cluster_cols but splitter does not."
+
+        assert (
+            has_analysis_clusters
+            or not has_splitter_clusters
+            or not self.splitter.cluster_cols
+        ), "splitter has cluster_cols but analysis does not."
+
+        has_time_col = hasattr(self.splitter, "time_col")
+        assert not (
+            has_time_col
+            and has_splitter_clusters
+            and self.splitter.time_col not in self.splitter.cluster_cols
+        ), "in switchback splitters, time_col must be in cluster_cols"
+
+    def check_inputs(self):
+        self.check_covariates()
+        self.check_treatment_col()
+        self.check_target_col()
+        self.check_treatment()
+        self.check_clusters()
+
+
+class NormalPowerAnalysis:
+    """
+    Class used to run Power analysis, using the central limit theorem to estimate power based on standard errors of the estimator,
+    and the fact that the coefficients of a regression are normally distributed.
+    It does so by running simulations. In each simulation:
+    1. Assign treatment to dataframe randomly
+    2. Add pre-experiment data if needed
+    3. Get standard error from analysis
+
+    Finally it returns the power of the analysis by counting how many times the effect was detected.
+
+    Args:
+        splitter: RandomSplitter class to randomly assign treatment to dataframe.
+        analysis: ExperimentAnalysis class to use for analysis.
+        cupac_model: Sklearn estimator class to add pre-experiment data to dataframe. If None, no pre-experiment data will be added.
+        target_col: Name of the column with the outcome variable.
+        treatment_col: Name of the column with the treatment variable.
+        treatment: value of treatment_col considered to be treatment (not control)
+        control: value of treatment_col considered to be control (not treatment)
+        n_simulations: Number of simulations to run.
+        alpha: Significance level.
+        features_cupac_model: Covariates to be used in cupac model
+        seed: Optional. Seed to use for the splitter.
+
+    Usage:
+    ```python
+    from datetime import date
+
+    import numpy as np
+    import pandas as pd
+    from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+    from cluster_experiments.power_analysis import NormalPowerAnalysis
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
+    N = 1_000
+    users = [f"User {i}" for i in range(1000)]
+    clusters = [f"Cluster {i}" for i in range(100)]
+    dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
+    df = pd.DataFrame(
+        {
+            "cluster": np.random.choice(clusters, size=N),
+            "target": np.random.normal(0, 1, size=N),
+            "user": np.random.choice(users, size=N),
+            "date": np.random.choice(dates, size=N),
+        }
+    )
+
+    experiment_dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(15, 32)]
+    sw = ClusteredSplitter(
+        cluster_cols=["cluster", "date"],
+    )
+
+    analysis = GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+    pw = NormalPowerAnalysis(
+        splitter=sw, analysis=analysis, n_simulations=50
+    )
+
+    power = pw.power_analysis(df, average_effect=0.1)
+    print(f"{power = }")
+    ```
+    """
+
+    def __init__(
+        self,
+        splitter: RandomSplitter,
+        analysis: ExperimentAnalysis,
+        cupac_model: Optional[BaseEstimator] = None,
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        control: str = "A",
+        n_simulations: int = 100,
+        alpha: float = 0.05,
+        features_cupac_model: Optional[List[str]] = None,
+        seed: Optional[int] = None,
+        hypothesis: str = "two-sided",
+    ):
+        self.splitter = splitter
+        self.analysis = analysis
+        self.n_simulations = n_simulations
+        self.target_col = target_col
+        self.treatment = treatment
+        self.control = control
+        self.treatment_col = treatment_col
+        self.alpha = alpha
+        self.hypothesis = hypothesis
+
+        self.cupac_handler = CupacHandler(
+            cupac_model=cupac_model,
+            target_col=target_col,
+            features_cupac_model=features_cupac_model,
+        )
+        if seed is not None:
+            random.seed(seed)  # seed for splitter
+            np.random.seed(seed)  # numpy seed
+            # may need to seed other stochasticity sources if added
+
+        self.check_inputs()
+
+    def _split(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Split dataframe.
+        Args:
+            df: Dataframe with outcome variable
+        """
+        treatment_df = self.splitter.assign_treatment_df(df)
+        self.log_nulls(treatment_df)
+        treatment_df = treatment_df.query(
+            f"{self.treatment_col}.notnull()", engine="python"
+        ).query(
+            f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
+            engine="python",
+        )
+        return treatment_df
+
+    def _get_standard_error(
+        self,
+        df: pd.DataFrame,
+        n_simulations: int,
+        verbose: bool,
+    ) -> Generator[float, None, None]:
+        for _ in tqdm(range(n_simulations), disable=not verbose):
+            split_df = self._split(df)
+            yield self.analysis.get_standard_error(split_df)
+
+    def _normal_power_calculation(
+        self, alpha: float, std_error: float, average_effect: float
+    ) -> float:
+        """Returns the power of the analysis using the normal distribution.
+        Arguments:
+            alpha: significance level
+            std_error: standard error of the analysis
+            average_effect: effect size of the analysis
+        """
+        if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.LESS:
+            z_alpha = norm.ppf(alpha)
+            return float(norm.cdf(z_alpha - average_effect / std_error))
+
+        if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.GREATER:
+            z_alpha = norm.ppf(1 - alpha)
+            return 1 - float(norm.cdf(z_alpha - average_effect / std_error))
+
+        if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.TWO_SIDED:
+            z_alpha = norm.ppf(1 - alpha / 2)
+            norm_cdf_right = norm.cdf(z_alpha - average_effect / std_error)
+            norm_cdf_left = norm.cdf(-z_alpha - average_effect / std_error)
+            return float(norm_cdf_left + (1 - norm_cdf_right))
+
+        raise ValueError(f"{self.analysis.hypothesis} is not a valid HypothesisEntries")
+
+    def power_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effects: Iterable[float] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> Dict[float, float]:
+        """
+        Run power analysis by simulation, using standard errors from the analysis.
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effects: Average effects to test.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+        alpha = self.alpha if alpha is None else alpha
+
+        df = df.copy()
+        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+
+        std_errors = list(self._get_standard_error(df, n_simulations, verbose))
+        std_error_mean = float(np.mean(std_errors))
+
+        return {
+            effect: self._normal_power_calculation(
+                alpha=alpha, std_error=std_error_mean, average_effect=effect
+            )
+            for effect in average_effects
+        }
+
+    def power_analysis(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effect: float = 0.0,
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> float:
+        """
+        Run power analysis by simulation, using standard errors from the analysis.
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effect: Average effect of treatment.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        return self.power_line(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            average_effects=[average_effect],
+            n_simulations=n_simulations,
+            alpha=alpha,
+        )[average_effect]
+
+    def log_nulls(self, df: pd.DataFrame) -> None:
+        """Warns about dropping nulls in treatment column"""
+        n_nulls = len(df.query(f"{self.treatment_col}.isnull()", engine="python"))
+        if n_nulls > 0:
+            logging.warning(
+                f"There are {n_nulls} null values in treatment, dropping them"
+            )
+
+    @classmethod
+    def from_dict(cls, config_dict: dict) -> "NormalPowerAnalysis":
+        """Constructs PowerAnalysis from dictionary"""
+        config = PowerConfig(**config_dict)
+        return cls.from_config(config)
+
+    @classmethod
+    def from_config(cls, config: PowerConfig) -> "NormalPowerAnalysis":
+        """Constructs PowerAnalysis from PowerConfig"""
+        splitter_cls = _get_mapping_key(splitter_mapping, config.splitter)
+        analysis_cls = _get_mapping_key(analysis_mapping, config.analysis)
+        cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
+        return cls(
+            splitter=splitter_cls.from_config(config),
+            analysis=analysis_cls.from_config(config),
+            cupac_model=cupac_cls.from_config(config),
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            n_simulations=config.n_simulations,
+            alpha=config.alpha,
+            seed=config.seed,
+        )
+
+    def check_treatment_col(self):
+        """Checks consistency of treatment column"""
+        assert (
+            self.analysis.treatment_col == self.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in PowerAnalysis ({self.treatment_col})"
+
+        assert (
+            self.analysis.treatment_col == self.splitter.treatment_col
+        ), f"treatment_col in analysis ({self.analysis.treatment_col}) must be the same as treatment_col in splitter ({self.splitter.treatment_col})"
+
+    def check_target_col(self):
+        assert (
+            self.analysis.target_col == self.target_col
+        ), f"target_col in analysis ({self.analysis.target_col}) must be the same as target_col in PowerAnalysis ({self.target_col})"
+
+    def check_treatment(self):
         assert (
             self.analysis.treatment == self.treatment
         ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in PowerAnalysis ({self.treatment})"
