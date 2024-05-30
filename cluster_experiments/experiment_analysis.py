@@ -892,7 +892,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
             treatment_cluster = self._get_treatment_cluster(df)
 
         df = self.fit_predict_synthetic(
-            pre_experiment_df, df, treatment_cluster, verbose=verbose
+            df, pre_experiment_df, treatment_cluster, verbose=verbose
         )
 
         df["effect"] = df[self.target_col] - df["synthetic"]
