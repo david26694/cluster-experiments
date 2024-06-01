@@ -84,6 +84,19 @@ class ExperimentAnalysis(ABC):
         """
         raise NotImplementedError("Point estimate not implemented for this analysis")
 
+    def analysis_standard_error(
+        self,
+        df: pd.DataFrame,
+        verbose: bool = False,
+    ) -> float:
+        """
+        Returns the standard error of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError("Standard error not implemented for this analysis")
+
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
         if df[self.target_col].isnull().any():
@@ -117,6 +130,17 @@ class ExperimentAnalysis(ABC):
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
         return self.analysis_point_estimate(df)
+
+    def get_standard_error(self, df: pd.DataFrame) -> float:
+        """Returns the standard error of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_standard_error(df)
 
     def pvalue_based_on_hypothesis(
         self, model_result
@@ -241,6 +265,15 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         results_gee = self.fit_gee(df)
         return results_gee.params[self.treatment_col]
 
+    def analysis_standard_error(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
+        return results_gee.bse[self.treatment_col]
+
 
 class ClusteredOLSAnalysis(ExperimentAnalysis):
     """
@@ -294,16 +327,20 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
         self.cov_type = "cluster"
 
+    def fit_ols_clustered(self, df: pd.DataFrame):
+        """Returns the fitted OLS model"""
+        return sm.OLS.from_formula(self.formula, data=df,).fit(
+            cov_type=self.cov_type,
+            cov_kwds={"groups": self._get_cluster_column(df)},
+        )
+
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
         Arguments:
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        results_ols = sm.OLS.from_formula(self.formula, data=df,).fit(
-            cov_type=self.cov_type,
-            cov_kwds={"groups": self._get_cluster_column(df)},
-        )
+        results_ols = self.fit_ols_clustered(df)
         if verbose:
             print(results_ols.summary())
 
@@ -316,12 +353,17 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        # Keep in mind that the point estimate of the OLS is the same as the ClusteredOLS
-        results_ols = sm.OLS.from_formula(
-            self.formula,
-            data=df,
-        ).fit()
+        results_ols = self.fit_ols_clustered(df)
         return results_ols.params[self.treatment_col]
+
+    def analysis_standard_error(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols_clustered(df)
+        return results_ols.bse[self.treatment_col]
 
 
 class TTestClusteredAnalysis(ExperimentAnalysis):
@@ -564,7 +606,7 @@ class OLSAnalysis(ExperimentAnalysis):
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
         self.hypothesis = hypothesis
 
-    def fit_ols(self, df: pd.DataFrame) -> sm.GEE:
+    def fit_ols(self, df: pd.DataFrame):
         """Returns the fitted OLS model"""
         return sm.OLS.from_formula(self.formula, data=df).fit()
 
@@ -589,6 +631,15 @@ class OLSAnalysis(ExperimentAnalysis):
         """
         results_ols = self.fit_ols(df=df)
         return results_ols.params[self.treatment_col]
+
+    def analysis_standard_error(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols(df=df)
+        return results_ols.bse[self.treatment_col]
 
     @classmethod
     def from_config(cls, config):
@@ -687,6 +738,15 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         """
         results_mlm = self.fit_mlm(df)
         return results_mlm.params[self.treatment_col]
+
+    def analysis_standard_error(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_mlm = self.fit_mlm(df)
+        return results_mlm.bse[self.treatment_col]
 
 
 class SyntheticControlAnalysis(ExperimentAnalysis):

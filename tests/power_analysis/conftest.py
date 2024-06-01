@@ -1,10 +1,15 @@
 from datetime import date, timedelta
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from cluster_experiments.cupac import TargetAggregation
-from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+from cluster_experiments.experiment_analysis import (
+    ClusteredOLSAnalysis,
+    GeeExperimentAnalysis,
+    MLMExperimentAnalysis,
+)
 from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysis
 from cluster_experiments.random_splitter import (
@@ -37,6 +42,27 @@ def df(clusters, dates):
 
 
 @pytest.fixture
+def correlated_df():
+    _n_rows = 10_000
+    _clusters = [f"Cluster {i}" for i in range(10)]
+    _dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 15)]
+    df = pd.DataFrame(
+        {
+            "cluster": np.random.choice(_clusters, size=_n_rows),
+            "date": np.random.choice(_dates, size=_n_rows),
+        }
+    ).assign(
+        # Target is a linear combination of cluster and day of week, plus some noise
+        cluster_id=lambda df: df["cluster"].astype("category").cat.codes,
+        day_of_week=lambda df: pd.to_datetime(df["date"]).dt.dayofweek,
+        target=lambda df: df["cluster_id"]
+        + df["day_of_week"]
+        + np.random.normal(size=_n_rows),
+    )
+    return df
+
+
+@pytest.fixture
 def df_feats(clusters, dates):
     df = generate_random_data(clusters, dates, N)
     df["x1"] = np.random.normal(0, 1, N)
@@ -57,6 +83,20 @@ def perturbator():
 @pytest.fixture
 def analysis_gee_vainilla():
     return GeeExperimentAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+
+@pytest.fixture
+def analysis_clusterd_ols():
+    return ClusteredOLSAnalysis(
+        cluster_cols=["cluster", "date"],
+    )
+
+
+@pytest.fixture
+def analysis_mlm():
+    return MLMExperimentAnalysis(
         cluster_cols=["cluster", "date"],
     )
 
@@ -102,6 +142,7 @@ def switchback_power_analysis(perturbator, analysis_gee_vainilla):
         splitter=sw,
         analysis=analysis_gee_vainilla,
         n_simulations=3,
+        seed=123,
     )
 
 

@@ -45,7 +45,7 @@ class PowerConfig:
 
     Arguments:
         splitter: Splitter object to use
-        perturbator: Perturbator object to use
+        perturbator: Perturbator object to use, defaults to "" for normal power analysis
         analysis: ExperimentAnalysis object to use
         washover: Washover object to use, defaults to ""
         cupac_model: CUPAC model to use
@@ -78,7 +78,7 @@ class PowerConfig:
 
     ```python
     from cluster_experiments.power_config import PowerConfig
-    from cluster_experiments.power_analysis import PowerAnalysis
+    from cluster_experiments.power_analysis import PowerAnalysis, NormalPowerAnalysis
 
     p = PowerConfig(
         analysis="gee",
@@ -89,13 +89,15 @@ class PowerConfig:
         alpha=0.05,
     )
     power_analysis = PowerAnalysis.from_config(p)
+
+    normal_power_analysis = NormalPowerAnalysis.from_config(p)
     ```
     """
 
     # mappings
-    perturbator: str
     splitter: str
     analysis: str
+    perturbator: str = ""
     washover: str = ""
 
     # Needed
