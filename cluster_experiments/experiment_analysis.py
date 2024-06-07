@@ -186,6 +186,38 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
     ):
+        """
+        Class to run the Delta Method approximation for estimating the treatment effect on a ratio metric (target/scale) under a clustered design.
+        The analysis is done on the aggregated data at the cluster level, making computation more efficient.
+
+        Arguments:
+            cluster_cols: list of columns to use as clusters.
+            target_col: name of the column containing the variable to measure (the numerator of the ratio).
+            scale_col: name of the column containing the scale variable (the denominator of the ratio).
+            treatment_col: name of the column containing the treatment variable.
+            treatment: name of the treatment to use as the treated group.
+            covariates: list of columns to use as covariates (not used in the Delta Method Analysis).
+            hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis.
+
+            Usage:
+            ```python
+            from cluster_experiments.experiment_analysis import DeltaMethodAnalysis
+            import pandas as pd
+
+            df = pd.DataFrame({
+                'x': [1, 2, 3, 0, 0, 1],
+                'y': [2, 2, 5, 1, 1, 1],
+                'treatment': ["A"] * 3 + ["B"] * 3,
+                'cluster': [1] * 6,
+            })
+
+            DeltaMethodAnalysis(
+                cluster_cols=['cluster'],
+                target_col='x',
+                scale_col='y'
+            ).get_pvalue(df)
+            ```
+        """
         self.target_col = target_col
         self.scale_col = scale_col
         self.treatment = treatment
@@ -197,6 +229,12 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             self.__warn_covariate_dismissal()
 
     def aggregate_to_cluster(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Returns an aggreegated dataframe of the target and scale variables at the cluster (and treatment) level.
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
         aggregate_df = (
             df.groupby(by=self.cluster_cols + [self.treatment_col], as_index=False)
             .agg({self.target_col: "sum", self.scale_col: "sum"})
@@ -205,6 +243,12 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         return aggregate_df
 
     def analysis_pvalue(self, df: pd.DataFrame) -> float:
+        """
+        Returns the p-value of the analysis.
+
+        Arguments:
+            df: dataframe containing the data to analyze.
+        """
         treatment_mean, treatment_variance = self.get_group_mean_and_variance(
             df.query(f"{self.treatment_col} == 1")
         )
@@ -220,6 +264,12 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         return p_value
 
     def get_group_mean_and_variance(self, df: pd.DataFrame) -> tuple[float, float]:
+        """
+        Returns the mean and variance of the ratio metric (target/scale) as estimated by the delta method for a given group (treatment).
+
+        Arguments:
+            df: dataframe containing the data to analyze.
+        """
         df = self.aggregate_to_cluster(df)
         group_size = len(df)
 
