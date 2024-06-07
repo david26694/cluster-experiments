@@ -1,11 +1,13 @@
 import logging
+import math
+import warnings
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
 import pandas as pd
 import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
-from scipy.stats import ttest_ind, ttest_rel
+from scipy.stats import norm, ttest_ind, ttest_rel
 
 from cluster_experiments.utils import HypothesisEntries
 
@@ -171,6 +173,76 @@ class ExperimentAnalysis(ABC):
             covariates=config.covariates,
             hypothesis=config.hypothesis,
         )
+
+
+class DeltaMethodAnalysis(ExperimentAnalysis):
+    def __init__(
+        self,
+        cluster_cols: List[str],
+        target_col: str = "target",
+        scale_col: str = "scale",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        covariates: Optional[List[str]] = None,
+        hypothesis: str = "two-sided",
+    ):
+        self.target_col = target_col
+        self.scale_col = scale_col
+        self.treatment = treatment
+        self.treatment_col = treatment_col
+        self.cluster_cols = cluster_cols
+        self.hypothesis = hypothesis
+
+        if covariates:
+            self.__warn_covariate_dismissal()
+
+    def aggregate_to_cluster(self, df: pd.DataFrame) -> pd.DataFrame:
+        aggregate_df = (
+            df.groupby(by=self.cluster_cols + [self.treatment_col], as_index=False)
+            .agg({self.target_col: "sum", self.scale_col: "sum"})
+            .reset_index()
+        )
+        return aggregate_df
+
+    def analysis_pvalue(self, df: pd.DataFrame) -> float:
+        treatment_mean, treatment_variance = self.get_group_mean_and_variance(
+            df.query(f"{self.treatment_col} == 1")
+        )
+        control_mean, control_variance = self.get_group_mean_and_variance(
+            df.query(f"{self.treatment_col} != 1")
+        )
+
+        mean_diff = treatment_mean - control_mean
+        variance_diff = control_variance + treatment_variance
+
+        z_score = mean_diff / math.sqrt(variance_diff)
+        p_value = 2 * (1 - norm.cdf(abs(z_score)))
+        return p_value
+
+    def get_group_mean_and_variance(self, df: pd.DataFrame) -> tuple[float, float]:
+        df = self.aggregate_to_cluster(df)
+        group_size = len(df)
+
+        target_mean = df.loc[:, self.target_col].mean()
+        target_variance = df.loc[:, self.target_col].var()
+        target_sum = df.loc[:, self.target_col].sum()
+
+        scale_mean = df.loc[:, self.scale_col].mean()
+        scale_variance = df.loc[:, self.scale_col].var()
+        scale_sum = df.loc[:, self.scale_col].sum()
+
+        target_scale_cov = df.loc[:, self.target_col].cov(df.loc[:, self.scale_col])
+
+        group_mean = target_sum / scale_sum
+        group_variance = (
+            (1 / (scale_mean**2)) * target_variance
+            + (target_mean**2) / (scale_mean**4) * scale_variance
+            - (2 * target_mean) / (scale_mean**3) * target_scale_cov
+        ) / group_size
+        return group_mean, group_variance
+
+    def __warn_covariate_dismissal(self):
+        warnings.warn("Covariates are not used in the Delta Method Analysis")
 
 
 class GeeExperimentAnalysis(ExperimentAnalysis):
