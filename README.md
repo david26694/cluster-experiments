@@ -63,6 +63,9 @@ npw = NormalPowerAnalysis.from_dict(
 )
 power_line_normal = npw.power_line(df, average_effects=[0, 0.1, 0.2])
 
+# you can also use the normal power to get mde from a power level
+mde = npw.mde(df, power=0.8)
+
 ```
 
 ### Switchback
