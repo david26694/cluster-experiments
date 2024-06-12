@@ -680,6 +680,34 @@ class NormalPowerAnalysis:
 
         raise ValueError(f"{self.analysis.hypothesis} is not a valid HypothesisEntries")
 
+    def _get_average_standard_error(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        n_simulations: Optional[int] = None,
+    ) -> float:
+        """
+        Gets standard error to be used in normal power calculation.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effects: Average effects to test.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+
+        df = df.copy()
+        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+
+        std_errors = list(self._get_standard_error(df, n_simulations, verbose))
+        std_error_mean = float(np.mean(std_errors))
+
+        return std_error_mean
+
     def power_line(
         self,
         df: pd.DataFrame,
@@ -699,14 +727,14 @@ class NormalPowerAnalysis:
             n_simulations: Number of simulations to run.
             alpha: Significance level.
         """
-        n_simulations = self.n_simulations if n_simulations is None else n_simulations
         alpha = self.alpha if alpha is None else alpha
 
-        df = df.copy()
-        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
-
-        std_errors = list(self._get_standard_error(df, n_simulations, verbose))
-        std_error_mean = float(np.mean(std_errors))
+        std_error_mean = self._get_average_standard_error(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            n_simulations=n_simulations,
+        )
 
         return {
             effect: self._normal_power_calculation(
