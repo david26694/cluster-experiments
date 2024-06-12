@@ -940,7 +940,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def analysis_point_estimate(
         self,
         df: pd.DataFrame,
-        treatment_cluster: Optional[str] = "",
+        treatment_cluster: str = "",
         verbose: bool = False,
     ):
         """
