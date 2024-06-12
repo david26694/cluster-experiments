@@ -251,3 +251,80 @@ def test_get_standard_error_hypothesis_wrong_input():
         )
     # Check if the error message is as expected
     assert "'greaters' is not a valid HypothesisEntries" in str(excinfo.value)
+
+
+def test_get_mde_hypothesis_wrong_input(df):
+    # Check if the ValueError is raised when the hypothesis is not valid
+    with pytest.raises(ValueError) as excinfo:
+        NormalPowerAnalysis(
+            splitter=NonClusteredSplitter(),
+            analysis=OLSAnalysis(
+                hypothesis="greaters",
+            ),
+            n_simulations=3,
+            seed=20240922,
+        ).mde(
+            df,
+            alpha=0.05,
+            power=0.7,
+        )
+    # Check if the error message is as expected
+    assert "'greaters' is not a valid HypothesisEntries" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "hypothesis",
+    [
+        "greater",
+        "less",
+        "two-sided",
+    ],
+)
+def test_mde_power(df, hypothesis):
+    # given
+    pw_normal = NormalPowerAnalysis.from_dict(
+        {
+            "splitter": "non_clustered",
+            "analysis": "ols",
+            "n_simulations": 5,
+            "hypothesis": hypothesis,
+            "seed": 20240922,
+        }
+    )
+
+    # when
+    mde = pw_normal.mde(df, power=0.9)
+
+    power = pw_normal.power_analysis(df, average_effect=mde)
+
+    # then
+    assert abs(power - 0.9) < 0.03
+
+
+@pytest.mark.parametrize(
+    "hypothesis",
+    [
+        "greater",
+        "less",
+        "two-sided",
+    ],
+)
+def test_power_mde(df, hypothesis):
+    # given
+    pw_normal = NormalPowerAnalysis.from_dict(
+        {
+            "splitter": "non_clustered",
+            "analysis": "ols",
+            "n_simulations": 5,
+            "hypothesis": hypothesis,
+            "seed": 20240922,
+        }
+    )
+
+    # when
+    power = pw_normal.power_analysis(df, average_effect=0.1)
+
+    mde = pw_normal.mde(df, power=power)
+
+    # then
+    assert abs(mde - 0.1) < 0.03
