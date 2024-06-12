@@ -295,7 +295,7 @@ class PowerAnalysis:
         self, treatment_df: pd.DataFrame, average_effect: Optional[float]
     ) -> pd.DataFrame:
         """
-        Split and perturbate dataframe.
+        Perturbate dataframe using perturbator.
         Args:
             df: Dataframe with outcome variable
             average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
