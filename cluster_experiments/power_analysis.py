@@ -443,9 +443,12 @@ class PowerAnalysis:
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
+            control=config.control,
             n_simulations=config.n_simulations,
             alpha=config.alpha,
+            features_cupac_model=config.features_cupac_model,
             seed=config.seed,
+            hypothesis=config.hypothesis,
         )
 
     def check_treatment_col(self):
@@ -556,6 +559,11 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
     def _perturbate(
         self, treatment_df: pd.DataFrame, average_effect: Optional[float]
     ) -> pd.DataFrame:
+        if not hasattr(self.analysis, "_split_pre_experiment_df"):
+            raise AttributeError(
+                "The PowerAnalysisWithPreExperimentData is intended to work mainly for diff-in-diff or synthetic control-like estimators."
+                "For other cases use the PowerAnalysis"
+            )
 
         df, pre_experiment_df = self.analysis._split_pre_experiment_df(treatment_df)
 
@@ -643,6 +651,7 @@ class NormalPowerAnalysis:
         features_cupac_model: Optional[List[str]] = None,
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
+        time_col: Optional[str] = None,
     ):
         self.splitter = splitter
         self.analysis = analysis
@@ -653,6 +662,7 @@ class NormalPowerAnalysis:
         self.treatment_col = treatment_col
         self.alpha = alpha
         self.hypothesis = hypothesis
+        self.time_col = time_col
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
@@ -717,6 +727,229 @@ class NormalPowerAnalysis:
 
         raise ValueError(f"{self.analysis.hypothesis} is not a valid HypothesisEntries")
 
+    def _normal_mde_calculation(
+        self, alpha: float, std_error: float, power: float
+    ) -> float:
+        """
+        Returns the minimum detectable effect of the analysis using the normal distribution.
+        Args:
+            alpha: Significance level.
+            std_error: Standard error of the analysis.
+            power: Power of the analysis.
+        """
+        if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.LESS:
+            z_alpha = norm.ppf(alpha)
+            z_beta = norm.ppf(1 - power)
+        elif HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.GREATER:
+            z_alpha = norm.ppf(1 - alpha)
+            z_beta = norm.ppf(power)
+        elif HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.TWO_SIDED:
+            # we are neglecting norm_cdf_left
+            z_alpha = norm.ppf(1 - alpha / 2)
+            z_beta = norm.ppf(power)
+        else:
+            raise ValueError(
+                f"{self.analysis.hypothesis} is not a valid HypothesisEntries"
+            )
+
+        return float(z_alpha + z_beta) * std_error
+
+    def mde_power_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        powers: Iterable[float] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> Dict[float, float]:
+        """
+        Returns the minimum detectable effect of the analysis.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            power: Power of the analysis.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        alpha = self.alpha if alpha is None else alpha
+        std_error = self._get_average_standard_error(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            n_simulations=n_simulations,
+        )
+        return {
+            power: self._normal_mde_calculation(
+                alpha=alpha, std_error=std_error, power=power
+            )
+            for power in powers
+        }
+
+    def mde(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        power: float = 0.8,
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> float:
+        """
+        Returns the minimum detectable effect of the analysis.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            power: Power of the analysis.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        return self.mde_power_line(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            powers=[power],
+            n_simulations=n_simulations,
+            alpha=alpha,
+        )[power]
+
+    def _get_average_standard_error(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        n_simulations: Optional[int] = None,
+    ) -> float:
+        """
+        Gets standard error to be used in normal power calculation.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effects: Average effects to test.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+
+        df = df.copy()
+        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+
+        std_errors = list(self._get_standard_error(df, n_simulations, verbose))
+        std_error_mean = float(np.mean(std_errors))
+
+        return std_error_mean
+
+    def run_average_standard_error(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        n_simulations: Optional[int] = None,
+        experiment_length: Iterable[int] = (),
+    ) -> Generator[Tuple[float, int], None, None]:
+        """
+        Run power analysis by simulation, using standard errors from the analysis.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            n_simulations: Number of simulations to run.
+            experiment_length: Length of the experiment in days.
+        """
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+
+        for n_days in experiment_length:
+            df_time = df.copy()
+            experiment_start = df_time[self.time_col].min()
+            df_time = df_time.loc[
+                df_time[self.time_col] < experiment_start + pd.Timedelta(days=n_days)
+            ]
+            std_error_mean = self._get_average_standard_error(
+                df=df_time,
+                pre_experiment_df=pre_experiment_df,
+                verbose=verbose,
+                n_simulations=n_simulations,
+            )
+            yield std_error_mean, n_days
+
+    def power_time_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effects: Iterable[float] = (),
+        experiment_length: Iterable[int] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> List[Dict]:
+        """
+        Run power analysis by simulation, using standard errors from the analysis.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effects: Average effects to test.
+            experiment_length: Length of the experiment in days.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        alpha = self.alpha if alpha is None else alpha
+
+        results = []
+        for std_error_mean, n_days in self.run_average_standard_error(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            n_simulations=n_simulations,
+            experiment_length=experiment_length,
+        ):
+            for effect in average_effects:
+                power = self._normal_power_calculation(
+                    alpha=alpha, std_error=std_error_mean, average_effect=effect
+                )
+                results.append(
+                    {"effect": effect, "power": power, "experiment_length": n_days}
+                )
+
+        return results
+
+    def mde_time_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        powers: Iterable[float] = (),
+        experiment_length: Iterable[int] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> List[Dict]:
+        alpha = self.alpha if alpha is None else alpha
+
+        results = []
+        for std_error_mean, n_days in self.run_average_standard_error(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            n_simulations=n_simulations,
+            experiment_length=experiment_length,
+        ):
+            for power in powers:
+                mde = self._normal_mde_calculation(
+                    alpha=alpha, std_error=std_error_mean, power=power
+                )
+                results.append(
+                    {"power": power, "mde": mde, "experiment_length": n_days}
+                )
+        return results
+
     def power_line(
         self,
         df: pd.DataFrame,
@@ -736,14 +969,14 @@ class NormalPowerAnalysis:
             n_simulations: Number of simulations to run.
             alpha: Significance level.
         """
-        n_simulations = self.n_simulations if n_simulations is None else n_simulations
         alpha = self.alpha if alpha is None else alpha
 
-        df = df.copy()
-        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
-
-        std_errors = list(self._get_standard_error(df, n_simulations, verbose))
-        std_error_mean = float(np.mean(std_errors))
+        std_error_mean = self._get_average_standard_error(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            n_simulations=n_simulations,
+        )
 
         return {
             effect: self._normal_power_calculation(
@@ -807,9 +1040,13 @@ class NormalPowerAnalysis:
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
+            control=config.control,
             n_simulations=config.n_simulations,
             alpha=config.alpha,
+            features_cupac_model=config.features_cupac_model,
             seed=config.seed,
+            hypothesis=config.hypothesis,
+            time_col=config.time_col,
         )
 
     def check_treatment_col(self):

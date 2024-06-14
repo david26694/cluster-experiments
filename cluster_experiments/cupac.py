@@ -2,10 +2,11 @@ from typing import List, Optional, Tuple
 
 import pandas as pd
 from numpy.typing import ArrayLike
-from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
+from sklearn.base import BaseEstimator
+from sklearn.utils.validation import NotFittedError, check_is_fitted
 
 
-class EmptyRegressor(BaseEstimator, RegressorMixin):
+class EmptyRegressor(BaseEstimator):
     """
     Empty regressor class. It does not do anything, used to glue the code of other estimators and PowerAnalysis
 
@@ -21,7 +22,7 @@ class EmptyRegressor(BaseEstimator, RegressorMixin):
         return cls()
 
 
-class TargetAggregation(BaseEstimator, RegressorMixin):
+class TargetAggregation(BaseEstimator):
     """
     Adds average of target using pre-experiment data
 
@@ -117,12 +118,14 @@ class CupacHandler:
         cupac_model: Optional[BaseEstimator] = None,
         target_col: str = "target",
         features_cupac_model: Optional[List[str]] = None,
+        cache_fit: bool = True,
     ):
         self.cupac_model: BaseEstimator = cupac_model or EmptyRegressor()
         self.target_col = target_col
         self.cupac_outcome_name = f"estimate_{target_col}"
         self.features_cupac_model: List[str] = features_cupac_model or []
         self.is_cupac = not isinstance(self.cupac_model, EmptyRegressor)
+        self.cache_fit = cache_fit
 
     def _prep_data_cupac(
         self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
@@ -165,22 +168,39 @@ class CupacHandler:
             df=df, pre_experiment_df=pre_experiment_df
         )
 
-        # Fit model
-        self.cupac_model.fit(pre_experiment_x, pre_experiment_y)
+        # Fit model if it has not been fitted before
+        self._fit_cupac_model(pre_experiment_x, pre_experiment_y)
 
         # Predict
-        if isinstance(self.cupac_model, RegressorMixin):
-            estimated_target = self.cupac_model.predict(df_predict)
-        elif isinstance(self.cupac_model, ClassifierMixin):
-            estimated_target = self.cupac_model.predict_proba(df_predict)[:, 1]
-        else:
-            raise ValueError(
-                "cupac_model should be an instance of RegressorMixin or ClassifierMixin"
-            )
+        estimated_target = self._predict_cupac_model(df_predict)
 
         # Add cupac outcome name to df
         df[self.cupac_outcome_name] = estimated_target
         return df
+
+    def _fit_cupac_model(
+        self, pre_experiment_x: pd.DataFrame, pre_experiment_y: pd.Series
+    ):
+        """Fits the cupac model.
+        Caches the fitted model in the object, so we only fit it once.
+        We can disable this by setting cache_fit to False.
+        """
+        if not self.cache_fit:
+            self.cupac_model.fit(pre_experiment_x, pre_experiment_y)
+            return
+
+        try:
+            check_is_fitted(self.cupac_model)
+        except NotFittedError:
+            self.cupac_model.fit(pre_experiment_x, pre_experiment_y)
+
+    def _predict_cupac_model(self, df_predict: pd.DataFrame) -> ArrayLike:
+        """Predicts the cupac model"""
+        if hasattr(self.cupac_model, "predict_proba"):
+            return self.cupac_model.predict_proba(df_predict)[:, 1]
+        if hasattr(self.cupac_model, "predict"):
+            return self.cupac_model.predict(df_predict)
+        raise ValueError("cupac_model should have predict or predict_proba method.")
 
     def need_covariates(self, pre_experiment_df: Optional[pd.DataFrame] = None) -> bool:
         return pre_experiment_df is not None and self.is_cupac

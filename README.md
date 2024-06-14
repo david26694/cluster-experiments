@@ -63,6 +63,9 @@ npw = NormalPowerAnalysis.from_dict(
 )
 power_line_normal = npw.power_line(df, average_effects=[0, 0.1, 0.2])
 
+# you can also use the normal power to get mde from a power level
+mde = npw.mde(df, power=0.8)
+
 ```
 
 ### Switchback
@@ -169,7 +172,7 @@ The library offers the following classes:
     * `PowerAnalysis`: to run power analysis on a clustered/switchback design
     * `PowerAnalysisWithPreExperimentData`: to run power analysis on a clustered/switchback design, but adding pre-experiment df during split and perturbation (especially useful for Synthetic Control)
     * `PowerAnalysis`: to run power analysis on any experiment design, using simulation
-    * `NormalPowerAnalysis`: to run power analysis on any experiment design using the central limit theorem for the distribution of the estimator
+    * `NormalPowerAnalysis`: to run power analysis on any experiment design using the central limit theorem for the distribution of the estimator. It can be used to compute the minimum detectable effect (MDE) for a given power level.
     * `ConstantPerturbator`: to artificially perturb treated group with constant perturbations
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
     * `RelativePositivePerturbator`: to artificially perturb treated group with relative positive perturbations
