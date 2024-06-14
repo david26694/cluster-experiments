@@ -20,7 +20,9 @@ nav:
   - Paired T test: paired_ttest.ipynb
   - Different hypotheses tests: analysis_with_different_hypotheses.ipynb
   - Washover: washover_example.ipynb
-  - Normal Power: normal_power.ipynb
+  - Normal Power:
+      - Compare with simulation: normal_power.ipynb
+      - Time-lines: normal_power_lines.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
