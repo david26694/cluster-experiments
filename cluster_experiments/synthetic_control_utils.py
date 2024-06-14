@@ -39,21 +39,21 @@ def get_w(X, y, verbose=False) -> np.ndarray:
     return weights
 
 
-def generate_data(N, start_date, end_date):
+def generate_synthetic_control_data(N, start_date, end_date):
+    """Create df for synthetic control cases, where we need a time variable, a target metric, and some clusters."""
     # Generate a list of dates between start_date and end_date
     dates = pd.date_range(start_date, end_date, freq="d")
 
     users = [f"User {i}" for i in range(N)]
 
-    # Use itertools.product to create a combination of each date with each user
+    # Create a combination of each date with each user
     combinations = list(product(users, dates))
 
-    target_values = np.random.normal(0, 1, size=len(combinations))
+    target_values = np.random.normal(100, 10, size=len(combinations))
 
     df = pd.DataFrame(combinations, columns=["user", "date"])
     df["target"] = target_values
 
-    # Ensure 'date' column is of datetime type
     df["date"] = pd.to_datetime(df["date"])
 
     return df

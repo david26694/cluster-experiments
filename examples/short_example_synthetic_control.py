@@ -2,9 +2,9 @@ from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
 from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import PowerAnalysisWithPreExperimentData
 from cluster_experiments.random_splitter import FixedSizeClusteredSplitter
-from cluster_experiments.synthetic_control_utils import generate_data
+from cluster_experiments.synthetic_control_utils import generate_synthetic_control_data
 
-df = generate_data(10, "2022-01-01", "2022-01-30")
+df = generate_synthetic_control_data(10, "2022-01-01", "2022-01-30")
 
 sw = FixedSizeClusteredSplitter(n_treatment_clusters=2, cluster_cols=["user"])
 

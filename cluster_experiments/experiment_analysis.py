@@ -940,15 +940,15 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     def analysis_point_estimate(
         self,
         df: pd.DataFrame,
-        treatment_cluster: str = "",
+        treatment_cluster: Optional[str] = None,
         verbose: bool = False,
     ):
         """
-        Calculate the point estimate for the treatment effect for a specified cluster.
+        Calculate the point estimate for the treatment effect for a specified cluster by averaging across the time windows.
         """
         df, pre_experiment_df = self._split_pre_experiment_df(df)
 
-        if treatment_cluster == "":
+        if treatment_cluster is None:
             treatment_cluster = self._get_treatment_cluster(df)
 
         df = self.fit_predict_synthetic(

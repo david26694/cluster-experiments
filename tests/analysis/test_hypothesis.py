@@ -9,7 +9,7 @@ from cluster_experiments.experiment_analysis import (
     SyntheticControlAnalysis,
     TTestClusteredAnalysis,
 )
-from cluster_experiments.synthetic_control_utils import generate_data
+from cluster_experiments.synthetic_control_utils import generate_synthetic_control_data
 from tests.utils import generate_clustered_data
 
 
@@ -78,7 +78,9 @@ def test_several_hypothesis(analysis_class, analysis_df):
 @pytest.mark.parametrize("hypothesis", ["less", "greater", "two-sided"])
 def test_hypothesis_synthetic(hypothesis):
 
-    df = generate_data(N=10, start_date="2022-01-01", end_date="2022-01-30")
+    df = generate_synthetic_control_data(
+        N=10, start_date="2022-01-01", end_date="2022-01-30"
+    )
     # Add treatment column to only 1 user
     df["treatment"] = 0
     df.loc[(df["user"] == "User 5"), "treatment"] = 1

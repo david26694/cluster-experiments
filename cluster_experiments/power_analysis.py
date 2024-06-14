@@ -278,7 +278,6 @@ class PowerAnalysis:
         Split dataframe.
         Args:
             df: Dataframe with outcome variable
-            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
         """
         treatment_df = self.splitter.assign_treatment_df(df)
         self.log_nulls(treatment_df)
@@ -549,9 +548,9 @@ class PowerAnalysis:
 
 class PowerAnalysisWithPreExperimentData(PowerAnalysis):
     """
-    Same as PowerAnalysis, but allowing a perturbation only at experiment period and keeping pre-experiment df intact. The PowerAnalysis class
-    accepts a pre_experiment param, however this is only used for cuped purposes (where we add a column to df). This
-    child class is used for cases where the pre experiment df is also available when the class is instantiated
+    This is intended to work mainly for diff-in-diff or synthetic control-like estimators, and NOT for cases of CUPED/CUPAC.
+    Same as PowerAnalysis, but allowing a perturbation only at experiment period and keeping pre-experiment df intact.
+    Using this class the pre experiment df is also available when the class is instantiated.
     """
 
     def _perturbate(
