@@ -424,9 +424,12 @@ class PowerAnalysis:
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
+            control=config.control,
             n_simulations=config.n_simulations,
             alpha=config.alpha,
+            features_cupac_model=config.features_cupac_model,
             seed=config.seed,
+            hypothesis=config.hypothesis,
         )
 
     def check_treatment_col(self):
@@ -606,6 +609,7 @@ class NormalPowerAnalysis:
         features_cupac_model: Optional[List[str]] = None,
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
+        time_col: Optional[str] = None,
     ):
         self.splitter = splitter
         self.analysis = analysis
@@ -616,6 +620,7 @@ class NormalPowerAnalysis:
         self.treatment_col = treatment_col
         self.alpha = alpha
         self.hypothesis = hypothesis
+        self.time_col = time_col
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
@@ -798,6 +803,111 @@ class NormalPowerAnalysis:
 
         return std_error_mean
 
+    def run_average_standard_error(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        n_simulations: Optional[int] = None,
+        experiment_length: Iterable[int] = (),
+    ) -> Generator[Tuple[float, int], None, None]:
+        """
+        Run power analysis by simulation, using standard errors from the analysis.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            n_simulations: Number of simulations to run.
+            experiment_length: Length of the experiment in days.
+        """
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+
+        for n_days in experiment_length:
+            df_time = df.copy()
+            experiment_start = df_time[self.time_col].min()
+            df_time = df_time.loc[
+                df_time[self.time_col] < experiment_start + pd.Timedelta(days=n_days)
+            ]
+            std_error_mean = self._get_average_standard_error(
+                df=df_time,
+                pre_experiment_df=pre_experiment_df,
+                verbose=verbose,
+                n_simulations=n_simulations,
+            )
+            yield std_error_mean, n_days
+
+    def power_time_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        average_effects: Iterable[float] = (),
+        experiment_length: Iterable[int] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> List[Dict]:
+        """
+        Run power analysis by simulation, using standard errors from the analysis.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            average_effects: Average effects to test.
+            experiment_length: Length of the experiment in days.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        alpha = self.alpha if alpha is None else alpha
+
+        results = []
+        for std_error_mean, n_days in self.run_average_standard_error(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            n_simulations=n_simulations,
+            experiment_length=experiment_length,
+        ):
+            for effect in average_effects:
+                power = self._normal_power_calculation(
+                    alpha=alpha, std_error=std_error_mean, average_effect=effect
+                )
+                results.append(
+                    {"effect": effect, "power": power, "experiment_length": n_days}
+                )
+
+        return results
+
+    def mde_time_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        powers: Iterable[float] = (),
+        experiment_length: Iterable[int] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> List[Dict]:
+        alpha = self.alpha if alpha is None else alpha
+
+        results = []
+        for std_error_mean, n_days in self.run_average_standard_error(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            n_simulations=n_simulations,
+            experiment_length=experiment_length,
+        ):
+            for power in powers:
+                mde = self._normal_mde_calculation(
+                    alpha=alpha, std_error=std_error_mean, power=power
+                )
+                results.append(
+                    {"power": power, "mde": mde, "experiment_length": n_days}
+                )
+        return results
+
     def power_line(
         self,
         df: pd.DataFrame,
@@ -888,9 +998,13 @@ class NormalPowerAnalysis:
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
+            control=config.control,
             n_simulations=config.n_simulations,
             alpha=config.alpha,
+            features_cupac_model=config.features_cupac_model,
             seed=config.seed,
+            hypothesis=config.hypothesis,
+            time_col=config.time_col,
         )
 
     def check_treatment_col(self):
