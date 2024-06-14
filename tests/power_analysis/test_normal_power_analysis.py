@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 
 from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis, OLSAnalysis
@@ -348,3 +349,67 @@ def test_mde_power_line(df):
     # then
     assert mde_power_line[0.9] > mde_power_line[0.8]
     assert mde_power_line[0.8] > mde_power_line[0.7]
+
+
+def test_mde_time_line(df):
+    # given
+    pw_normal = NormalPowerAnalysis.from_dict(
+        {
+            "splitter": "non_clustered",
+            "analysis": "ols",
+            "n_simulations": 5,
+            "hypothesis": "two-sided",
+            "seed": 20240922,
+            "time_col": "date",
+        }
+    )
+    df_cp = df.copy()
+    df_cp["date"] = pd.to_datetime(df_cp["date"])
+
+    # when
+    mde_time_line = pw_normal.mde_time_line(
+        df_cp, experiment_length=[1, 2, 3], powers=[0.8]
+    )
+    mde_df = pd.DataFrame(mde_time_line)
+
+    # then
+    assert (
+        mde_df.query("experiment_length == 1")["mde"].squeeze()
+        > mde_df.query("experiment_length == 2")["mde"].squeeze()
+    )
+    assert (
+        mde_df.query("experiment_length == 2")["mde"].squeeze()
+        > mde_df.query("experiment_length == 3")["mde"].squeeze()
+    )
+
+
+def test_power_time_line(df):
+    # given
+    pw_normal = NormalPowerAnalysis.from_dict(
+        {
+            "splitter": "non_clustered",
+            "analysis": "ols",
+            "n_simulations": 5,
+            "hypothesis": "two-sided",
+            "seed": 20240922,
+            "time_col": "date",
+        }
+    )
+    df_cp = df.copy()
+    df_cp["date"] = pd.to_datetime(df_cp["date"])
+
+    # when
+    power_time_line = pw_normal.power_time_line(
+        df_cp, experiment_length=[1, 2, 3], average_effects=[0.1]
+    )
+    power_df = pd.DataFrame(power_time_line)
+
+    # then
+    assert (
+        power_df.query("experiment_length == 1")["power"].squeeze()
+        < power_df.query("experiment_length == 2")["power"].squeeze()
+    )
+    assert (
+        power_df.query("experiment_length == 2")["power"].squeeze()
+        < power_df.query("experiment_length == 3")["power"].squeeze()
+    )
