@@ -328,3 +328,23 @@ def test_power_mde(df, hypothesis):
 
     # then
     assert abs(mde - 0.1) < 0.03
+
+
+def test_mde_power_line(df):
+    # given
+    pw_normal = NormalPowerAnalysis.from_dict(
+        {
+            "splitter": "non_clustered",
+            "analysis": "ols",
+            "n_simulations": 5,
+            "hypothesis": "two-sided",
+            "seed": 20240922,
+        }
+    )
+
+    # when
+    mde_power_line = pw_normal.mde_power_line(df, powers=[0.9, 0.8, 0.7])
+
+    # then
+    assert mde_power_line[0.9] > mde_power_line[0.8]
+    assert mde_power_line[0.8] > mde_power_line[0.7]

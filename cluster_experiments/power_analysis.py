@@ -680,6 +680,67 @@ class NormalPowerAnalysis:
 
         raise ValueError(f"{self.analysis.hypothesis} is not a valid HypothesisEntries")
 
+    def _normal_mde_calculation(
+        self, alpha: float, std_error: float, power: float
+    ) -> float:
+        """
+        Returns the minimum detectable effect of the analysis using the normal distribution.
+        Args:
+            alpha: Significance level.
+            std_error: Standard error of the analysis.
+            power: Power of the analysis.
+        """
+        if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.LESS:
+            z_alpha = norm.ppf(alpha)
+            z_beta = norm.ppf(1 - power)
+        elif HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.GREATER:
+            z_alpha = norm.ppf(1 - alpha)
+            z_beta = norm.ppf(power)
+        elif HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.TWO_SIDED:
+            # we are neglecting norm_cdf_left
+            z_alpha = norm.ppf(1 - alpha / 2)
+            z_beta = norm.ppf(power)
+        else:
+            raise ValueError(
+                f"{self.analysis.hypothesis} is not a valid HypothesisEntries"
+            )
+
+        return float(z_alpha + z_beta) * std_error
+
+    def mde_power_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        powers: Iterable[float] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+    ) -> Dict[float, float]:
+        """
+        Returns the minimum detectable effect of the analysis.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            power: Power of the analysis.
+            n_simulations: Number of simulations to run.
+            alpha: Significance level.
+        """
+        alpha = self.alpha if alpha is None else alpha
+        std_error = self._get_average_standard_error(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            n_simulations=n_simulations,
+        )
+        return {
+            power: self._normal_mde_calculation(
+                alpha=alpha, std_error=std_error, power=power
+            )
+            for power in powers
+        }
+
     def mde(
         self,
         df: pd.DataFrame,
@@ -700,30 +761,14 @@ class NormalPowerAnalysis:
             n_simulations: Number of simulations to run.
             alpha: Significance level.
         """
-        alpha = self.alpha if alpha is None else alpha
-        std_error = self._get_average_standard_error(
+        return self.mde_power_line(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
+            powers=[power],
             n_simulations=n_simulations,
-        )
-
-        if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.LESS:
-            z_alpha = norm.ppf(alpha)
-            z_beta = norm.ppf(1 - power)
-        elif HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.GREATER:
-            z_alpha = norm.ppf(1 - alpha)
-            z_beta = norm.ppf(power)
-        elif HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.TWO_SIDED:
-            # we are neglecting norm_cdf_left
-            z_alpha = norm.ppf(1 - alpha / 2)
-            z_beta = norm.ppf(power)
-        else:
-            raise ValueError(
-                f"{self.analysis.hypothesis} is not a valid HypothesisEntries"
-            )
-
-        return float(z_alpha + z_beta) * std_error
+            alpha=alpha,
+        )[power]
 
     def _get_average_standard_error(
         self,

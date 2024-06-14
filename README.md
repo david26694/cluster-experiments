@@ -170,7 +170,7 @@ The library offers the following classes:
 
 * Regarding power analysis:
     * `PowerAnalysis`: to run power analysis on any experiment design, using simulation
-    * `NormalPowerAnalysis`: to run power analysis on any experiment design using the central limit theorem for the distribution of the estimator
+    * `NormalPowerAnalysis`: to run power analysis on any experiment design using the central limit theorem for the distribution of the estimator. It can be used to compute the minimum detectable effect (MDE) for a given power level.
     * `ConstantPerturbator`: to artificially perturb treated group with constant perturbations
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
     * `RelativePositivePerturbator`: to artificially perturb treated group with relative positive perturbations
