@@ -24,7 +24,6 @@ nav:
       - Compare with simulation: normal_power.ipynb
       - Time-lines: normal_power_lines.ipynb
   - Synthetic control: synthetic_control.ipynb
-  - Normal Power: normal_power.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
