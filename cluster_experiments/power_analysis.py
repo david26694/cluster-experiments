@@ -553,7 +553,7 @@ class PowerAnalysisWithPreExperimentData(PowerAnalysis):
     """
     This is intended to work mainly for diff-in-diff or synthetic control-like estimators, and NOT for cases of CUPED/CUPAC.
     Same as PowerAnalysis, but allowing a perturbation only at experiment period and keeping pre-experiment df intact.
-    Using this class the pre experiment df is also available when the class is instantiated.
+    Using this class, the pre experiment df is also available when the class is instantiated.
     """
 
     def _perturbate(

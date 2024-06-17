@@ -964,14 +964,3 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
         pre_experiment_df = df[(df[self.time_col] <= self.intervention_date)]
         df = df[(df[self.time_col] > self.intervention_date)]
         return df, pre_experiment_df
-
-    @classmethod
-    def from_config(cls, config):
-        """Creates an SyntheticControlAnalysis object from a PowerConfig object"""
-        return cls(
-            target_col=config.target_col,
-            treatment_col=config.treatment_col,
-            treatment=config.treatment,
-            hypothesis=config.hypothesis,
-            cluster_cols=config.cluster_cols,
-        )
