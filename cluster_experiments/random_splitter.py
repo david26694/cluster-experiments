@@ -302,7 +302,6 @@ class NonClusteredSplitter(RandomSplitter):
         self,
         df: pd.DataFrame,
     ) -> pd.DataFrame:
-
         """
         Takes a df, randomizes treatments and adds the treatment column to the dataframe
 
@@ -545,3 +544,46 @@ class RepeatedSampler(RandomSplitter):
             treatments=config.treatments,
             treatment_col=config.treatment_col,
         )
+
+
+class FixedSizeClusteredSplitter(ClusteredSplitter):
+    """
+    This class  represents a splitter that splits clusters into treatment groups with a predefined number of
+    treatment clusters. This is particularly useful for synthetic control analysis, where we only want 1 cluster (
+    unit) to be in treatment group and the rest in control The cluster that receives treatment remains random.
+
+    Attributes:
+        cluster_cols (List[str]): List of columns to use as clusters.
+        n_treatment_clusters (int): The predefined number of treatment clusters.
+
+    """
+
+    def __init__(self, cluster_cols: List[str], n_treatment_clusters: int):
+        super().__init__(cluster_cols=cluster_cols)
+        self.n_treatment_clusters = n_treatment_clusters
+
+    def sample_treatment(
+        self,
+        cluster_df: pd.DataFrame,
+    ) -> List[str]:
+        """
+        Samples treatments for each cluster.
+
+        Args:
+            cluster_df (pd.DataFrame): Dataframe to assign treatments to.
+
+        Returns:
+            List[str]: A list of treatments for each cluster.
+        """
+        n_control_treatment = [
+            len(cluster_df) - self.n_treatment_clusters,
+            self.n_treatment_clusters,
+        ]
+
+        sample_treatment = [
+            treatment
+            for treatment, count in zip(self.treatments, n_control_treatment)
+            for _ in range(count)
+        ]
+        random.shuffle(sample_treatment)
+        return sample_treatment

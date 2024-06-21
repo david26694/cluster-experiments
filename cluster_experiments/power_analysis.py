@@ -273,14 +273,11 @@ class PowerAnalysis:
         else:
             raise ValueError("n_jobs must be greater than 0, or -1.")
 
-    def _split_and_perturbate(
-        self, df: pd.DataFrame, average_effect: Optional[float]
-    ) -> pd.DataFrame:
+    def _split(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Split and perturbate dataframe.
+        Split dataframe.
         Args:
             df: Dataframe with outcome variable
-            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
         """
         treatment_df = self.splitter.assign_treatment_df(df)
         self.log_nulls(treatment_df)
@@ -290,8 +287,30 @@ class PowerAnalysis:
             f"{self.treatment_col}.isin(['{self.treatment}', '{self.control}'])",
             engine="python",
         )
+
+        return treatment_df
+
+    def _perturbate(
+        self, treatment_df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+        """
+        Perturbate dataframe using perturbator.
+        Args:
+            df: Dataframe with outcome variable
+            average_effect: Average effect of treatment. If None, it will use the perturbator average effect.
+        """
+
         perturbed_df = self.perturbator.perturbate(
             treatment_df, average_effect=average_effect
+        )
+        return perturbed_df
+
+    def _split_and_perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+        treatment_df = self._split(df)
+        perturbed_df = self._perturbate(
+            treatment_df=treatment_df, average_effect=average_effect
         )
         return perturbed_df
 
@@ -528,6 +547,29 @@ class PowerAnalysis:
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+
+
+class PowerAnalysisWithPreExperimentData(PowerAnalysis):
+    """
+    This is intended to work mainly for diff-in-diff or synthetic control-like estimators, and NOT for cases of CUPED/CUPAC.
+    Same as PowerAnalysis, but allowing a perturbation only at experiment period and keeping pre-experiment df intact.
+    Using this class, the pre experiment df is also available when the class is instantiated.
+    """
+
+    def _perturbate(
+        self, treatment_df: pd.DataFrame, average_effect: Optional[float]
+    ) -> pd.DataFrame:
+        if not hasattr(self.analysis, "_split_pre_experiment_df"):
+            raise AttributeError(
+                "The PowerAnalysisWithPreExperimentData is intended to work mainly for diff-in-diff or synthetic control-like estimators."
+                "For other cases use the PowerAnalysis"
+            )
+
+        df, pre_experiment_df = self.analysis._split_pre_experiment_df(treatment_df)
+
+        perturbed_df = self.perturbator.perturbate(df, average_effect=average_effect)
+
+        return pd.concat([perturbed_df, pre_experiment_df])
 
 
 class NormalPowerAnalysis:

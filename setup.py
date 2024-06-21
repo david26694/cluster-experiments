@@ -39,7 +39,7 @@ docs_packages = [
     "mkdocstrings==0.18.0",
     "jinja2<3.1.0",
     "mkdocs-jupyter==0.22.0",
-    "plotnine==0.8.0",
+    "plotnine>=0.8.0",
     "matplotlib>=3.4.3",
 ]
 
@@ -47,7 +47,7 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.18.0",
+    version="0.19.0",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,
