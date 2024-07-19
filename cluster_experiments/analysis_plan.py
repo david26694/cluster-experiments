@@ -1,5 +1,8 @@
 from typing import List
 
+import pandas as pd
+
+from cluster_experiments.analysis_results import AnalysisPlanResults
 from cluster_experiments.hypothesis_test import HypothesisTest
 from cluster_experiments.variant import Variant
 
@@ -67,3 +70,12 @@ class AnalysisPlan:
             raise ValueError("Tests list cannot be empty")
         if not variants:
             raise ValueError("Variants list cannot be empty")
+
+    def analyze(
+        self, exp_data: pd.DataFrame, pre_exp_data: pd.DataFrame, alpha=0.05
+    ) -> AnalysisPlanResults:
+        ...
+        # add methods to prepare the filtered dataset based on variants and slicers
+        # add methods to run the analysis for each of the hypothesis tests, given a filtered dataset
+        # store each row as a HypothesisTestResults object
+        # wrap all results in an AnalysisPlanResults object
