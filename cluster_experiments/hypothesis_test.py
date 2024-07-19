@@ -1,8 +1,6 @@
 from typing import List, Optional
 
-from cluster_experiments.dimension import (
-    Dimension,
-)
+from cluster_experiments.dimension import Dimension
 from cluster_experiments.experiment_analysis import ExperimentAnalysis
 from cluster_experiments.metric import Metric
 
