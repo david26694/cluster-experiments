@@ -48,6 +48,6 @@ class Variant:
             If the name is not a string or if is_control is not a boolean.
         """
         if not isinstance(name, str):
-            raise TypeError("Name must be a string")
+            raise TypeError("Variant name must be a string")
         if not isinstance(is_control, bool):
-            raise TypeError("is_control must be a boolean")
+            raise TypeError("Variant is_control must be a boolean")

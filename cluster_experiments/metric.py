@@ -48,8 +48,8 @@ class Metric:
             If the alias is not a string or if components is not a tuple of strings.
         """
         if not isinstance(alias, str):
-            raise TypeError("Alias must be a string")
+            raise TypeError("Metric alias must be a string")
         if not isinstance(components, tuple) or not all(
             isinstance(comp, str) for comp in components
         ):
-            raise TypeError("Components must be a tuple of strings")
+            raise TypeError("Metric components must be a tuple of strings")
