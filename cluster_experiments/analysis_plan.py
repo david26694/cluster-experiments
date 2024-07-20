@@ -2,8 +2,12 @@ from typing import List
 
 import pandas as pd
 
-from cluster_experiments.analysis_results import AnalysisPlanResults
+from cluster_experiments.analysis_results import (
+    AnalysisPlanResults,
+    HypothesisTestResults,
+)
 from cluster_experiments.hypothesis_test import HypothesisTest
+from cluster_experiments.power_config import analysis_mapping
 from cluster_experiments.variant import Variant
 
 
@@ -26,7 +30,12 @@ class AnalysisPlan:
         Validates the inputs for the AnalysisPlan class.
     """
 
-    def __init__(self, tests: List[HypothesisTest], variants: List[Variant]):
+    def __init__(
+        self,
+        tests: List[HypothesisTest],
+        variants: List[Variant],
+        variant_col: str = "treatment",
+    ):
         """
         Parameters
         ----------
@@ -34,13 +43,18 @@ class AnalysisPlan:
             A list of HypothesisTest instances
         variants : List[Variant]
             A list of Variant instances
+        variant_col : str
+            The name of the column containing the variant names.
         """
-        self._validate_inputs(tests, variants)
+        self._validate_inputs(tests, variants, variant_col)
         self.tests = tests
         self.variants = variants
+        self.variant_col = variant_col
 
     @staticmethod
-    def _validate_inputs(tests: List[HypothesisTest], variants: List[Variant]):
+    def _validate_inputs(
+        tests: List[HypothesisTest], variants: List[Variant], variant_col: str
+    ):
         """
         Validates the inputs for the AnalysisPlan class.
 
@@ -50,6 +64,8 @@ class AnalysisPlan:
             A list of HypothesisTest instances
         variants : List[Variant]
             A list of Variant instances
+        variant_col : str
+            The name of the column containing the variant names.
 
         Raises
         ------
@@ -66,6 +82,8 @@ class AnalysisPlan:
             isinstance(variant, Variant) for variant in variants
         ):
             raise TypeError("Variants must be a list of Variant instances")
+        if not isinstance(variant_col, str):
+            raise TypeError("Variant_col must be a string")
         if not tests:
             raise ValueError("Tests list cannot be empty")
         if not variants:
@@ -79,3 +97,105 @@ class AnalysisPlan:
         # add methods to run the analysis for each of the hypothesis tests, given a filtered dataset
         # store each row as a HypothesisTestResults object
         # wrap all results in an AnalysisPlanResults object
+
+        # -----
+
+        # add all kind of checks on the inputs at the beginning using the data structures
+        # todo: ...
+        # do it before running the computations below
+
+        results = AnalysisPlanResults()
+        treatment_variants: List[Variant] = self.get_treatment_variants()
+        control_variant: Variant = self.get_control_variant()
+
+        for test in self.tests:
+            # add cupac handler here
+            for treatment_variant in treatment_variants:
+                for dimension in test.dimensions:
+                    for dimension_value in list(set(dimension.values)):
+                        prepared_df = self.prepare_data(
+                            data=exp_data,
+                            variant_col=self.variant_col,
+                            treatment_variant=treatment_variant,
+                            control_variant=control_variant,
+                            dimension_name=dimension.name,
+                            dimension_value=dimension_value,
+                        )
+
+                        analysis_class = analysis_mapping[test.analysis_type]
+                        experiment_analysis = analysis_class(**test.analysis_config)
+                        experiment_analysis.target_col = test.metric.alias
+                        experiment_analysis.treatment_col = (self.variant_col,)
+                        experiment_analysis.treatment = treatment_variant
+
+                        HypothesisTestResults(
+                            metric_alias=test.metric.alias,
+                            control_variant_name=control_variant.name,
+                            treatment_variant_name=treatment_variant.name,
+                            control_variant_mean=0.5,  # todo: add method
+                            treatment_variant_mean=0.6,  # todo: add method
+                            analysis_type=test.analysis_type,
+                            ate=experiment_analysis.get_point_estimate(df=prepared_df),
+                            ate_ci_lower=0.1,  # todo: add method
+                            ate_ci_upper=0.2,  # todo: add method
+                            p_value=experiment_analysis.get_point_estimate(
+                                df=prepared_df
+                            ),
+                            std_error=experiment_analysis.get_standard_error(
+                                df=prepared_df
+                            ),
+                            dimension_name=dimension.name,
+                            dimension_value=dimension_value,
+                        )
+
+        return results
+
+    def prepare_data(
+        self,
+        data: pd.DataFrame,
+        variant_col: str,
+        treatment_variant: Variant,
+        control_variant: Variant,
+        dimension_name: str,
+        dimension_value: str,
+    ) -> pd.DataFrame:
+        """
+        Prepares the data for the experiment analysis pipeline
+        """
+        prepared_df = data.copy()
+
+        prepared_df = prepared_df.query(
+            f"{variant_col}.isin(['{treatment_variant.name}','{control_variant.name}'')"
+        ).query(f"{dimension_name} == '{dimension_value}'")
+
+        return prepared_df
+
+    def get_control_variant(self) -> Variant:
+        """
+        Returns the control variant from the list of variants. Raises an error if no control variant is found.
+
+        Returns
+        -------
+        Variant
+            The control variant
+
+        Raises
+        ------
+        ValueError
+            If no control variant is found
+        """
+        for variant in self.variants:
+            if variant.is_control:
+                return variant
+        raise ValueError("No control variant found")
+
+    def get_treatment_variants(self) -> List[Variant]:
+        """
+        Returns the treatment variants from the list of variants.
+
+        Returns
+        -------
+        List[Variant]
+            A list of treatment variants
+        """
+        return [variant for variant in self.variants if not variant.is_control]
