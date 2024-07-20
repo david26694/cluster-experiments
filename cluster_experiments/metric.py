@@ -1,3 +1,6 @@
+from typing import Union
+
+
 class Metric:
     """
     A class used to represent a Metric with an alias and components.
@@ -6,8 +9,8 @@ class Metric:
     ----------
     alias : str
         A string representing the alias of the metric
-    components : tuple
-        A tuple of strings representing the components of the metric
+    components : str or tuple
+        A string or a tuple of strings representing the components of the metric
 
     Methods
     -------
@@ -17,14 +20,14 @@ class Metric:
         Validates the inputs for the Metric class.
     """
 
-    def __init__(self, alias: str, components: tuple):
+    def __init__(self, alias: str, components: Union[tuple, str]):
         """
         Parameters
         ----------
         alias : str
             The alias of the metric
-        components : tuple
-            A tuple of strings representing the components of the metric
+        components : tuple or str
+            A string or a tuple of strings representing the components of the metric
         """
         self._validate_inputs(alias, components)
         self.alias = alias
@@ -39,7 +42,7 @@ class Metric:
         ----------
         alias : str
             The alias of the metric
-        components : tuple
+        components : tuple or str
             A tuple of strings representing the components of the metric
 
         Raises
@@ -50,6 +53,7 @@ class Metric:
         if not isinstance(alias, str):
             raise TypeError("Metric alias must be a string")
         if not isinstance(components, tuple) or not all(
-            isinstance(comp, str) for comp in components
+            isinstance(comp, str)
+            for comp in components or not isinstance(components, str)
         ):
-            raise TypeError("Metric components must be a tuple of strings")
+            raise TypeError("Metric components must be a string or a tuple of strings")
