@@ -1,9 +1,9 @@
 from typing import List
 
 import pandas as pd
+from pandas import DataFrame
 
 from cluster_experiments.analysis_results import (
-    AnalysisPlanResults,
     HypothesisTestResults,
 )
 from cluster_experiments.hypothesis_test import HypothesisTest
@@ -90,8 +90,9 @@ class AnalysisPlan:
             raise ValueError("Variants list cannot be empty")
 
     def analyze(
-        self, exp_data: pd.DataFrame, pre_exp_data: pd.DataFrame, alpha=0.05
-    ) -> AnalysisPlanResults:
+        self,
+        exp_data: pd.DataFrame,  # , pre_exp_data: Optional[pd.DataFrame], alpha=0.05
+    ) -> DataFrame:
         ...
         # add methods to prepare the filtered dataset based on variants and slicers
         # add methods to run the analysis for each of the hypothesis tests, given a filtered dataset
@@ -104,7 +105,7 @@ class AnalysisPlan:
         # todo: ...
         # do it before running the computations below
 
-        results = AnalysisPlanResults()
+        test_results = []
         treatment_variants: List[Variant] = self.get_treatment_variants()
         control_variant: Variant = self.get_control_variant()
 
@@ -123,32 +124,38 @@ class AnalysisPlan:
                         )
 
                         analysis_class = analysis_mapping[test.analysis_type]
-                        experiment_analysis = analysis_class(**test.analysis_config)
-                        experiment_analysis.target_col = test.metric.alias
-                        experiment_analysis.treatment_col = (self.variant_col,)
-                        experiment_analysis.treatment = treatment_variant
-
-                        HypothesisTestResults(
-                            metric_alias=test.metric.alias,
-                            control_variant_name=control_variant.name,
-                            treatment_variant_name=treatment_variant.name,
-                            control_variant_mean=0.5,  # todo: add method
-                            treatment_variant_mean=0.6,  # todo: add method
-                            analysis_type=test.analysis_type,
-                            ate=experiment_analysis.get_point_estimate(df=prepared_df),
-                            ate_ci_lower=0.1,  # todo: add method
-                            ate_ci_upper=0.2,  # todo: add method
-                            p_value=experiment_analysis.get_point_estimate(
-                                df=prepared_df
-                            ),
-                            std_error=experiment_analysis.get_standard_error(
-                                df=prepared_df
-                            ),
-                            dimension_name=dimension.name,
-                            dimension_value=dimension_value,
+                        experiment_analysis = analysis_class(
+                            **test.analysis_config,
+                            target_col=test.metric.components,  # todo: add support for ratio and delta method
+                            treatment_col=self.variant_col,
+                            treatment=treatment_variant.name,
                         )
 
-        return results
+                        ate = experiment_analysis.get_point_estimate(df=prepared_df)
+                        p_value = experiment_analysis.get_pvalue(df=prepared_df)
+                        std_error = experiment_analysis.get_standard_error(
+                            df=prepared_df
+                        )
+
+                        test_results.append(
+                            HypothesisTestResults(
+                                metric_alias=test.metric.alias,
+                                control_variant_name=control_variant.name,
+                                treatment_variant_name=treatment_variant.name,
+                                control_variant_mean=0.5,  # todo: add method
+                                treatment_variant_mean=0.6,  # todo: add method
+                                analysis_type=test.analysis_type,
+                                ate=ate,
+                                ate_ci_lower=0.1,  # todo: add method
+                                ate_ci_upper=0.2,  # todo: add method
+                                p_value=p_value,
+                                std_error=std_error,
+                                dimension_name=dimension.name,
+                                dimension_value=dimension_value,
+                            )
+                        )
+
+        return pd.DataFrame([test_result.__dict__ for test_result in test_results])
 
     def prepare_data(
         self,
@@ -165,7 +172,7 @@ class AnalysisPlan:
         prepared_df = data.copy()
 
         prepared_df = prepared_df.query(
-            f"{variant_col}.isin(['{treatment_variant.name}','{control_variant.name}'')"
+            f"{variant_col}.isin(['{treatment_variant.name}','{control_variant.name}'])"
         ).query(f"{dimension_name} == '{dimension_value}'")
 
         return prepared_df

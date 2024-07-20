@@ -82,7 +82,8 @@ class AnalysisPlanResults(pd.DataFrame):
         ]
         super().__init__(*args, columns=columns, **kwargs)
 
-    def add_results(self, results: List[HypothesisTestResults]):
+    @staticmethod
+    def add_results(results: List[HypothesisTestResults]) -> pd.DataFrame:
         """
         Adds a list of new results to the DataFrame.
 
@@ -93,4 +94,4 @@ class AnalysisPlanResults(pd.DataFrame):
         """
         new_data = [result.__dict__ for result in results]
         new_df = pd.DataFrame(new_data)
-        self.append(new_df, ignore_index=True)
+        return new_df
