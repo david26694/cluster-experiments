@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from cluster_experiments.dimension import Dimension
+from cluster_experiments.dimension import DefaultDimension, Dimension
 from cluster_experiments.metric import Metric
 
 
@@ -50,7 +50,7 @@ class HypothesisTest:
         self.metric = metric
         self.analysis_type = analysis_type
         self.analysis_config = analysis_config or {}
-        self.dimensions = dimensions or [Dimension(name="total", values=["total"])]
+        self.dimensions = [DefaultDimension()] + (dimensions or [])
 
     @staticmethod
     def _validate_inputs(

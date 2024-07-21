@@ -201,6 +201,8 @@ class AnalysisPlan:
         """
         prepared_df = data.copy()
 
+        prepared_df = prepared_df.assign(total_dimension="total")
+
         prepared_df = prepared_df.query(
             f"{variant_col}.isin(['{treatment_variant.name}','{control_variant.name}'])"
         ).query(f"{dimension_name} == '{dimension_value}'")

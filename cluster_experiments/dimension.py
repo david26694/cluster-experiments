@@ -56,3 +56,12 @@ class Dimension:
             isinstance(val, str) for val in values
         ):
             raise TypeError("Dimension values must be a list of strings")
+
+
+class DefaultDimension(Dimension):
+    """
+    A class used to represent a Dimension with a default value representing total, i.e. no slicing.
+    """
+
+    def __init__(self):
+        super().__init__(name="total_dimension", values=["total"])
