@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import List
 
 import pandas as pd
@@ -58,10 +58,12 @@ class AnalysisPlanResults(pd.DataFrame):
     """
     A class used to represent the results of an Analysis Plan as a pandas DataFrame.
 
+    This DataFrame ensures that each row or entry respects the contract defined by the HypothesisTestResults dataclass.
+
     Methods
     -------
-    add_results(results: List[HypothesisTestResults]):
-        Adds a list of new results to the DataFrame.
+    from_results(results: List[HypothesisTestResults]):
+        Creates an AnalysisPlanResults DataFrame from a list of HypothesisTestResults objects.
     """
 
     def __init__(self, *args, **kwargs):
@@ -69,6 +71,8 @@ class AnalysisPlanResults(pd.DataFrame):
             "metric_alias",
             "control_variant_name",
             "treatment_variant_name",
+            "dimension_name",
+            "dimension_value",
             "control_variant_mean",
             "treatment_variant_mean",
             "analysis_type",
@@ -77,21 +81,25 @@ class AnalysisPlanResults(pd.DataFrame):
             "ate_ci_upper",
             "p_value",
             "std_error",
-            "dimension_name",
-            "dimension_value",
         ]
         super().__init__(*args, columns=columns, **kwargs)
 
-    @staticmethod
-    def add_results(results: List[HypothesisTestResults]) -> pd.DataFrame:
+    @classmethod
+    def from_results(
+        cls, results: List[HypothesisTestResults]
+    ) -> "AnalysisPlanResults":
         """
-        Adds a list of new results to the DataFrame.
+        Creates an AnalysisPlanResults DataFrame from a list of HypothesisTestResults objects.
 
         Parameters
         ----------
         results : List[HypothesisTestResults]
             The list of results to be added to the DataFrame
+
+        Returns
+        -------
+        AnalysisPlanResults
+            A DataFrame containing the results
         """
-        new_data = [result.__dict__ for result in results]
-        new_df = pd.DataFrame(new_data)
-        return new_df
+        data = [asdict(result) for result in results]
+        return cls(data)

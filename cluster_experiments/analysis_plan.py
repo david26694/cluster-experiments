@@ -4,6 +4,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from cluster_experiments.analysis_results import (
+    AnalysisPlanResults,
     HypothesisTestResults,
 )
 from cluster_experiments.hypothesis_test import HypothesisTest
@@ -110,8 +111,21 @@ class AnalysisPlan:
         control_variant: Variant = self.get_control_variant()
 
         for test in self.tests:
-            # add cupac handler here
+            # todo: add cupac handler here
+            analysis_class = analysis_mapping[test.analysis_type]
+            target_col = test.metric.get_target_column_from_metric()
+
             for treatment_variant in treatment_variants:
+
+                analysis_config_final = self.prepare_analysis_config(
+                    initial_analysis_config=test.analysis_config,
+                    target_col=target_col,
+                    treatment_col=self.variant_col,
+                    treatment=treatment_variant.name,
+                )
+
+                experiment_analysis = analysis_class(**analysis_config_final)
+
                 for dimension in test.dimensions:
                     for dimension_value in list(set(dimension.values)):
                         prepared_df = self.prepare_data(
@@ -123,18 +137,20 @@ class AnalysisPlan:
                             dimension_value=dimension_value,
                         )
 
-                        analysis_class = analysis_mapping[test.analysis_type]
-                        experiment_analysis = analysis_class(
-                            **test.analysis_config,
-                            target_col=test.metric.components,  # todo: add support for ratio and delta method
-                            treatment_col=self.variant_col,
-                            treatment=treatment_variant.name,
-                        )
-
                         ate = experiment_analysis.get_point_estimate(df=prepared_df)
                         p_value = experiment_analysis.get_pvalue(df=prepared_df)
                         std_error = experiment_analysis.get_standard_error(
                             df=prepared_df
+                        )
+                        control_variant_mean = test.metric.get_mean(
+                            prepared_df.query(
+                                f"{self.variant_col}=='{control_variant.name}'"
+                            )
+                        )
+                        treatment_variant_mean = test.metric.get_mean(
+                            prepared_df.query(
+                                f"{self.variant_col}=='{treatment_variant.name}'"
+                            )
                         )
 
                         test_results.append(
@@ -142,8 +158,8 @@ class AnalysisPlan:
                                 metric_alias=test.metric.alias,
                                 control_variant_name=control_variant.name,
                                 treatment_variant_name=treatment_variant.name,
-                                control_variant_mean=0.5,  # todo: add method
-                                treatment_variant_mean=0.6,  # todo: add method
+                                control_variant_mean=control_variant_mean,
+                                treatment_variant_mean=treatment_variant_mean,
                                 analysis_type=test.analysis_type,
                                 ate=ate,
                                 ate_ci_lower=0.1,  # todo: add method
@@ -155,7 +171,7 @@ class AnalysisPlan:
                             )
                         )
 
-        return pd.DataFrame([test_result.__dict__ for test_result in test_results])
+        return AnalysisPlanResults.from_results(test_results)
 
     def prepare_data(
         self,
@@ -206,3 +222,27 @@ class AnalysisPlan:
             A list of treatment variants
         """
         return [variant for variant in self.variants if not variant.is_control]
+
+    @staticmethod
+    def prepare_analysis_config(
+        initial_analysis_config: dict,
+        target_col: str,
+        treatment_col: str,
+        treatment: str,
+    ) -> dict:
+        """
+        Extends the analysis_config provided by the user, by adding or overriding the following keys:
+        - target_col
+        - treatment_col
+        - treatment
+
+        Returns
+        -------
+        dict
+            The prepared analysis configuration, ready to be ingested by the experiment analysis class
+        """
+        initial_analysis_config["target_col"] = target_col
+        initial_analysis_config["treatment_col"] = treatment_col
+        initial_analysis_config["treatment"] = treatment
+
+        return initial_analysis_config
