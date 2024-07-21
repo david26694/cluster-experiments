@@ -22,6 +22,10 @@ class AnalysisPlan:
         A list of HypothesisTest instances
     variants : List[Variant]
         A list of Variant instances
+    variant_col : str
+        name of the column with the experiment groups
+    alpha : float
+        significance level used to construct confidence intervals
 
     Methods
     -------
@@ -36,6 +40,7 @@ class AnalysisPlan:
         tests: List[HypothesisTest],
         variants: List[Variant],
         variant_col: str = "treatment",
+        alpha: float = 0.05,
     ):
         """
         Parameters
@@ -46,11 +51,14 @@ class AnalysisPlan:
             A list of Variant instances
         variant_col : str
             The name of the column containing the variant names.
+        alpha : float
+            significance level used to construct confidence intervals
         """
         self._validate_inputs(tests, variants, variant_col)
         self.tests = tests
         self.variants = variants
         self.variant_col = variant_col
+        self.alpha = alpha
 
     @staticmethod
     def _validate_inputs(
@@ -142,6 +150,11 @@ class AnalysisPlan:
                         std_error = experiment_analysis.get_standard_error(
                             df=prepared_df
                         )
+                        confidence_interval = (
+                            experiment_analysis.get_confidence_interval(
+                                df=prepared_df, alpha=self.alpha
+                            )
+                        )
                         control_variant_mean = test.metric.get_mean(
                             prepared_df.query(
                                 f"{self.variant_col}=='{control_variant.name}'"
@@ -162,8 +175,8 @@ class AnalysisPlan:
                                 treatment_variant_mean=treatment_variant_mean,
                                 analysis_type=test.analysis_type,
                                 ate=ate,
-                                ate_ci_lower=0.1,  # todo: add method
-                                ate_ci_upper=0.2,  # todo: add method
+                                ate_ci_lower=confidence_interval.lower,
+                                ate_ci_upper=confidence_interval.upper,
                                 p_value=p_value,
                                 std_error=std_error,
                                 dimension_name=dimension.name,

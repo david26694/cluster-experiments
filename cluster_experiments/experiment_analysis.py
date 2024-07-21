@@ -316,6 +316,26 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         results_gee = self.fit_gee(df)
         return results_gee.bse[self.treatment_col]
 
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_gee.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_gee.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
 
 class ClusteredOLSAnalysis(ExperimentAnalysis):
     """
@@ -406,6 +426,26 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
         """
         results_ols = self.fit_ols_clustered(df)
         return results_ols.bse[self.treatment_col]
+
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols_clustered(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
 
 
 class TTestClusteredAnalysis(ExperimentAnalysis):
@@ -682,6 +722,26 @@ class OLSAnalysis(ExperimentAnalysis):
         """
         results_ols = self.fit_ols(df=df)
         return results_ols.bse[self.treatment_col]
+
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
 
     @classmethod
     def from_config(cls, config):
