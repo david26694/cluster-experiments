@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -10,6 +11,17 @@ from scipy.stats import ttest_ind, ttest_rel
 
 from cluster_experiments.synthetic_control_utils import get_w
 from cluster_experiments.utils import HypothesisEntries
+
+
+@dataclass
+class ConfidenceInterval:
+    """
+    Class to define the structure of a confidence interval.
+    """
+
+    lower: float
+    upper: float
+    alpha: float
 
 
 class ExperimentAnalysis(ABC):
@@ -97,6 +109,23 @@ class ExperimentAnalysis(ABC):
         """
         raise NotImplementedError("Standard error not implemented for this analysis")
 
+    def analysis_confidence_interval(
+        self,
+        df: pd.DataFrame,
+        alpha: float,
+        verbose: bool = False,
+    ) -> ConfidenceInterval:
+        """
+        Returns the confidence interval of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError(
+            "Confidence Interval not implemented for this analysis"
+        )
+
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
         if df[self.target_col].isnull().any():
@@ -141,6 +170,19 @@ class ExperimentAnalysis(ABC):
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
         return self.analysis_standard_error(df)
+
+    def get_confidence_interval(
+        self, df: pd.DataFrame, alpha: float
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_confidence_interval(df, alpha)
 
     def pvalue_based_on_hypothesis(
         self, model_result
