@@ -181,6 +181,7 @@ class AnalysisPlan:
                                 std_error=std_error,
                                 dimension_name=dimension.name,
                                 dimension_value=dimension_value,
+                                alpha=self.alpha,
                             )
                         )
 

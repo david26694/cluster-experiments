@@ -37,6 +37,8 @@ class HypothesisTestResults:
         The name of the dimension
     dimension_value : str
         The value of the dimension
+    alpha: float
+        The significance level of the test
     """
 
     metric_alias: str
@@ -52,6 +54,7 @@ class HypothesisTestResults:
     std_error: float
     dimension_name: str
     dimension_value: str
+    alpha: float
 
 
 class AnalysisPlanResults(pd.DataFrame):
@@ -76,6 +79,7 @@ class AnalysisPlanResults(pd.DataFrame):
             "control_variant_mean",
             "treatment_variant_mean",
             "analysis_type",
+            "alpha",
             "ate",
             "ate_ci_lower",
             "ate_ci_upper",
