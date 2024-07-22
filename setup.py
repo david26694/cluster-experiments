@@ -13,7 +13,7 @@ only_test_packages = [
     "pytest>=5.4.3",
     "black==22.12.0",
     "ruff==0.0.261",
-    "mktestdocs>=0.2.0",
+    "mktestdocs>=0.2.2",
     "pytest-cov>=2.10.1",
     "pytest-sugar>=0.9.4",
     "pytest-slow-last>=0.1.3",
