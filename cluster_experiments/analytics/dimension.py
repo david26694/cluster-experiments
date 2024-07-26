@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 from typing import List
 
 
+@dataclass
 class Dimension:
     """
     A class used to represent a Dimension with a name and values.
@@ -14,24 +16,20 @@ class Dimension:
 
     Methods
     -------
-    __init__(self, name: str, values: List[str]):
-        Initializes the Dimension with the provided name and values.
+    __post_init__(self):
+        Validates the inputs after initialization.
     _validate_inputs(name: str, values: List[str]):
         Validates the inputs for the Dimension class.
     """
 
-    def __init__(self, name: str, values: List[str]):
+    name: str
+    values: List[str]
+
+    def __post_init__(self):
         """
-        Parameters
-        ----------
-        name : str
-            The name of the dimension
-        values : List[str]
-            A list of strings representing the possible values of the dimension
+        Validates the inputs after initialization.
         """
-        self._validate_inputs(name, values)
-        self.name = name
-        self.values = values
+        self._validate_inputs(self.name, self.values)
 
     @staticmethod
     def _validate_inputs(name: str, values: List[str]):
@@ -58,6 +56,7 @@ class Dimension:
             raise TypeError("Dimension values must be a list of strings")
 
 
+@dataclass
 class DefaultDimension(Dimension):
     """
     A class used to represent a Dimension with a default value representing total, i.e. no slicing.
