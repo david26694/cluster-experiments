@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class Variant:
     """
     A class used to represent a Variant with a name and a control flag.
@@ -11,24 +15,20 @@ class Variant:
 
     Methods
     -------
-    __init__(self, name: str, is_control: bool):
-        Initializes the Variant with the provided name and control flag.
+    __post_init__(self):
+        Validates the inputs after initialization.
     _validate_inputs(name: str, is_control: bool):
         Validates the inputs for the Variant class.
     """
 
-    def __init__(self, name: str, is_control: bool):
+    name: str
+    is_control: bool
+
+    def __post_init__(self):
         """
-        Parameters
-        ----------
-        name : str
-            The name of the variant
-        is_control : bool
-            A boolean indicating if the variant is a control variant
+        Validates the inputs after initialization.
         """
-        self._validate_inputs(name, is_control)
-        self.name = name
-        self.is_control = is_control
+        self._validate_inputs(self.name, self.is_control)
 
     @staticmethod
     def _validate_inputs(name: str, is_control: bool):
