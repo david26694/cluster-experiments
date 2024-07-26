@@ -31,7 +31,7 @@ class InferenceResults:
     """
 
     ate: float
-    p_value = float
+    p_value: float
     std_error: float
     conf_int: ConfidenceInterval
 

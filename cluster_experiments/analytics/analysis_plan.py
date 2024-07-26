@@ -146,16 +146,10 @@ class AnalysisPlan:
                             dimension_value=dimension_value,
                         )
 
-                        ate = experiment_analysis.get_point_estimate(df=prepared_df)
-                        p_value = experiment_analysis.get_pvalue(df=prepared_df)
-                        std_error = experiment_analysis.get_standard_error(
-                            df=prepared_df
+                        inference_results = experiment_analysis.get_inference_results(
+                            df=prepared_df, alpha=self.alpha
                         )
-                        confidence_interval = (
-                            experiment_analysis.get_confidence_interval(
-                                df=prepared_df, alpha=self.alpha
-                            )
-                        )
+
                         control_variant_mean = test.metric.get_mean(
                             prepared_df.query(
                                 f"{self.variant_col}=='{control_variant.name}'"
@@ -175,11 +169,11 @@ class AnalysisPlan:
                                 control_variant_mean=control_variant_mean,
                                 treatment_variant_mean=treatment_variant_mean,
                                 analysis_type=test.analysis_type,
-                                ate=ate,
-                                ate_ci_lower=confidence_interval.lower,
-                                ate_ci_upper=confidence_interval.upper,
-                                p_value=p_value,
-                                std_error=std_error,
+                                ate=inference_results.ate,
+                                ate_ci_lower=inference_results.conf_int.lower,
+                                ate_ci_upper=inference_results.conf_int.upper,
+                                p_value=inference_results.p_value,
+                                std_error=inference_results.std_error,
                                 dimension_name=dimension.name,
                                 dimension_value=dimension_value,
                                 alpha=self.alpha,
