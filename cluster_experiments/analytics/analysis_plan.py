@@ -3,13 +3,13 @@ from typing import List
 import pandas as pd
 from pandas import DataFrame
 
-from cluster_experiments.analysis_results import (
+from cluster_experiments.analytics.analysis_results import (
     AnalysisPlanResults,
     HypothesisTestResults,
 )
-from cluster_experiments.hypothesis_test import HypothesisTest
+from cluster_experiments.analytics.hypothesis_test import HypothesisTest
+from cluster_experiments.analytics.variant import Variant
 from cluster_experiments.power_config import analysis_mapping
-from cluster_experiments.variant import Variant
 
 
 class AnalysisPlan:
