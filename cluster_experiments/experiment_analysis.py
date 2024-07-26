@@ -24,6 +24,18 @@ class ConfidenceInterval:
     alpha: float
 
 
+@dataclass
+class InferenceResults:
+    """
+    Class to define the structure of complete statistical analysis results.
+    """
+
+    ate: float
+    pvalue = float
+    std_error: float
+    conf_int: ConfidenceInterval
+
+
 class ExperimentAnalysis(ABC):
     """
     Abstract class to run the analysis of a given experiment
@@ -126,6 +138,23 @@ class ExperimentAnalysis(ABC):
             "Confidence Interval not implemented for this analysis"
         )
 
+    def analysis_inference_results(
+        self,
+        df: pd.DataFrame,
+        alpha: float,
+        verbose: bool = False,
+    ) -> InferenceResults:
+        """
+        Returns the InferenceResults object of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError(
+            "Inference results are not implemented for this analysis"
+        )
+
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
         if df[self.target_col].isnull().any():
@@ -178,11 +207,24 @@ class ExperimentAnalysis(ABC):
 
         Arguments:
             df: dataframe containing the data to analyze
+            alpha: significance level
         """
         df = df.copy()
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
         return self.analysis_confidence_interval(df, alpha)
+
+    def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
+        """Returns the inference results of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_inference_results(df, alpha)
 
     def pvalue_based_on_hypothesis(
         self, model_result
