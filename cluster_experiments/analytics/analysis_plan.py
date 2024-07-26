@@ -15,6 +15,7 @@ from cluster_experiments.power_config import analysis_mapping
 class AnalysisPlan:
     """
     A class used to represent an Analysis Plan with a list of hypothesis tests and a list of variants.
+    All the hypothesis tests in the same analysis plan will be analysed with the same dataframe, which will need to be passed in the analyze() method.
 
     Attributes
     ----------
