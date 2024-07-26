@@ -9,7 +9,6 @@ from cluster_experiments.analytics.analysis_results import (
 )
 from cluster_experiments.analytics.hypothesis_test import HypothesisTest
 from cluster_experiments.analytics.variant import Variant
-from cluster_experiments.power_config import analysis_mapping
 
 
 class AnalysisPlan:
@@ -103,13 +102,6 @@ class AnalysisPlan:
         self,
         exp_data: pd.DataFrame,  # , pre_exp_data: Optional[pd.DataFrame], alpha=0.05
     ) -> DataFrame:
-        ...
-        # add methods to prepare the filtered dataset based on variants and slicers
-        # add methods to run the analysis for each of the hypothesis tests, given a filtered dataset
-        # store each row as a HypothesisTestResults object
-        # wrap all results in an AnalysisPlanResults object
-
-        # -----
 
         # add all kind of checks on the inputs at the beginning using the data structures
         # todo: ...
@@ -121,7 +113,7 @@ class AnalysisPlan:
 
         for test in self.tests:
             # todo: add cupac handler here
-            analysis_class = analysis_mapping[test.analysis_type]
+            analysis_class = test.analysis_class
             target_col = test.metric.get_target_column_from_metric()
 
             for treatment_variant in treatment_variants:

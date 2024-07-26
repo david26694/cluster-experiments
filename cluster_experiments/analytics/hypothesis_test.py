@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from cluster_experiments.analytics.dimension import DefaultDimension, Dimension
 from cluster_experiments.analytics.metric import Metric
+from cluster_experiments.power_config import analysis_mapping
 
 
 class HypothesisTest:
@@ -51,6 +52,8 @@ class HypothesisTest:
         self.analysis_type = analysis_type
         self.analysis_config = analysis_config or {}
         self.dimensions = [DefaultDimension()] + (dimensions or [])
+
+        self.analysis_class = analysis_mapping[self.analysis_type]
 
     @staticmethod
     def _validate_inputs(
