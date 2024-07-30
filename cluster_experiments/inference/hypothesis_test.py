@@ -7,6 +7,7 @@ from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.experiment_analysis import InferenceResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
 from cluster_experiments.inference.metric import Metric
+from cluster_experiments.inference.variant import Variant
 from cluster_experiments.power_config import analysis_mapping
 
 
@@ -172,3 +173,25 @@ class HypothesisTest:
             )
 
         self.new_analysis_config = new_analysis_config
+
+    @staticmethod
+    def prepare_data(
+        data: pd.DataFrame,
+        variant_col: str,
+        treatment_variant: Variant,
+        control_variant: Variant,
+        dimension_name: str,
+        dimension_value: str,
+    ) -> pd.DataFrame:
+        """
+        Prepares the data for the experiment analysis pipeline
+        """
+        prepared_df = data.copy()
+
+        prepared_df = prepared_df.assign(total_dimension="total")
+
+        prepared_df = prepared_df.query(
+            f"{variant_col}.isin(['{treatment_variant.name}','{control_variant.name}'])"
+        ).query(f"{dimension_name} == '{dimension_value}'")
+
+        return prepared_df

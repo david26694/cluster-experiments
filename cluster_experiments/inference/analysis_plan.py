@@ -109,8 +109,8 @@ class AnalysisPlan:
                 )
 
                 for dimension in test.dimensions:
-                    for dimension_value in list(set(dimension.values)):
-                        prepared_df = self.prepare_data(
+                    for dimension_value in dimension.iterate_dimension_values():
+                        prepared_df = test.prepare_data(
                             data=exp_data,
                             variant_col=self.variant_col,
                             treatment_variant=treatment_variant,
@@ -154,28 +154,6 @@ class AnalysisPlan:
                         )
 
         return AnalysisPlanResults.from_results(test_results)
-
-    def prepare_data(
-        self,
-        data: pd.DataFrame,
-        variant_col: str,
-        treatment_variant: Variant,
-        control_variant: Variant,
-        dimension_name: str,
-        dimension_value: str,
-    ) -> pd.DataFrame:
-        """
-        Prepares the data for the experiment analysis pipeline
-        """
-        prepared_df = data.copy()
-
-        prepared_df = prepared_df.assign(total_dimension="total")
-
-        prepared_df = prepared_df.query(
-            f"{variant_col}.isin(['{treatment_variant.name}','{control_variant.name}'])"
-        ).query(f"{dimension_name} == '{dimension_value}'")
-
-        return prepared_df
 
     @property
     def control_variant(self) -> Variant:

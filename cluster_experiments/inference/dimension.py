@@ -40,6 +40,21 @@ class Dimension:
         ):
             raise TypeError("Dimension values must be a list of strings")
 
+    def iterate_dimension_values(self):
+        """
+        A generator method to yield name and values from the dimension.
+
+        Yields
+        ------
+        Any
+            A unique value from the dimension.
+        """
+        seen = set()
+        for value in self.values:
+            if value not in seen:
+                seen.add(value)
+                yield value
+
 
 @dataclass
 class DefaultDimension(Dimension):
