@@ -1,10 +1,8 @@
-import copy
 from typing import List, Optional
 
 import pandas as pd
 from pandas import DataFrame
 
-from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.inference.analysis_results import (
     AnalysisPlanResults,
     HypothesisTestResults,
@@ -94,28 +92,21 @@ class AnalysisPlan:
         test_results = []
 
         for test in self.tests:
-            cupac_covariate_col = None
             if test.is_cupac:
-                cupac_handler = CupacHandler(**test.cupac_config)
-                exp_data = cupac_handler.add_covariates(
+                exp_data = test.cupac_handler.add_covariates(
                     df=exp_data, pre_experiment_df=pre_exp_data
                 )
-                cupac_covariate_col = cupac_handler.cupac_outcome_name
 
-            analysis_class = test.analysis_class
             target_col = test.metric.get_target_column_from_metric()
 
             for treatment_variant in self.treatment_variants:
 
-                analysis_config_final = self.prepare_analysis_config(
-                    initial_analysis_config=test.analysis_config,
+                test._prepare_analysis_config(
                     target_col=target_col,
                     treatment_col=self.variant_col,
                     treatment=treatment_variant.name,
-                    cupac_covariate_col=cupac_covariate_col,
+                    cupac_covariate_col=test.cupac_covariate_col,
                 )
-
-                analysis_class(**analysis_config_final)
 
                 for dimension in test.dimensions:
                     for dimension_value in list(set(dimension.values)):
@@ -225,38 +216,3 @@ class AnalysisPlan:
         if not treatments:
             raise ValueError("No treatment variants found")
         return treatments
-
-    @staticmethod
-    def prepare_analysis_config(
-        initial_analysis_config: dict,
-        target_col: str,
-        treatment_col: str,
-        treatment: str,
-        cupac_covariate_col: Optional[str] = None,
-    ) -> dict:
-        """
-        Extends the analysis_config provided by the user, by adding or overriding the following keys:
-        - target_col
-        - treatment_col
-        - treatment
-
-        Also handles cupac covariate.
-
-        Returns
-        -------
-        dict
-            The prepared analysis configuration, ready to be ingested by the experiment analysis class
-        """
-        new_analysis_config = copy.deepcopy(initial_analysis_config)
-
-        new_analysis_config["target_col"] = target_col
-        new_analysis_config["treatment_col"] = treatment_col
-        new_analysis_config["treatment"] = treatment
-
-        if cupac_covariate_col:
-            covariates = initial_analysis_config.get("covariates", [])
-            new_analysis_config["covariates"] = list(
-                set(covariates + [cupac_covariate_col])
-            )
-
-        return new_analysis_config

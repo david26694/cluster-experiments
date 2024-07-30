@@ -1,7 +1,9 @@
+import copy
 from typing import List, Optional
 
 import pandas as pd
 
+from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.experiment_analysis import InferenceResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
 from cluster_experiments.inference.metric import Metric
@@ -57,6 +59,13 @@ class HypothesisTest:
 
         self.analysis_class = analysis_mapping[self.analysis_type]
         self.is_cupac = bool(cupac_config)
+        self.cupac_handler = CupacHandler(self.cupac_config) if self.is_cupac else None
+        self.cupac_covariate_col = (
+            self.cupac_handler.cupac_outcome_name if self.is_cupac else None
+        )
+
+        self.new_analysis_config = None
+        self.experiment_analysis = None
 
     @staticmethod
     def _validate_inputs(
@@ -123,8 +132,43 @@ class HypothesisTest:
             The results containing the statistics of the inference procedure.
         """
 
-        inference_results = self.analysis_class.get_inference_results(
+        self.experiment_analysis = self.analysis_class(**self.new_analysis_config)
+        inference_results = self.experiment_analysis.get_inference_results(
             df=df, alpha=alpha
         )
 
         return inference_results
+
+    def _prepare_analysis_config(
+        self,
+        target_col: str,
+        treatment_col: str,
+        treatment: str,
+        cupac_covariate_col: Optional[str] = None,
+    ) -> None:
+        """
+        Extends the analysis_config provided by the user, by adding or overriding the following keys:
+        - target_col
+        - treatment_col
+        - treatment
+
+        Also handles cupac covariate.
+
+        Returns
+        -------
+        dict
+            The prepared analysis configuration, ready to be ingested by the experiment analysis class
+        """
+        new_analysis_config = copy.deepcopy(self.analysis_config)
+
+        new_analysis_config["target_col"] = target_col
+        new_analysis_config["treatment_col"] = treatment_col
+        new_analysis_config["treatment"] = treatment
+
+        if cupac_covariate_col:
+            covariates = self.analysis_config.get("covariates", [])
+            new_analysis_config["covariates"] = list(
+                set(covariates + [cupac_covariate_col])
+            )
+
+        self.new_analysis_config = new_analysis_config
