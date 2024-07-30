@@ -60,7 +60,9 @@ class HypothesisTest:
 
         self.analysis_class = analysis_mapping[self.analysis_type]
         self.is_cupac = bool(cupac_config)
-        self.cupac_handler = CupacHandler(self.cupac_config) if self.is_cupac else None
+        self.cupac_handler = (
+            CupacHandler(**self.cupac_config) if self.is_cupac else None
+        )
         self.cupac_covariate_col = (
             self.cupac_handler.cupac_outcome_name if self.is_cupac else None
         )
@@ -188,7 +190,7 @@ class HypothesisTest:
         """
         prepared_df = data.copy()
 
-        prepared_df = prepared_df.assign(total_dimension="total")
+        prepared_df = prepared_df.assign(__total_dimension="total")
 
         prepared_df = prepared_df.query(
             f"{variant_col}.isin(['{treatment_variant.name}','{control_variant.name}'])"
