@@ -195,7 +195,8 @@ class AnalysisPlan:
 
         return prepared_df
 
-    def get_control_variant(self) -> Variant:
+    @property
+    def control_variant(self) -> Variant:
         """
         Returns the control variant from the list of variants. Raises an error if no control variant is found.
 
@@ -214,7 +215,8 @@ class AnalysisPlan:
                 return variant
         raise ValueError("No control variant found")
 
-    def get_treatment_variants(self) -> List[Variant]:
+    @property
+    def treatment_variants(self) -> List[Variant]:
         """
         Returns the treatment variants from the list of variants.
 
