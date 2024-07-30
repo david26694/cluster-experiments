@@ -1,5 +1,8 @@
 from typing import List, Optional
 
+import pandas as pd
+
+from cluster_experiments.experiment_analysis import InferenceResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
 from cluster_experiments.inference.metric import Metric
 from cluster_experiments.power_config import analysis_mapping
@@ -102,3 +105,26 @@ class HypothesisTest:
             raise TypeError(
                 "Dimensions must be a list of Dimension instances if provided"
             )
+
+    def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
+        """
+        Performs inference analysis on the provided DataFrame using the analysis class.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The dataframe containing the data for analysis.
+        alpha : float
+            The significance level to be used in the inference analysis.
+
+        Returns
+        -------
+        InferenceResults
+            The results containing the statistics of the inference procedure.
+        """
+
+        inference_results = self.analysis_class.get_inference_results(
+            df=df, alpha=alpha
+        )
+
+        return inference_results

@@ -122,7 +122,7 @@ class AnalysisPlan:
                     cupac_covariate_col=cupac_covariate_col,
                 )
 
-                experiment_analysis = analysis_class(**analysis_config_final)
+                analysis_class(**analysis_config_final)
 
                 for dimension in test.dimensions:
                     for dimension_value in list(set(dimension.values)):
@@ -135,7 +135,7 @@ class AnalysisPlan:
                             dimension_value=dimension_value,
                         )
 
-                        inference_results = experiment_analysis.get_inference_results(
+                        inference_results = test.get_inference_results(
                             df=prepared_df, alpha=self.alpha
                         )
 
