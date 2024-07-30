@@ -56,27 +56,17 @@ class AnalysisPlan:
         alpha : float
             significance level used to construct confidence intervals
         """
-        self._validate_inputs(tests, variants, variant_col)
+
         self.tests = tests
         self.variants = variants
         self.variant_col = variant_col
         self.alpha = alpha
 
-    @staticmethod
-    def _validate_inputs(
-        tests: List[HypothesisTest], variants: List[Variant], variant_col: str
-    ):
+        self._validate_inputs()
+
+    def _validate_inputs(self):
         """
         Validates the inputs for the AnalysisPlan class.
-
-        Parameters
-        ----------
-        tests : List[HypothesisTest]
-            A list of HypothesisTest instances
-        variants : List[Variant]
-            A list of Variant instances
-        variant_col : str
-            The name of the column containing the variant names.
 
         Raises
         ------
@@ -85,19 +75,19 @@ class AnalysisPlan:
         ValueError
             If tests or variants are empty lists.
         """
-        if not isinstance(tests, list) or not all(
-            isinstance(test, HypothesisTest) for test in tests
+        if not isinstance(self.tests, list) or not all(
+            isinstance(test, HypothesisTest) for test in self.tests
         ):
             raise TypeError("Tests must be a list of HypothesisTest instances")
-        if not isinstance(variants, list) or not all(
-            isinstance(variant, Variant) for variant in variants
+        if not isinstance(self.variants, list) or not all(
+            isinstance(variant, Variant) for variant in self.variants
         ):
             raise TypeError("Variants must be a list of Variant instances")
-        if not isinstance(variant_col, str):
+        if not isinstance(self.variant_col, str):
             raise TypeError("Variant_col must be a string")
-        if not tests:
+        if not self.tests:
             raise ValueError("Tests list cannot be empty")
-        if not variants:
+        if not self.variants:
             raise ValueError("Variants list cannot be empty")
 
     def analyze(
