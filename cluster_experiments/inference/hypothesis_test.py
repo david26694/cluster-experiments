@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from cluster_experiments.analytics.dimension import DefaultDimension, Dimension
-from cluster_experiments.analytics.metric import Metric
+from cluster_experiments.inference.dimension import DefaultDimension, Dimension
+from cluster_experiments.inference.metric import Metric
 from cluster_experiments.power_config import analysis_mapping
 
 

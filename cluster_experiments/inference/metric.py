@@ -20,25 +20,19 @@ class Metric(ABC):
         alias : str
             The alias of the metric
         """
-        self._validate_alias(alias)
         self.alias = alias
+        self._validate_alias()
 
-    @staticmethod
-    def _validate_alias(alias: str):
+    def _validate_alias(self):
         """
         Validates the alias input for the Metric class.
-
-        Parameters
-        ----------
-        alias : str
-            The alias of the metric
 
         Raises
         ------
         TypeError
             If the alias is not a string
         """
-        if not isinstance(alias, str):
+        if not isinstance(self.alias, str):
             raise TypeError("Metric alias must be a string")
 
     @abstractmethod
@@ -95,25 +89,19 @@ class SimpleMetric(Metric):
             The name of the metric
         """
         super().__init__(alias)
-        self._validate_name(name)
         self.name = name
+        self._validate_name()
 
-    @staticmethod
-    def _validate_name(name: str):
+    def _validate_name(self):
         """
         Validates the name input for the SimpleMetric class.
-
-        Parameters
-        ----------
-        name : str
-            The name of the metric
 
         Raises
         ------
         TypeError
             If the name is not a string
         """
-        if not isinstance(name, str):
+        if not isinstance(self.name, str):
             raise TypeError("SimpleMetric name must be a string")
 
     def get_target_column_from_metric(self) -> str:
@@ -129,7 +117,7 @@ class SimpleMetric(Metric):
 
     def get_mean(self, df: pd.DataFrame) -> float:
         """
-        Abstract method to return the mean value of the metric, given a dataframe.
+        Returns the mean value of the metric, given a dataframe.
 
         Returns
         -------
@@ -173,27 +161,22 @@ class RatioMetric(Metric):
             The denominator name of the metric
         """
         super().__init__(alias)
-        self._validate_name(numerator_name)
-        self._validate_name(denominator_name)
         self.numerator_name = numerator_name
         self.denominator_name = denominator_name
+        self._validate_names()
 
-    @staticmethod
-    def _validate_name(name: str):
+    def _validate_names(self):
         """
-        Validates the name input for the RatioMetric class.
-
-        Parameters
-        ----------
-        name : str
-            The name to validate
+        Validates the numerator and denominator names input for the RatioMetric class.
 
         Raises
         ------
         TypeError
-            If the name is not a string
+            If the numerator or denominator names are not strings
         """
-        if not isinstance(name, str):
+        if not isinstance(self.numerator_name, str) or not isinstance(
+            self.denominator_name, str
+        ):
             raise TypeError("RatioMetric names must be strings")
 
     def get_target_column_from_metric(self) -> str:
@@ -209,7 +192,7 @@ class RatioMetric(Metric):
 
     def get_mean(self, df: pd.DataFrame) -> float:
         """
-        Abstract method to return the mean value of the metric, given a dataframe.
+        Returns the mean value of the metric, given a dataframe.
 
         Returns
         -------

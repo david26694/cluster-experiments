@@ -4,13 +4,13 @@ from typing import List, Optional
 import pandas as pd
 from pandas import DataFrame
 
-from cluster_experiments.analytics.analysis_results import (
+from cluster_experiments.cupac import CupacHandler
+from cluster_experiments.inference.analysis_results import (
     AnalysisPlanResults,
     HypothesisTestResults,
 )
-from cluster_experiments.analytics.hypothesis_test import HypothesisTest
-from cluster_experiments.analytics.variant import Variant
-from cluster_experiments.cupac import CupacHandler
+from cluster_experiments.inference.hypothesis_test import HypothesisTest
+from cluster_experiments.inference.variant import Variant
 
 
 class AnalysisPlan:
