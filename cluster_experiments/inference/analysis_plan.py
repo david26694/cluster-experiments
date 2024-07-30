@@ -99,8 +99,6 @@ class AnalysisPlan:
         # do it before running the computations below
 
         test_results = []
-        treatment_variants: List[Variant] = self.get_treatment_variants()
-        control_variant: Variant = self.get_control_variant()
 
         for test in self.tests:
             cupac_covariate_col = None
@@ -114,7 +112,7 @@ class AnalysisPlan:
             analysis_class = test.analysis_class
             target_col = test.metric.get_target_column_from_metric()
 
-            for treatment_variant in treatment_variants:
+            for treatment_variant in self.treatment_variants:
 
                 analysis_config_final = self.prepare_analysis_config(
                     initial_analysis_config=test.analysis_config,
@@ -132,7 +130,7 @@ class AnalysisPlan:
                             data=exp_data,
                             variant_col=self.variant_col,
                             treatment_variant=treatment_variant,
-                            control_variant=control_variant,
+                            control_variant=self.control_variant,
                             dimension_name=dimension.name,
                             dimension_value=dimension_value,
                         )
@@ -143,7 +141,7 @@ class AnalysisPlan:
 
                         control_variant_mean = test.metric.get_mean(
                             prepared_df.query(
-                                f"{self.variant_col}=='{control_variant.name}'"
+                                f"{self.variant_col}=='{self.control_variant.name}'"
                             )
                         )
                         treatment_variant_mean = test.metric.get_mean(
@@ -155,7 +153,7 @@ class AnalysisPlan:
                         test_results.append(
                             HypothesisTestResults(
                                 metric_alias=test.metric.alias,
-                                control_variant_name=control_variant.name,
+                                control_variant_name=self.control_variant.name,
                                 treatment_variant_name=treatment_variant.name,
                                 control_variant_mean=control_variant_mean,
                                 treatment_variant_mean=treatment_variant_mean,
@@ -218,14 +216,22 @@ class AnalysisPlan:
     @property
     def treatment_variants(self) -> List[Variant]:
         """
-        Returns the treatment variants from the list of variants.
+        Returns the treatment variants from the list of variants. Raises an error if no treatment variants are found.
 
         Returns
         -------
         List[Variant]
             A list of treatment variants
+
+        Raises
+        ------
+        ValueError
+            If no treatment variants are found
         """
-        return [variant for variant in self.variants if not variant.is_control]
+        treatments = [variant for variant in self.variants if not variant.is_control]
+        if not treatments:
+            raise ValueError("No treatment variants found")
+        return treatments
 
     @staticmethod
     def prepare_analysis_config(
