@@ -28,13 +28,6 @@ class AnalysisPlan:
         name of the column with the experiment groups
     alpha : float
         significance level used to construct confidence intervals
-
-    Methods
-    -------
-    __init__(self, tests: List[HypothesisTest], variants: List[Variant]):
-        Initializes the AnalysisPlan with the provided list of hypothesis tests and variants.
-    _validate_inputs(tests: List[HypothesisTest], variants: List[Variant]):
-        Validates the inputs for the AnalysisPlan class.
     """
 
     def __init__(
