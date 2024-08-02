@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -6,7 +6,9 @@ from cluster_experiments.inference.analysis_results import (
     AnalysisPlanResults,
     EmptyAnalysisPlanResults,
 )
+from cluster_experiments.inference.dimension import Dimension
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
+from cluster_experiments.inference.metric import Metric
 from cluster_experiments.inference.variant import Variant
 
 
@@ -219,3 +221,57 @@ class AnalysisPlan:
         if not treatments:
             raise ValueError("No treatment variants found")
         return treatments
+
+    @classmethod
+    def from_metrics(
+        cls,
+        metrics: List[Metric],
+        variants: List[Variant],
+        variant_col: str = "treatment",
+        alpha: float = 0.05,
+        dimensions: Optional[List[Dimension]] = None,
+        analysis_type: str = "default",
+        analysis_config: Optional[Dict[str, Any]] = None,
+    ) -> "AnalysisPlan":
+        """
+        Creates a simplified AnalysisPlan instance from a list of metrics. It will create HypothesisTest objects under the hood.
+        This shortcut does not support cupac, and uses the same dimensions, analysis type and analysis config for all metrics.
+
+        Parameters
+        ----------
+        metrics : List[Metric]
+            A list of Metric instances
+        variants : List[Variant]
+            A list of Variant instances
+        variant_col : str
+            The name of the column containing the variant names.
+        alpha : float
+            Significance level used to construct confidence intervals
+        dimensions : Optional[List[Dimension]]
+            A list of Dimension instances (optional)
+        analysis_type : str
+            The type of analysis to be conducted (default: "default")
+        analysis_config : Optional[Dict[str, Any]]
+            A dictionary containing analysis configuration options (optional)
+
+        Returns
+        -------
+        AnalysisPlan
+            An instance of AnalysisPlan
+        """
+        tests = [
+            HypothesisTest(
+                metric=metric,
+                dimensions=dimensions or [],
+                analysis_type=analysis_type,
+                analysis_config=analysis_config or {},
+            )
+            for metric in metrics
+        ]
+
+        return cls(
+            tests=tests,
+            variants=variants,
+            variant_col=variant_col,
+            alpha=alpha,
+        )
