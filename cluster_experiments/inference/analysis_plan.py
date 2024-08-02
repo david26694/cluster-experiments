@@ -84,9 +84,7 @@ class AnalysisPlan:
         self, exp_data: pd.DataFrame, pre_exp_data: Optional[pd.DataFrame] = None
     ) -> AnalysisPlanResults:
 
-        # add all kind of checks on the inputs at the beginning using the data structures
-        # todo: ...
-        # do it before running the computations below
+        self._validate_data(exp_data, pre_exp_data)
 
         analysis_results = EmptyAnalysisPlanResults()
 
@@ -152,6 +150,35 @@ class AnalysisPlan:
                         analysis_results = analysis_results + test_results
 
         return analysis_results
+
+    def _validate_data(
+        self, exp_data: pd.DataFrame, pre_exp_data: Optional[pd.DataFrame] = None
+    ):
+        """
+        Validates the input dataframes for the analyze method.
+
+        Parameters
+        ----------
+        exp_data : pd.DataFrame
+            The experimental data
+        pre_exp_data : Optional[pd.DataFrame]
+            The pre-experimental data (optional)
+
+        Raises
+        ------
+        ValueError
+            If exp_data is not a DataFrame or is empty
+            If pre_exp_data is provided and is not a DataFrame or is empty
+        """
+        if not isinstance(exp_data, pd.DataFrame):
+            raise ValueError("exp_data must be a pandas DataFrame")
+        if exp_data.empty:
+            raise ValueError("exp_data cannot be empty")
+        if pre_exp_data is not None:
+            if not isinstance(pre_exp_data, pd.DataFrame):
+                raise ValueError("pre_exp_data must be a pandas DataFrame if provided")
+            if pre_exp_data.empty:
+                raise ValueError("pre_exp_data cannot be empty if provided")
 
     @property
     def control_variant(self) -> Variant:
