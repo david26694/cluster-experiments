@@ -100,15 +100,15 @@ class AnalysisPlan:
             target_col = test.metric.get_target_column_from_metric()
 
             for treatment_variant in self.treatment_variants:
-
-                test._prepare_analysis_config(
-                    target_col=target_col,
-                    treatment_col=self.variant_col,
-                    treatment=treatment_variant.name,
-                )
-
                 for dimension in test.dimensions:
                     for dimension_value in dimension.iterate_dimension_values():
+
+                        test._prepare_analysis_config(
+                            target_col=target_col,
+                            treatment_col=self.variant_col,
+                            treatment=treatment_variant.name,
+                        )
+
                         prepared_df = test.prepare_data(
                             data=exp_data,
                             variant_col=self.variant_col,
