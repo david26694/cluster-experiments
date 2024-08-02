@@ -105,7 +105,6 @@ class AnalysisPlan:
                     target_col=target_col,
                     treatment_col=self.variant_col,
                     treatment=treatment_variant.name,
-                    cupac_covariate_col=test.cupac_covariate_col,
                 )
 
                 for dimension in test.dimensions:
