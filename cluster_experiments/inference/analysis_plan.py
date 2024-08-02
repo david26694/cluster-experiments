@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
@@ -10,6 +11,10 @@ from cluster_experiments.inference.dimension import Dimension
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
 from cluster_experiments.inference.metric import Metric
 from cluster_experiments.inference.variant import Variant
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 
 class AnalysisPlan:
@@ -83,9 +88,16 @@ class AnalysisPlan:
             raise ValueError("Variants list cannot be empty")
 
     def analyze(
-        self, exp_data: pd.DataFrame, pre_exp_data: Optional[pd.DataFrame] = None
+        self,
+        exp_data: pd.DataFrame,
+        pre_exp_data: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
     ) -> AnalysisPlanResults:
+        """
+        Method to run the experiment analysis.
+        """
 
+        # Validate input data at the beginning
         self._validate_data(exp_data, pre_exp_data)
 
         analysis_results = EmptyAnalysisPlanResults()
@@ -101,6 +113,14 @@ class AnalysisPlan:
             for treatment_variant in self.treatment_variants:
                 for dimension in test.dimensions:
                     for dimension_value in dimension.iterate_dimension_values():
+
+                        if verbose:
+                            logger.info(
+                                f"Metric: {test.metric.alias}, "
+                                f"Treatment: {treatment_variant.name}, "
+                                f"Dimension: {dimension.name}, "
+                                f"Value: {dimension_value}"
+                            )
 
                         test._prepare_analysis_config(
                             target_col=target_col,
