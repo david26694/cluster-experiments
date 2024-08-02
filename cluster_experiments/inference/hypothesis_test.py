@@ -143,11 +143,7 @@ class HypothesisTest:
         return inference_results
 
     def _prepare_analysis_config(
-        self,
-        target_col: str,
-        treatment_col: str,
-        treatment: str,
-        cupac_covariate_col: Optional[str] = None,
+        self, target_col: str, treatment_col: str, treatment: str
     ) -> None:
         """
         Extends the analysis_config provided by the user, by adding or overriding the following keys:
@@ -168,10 +164,11 @@ class HypothesisTest:
         new_analysis_config["treatment_col"] = treatment_col
         new_analysis_config["treatment"] = treatment
 
-        if cupac_covariate_col:
-            covariates = self.analysis_config.get("covariates", [])
-            new_analysis_config["covariates"] = list(
-                set(covariates + [cupac_covariate_col])
+        covariates = new_analysis_config.get("covariates", [])
+
+        if self.cupac_covariate_col and self.cupac_covariate_col not in covariates:
+            raise ValueError(
+                f"You provided a cupac configuration but did not provide the cupac covariate called {self.cupac_covariate_col} in the analysis_config"
             )
 
         self.new_analysis_config = new_analysis_config
