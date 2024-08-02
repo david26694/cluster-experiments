@@ -1,11 +1,10 @@
 from typing import List, Optional
 
 import pandas as pd
-from pandas import DataFrame
 
 from cluster_experiments.inference.analysis_results import (
     AnalysisPlanResults,
-    HypothesisTestResults,
+    EmptyAnalysisPlanResults,
 )
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
 from cluster_experiments.inference.variant import Variant
@@ -83,13 +82,13 @@ class AnalysisPlan:
 
     def analyze(
         self, exp_data: pd.DataFrame, pre_exp_data: Optional[pd.DataFrame] = None
-    ) -> DataFrame:
+    ) -> AnalysisPlanResults:
 
         # add all kind of checks on the inputs at the beginning using the data structures
         # todo: ...
         # do it before running the computations below
 
-        test_results = []
+        analysis_results = EmptyAnalysisPlanResults()
 
         for test in self.tests:
             if test.is_cupac:
@@ -133,26 +132,26 @@ class AnalysisPlan:
                             )
                         )
 
-                        test_results.append(
-                            HypothesisTestResults(
-                                metric_alias=test.metric.alias,
-                                control_variant_name=self.control_variant.name,
-                                treatment_variant_name=treatment_variant.name,
-                                control_variant_mean=control_variant_mean,
-                                treatment_variant_mean=treatment_variant_mean,
-                                analysis_type=test.analysis_type,
-                                ate=inference_results.ate,
-                                ate_ci_lower=inference_results.conf_int.lower,
-                                ate_ci_upper=inference_results.conf_int.upper,
-                                p_value=inference_results.p_value,
-                                std_error=inference_results.std_error,
-                                dimension_name=dimension.name,
-                                dimension_value=dimension_value,
-                                alpha=self.alpha,
-                            )
+                        test_results = AnalysisPlanResults(
+                            metric_alias=[test.metric.alias],
+                            control_variant_name=[self.control_variant.name],
+                            treatment_variant_name=[treatment_variant.name],
+                            control_variant_mean=[control_variant_mean],
+                            treatment_variant_mean=[treatment_variant_mean],
+                            analysis_type=[test.analysis_type],
+                            ate=[inference_results.ate],
+                            ate_ci_lower=[inference_results.conf_int.lower],
+                            ate_ci_upper=[inference_results.conf_int.upper],
+                            p_value=[inference_results.p_value],
+                            std_error=[inference_results.std_error],
+                            dimension_name=[dimension.name],
+                            dimension_value=[dimension_value],
+                            alpha=[self.alpha],
                         )
 
-        return AnalysisPlanResults.from_results(test_results)
+                        analysis_results = analysis_results + test_results
+
+        return analysis_results
 
     @property
     def control_variant(self) -> Variant:

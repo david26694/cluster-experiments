@@ -5,105 +5,99 @@ import pandas as pd
 
 
 @dataclass
-class HypothesisTestResults:
+class AnalysisPlanResults:
     """
-    A dataclass used to represent the results of a Hypothesis Test.
+    A dataclass used to represent the results of the experiment analysis.
 
     Attributes
     ----------
-    metric_alias : str
+    metric_alias : List[str]
         The alias of the metric used in the test
-    control_variant_name : str
+    control_variant_name : List[str]
         The name of the control variant
-    treatment_variant_name : str
+    treatment_variant_name : List[str]
         The name of the treatment variant
-    control_variant_mean : float
+    control_variant_mean : List[float]
         The mean value of the control variant
-    treatment_variant_mean : float
+    treatment_variant_mean : List[float]
         The mean value of the treatment variant
-    analysis_type : str
+    analysis_type : List[str]
         The type of analysis performed
-    ate : float
+    ate : List[float]
         The average treatment effect
-    ate_ci_lower : float
+    ate_ci_lower : List[float]
         The lower bound of the confidence interval for the ATE
-    ate_ci_upper : float
+    ate_ci_upper : List[float]
         The upper bound of the confidence interval for the ATE
-    p_value : float
+    p_value : List[float]
         The p-value of the test
-    std_error : float
+    std_error : List[float]
         The standard error of the test
-    dimension_name : str
+    dimension_name : List[str]
         The name of the dimension
-    dimension_value : str
+    dimension_value : List[str]
         The value of the dimension
-    alpha: float
+    alpha: List[float]
         The significance level of the test
     """
 
-    metric_alias: str
-    control_variant_name: str
-    treatment_variant_name: str
-    control_variant_mean: float
-    treatment_variant_mean: float
-    analysis_type: str
-    ate: float
-    ate_ci_lower: float
-    ate_ci_upper: float
-    p_value: float
-    std_error: float
-    dimension_name: str
-    dimension_value: str
-    alpha: float
+    metric_alias: List[str]
+    control_variant_name: List[str]
+    treatment_variant_name: List[str]
+    control_variant_mean: List[float]
+    treatment_variant_mean: List[float]
+    analysis_type: List[str]
+    ate: List[float]
+    ate_ci_lower: List[float]
+    ate_ci_upper: List[float]
+    p_value: List[float]
+    std_error: List[float]
+    dimension_name: List[str]
+    dimension_value: List[str]
+    alpha: List[float]
+
+    def __add__(self, other):
+        if not isinstance(other, AnalysisPlanResults):
+            return NotImplemented
+
+        return AnalysisPlanResults(
+            metric_alias=self.metric_alias + other.metric_alias,
+            control_variant_name=self.control_variant_name + other.control_variant_name,
+            treatment_variant_name=self.treatment_variant_name
+            + other.treatment_variant_name,
+            control_variant_mean=self.control_variant_mean + other.control_variant_mean,
+            treatment_variant_mean=self.treatment_variant_mean
+            + other.treatment_variant_mean,
+            analysis_type=self.analysis_type + other.analysis_type,
+            ate=self.ate + other.ate,
+            ate_ci_lower=self.ate_ci_lower + other.ate_ci_lower,
+            ate_ci_upper=self.ate_ci_upper + other.ate_ci_upper,
+            p_value=self.p_value + other.p_value,
+            std_error=self.std_error + other.std_error,
+            dimension_name=self.dimension_name + other.dimension_name,
+            dimension_value=self.dimension_value + other.dimension_value,
+            alpha=self.alpha + other.alpha,
+        )
+
+    def to_dataframe(self):
+        return pd.DataFrame(asdict(self))
 
 
-class AnalysisPlanResults(pd.DataFrame):
-    """
-    A class used to represent the results of an Analysis Plan as a pandas DataFrame.
-
-    This DataFrame ensures that each row or entry respects the contract defined by the HypothesisTestResults dataclass.
-
-    Methods
-    -------
-    from_results(results: List[HypothesisTestResults]):
-        Creates an AnalysisPlanResults DataFrame from a list of HypothesisTestResults objects.
-    """
-
-    def __init__(self, *args, **kwargs):
-        columns = [
-            "metric_alias",
-            "control_variant_name",
-            "treatment_variant_name",
-            "dimension_name",
-            "dimension_value",
-            "control_variant_mean",
-            "treatment_variant_mean",
-            "analysis_type",
-            "alpha",
-            "ate",
-            "ate_ci_lower",
-            "ate_ci_upper",
-            "p_value",
-            "std_error",
-        ]
-        super().__init__(*args, columns=columns, **kwargs)
-
-    @classmethod
-    def from_results(
-        cls, results: List[HypothesisTestResults]
-    ) -> "AnalysisPlanResults":
-        """
-        Creates an AnalysisPlanResults DataFrame from a list of HypothesisTestResults objects.
-
-        Parameters
-        ----------
-        results : List[HypothesisTestResults]
-            The list of results to be added to the DataFrame
-
-        Returns
-        -------
-        AnalysisPlanResults
-            A DataFrame containing the results
-        """
-        data = [asdict(result) for result in results]
-        return cls(data)
+class EmptyAnalysisPlanResults(AnalysisPlanResults):
+    def __init__(self):
+        super().__init__(
+            metric_alias=[],
+            control_variant_name=[],
+            treatment_variant_name=[],
+            control_variant_mean=[],
+            treatment_variant_mean=[],
+            analysis_type=[],
+            ate=[],
+            ate_ci_lower=[],
+            ate_ci_upper=[],
+            p_value=[],
+            std_error=[],
+            dimension_name=[],
+            dimension_value=[],
+            alpha=[],
+        )
