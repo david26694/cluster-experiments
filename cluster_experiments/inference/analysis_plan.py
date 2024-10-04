@@ -113,7 +113,7 @@ class AnalysisPlan:
                     df=exp_data, pre_experiment_df=pre_exp_data
                 )
 
-            target_col = test.metric.get_target_column_from_metric()
+            target_col = test.metric.target_column
 
             for treatment_variant in self.treatment_variants:
                 for dimension in test.dimensions:

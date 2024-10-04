@@ -35,10 +35,11 @@ class Metric(ABC):
         if not isinstance(self.alias, str):
             raise TypeError("Metric alias must be a string")
 
+    @property
     @abstractmethod
-    def get_target_column_from_metric(self) -> str:
+    def target_column(self) -> str:
         """
-        Abstract method to return the target column to feed the experiment analysis class, from the metric definition.
+        Abstract property to return the target column to feed the experiment analysis class, from the metric definition.
 
         Returns
         -------
@@ -104,7 +105,8 @@ class SimpleMetric(Metric):
         if not isinstance(self.name, str):
             raise TypeError("SimpleMetric name must be a string")
 
-    def get_target_column_from_metric(self) -> str:
+    @property
+    def target_column(self) -> str:
         """
         Returns the target column for the SimpleMetric.
 
@@ -179,7 +181,8 @@ class RatioMetric(Metric):
         ):
             raise TypeError("RatioMetric names must be strings")
 
-    def get_target_column_from_metric(self) -> str:
+    @property
+    def target_column(self) -> str:
         """
         Returns the target column for the RatioMetric.
 
