@@ -12,9 +12,14 @@ from cluster_experiments.inference.hypothesis_test import HypothesisTest
 from cluster_experiments.inference.metric import Metric
 from cluster_experiments.inference.variant import Variant
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+# Set up a default handler, but don't configure the root logger
+if not logger.hasHandlers():
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)  # This level can be changed by the user
 
 
 class AnalysisPlan:
