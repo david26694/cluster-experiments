@@ -194,3 +194,16 @@ class HypothesisTest:
         ).query(f"{dimension_name} == '{dimension_value}'")
 
         return prepared_df
+
+    def add_covariates(
+        self, exp_data: pd.DataFrame, pre_exp_data: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        If the test is a cupac test, adds the covariates to the experimental data.
+        """
+        if self.is_cupac:
+            exp_data = self.cupac_handler.add_covariates(
+                df=exp_data, pre_experiment_df=pre_exp_data
+            )
+
+        return exp_data

@@ -108,12 +108,7 @@ class AnalysisPlan:
         analysis_results = EmptyAnalysisPlanResults()
 
         for test in self.tests:
-            if test.is_cupac:
-                exp_data = test.cupac_handler.add_covariates(
-                    df=exp_data, pre_experiment_df=pre_exp_data
-                )
-
-            target_col = test.metric.target_column
+            exp_data = test.add_covariates(exp_data, pre_exp_data)
 
             for treatment_variant in self.treatment_variants:
                 for dimension in test.dimensions:
@@ -128,7 +123,7 @@ class AnalysisPlan:
                             )
 
                         test._prepare_analysis_config(
-                            target_col=target_col,
+                            target_col=test.metric.target_column,
                             treatment_col=self.variant_col,
                             treatment=treatment_variant.name,
                         )
