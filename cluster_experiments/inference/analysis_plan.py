@@ -3,10 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from cluster_experiments.inference.analysis_results import (
-    AnalysisPlanResults,
-    EmptyAnalysisPlanResults,
-)
+from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import Dimension
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
 from cluster_experiments.inference.metric import Metric
@@ -105,7 +102,7 @@ class AnalysisPlan:
         # Validate input data at the beginning
         self._validate_data(exp_data, pre_exp_data)
 
-        analysis_results = EmptyAnalysisPlanResults()
+        analysis_results = AnalysisPlanResults()
 
         for test in self.tests:
             exp_data = test.add_covariates(exp_data, pre_exp_data)

@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import List
 
 import pandas as pd
@@ -41,20 +41,20 @@ class AnalysisPlanResults:
         The significance level of the test
     """
 
-    metric_alias: List[str]
-    control_variant_name: List[str]
-    treatment_variant_name: List[str]
-    control_variant_mean: List[float]
-    treatment_variant_mean: List[float]
-    analysis_type: List[str]
-    ate: List[float]
-    ate_ci_lower: List[float]
-    ate_ci_upper: List[float]
-    p_value: List[float]
-    std_error: List[float]
-    dimension_name: List[str]
-    dimension_value: List[str]
-    alpha: List[float]
+    metric_alias: List[str] = field(default_factory=lambda: [])
+    control_variant_name: List[str] = field(default_factory=lambda: [])
+    treatment_variant_name: List[str] = field(default_factory=lambda: [])
+    control_variant_mean: List[float] = field(default_factory=lambda: [])
+    treatment_variant_mean: List[float] = field(default_factory=lambda: [])
+    analysis_type: List[str] = field(default_factory=lambda: [])
+    ate: List[float] = field(default_factory=lambda: [])
+    ate_ci_lower: List[float] = field(default_factory=lambda: [])
+    ate_ci_upper: List[float] = field(default_factory=lambda: [])
+    p_value: List[float] = field(default_factory=lambda: [])
+    std_error: List[float] = field(default_factory=lambda: [])
+    dimension_name: List[str] = field(default_factory=lambda: [])
+    dimension_value: List[str] = field(default_factory=lambda: [])
+    alpha: List[float] = field(default_factory=lambda: [])
 
     def __add__(self, other):
         if not isinstance(other, AnalysisPlanResults):
@@ -81,23 +81,3 @@ class AnalysisPlanResults:
 
     def to_dataframe(self):
         return pd.DataFrame(asdict(self))
-
-
-class EmptyAnalysisPlanResults(AnalysisPlanResults):
-    def __init__(self):
-        super().__init__(
-            metric_alias=[],
-            control_variant_name=[],
-            treatment_variant_name=[],
-            control_variant_mean=[],
-            treatment_variant_mean=[],
-            analysis_type=[],
-            ate=[],
-            ate_ci_lower=[],
-            ate_ci_upper=[],
-            p_value=[],
-            std_error=[],
-            dimension_name=[],
-            dimension_value=[],
-            alpha=[],
-        )
