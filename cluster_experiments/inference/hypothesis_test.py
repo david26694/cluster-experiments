@@ -5,6 +5,7 @@ import pandas as pd
 
 from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.experiment_analysis import InferenceResults
+from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
 from cluster_experiments.inference.metric import Metric
 from cluster_experiments.inference.variant import Variant
@@ -207,3 +208,81 @@ class HypothesisTest:
             )
 
         return exp_data
+
+    def get_test_results(
+        self,
+        control_variant: Variant,
+        treatment_variant: Variant,
+        variant_col: str,
+        exp_data: pd.DataFrame,
+        dimension: Dimension,
+        dimension_value: str,
+        alpha: float,
+    ) -> AnalysisPlanResults:
+        """
+        Performs the hypothesis test on the provided data, for the given dimension value.
+
+        Parameters
+        ----------
+        control_variant : Variant
+            The control variant
+        treatment_variant : Variant
+            The treatment variant
+        variant_col : str
+            The column name representing the variant
+        exp_data : pd.DataFrame
+            The dataframe containing the data for analysis.
+        dimension : Dimension
+            The dimension instance
+        dimension_value : str
+            The value of the dimension
+        alpha : float
+            The significance level to be used in the inference analysis.
+
+        Returns
+        -------
+        AnalysisPlanResults
+            The results of the hypothesis test
+        """
+        self._prepare_analysis_config(
+            target_col=self.metric.target_column,
+            treatment_col=variant_col,
+            treatment=treatment_variant.name,
+        )
+
+        prepared_df = self.prepare_data(
+            data=exp_data,
+            variant_col=variant_col,
+            treatment_variant=treatment_variant,
+            control_variant=control_variant,
+            dimension_name=dimension.name,
+            dimension_value=dimension_value,
+        )
+
+        inference_results = self.get_inference_results(df=prepared_df, alpha=alpha)
+
+        control_variant_mean = self.metric.get_mean(
+            prepared_df.query(f"{variant_col}=='{control_variant.name}'")
+        )
+        treatment_variant_mean = self.metric.get_mean(
+            prepared_df.query(f"{variant_col}=='{treatment_variant.name}'")
+        )
+
+        test_results = AnalysisPlanResults(
+            metric_alias=[self.metric.alias],
+            control_variant_name=[control_variant.name],
+            treatment_variant_name=[treatment_variant.name],
+            control_variant_mean=[control_variant_mean],
+            treatment_variant_mean=[treatment_variant_mean],
+            analysis_type=[self.analysis_type],
+            ate=[inference_results.ate],
+            ate_ci_lower=[inference_results.conf_int.lower],
+            ate_ci_upper=[inference_results.conf_int.upper],
+            p_value=[inference_results.p_value],
+            std_error=[inference_results.std_error],
+            dimension_name=[dimension.name],
+            dimension_value=[dimension_value],
+            alpha=[alpha],
+        )
+
+        return test_results

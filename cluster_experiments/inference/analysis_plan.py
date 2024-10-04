@@ -122,51 +122,14 @@ class AnalysisPlan:
                                 f"Value: {dimension_value}"
                             )
 
-                        test._prepare_analysis_config(
-                            target_col=test.metric.target_column,
-                            treatment_col=self.variant_col,
-                            treatment=treatment_variant.name,
-                        )
-
-                        prepared_df = test.prepare_data(
-                            data=exp_data,
-                            variant_col=self.variant_col,
-                            treatment_variant=treatment_variant,
+                        test_results = test.get_test_results(
+                            exp_data=exp_data,
                             control_variant=self.control_variant,
-                            dimension_name=dimension.name,
+                            treatment_variant=treatment_variant,
+                            variant_col=self.variant_col,
+                            dimension=dimension,
                             dimension_value=dimension_value,
-                        )
-
-                        inference_results = test.get_inference_results(
-                            df=prepared_df, alpha=self.alpha
-                        )
-
-                        control_variant_mean = test.metric.get_mean(
-                            prepared_df.query(
-                                f"{self.variant_col}=='{self.control_variant.name}'"
-                            )
-                        )
-                        treatment_variant_mean = test.metric.get_mean(
-                            prepared_df.query(
-                                f"{self.variant_col}=='{treatment_variant.name}'"
-                            )
-                        )
-
-                        test_results = AnalysisPlanResults(
-                            metric_alias=[test.metric.alias],
-                            control_variant_name=[self.control_variant.name],
-                            treatment_variant_name=[treatment_variant.name],
-                            control_variant_mean=[control_variant_mean],
-                            treatment_variant_mean=[treatment_variant_mean],
-                            analysis_type=[test.analysis_type],
-                            ate=[inference_results.ate],
-                            ate_ci_lower=[inference_results.conf_int.lower],
-                            ate_ci_upper=[inference_results.conf_int.upper],
-                            p_value=[inference_results.p_value],
-                            std_error=[inference_results.std_error],
-                            dimension_name=[dimension.name],
-                            dimension_value=[dimension_value],
-                            alpha=[self.alpha],
+                            alpha=self.alpha,
                         )
 
                         analysis_results = analysis_results + test_results
