@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -10,6 +11,29 @@ from scipy.stats import ttest_ind, ttest_rel
 
 from cluster_experiments.synthetic_control_utils import get_w
 from cluster_experiments.utils import HypothesisEntries
+
+
+@dataclass
+class ConfidenceInterval:
+    """
+    Class to define the structure of a confidence interval.
+    """
+
+    lower: float
+    upper: float
+    alpha: float
+
+
+@dataclass
+class InferenceResults:
+    """
+    Class to define the structure of complete statistical analysis results.
+    """
+
+    ate: float
+    p_value: float
+    std_error: float
+    conf_int: ConfidenceInterval
 
 
 class ExperimentAnalysis(ABC):
@@ -97,6 +121,40 @@ class ExperimentAnalysis(ABC):
         """
         raise NotImplementedError("Standard error not implemented for this analysis")
 
+    def analysis_confidence_interval(
+        self,
+        df: pd.DataFrame,
+        alpha: float,
+        verbose: bool = False,
+    ) -> ConfidenceInterval:
+        """
+        Returns the confidence interval of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError(
+            "Confidence Interval not implemented for this analysis"
+        )
+
+    def analysis_inference_results(
+        self,
+        df: pd.DataFrame,
+        alpha: float,
+        verbose: bool = False,
+    ) -> InferenceResults:
+        """
+        Returns the InferenceResults object of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError(
+            "Inference results are not implemented for this analysis"
+        )
+
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
         if df[self.target_col].isnull().any():
@@ -141,6 +199,32 @@ class ExperimentAnalysis(ABC):
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
         return self.analysis_standard_error(df)
+
+    def get_confidence_interval(
+        self, df: pd.DataFrame, alpha: float
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_confidence_interval(df, alpha)
+
+    def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
+        """Returns the inference results of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_inference_results(df, alpha)
 
     def pvalue_based_on_hypothesis(
         self, model_result
@@ -274,6 +358,58 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         results_gee = self.fit_gee(df)
         return results_gee.bse[self.treatment_col]
 
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_gee.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_gee.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
+    def analysis_inference_results(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> InferenceResults:
+        """Returns the inference results of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
+
+        std_error = results_gee.bse[self.treatment_col]
+        ate = results_gee.params[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_gee)
+
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_gee.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_gee.summary())
+
+        # Return the confidence interval
+        return InferenceResults(
+            ate=ate,
+            p_value=p_value,
+            std_error=std_error,
+            conf_int=ConfidenceInterval(
+                lower=lower_bound, upper=upper_bound, alpha=alpha
+            ),
+        )
+
 
 class ClusteredOLSAnalysis(ExperimentAnalysis):
     """
@@ -364,6 +500,58 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
         """
         results_ols = self.fit_ols_clustered(df)
         return results_ols.bse[self.treatment_col]
+
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols_clustered(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
+    def analysis_inference_results(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> InferenceResults:
+        """Returns the inference results of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols_clustered(df)
+
+        std_error = results_ols.bse[self.treatment_col]
+        ate = results_ols.params[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_ols)
+
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return InferenceResults(
+            ate=ate,
+            p_value=p_value,
+            std_error=std_error,
+            conf_int=ConfidenceInterval(
+                lower=lower_bound, upper=upper_bound, alpha=alpha
+            ),
+        )
 
 
 class TTestClusteredAnalysis(ExperimentAnalysis):
@@ -640,6 +828,58 @@ class OLSAnalysis(ExperimentAnalysis):
         """
         results_ols = self.fit_ols(df=df)
         return results_ols.bse[self.treatment_col]
+
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
+    def analysis_inference_results(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> InferenceResults:
+        """Returns the inference results of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols(df)
+
+        std_error = results_ols.bse[self.treatment_col]
+        ate = results_ols.params[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_ols)
+
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return InferenceResults(
+            ate=ate,
+            p_value=p_value,
+            std_error=std_error,
+            conf_int=ConfidenceInterval(
+                lower=lower_bound, upper=upper_bound, alpha=alpha
+            ),
+        )
 
     @classmethod
     def from_config(cls, config):
