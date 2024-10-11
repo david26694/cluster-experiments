@@ -1,8 +1,9 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import pandas as pd
 
+from cluster_experiments.experiment_analysis import ExperimentAnalysis
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import Dimension
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
@@ -212,6 +213,9 @@ class AnalysisPlan:
         dimensions: Optional[List[Dimension]] = None,
         analysis_type: str = "default",
         analysis_config: Optional[Dict[str, Any]] = None,
+        custom_analysis_type_mapper: Optional[
+            dict[str, Type[ExperimentAnalysis]]
+        ] = None,
     ) -> "AnalysisPlan":
         """
         Creates a simplified AnalysisPlan instance from a list of metrics. It will create HypothesisTest objects under the hood.
@@ -233,6 +237,8 @@ class AnalysisPlan:
             The type of analysis to be conducted (default: "default")
         analysis_config : Optional[Dict[str, Any]]
             A dictionary containing analysis configuration options (optional)
+        custom_analysis_type_mapper : Optional[dict[str, Type[ExperimentAnalysis]]]
+            An optional dictionary mapping the names of custom analysis types to the corresponding ExperimentAnalysis classes
 
         Returns
         -------
@@ -245,6 +251,7 @@ class AnalysisPlan:
                 dimensions=dimensions or [],
                 analysis_type=analysis_type,
                 analysis_config=analysis_config or {},
+                custom_analysis_type_mapper=custom_analysis_type_mapper or {},
             )
             for metric in metrics
         ]

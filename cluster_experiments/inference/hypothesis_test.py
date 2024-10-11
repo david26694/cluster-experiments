@@ -1,10 +1,10 @@
 import copy
-from typing import List, Optional
+from typing import List, Optional, Type
 
 import pandas as pd
 
 from cluster_experiments.cupac import CupacHandler
-from cluster_experiments.experiment_analysis import InferenceResults
+from cluster_experiments.experiment_analysis import ExperimentAnalysis, InferenceResults
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
 from cluster_experiments.inference.metric import Metric
@@ -20,14 +20,16 @@ class HypothesisTest:
     ----------
     metric : Metric
         An instance of the Metric class
-    analysis : ExperimentAnalysis
-        An instance of the ExperimentAnalysis class
+    analysis_type : str
+        string mapping to an ExperimentAnalysis class. Must be either in the built-in analysis_mapping or in the custom_analysis_type_mapper if provided.
     analysis_config : Optional[dict]
         An optional dictionary representing the configuration for the analysis
     dimensions : Optional[List[Dimension]]
         An optional list of Dimension instances
     cupac_config : Optional[dict]
-            An optional dictionary representing the configuration for the cupac model
+        An optional dictionary representing the configuration for the cupac model
+    custom_analysis_type_mapper : Optional[dict[str, Type[ExperimentAnalysis]]]
+        An optional dictionary mapping the names of custom analysis types to the corresponding ExperimentAnalysis classes
     """
 
     def __init__(
@@ -37,6 +39,9 @@ class HypothesisTest:
         analysis_config: Optional[dict] = None,
         dimensions: Optional[List[Dimension]] = None,
         cupac_config: Optional[dict] = None,
+        custom_analysis_type_mapper: Optional[
+            dict[str, Type[ExperimentAnalysis]]
+        ] = None,
     ):
         """
         Parameters
@@ -44,22 +49,33 @@ class HypothesisTest:
         metric : Metric
             An instance of the Metric class
         analysis_type : str
-            string mapper to an ExperimentAnalysis
+            string mapping to an ExperimentAnalysis class. Must be either in the built-in analysis_mapping or in the custom_analysis_type_mapper if provided.
         analysis_config : Optional[dict]
             An optional dictionary representing the configuration for the analysis
         dimensions : Optional[List[Dimension]]
             An optional list of Dimension instances
         cupac_config : Optional[dict]
             An optional dictionary representing the configuration for the cupac model
+        custom_analysis_type_mapper : Optional[dict[str, Type[ExperimentAnalysis]]]
+            An optional dictionary mapping the names of custom analysis types to the corresponding ExperimentAnalysis classes
         """
-        self._validate_inputs(metric, analysis_type, analysis_config, dimensions)
+        self._validate_inputs(
+            metric,
+            analysis_type,
+            analysis_config,
+            dimensions,
+            cupac_config,
+            custom_analysis_type_mapper,
+        )
         self.metric = metric
         self.analysis_type = analysis_type
         self.analysis_config = analysis_config or {}
         self.dimensions = [DefaultDimension()] + (dimensions or [])
         self.cupac_config = cupac_config or {}
+        self.custom_analysis_type_mapper = custom_analysis_type_mapper or {}
 
-        self.analysis_class = analysis_mapping[self.analysis_type]
+        self.analysis_type_mapper = self.custom_analysis_type_mapper or analysis_mapping
+        self.analysis_class = self.analysis_type_mapper[self.analysis_type]
         self.is_cupac = bool(cupac_config)
         self.cupac_handler = (
             CupacHandler(**self.cupac_config) if self.is_cupac else None
@@ -78,6 +94,9 @@ class HypothesisTest:
         analysis_config: Optional[dict],
         dimensions: Optional[List[Dimension]],
         cupac_config: Optional[dict] = None,
+        custom_analysis_type_mapper: Optional[
+            dict[str, Type[ExperimentAnalysis]]
+        ] = None,
     ):
         """
         Validates the inputs for the HypothesisTest class.
@@ -94,32 +113,63 @@ class HypothesisTest:
             An optional list of Dimension instances
         cupac_config : Optional[dict]
             An optional dictionary representing the configuration for the cupac model
-
-        Raises
-        ------
-        TypeError
-            If metric is not an instance of Metric, if analysis_type is not an instance of string,
-            if analysis_config is not a dictionary (when provided), or if dimensions is not a list of Dimension instances (when provided),
-            if cupac_config is not a dictionary (when provided)
+        custom_analysis_type_mapper : Optional[dict[str, ExperimentAnalysis]]
+            An optional dictionary mapping the names of custom analysis types to the corresponding ExperimentAnalysis classes
         """
+        # Check if metric is a valid Metric instance
         if not isinstance(metric, Metric):
             raise TypeError("Metric must be an instance of Metric")
+
+        # Check if analysis_type is a string
         if not isinstance(analysis_type, str):
             raise TypeError("Analysis must be a string")
-        if analysis_type not in analysis_mapping:
-            raise ValueError(
-                f"Analysis type {analysis_type} not found in analysis_mapping"
-            )
+
+        # Check if analysis_config is a dictionary when provided
         if analysis_config is not None and not isinstance(analysis_config, dict):
             raise TypeError("analysis_config must be a dictionary if provided")
-        if cupac_config is not None and not isinstance(analysis_config, dict):
+
+        # Check if cupac_config is a dictionary when provided
+        if cupac_config is not None and not isinstance(cupac_config, dict):
             raise TypeError("cupac_config must be a dictionary if provided")
+
+        # Check if dimensions is a list of Dimension instances when provided
         if dimensions is not None and (
             not isinstance(dimensions, list)
             or not all(isinstance(dim, Dimension) for dim in dimensions)
         ):
             raise TypeError(
                 "Dimensions must be a list of Dimension instances if provided"
+            )
+
+        # Validate custom_analysis_type_mapper if provided
+        if custom_analysis_type_mapper:
+            # Ensure it's a dictionary
+            if not isinstance(custom_analysis_type_mapper, dict):
+                raise TypeError(
+                    "custom_analysis_type_mapper must be a dictionary if provided"
+                )
+
+            # Ensure all keys are strings and values are ExperimentAnalysis classes
+            for key, value in custom_analysis_type_mapper.items():
+                if not isinstance(key, str):
+                    raise TypeError(
+                        f"Key '{key}' in custom_analysis_type_mapper must be a string"
+                    )
+                if not issubclass(value, ExperimentAnalysis):
+                    raise TypeError(
+                        f"Value '{value}' for key '{key}' in custom_analysis_type_mapper must be a subclass of ExperimentAnalysis"
+                    )
+
+            # Ensure the analysis_type is in the custom mapper if a custom mapper is provided
+            if analysis_type not in custom_analysis_type_mapper:
+                raise ValueError(
+                    f"Analysis type '{analysis_type}' not found in the provided custom_analysis_type_mapper"
+                )
+
+        # If no custom_analysis_type_mapper, check if analysis_type exists in the default mapping
+        elif analysis_type not in analysis_mapping:
+            raise ValueError(
+                f"Analysis type '{analysis_type}' not found in analysis_mapping"
             )
 
     def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
