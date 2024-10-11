@@ -106,7 +106,10 @@ class HypothesisTest:
             raise TypeError("Metric must be an instance of Metric")
         if not isinstance(analysis_type, str):
             raise TypeError("Analysis must be a string")
-        # todo: add better check for analysis_type allowed values
+        if analysis_type not in analysis_mapping:
+            raise ValueError(
+                f"Analysis type {analysis_type} not found in analysis_mapping"
+            )
         if analysis_config is not None and not isinstance(analysis_config, dict):
             raise TypeError("analysis_config must be a dictionary if provided")
         if cupac_config is not None and not isinstance(analysis_config, dict):
