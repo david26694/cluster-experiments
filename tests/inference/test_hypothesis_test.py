@@ -177,6 +177,28 @@ def test_hypothesis_test_with_cupac(
             )
 
 
+def test_hypothesis_test_with_cupac_no_covariates(
+    experiment_data, metrics, dimensions, variants, cupac_config
+):
+    """Tests that a value error is raised if covariates are not provided in the analysis config."""
+    df, pre_exp_df = experiment_data
+    test_delivery_time = HypothesisTest(
+        metric=metrics["delivery_time"],
+        analysis_type="gee",
+        analysis_config={"cluster_cols": ["customer_id"]},
+        cupac_config=cupac_config,
+        dimensions=dimensions,
+    )
+
+    # Add covariates using CUPAC configuration
+    with pytest.raises(ValueError):
+        test_delivery_time._prepare_analysis_config(
+            target_col="order_delivery_time_in_minutes",
+            treatment_col="experiment_group",
+            treatment="treatment_1",
+        )
+
+
 def test_invalid_dimension_value(experiment_data, metrics, dimensions, variants):
     """Tests handling of invalid dimension values in hypothesis tests."""
     df, _ = experiment_data
@@ -274,5 +296,156 @@ def test_hypothesis_test_with_custom_analysis_type_mapper(
             analysis_type="invalid_custom_type",
             analysis_config={"cluster_cols": ["customer_id"]},
             dimensions=dimensions,
+            custom_analysis_type_mapper=custom_analysis_type_mapper,
+        )
+
+
+@pytest.mark.parametrize(
+    "metric, analysis_type, analysis_config, dimensions, cupac_config, custom_analysis_type_mapper, expected_exception, expected_message",
+    [
+        # Invalid Metric instance (metric is None)
+        (
+            None,
+            "test_analysis",
+            None,
+            None,
+            None,
+            None,
+            TypeError,
+            "Metric must be an instance of Metric",
+        ),
+        # Invalid analysis_type (not a string)
+        (
+            SimpleMetric("m", "m"),
+            123,
+            None,
+            None,
+            None,
+            None,
+            TypeError,
+            "Analysis must be a string",
+        ),
+        # Invalid analysis_config (not a dictionary)
+        (
+            SimpleMetric("m", "m"),
+            "test_analysis",
+            "not_a_dict",
+            None,
+            None,
+            None,
+            TypeError,
+            "analysis_config must be a dictionary if provided",
+        ),
+        # Invalid cupac_config (not a dictionary)
+        (
+            SimpleMetric("m", "m"),
+            "test_analysis",
+            None,
+            None,
+            "not_a_dict",
+            None,
+            TypeError,
+            "cupac_config must be a dictionary if provided",
+        ),
+        # Invalid dimensions type (not a list)
+        (
+            SimpleMetric("m", "m"),
+            "test_analysis",
+            None,
+            "not_a_list",
+            None,
+            None,
+            TypeError,
+            "Dimensions must be a list of Dimension instances if provided",
+        ),
+        # Invalid dimensions content (not a list of Dimension instances)
+        (
+            SimpleMetric("m", "m"),
+            "test_analysis",
+            None,
+            [1, 2, 3],
+            None,
+            None,
+            TypeError,
+            "Dimensions must be a list of Dimension instances if provided",
+        ),
+        # Invalid custom_analysis_type_mapper (not a dictionary)
+        (
+            SimpleMetric("m", "m"),
+            "custom_analysis",
+            None,
+            None,
+            None,
+            "not_a_dict",
+            TypeError,
+            "custom_analysis_type_mapper must be a dictionary if provided",
+        ),
+        # Invalid custom_analysis_type_mapper keys (non-string keys)
+        (
+            SimpleMetric("m", "m"),
+            "custom_analysis",
+            None,
+            None,
+            None,
+            {123: CustomExperimentAnalysis},
+            TypeError,
+            "Key '123' in custom_analysis_type_mapper must be a string",
+        ),
+        # Invalid custom_analysis_type_mapper values (not ExperimentAnalysis subclasses)
+        (
+            SimpleMetric("m", "m"),
+            "custom_analysis",
+            None,
+            None,
+            None,
+            {"custom_analysis": str},
+            TypeError,
+            "Value '<class 'str'>' for key 'custom_analysis' in custom_analysis_type_mapper must be a subclass of ExperimentAnalysis",
+        ),
+        # Missing analysis_type in custom_analysis_type_mapper
+        (
+            SimpleMetric("m", "m"),
+            "unknown_analysis",
+            None,
+            None,
+            None,
+            {"custom_analysis": CustomExperimentAnalysis},
+            ValueError,
+            "Analysis type 'unknown_analysis' not found in the provided custom_analysis_type_mapper",
+        ),
+        # Missing analysis_type in default analysis_mapping
+        (
+            SimpleMetric("m", "m"),
+            "unknown_analysis",
+            None,
+            None,
+            None,
+            None,
+            ValueError,
+            "Analysis type 'unknown_analysis' not found in analysis_mapping",
+        ),
+    ],
+)
+def test_validate_inputs_exceptions(
+    metric,
+    analysis_type,
+    analysis_config,
+    dimensions,
+    cupac_config,
+    custom_analysis_type_mapper,
+    expected_exception,
+    expected_message,
+):
+    """
+    Test that invalid inputs to _validate_inputs method in HypothesisTest class raise the appropriate exceptions
+    with expected error messages.
+    """
+    with pytest.raises(expected_exception, match=expected_message):
+        HypothesisTest(
+            metric=metric,
+            analysis_type=analysis_type,
+            analysis_config=analysis_config,
+            dimensions=dimensions,
+            cupac_config=cupac_config,
             custom_analysis_type_mapper=custom_analysis_type_mapper,
         )
