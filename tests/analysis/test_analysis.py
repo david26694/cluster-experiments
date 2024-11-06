@@ -43,6 +43,7 @@ def analysis_df_diff_realistic():
     )
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
     analysis_df_full.loc[analysis_df_full["treatment"] == "B", "target"] = 1.01
+    np.random.seed(2024)
     analysis_df_full["target"] = analysis_df_full["target"] + np.random.normal(
         0, 0.1, analysis_df_full.shape[0]
     )
