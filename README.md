@@ -181,31 +181,44 @@ from cluster_experiments import AnalysisPlan, SimpleMetric, Variant, Dimension
 
 NUM_ORDERS = 10_000
 NUM_CUSTOMERS = 3_000
-EXPERIMENT_GROUPS = ['control', 'treatment_1', 'treatment_2']
+EXPERIMENT_GROUPS = ["control", "treatment_1", "treatment_2"]
 GROUP_SIZE = NUM_CUSTOMERS // len(EXPERIMENT_GROUPS)
 
 # Generate customers and assign them to experiment groups
 customer_ids = np.arange(1, NUM_CUSTOMERS + 1)
 np.random.shuffle(customer_ids)
 experiment_group = np.repeat(EXPERIMENT_GROUPS, GROUP_SIZE)
-experiment_group = np.concatenate((experiment_group, np.random.choice(EXPERIMENT_GROUPS, NUM_CUSTOMERS - len(experiment_group))))
+experiment_group = np.concatenate(
+    (
+        experiment_group,
+        np.random.choice(EXPERIMENT_GROUPS, NUM_CUSTOMERS - len(experiment_group)),
+    )
+)
 customer_group_mapping = dict(zip(customer_ids, experiment_group))
 
 # Generate orders
 order_ids = np.arange(1, NUM_ORDERS + 1)
 customers = np.random.choice(customer_ids, NUM_ORDERS)
-order_values = np.abs(np.random.normal(loc=10, scale=2, size=NUM_ORDERS))  # Normally distributed around 10 and positive
-order_delivery_times = np.abs(np.random.normal(loc=30, scale=5, size=NUM_ORDERS))  # Normally distributed around 30 minutes and positive
-order_city_codes = np.random.randint(1, 3, NUM_ORDERS)  # Random city codes between 1 and 2
+order_values = np.abs(
+    np.random.normal(loc=10, scale=2, size=NUM_ORDERS)
+)  # Normally distributed around 10 and positive
+order_delivery_times = np.abs(
+    np.random.normal(loc=30, scale=5, size=NUM_ORDERS)
+)  # Normally distributed around 30 minutes and positive
+order_city_codes = np.random.randint(
+    1, 3, NUM_ORDERS
+)  # Random city codes between 1 and 2
 
 # Create DataFrame
 data = {
-    'order_id': order_ids,
-    'customer_id': customers,
-    'experiment_group': [customer_group_mapping[customer_id] for customer_id in customers],
-    'order_value': order_values,
-    'order_delivery_time': order_delivery_times,
-    'order_city_code': order_city_codes
+    "order_id": order_ids,
+    "customer_id": customers,
+    "experiment_group": [
+        customer_group_mapping[customer_id] for customer_id in customers
+    ],
+    "order_value": order_values,
+    "order_delivery_time": order_delivery_times,
+    "order_city_code": order_city_codes,
 }
 
 df = pd.DataFrame(data)
@@ -215,25 +228,18 @@ df.order_city_code = df.order_city_code.astype(str)
 # ---- Define metrics, variants and dimensions ----
 # -------------------------------------------------
 
-dimension__city_code = Dimension(
-    name='order_city_code',
-    values=['1','2']
-)
+dimension__city_code = Dimension(name="order_city_code", values=["1", "2"])
 
-metric__order_value = SimpleMetric(
-    alias='AOV',
-    name='order_value'
-)
+metric__order_value = SimpleMetric(alias="AOV", name="order_value")
 
 metric__delivery_time = SimpleMetric(
-    alias='AVG DT',
-    name='order_delivery_time_in_minutes'
+    alias="AVG DT", name="order_delivery_time_in_minutes"
 )
 
 variants = [
-    Variant('control', is_control=True),
-    Variant('treatment_1', is_control=False),
-    Variant('treatment_2', is_control=False)
+    Variant("control", is_control=True),
+    Variant("treatment_1", is_control=False),
+    Variant("treatment_2", is_control=False),
 ]
 
 # --------------------------------------------------------
@@ -243,11 +249,11 @@ variants = [
 simple_analysis_plan = AnalysisPlan.from_metrics(
     metrics=[metric__delivery_time, metric__order_value],
     variants=variants,
-    variant_col='experiment_group',
+    variant_col="experiment_group",
     alpha=0.01,
     dimensions=[dimension__city_code],
     analysis_type="clustered_ols",
-    analysis_config={"cluster_cols":["customer_id"]},
+    analysis_config={"cluster_cols": ["customer_id"]},
 )
 
 # --------------------------------------------------------
