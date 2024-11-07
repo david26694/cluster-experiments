@@ -3,9 +3,13 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.experiment_analysis import (
+    ClusteredOLSAnalysis,
+    ConfidenceInterval,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
+    InferenceResults,
     MLMExperimentAnalysis,
+    OLSAnalysis,
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
@@ -24,6 +28,25 @@ def analysis_df_diff():
     )
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
     analysis_df_full.loc[analysis_df_full["treatment"] == "B", "target"] = 0.1
+    return analysis_df_full
+
+
+@pytest.fixture
+def analysis_df_diff_realistic():
+    analysis_df = pd.DataFrame(
+        {
+            "cluster": ["ES"] * 4 + ["IT"] * 4 + ["PL"] * 4 + ["RO"] * 4,
+            "date": ["2022-01-01", "2022-01-02"] * 8,
+            "treatment": (["A"] * 4 + ["B"] * 4) * 2,
+            "target": [1] * 16,
+        }
+    )
+    analysis_df_full = pd.concat([analysis_df for _ in range(100)])
+    analysis_df_full.loc[analysis_df_full["treatment"] == "B", "target"] = 1.01
+    np.random.seed(2024)
+    analysis_df_full["target"] = analysis_df_full["target"] + np.random.normal(
+        0, 0.1, analysis_df_full.shape[0]
+    )
     return analysis_df_full
 
 
@@ -160,3 +183,68 @@ def test_point_estimate_raises():
     analyser = DummyAnalysis()
     with pytest.raises(NotImplementedError):
         analyser.analysis_point_estimate(df=pd.DataFrame())
+
+
+def test_confidence_interval():
+    conf_int = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+    assert conf_int.lower == 0.1
+    assert conf_int.upper == 0.5
+    assert conf_int.alpha == 0.05
+
+
+def test_inference_results():
+    conf_int = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+    results = InferenceResults(ate=0.2, p_value=0.03, std_error=0.1, conf_int=conf_int)
+    assert results.ate == 0.2
+    assert results.p_value == 0.03
+    assert results.std_error == 0.1
+    assert results.conf_int == conf_int
+
+
+@pytest.mark.parametrize(
+    "experiment_analysis",
+    [
+        ClusteredOLSAnalysis(
+            cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
+        ),
+        GeeExperimentAnalysis(
+            cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
+        ),
+        OLSAnalysis(target_col="target", treatment_col="treatment"),
+    ],
+)  # Add other child classes as necessary
+def test_get_confidence_interval(experiment_analysis, analysis_df_diff_realistic):
+
+    # Check if the get_confidence_interval method works
+    alpha = 0.05
+    conf_int = experiment_analysis.get_confidence_interval(
+        analysis_df_diff_realistic, alpha=alpha
+    )
+
+    assert isinstance(conf_int, ConfidenceInterval)
+    assert conf_int.alpha == alpha
+    assert conf_int.lower < conf_int.upper  # Simple sanity check
+
+
+@pytest.mark.parametrize(
+    "experiment_analysis",
+    [
+        ClusteredOLSAnalysis(
+            cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
+        ),
+        GeeExperimentAnalysis(
+            cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
+        ),
+        OLSAnalysis(target_col="target", treatment_col="treatment"),
+    ],
+)  # Add other child classes as necessary
+def test_get_inference_results(experiment_analysis, analysis_df_diff):
+    # Check if the get_inference_results method works
+    alpha = 0.05
+    results = experiment_analysis.get_inference_results(analysis_df_diff, alpha=alpha)
+
+    assert isinstance(results, InferenceResults)
+    assert results.conf_int.alpha == alpha
+    assert results.ate > 0
+    assert 0 <= results.p_value < 1
+    assert results.std_error > 0
