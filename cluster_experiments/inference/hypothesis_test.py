@@ -1,5 +1,5 @@
 import copy
-from typing import List, Optional, Type
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -28,7 +28,7 @@ class HypothesisTest:
         An optional list of Dimension instances
     cupac_config : Optional[dict]
         An optional dictionary representing the configuration for the cupac model
-    custom_analysis_type_mapper : Optional[dict[str, Type[ExperimentAnalysis]]]
+    custom_analysis_type_mapper : Optional[Dict[str, ExperimentAnalysis]]
         An optional dictionary mapping the names of custom analysis types to the corresponding ExperimentAnalysis classes
     """
 
@@ -39,9 +39,7 @@ class HypothesisTest:
         analysis_config: Optional[dict] = None,
         dimensions: Optional[List[Dimension]] = None,
         cupac_config: Optional[dict] = None,
-        custom_analysis_type_mapper: Optional[
-            dict[str, Type[ExperimentAnalysis]]
-        ] = None,
+        custom_analysis_type_mapper: Optional[Dict[str, ExperimentAnalysis]] = None,
     ):
         """
         Parameters
@@ -56,7 +54,7 @@ class HypothesisTest:
             An optional list of Dimension instances
         cupac_config : Optional[dict]
             An optional dictionary representing the configuration for the cupac model
-        custom_analysis_type_mapper : Optional[dict[str, Type[ExperimentAnalysis]]]
+        custom_analysis_type_mapper : Optional[Dict[str, ExperimentAnalysis]]
             An optional dictionary mapping the names of custom analysis types to the corresponding ExperimentAnalysis classes
         """
         self._validate_inputs(
@@ -94,9 +92,7 @@ class HypothesisTest:
         analysis_config: Optional[dict],
         dimensions: Optional[List[Dimension]],
         cupac_config: Optional[dict] = None,
-        custom_analysis_type_mapper: Optional[
-            dict[str, Type[ExperimentAnalysis]]
-        ] = None,
+        custom_analysis_type_mapper: Optional[Dict[str, ExperimentAnalysis]] = None,
     ):
         """
         Validates the inputs for the HypothesisTest class.

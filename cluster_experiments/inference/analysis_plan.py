@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -213,9 +213,7 @@ class AnalysisPlan:
         dimensions: Optional[List[Dimension]] = None,
         analysis_type: str = "default",
         analysis_config: Optional[Dict[str, Any]] = None,
-        custom_analysis_type_mapper: Optional[
-            dict[str, Type[ExperimentAnalysis]]
-        ] = None,
+        custom_analysis_type_mapper: Optional[Dict[str, ExperimentAnalysis]] = None,
     ) -> "AnalysisPlan":
         """
         Creates a simplified AnalysisPlan instance from a list of metrics. It will create HypothesisTest objects under the hood.
@@ -237,7 +235,7 @@ class AnalysisPlan:
             The type of analysis to be conducted (default: "default")
         analysis_config : Optional[Dict[str, Any]]
             A dictionary containing analysis configuration options (optional)
-        custom_analysis_type_mapper : Optional[dict[str, Type[ExperimentAnalysis]]]
+        custom_analysis_type_mapper : Optional[Dict[str, ExperimentAnalysis]]
             An optional dictionary mapping the names of custom analysis types to the corresponding ExperimentAnalysis classes
 
         Returns
