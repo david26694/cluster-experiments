@@ -33,7 +33,7 @@ nav:
       - Power config: api/power_config.md
       - Power analysis: api/power_analysis.md
       - Washover: api/washover.md
-      - Metrics: api/metrics.md
+      - Metric: api/metric.md
       - Variant: api/variant.md
       - Dimension: api/dimension.md
       - Hypothesis Test: api/hypothesis_test.md
