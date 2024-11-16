@@ -201,14 +201,15 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
             Usage:
             ```python
-            from cluster_experiments.experiment_analysis import DeltaMethodAnalysis
             import pandas as pd
 
+            from cluster_experiments.experiment_analysis import DeltaMethodAnalysis
+
             df = pd.DataFrame({
-                'x': [1, 2, 3, 0, 0, 1],
-                'y': [2, 2, 5, 1, 1, 1],
-                'treatment': ["A"] * 3 + ["B"] * 3,
-                'cluster': [1] * 6,
+                'x': [1, 2, 3, 0, 0, 1] * 2,
+                'y': [2, 2, 5, 1, 1, 1] * 2,
+                'treatment': ["A"] * 6 + ["B"] * 6,
+                'cluster': [1, 2, 3, 1, 2, 3] * 2,
             })
 
             DeltaMethodAnalysis(
@@ -273,6 +274,9 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         df = self.aggregate_to_cluster(df)
         group_size = len(df)
 
+        if group_size < 1000:
+            self.__warn_small_group_size()
+
         target_mean = df.loc[:, self.target_col].mean()
         target_variance = df.loc[:, self.target_col].var()
         target_sum = df.loc[:, self.target_col].sum()
@@ -293,6 +297,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
     def __warn_covariate_dismissal(self):
         warnings.warn("Covariates are not used in the Delta Method Analysis")
+
+    def __warn_small_group_size(self):
+        warnings.warn(
+            "Delta Method approximation may not be accurate for small group sizes"
+        )
 
 
 class GeeExperimentAnalysis(ExperimentAnalysis):
