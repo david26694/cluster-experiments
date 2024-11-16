@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.experiment_analysis import (
+    DeltaMethodAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     MLMExperimentAnalysis,
@@ -160,3 +161,24 @@ def test_point_estimate_raises():
     analyser = DummyAnalysis()
     with pytest.raises(NotImplementedError):
         analyser.analysis_point_estimate(df=pd.DataFrame())
+
+
+@pytest.fixture
+def analysis_df_ratio():
+    analysis_df = pd.DataFrame(
+        {
+            "cluster": [1, 2, 3, 1, 4, 5, 5, 6] * 2,
+            "date": ["2022-01-01", "2022-01-02"] * 8,
+            "treatment": (["A"] * 4 + ["B"] * 4) * 2,
+            "target": [1, 0, 1, 0, 1, 1, 1, 1] * 2,
+            "scale": [1, 1, 1, 1, 1, 1, 1, 1] * 2,
+        }
+    )
+    analysis_df_full = pd.concat([analysis_df for _ in range(100)])
+    return analysis_df_full
+
+
+def test_delta_analysis(analysis_df_ratio):
+    analyser = DeltaMethodAnalysis(cluster_cols=["cluster"])
+
+    assert 0.05 >= analyser.get_pvalue(analysis_df_ratio) >= 0
