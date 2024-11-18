@@ -31,5 +31,8 @@ def analysis_df():
 
 
 @pytest.fixture
-def analysis_ratio_df(dates):
-    return generate_ratio_metric_data(dates, N)
+def analysis_ratio_df(dates, experiment_dates):
+    pre_exp_dates = [d for d in dates if d not in experiment_dates]
+    pre_data = generate_ratio_metric_data(pre_exp_dates, N, treatment_effect=0)
+    post_data = generate_ratio_metric_data(experiment_dates, N)
+    return pd.concat([pre_data, post_data])

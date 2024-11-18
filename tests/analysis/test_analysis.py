@@ -178,10 +178,13 @@ def analysis_df_ratio():
     return analysis_df_full
 
 
-def test_delta_analysis(analysis_ratio_df):
+def test_delta_analysis(analysis_ratio_df, experiment_dates):
     analyser = DeltaMethodAnalysis(cluster_cols=["user"])
+    experiment_start = min(experiment_dates)
 
-    assert 0.05 >= analyser.get_pvalue(analysis_ratio_df) >= 0
+    df_experiment = analysis_ratio_df.query(f"date >= '{experiment_start}'")
+
+    assert 0.05 >= analyser.get_pvalue(df_experiment) >= 0
 
 
 def test_cuped_delta_analysis(analysis_ratio_df, experiment_dates):
