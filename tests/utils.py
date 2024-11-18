@@ -109,3 +109,47 @@ def generate_clustered_data() -> pd.DataFrame:
         }
     )
     return analysis_df
+
+
+def generate_ratio_metric_data(
+    dates,
+    N,
+    num_users=2000,
+    user_sample_mean=0.3,
+    user_standard_error=0.15,
+    treatment_effect=0.25,
+) -> pd.DataFrame:
+
+    user_sessions = np.random.choice(num_users, N)
+    user_dates = np.random.choice(dates, N)
+    user_target_means = np.random.normal(
+        user_sample_mean, user_standard_error, num_users
+    )
+    # assign treatment groups
+    treatment = np.random.choice([0, 1], num_users)
+
+    # create target rate per session level
+    target_percent_per_session = (
+        treatment_effect * treatment[user_sessions]
+        + user_target_means[user_sessions]
+        + np.random.normal(0, 0.01, N)
+    )
+
+    # Remove <0 or >1
+    target_percent_per_session[target_percent_per_session > 1] = 1
+    target_percent_per_session[target_percent_per_session < 0] = 0
+
+    targets_observed = np.random.binomial(1, target_percent_per_session)
+
+    # rename treatment array 0-->A, 1-->B
+    mapped_treatment = np.where(treatment == 0, "A", "B")
+
+    return pd.DataFrame(
+        {
+            "user": user_sessions,
+            "date": user_dates,
+            "treatment": mapped_treatment[user_sessions],
+            "target": targets_observed,
+            "scale": np.ones_like(user_sessions),
+        }
+    )
