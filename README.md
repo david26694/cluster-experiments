@@ -196,8 +196,9 @@ The library offers the following classes:
     * `ClusteredOLSAnalysis`: to run OLS analysis on the results of a clustered design
     * `OLSAnalysis`: to run OLS analysis for non-clustered data
     * `TargetAggregation`: to add pre-experimental data of the outcome to reduce variance
+    * `DeltaMethodAnalysis`: to run Delta Method on simple ratio metrics
 * Other:
-    * `PowerConfig`: to conviently configure `PowerAnalysis` class
+    * `PowerConfig`: to conveniently configure `PowerAnalysis` class
 
 ## Installation
 
