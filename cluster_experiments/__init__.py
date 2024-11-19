@@ -1,6 +1,7 @@
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
+    DeltaMethodAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     MLMExperimentAnalysis,
@@ -68,4 +69,5 @@ __all__ = [
     "ConstantWashover",
     "Washover",
     "MLMExperimentAnalysis",
+    "DeltaMethodAnalysis",
 ]

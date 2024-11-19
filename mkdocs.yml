@@ -21,6 +21,7 @@ nav:
   - Different hypotheses tests: analysis_with_different_hypotheses.ipynb
   - Washover: washover_example.ipynb
   - Normal Power: normal_power.ipynb
+  - Delta Method: delta_method.ipynb
   - API:
       - Experiment analysis: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
