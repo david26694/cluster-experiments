@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from cluster_experiments.experiment_analysis import (
+    ClusteredOLSAnalysis,
     DeltaMethodAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
@@ -233,3 +234,24 @@ def test_aa_cuped_delta_analysis(dates, experiment_dates):
     assert positive_rate == pytest.approx(
         0.05, abs=0.01
     ), "P-value A/A calculation is incorrect"
+
+
+def test_stats_delta_vs_ols(analysis_ratio_df, experiment_dates):
+    experiment_start_date = min(experiment_dates)
+
+    analyser_ols = ClusteredOLSAnalysis(cluster_cols=["user"])
+    analyser_delta = DeltaMethodAnalysis(cluster_cols=["user"])
+    df = analysis_ratio_df.query(f"date >= '{experiment_start_date}'")
+
+    point_estimate_ols = analyser_ols.get_point_estimate(df)
+    point_estimate_delta = analyser_delta.get_point_estimate(df)
+
+    SE_ols = analyser_ols.get_standard_error(df)
+    SE_delta = analyser_delta.get_standard_error(df)
+
+    assert point_estimate_delta == pytest.approx(
+        point_estimate_ols, rel=1e-2
+    ), "Point estimate is not consistent with Clustered OLS"
+    assert SE_delta == pytest.approx(
+        SE_ols, rel=1e-2
+    ), "Standard error is not consistent with Clustered OLS"

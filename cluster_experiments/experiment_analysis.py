@@ -436,7 +436,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             "Delta Method approximation may not be accurate for small group sizes"
         )
 
-    def get_mean_variance(self, df: pd.DataFrame) -> tuple[float, float]:
+    def _get_mean_variance(self, df: pd.DataFrame) -> tuple[float, float]:
         """
         Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
         CUPED method is used if cuped_time_split is provided when instantiating class.
@@ -468,7 +468,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze.
         """
 
-        mean_diff, SE = self.compute_mean_variance(df)
+        mean_diff, SE = self._get_mean_variance(df)
 
         z_score = mean_diff / SE
         p_value = 2 * (1 - norm.cdf(abs(z_score)))
@@ -480,7 +480,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        mean_diff, _SE = self.compute_mean_variance(df)
+        mean_diff, _SE = self._get_mean_variance(df)
         return mean_diff
 
     def analysis_standard_error(self, df: pd.DataFrame) -> float:
@@ -489,7 +489,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        _mean_diff, SE = self.compute_mean_variance(df)
+        _mean_diff, SE = self._get_mean_variance(df)
         return SE
 
 
