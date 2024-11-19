@@ -288,7 +288,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         return VariableHolder()
 
-    def calculate_cuped_theta(self, V):
+    def _calculate_cuped_theta(self, V):
         # assumes the V, the VariableHolder class is passed in
 
         # formula from Deng et al. n's would cancel out
@@ -297,7 +297,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         )
         return theta
 
-    def cuped_y_hat(self, df: pd.DataFrame, theta: np.float64) -> pd.DataFrame:
+    def _cuped_y_hat(self, df: pd.DataFrame, theta: np.float64) -> pd.DataFrame:
         """
         Returns the adjusted ratio metric (target/scale) for the given dataframe.
 
@@ -316,7 +316,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             - (pre_target_values / pre_scale_values).mean()
         )
 
-    def cuped_var_y_hat(self, V, theta: np.float64) -> np.float64:
+    def _cuped_var_y_hat(self, V, theta: np.float64) -> np.float64:
         # assumes the V, the VariableHolder class is passed in
 
         # formula from Deng et al., using the delta method
@@ -330,7 +330,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             var_Y_div_N + (theta**2) * var_X_div_M - 2 * theta * cov
         ) / V.group_size
 
-    def aggregate_to_cluster(
+    def _aggregate_to_cluster(
         self, df: pd.DataFrame, strat_treatment: Optional[bool] = True
     ) -> pd.DataFrame:
         """
@@ -363,12 +363,12 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
                 control_mean,
                 treatment_variance,
                 control_variance,
-            ) = self.get_cuped_group_mean_and_variance(df)
+            ) = self._get_cuped_group_mean_and_variance(df)
         else:
-            treatment_mean, treatment_variance = self.get_group_mean_and_variance(
+            treatment_mean, treatment_variance = self._get_group_mean_and_variance(
                 df[df[self.treatment_col] == 1]
             )
-            control_mean, control_variance = self.get_group_mean_and_variance(
+            control_mean, control_variance = self._get_group_mean_and_variance(
                 df[df[self.treatment_col] != 1]
             )
             mean_diff = treatment_mean - control_mean
@@ -381,14 +381,14 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         p_value = 2 * (1 - norm.cdf(abs(z_score)))
         return p_value
 
-    def get_group_mean_and_variance(self, df: pd.DataFrame) -> tuple[float, float]:
+    def _get_group_mean_and_variance(self, df: pd.DataFrame) -> tuple[float, float]:
         """
         Returns the mean and variance of the ratio metric (target/scale) as estimated by the delta method for a given group (treatment).
 
         Arguments:
             df: dataframe containing the data to analyze.
         """
-        df = self.aggregate_to_cluster(df)
+        df = self._aggregate_to_cluster(df)
         group_size = len(df)
 
         if group_size < 1000:
@@ -412,7 +412,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         ) / group_size
         return group_mean, group_variance
 
-    def get_cuped_group_mean_and_variance(
+    def _get_cuped_group_mean_and_variance(
         self, df: pd.DataFrame
     ) -> tuple[float, float, float, float]:
         """
@@ -422,11 +422,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze. Must contain pre-treatment target and scale columns.
         """
 
-        pre_df = self.aggregate_to_cluster(
+        pre_df = self._aggregate_to_cluster(
             df.query(f"{self.cuped_time_col} < '{self.cuped_timestamp}'"),
             strat_treatment=False,
         )
-        df = self.aggregate_to_cluster(
+        df = self._aggregate_to_cluster(
             df.query(f"{self.cuped_time_col} >= '{self.cuped_timestamp}'")
         )
 
@@ -444,9 +444,9 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         if V.group_size < 1000:
             self.__warn_small_group_size()
 
-        theta = self.calculate_cuped_theta(V)
+        theta = self._calculate_cuped_theta(V)
 
-        Y_hat_df = self.cuped_y_hat(df, theta)
+        Y_hat_df = self._cuped_y_hat(df, theta)
 
         is_control = df[self.treatment_col] == 0
 
@@ -455,8 +455,8 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         control_mean = Y_hat_df[is_control].mean()
         treatment_mean = Y_hat_df[~is_control].mean()
-        control_variance = self.cuped_var_y_hat(Vc, theta)
-        treatment_variance = self.cuped_var_y_hat(Vt, theta)
+        control_variance = self._cuped_var_y_hat(Vc, theta)
+        treatment_variance = self._cuped_var_y_hat(Vt, theta)
 
         return treatment_mean, control_mean, treatment_variance, control_variance
 
