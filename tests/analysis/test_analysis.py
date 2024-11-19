@@ -10,7 +10,11 @@ from cluster_experiments.experiment_analysis import (
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
-from tests.utils import generate_clustered_data, generate_random_data
+from tests.utils import (
+    generate_clustered_data,
+    generate_random_data,
+    generate_ratio_metric_data,
+)
 
 
 @pytest.fixture
@@ -187,6 +191,22 @@ def test_delta_analysis(analysis_ratio_df, experiment_dates):
     assert 0.05 >= analyser.get_pvalue(df_experiment) >= 0
 
 
+def test_aa_delta_analysis(dates):
+
+    analyser = DeltaMethodAnalysis(cluster_cols=["user"])
+
+    p_values = []
+    for _ in range(100):
+        data = generate_ratio_metric_data(dates, N=100_000, treatment_effect=0)
+        p_values.append(analyser.get_pvalue(data))
+
+    positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
+
+    assert positive_rate == pytest.approx(
+        0.05, abs=0.01
+    ), "P-value A/A calculation is incorrect"
+
+
 def test_cuped_delta_analysis(analysis_ratio_df, experiment_dates):
     experiment_start_date = min(experiment_dates)
     analyser = DeltaMethodAnalysis(
@@ -194,3 +214,22 @@ def test_cuped_delta_analysis(analysis_ratio_df, experiment_dates):
     )
 
     assert 0.05 >= analyser.get_pvalue(analysis_ratio_df) >= 0
+
+
+def test_aa_cuped_delta_analysis(dates, experiment_dates):
+    experiment_start_date = min(experiment_dates)
+
+    analyser = DeltaMethodAnalysis(
+        cluster_cols=["user"], cuped_time_split=("date", experiment_start_date)
+    )
+
+    p_values = []
+    for _ in range(100):
+        data = generate_ratio_metric_data(dates, N=100_000, treatment_effect=0)
+        p_values.append(analyser.get_pvalue(data))
+
+    positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
+
+    assert positive_rate == pytest.approx(
+        0.05, abs=0.01
+    ), "P-value A/A calculation is incorrect"
