@@ -349,38 +349,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         )
         return aggregate_df
 
-    def analysis_pvalue(self, df: pd.DataFrame) -> float:
-        """
-        Returns the p-value of the analysis.
-
-        Arguments:
-            df: dataframe containing the data to analyze.
-        """
-
-        if self.use_cuped:
-            (
-                treatment_mean,
-                control_mean,
-                treatment_variance,
-                control_variance,
-            ) = self._get_cuped_group_mean_and_variance(df)
-        else:
-            treatment_mean, treatment_variance = self._get_group_mean_and_variance(
-                df[df[self.treatment_col] == 1]
-            )
-            control_mean, control_variance = self._get_group_mean_and_variance(
-                df[df[self.treatment_col] != 1]
-            )
-            mean_diff = treatment_mean - control_mean
-            variance_diff = control_variance + treatment_variance
-
-        mean_diff = treatment_mean - control_mean
-        variance_diff = control_variance + treatment_variance
-
-        z_score = mean_diff / math.sqrt(variance_diff)
-        p_value = 2 * (1 - norm.cdf(abs(z_score)))
-        return p_value
-
     def _get_group_mean_and_variance(self, df: pd.DataFrame) -> tuple[float, float]:
         """
         Returns the mean and variance of the ratio metric (target/scale) as estimated by the delta method for a given group (treatment).
@@ -467,6 +435,62 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         warnings.warn(
             "Delta Method approximation may not be accurate for small group sizes"
         )
+
+    def get_mean_variance(self, df: pd.DataFrame) -> tuple[float, float]:
+        """
+        Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
+        CUPED method is used if cuped_time_split is provided when instantiating class.
+        """
+        if self.use_cuped:
+            (
+                treatment_mean,
+                control_mean,
+                treatment_variance,
+                control_variance,
+            ) = self._get_cuped_group_mean_and_variance(df)
+        else:
+            treatment_mean, treatment_variance = self._get_group_mean_and_variance(
+                df[df[self.treatment_col] == 1]
+            )
+            control_mean, control_variance = self._get_group_mean_and_variance(
+                df[df[self.treatment_col] != 1]
+            )
+
+        mean_diff = treatment_mean - control_mean
+        SE = math.sqrt(treatment_variance + control_variance)
+        return mean_diff, SE
+
+    def analysis_pvalue(self, df: pd.DataFrame) -> float:
+        """
+        Returns the p-value of the analysis.
+
+        Arguments:
+            df: dataframe containing the data to analyze.
+        """
+
+        mean_diff, SE = self.compute_mean_variance(df)
+
+        z_score = mean_diff / SE
+        p_value = 2 * (1 - norm.cdf(abs(z_score)))
+        return p_value
+
+    def analysis_point_estimate(self, df: pd.DataFrame) -> float:
+        """Returns the point estimate of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        mean_diff, _SE = self.compute_mean_variance(df)
+        return mean_diff
+
+    def analysis_standard_error(self, df: pd.DataFrame) -> float:
+        """Returns the standard error of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        _mean_diff, SE = self.compute_mean_variance(df)
+        return SE
 
 
 class GeeExperimentAnalysis(ExperimentAnalysis):
