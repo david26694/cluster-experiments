@@ -181,10 +181,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self,
         cluster_cols: List[str],
         target_col: str = "target",
-        scale_col: str = "scale",
+        scale_col: Optional[str] = None,
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
+        ratio_covariates: Optional[List[Tuple[str]]] = None,
         hypothesis: str = "two-sided",
         cuped_time_split: Optional[Tuple[str, str]] = None,
     ):
@@ -199,6 +200,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             treatment_col: name of the column containing the treatment variable.
             treatment: name of the treatment to use as the treated group.
             covariates: list of columns to use as covariates (not used in the Delta Method Analysis).
+            ratio_covariates: list of tuples of columns to use as covariates for the ratio metric. First element is the numerator column, second element is the denominator column.
             hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis.
             cuped_time_split: (time_cole, timestamp) to split the data for the CUPED method. If None, the CUPED method is not used.
 
@@ -231,12 +233,16 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         self.use_cuped = False
 
-        if cuped_time_split is not None:
+        if covariates or ratio_covariates:
             self.use_cuped = True
+
+        # TODO: FIX THIS, USE AS PREPROCESSING OR SOMETHING
+        if cuped_time_split is not None:
             self.cuped_time_col, self.cuped_timestamp = cuped_time_split
 
-        if covariates:
-            self.__warn_covariate_dismissal()
+        self.covariates = covariates or []
+        self.covariates_delta = []
+        self.ratio_covariates = ratio_covariates or []
 
     def _impute_pre_missing_values(self, df: pd.DataFrame):
         """Impute missing values with the mean"""
@@ -250,6 +256,87 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         )
 
         return df
+
+    def _transform_ratio_metric(
+        self, df: pd.DataFrame, numerator: str, denominator: str
+    ) -> pd.DataFrame:
+        df = df.copy()
+        mean_numerator, mean_denominator = df.loc[:, [numerator, denominator]].mean()
+        df[f"{numerator}_{denominator}"] = (
+            df[numerator] / mean_denominator
+            - df[denominator] * mean_numerator / mean_denominator**2
+        )
+        return df
+
+    def _transform_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Transforms ratio metrics that are not at user level into a column with linearization from Delta Method done already.
+        These columns are added to the covariates which allows for the Delta Method to be used equally for all covariates (non user-level and user-level metrics).
+        """
+        df = df.copy()
+
+        # transform target metric if necessary
+        if self.scale_col is not None:
+            numerator, denominator = self.target_col, self.scale_col
+            df = self._transform_ratio_metric(df, numerator, denominator)
+            df[f"unscaled_{numerator}_{denominator}"] = df[numerator] / df[denominator]
+            self.target_col = f"{numerator}_{denominator}"
+
+        for numerator, denominator in self.ratio_covariates:
+            df = self._transform_ratio_metric(df, numerator, denominator)
+            df[f"unscaled_{numerator}_{denominator}"] = df[numerator] / df[denominator]
+            self.covariates_delta.append(f"{numerator}_{denominator}")
+        return df
+
+    def _compute_thetas(self, df: pd.DataFrame) -> np.array:
+        """
+        Computes the theta value for the CUPED method.
+        """
+
+        data = df[[self.target_col] + self.covariates + self.covariates_delta]
+        cov_mat = data.cov()  # nxn
+        sigma = cov_mat.iloc[1:, 1:]  # (n-1)x(n-1)
+        z = cov_mat.iloc[1:, 0]  # (n-1)x1
+
+        thetas = np.dot(np.linalg.inv(sigma), z)
+        return thetas
+
+    def _get_y_hat(self, df: pd.DataFrame, theta: np.array) -> pd.DataFrame:
+        """
+        Compute CUPED estimate
+        """
+
+        Y = df["unscaled_" + self.target_col].values.astype(float)
+        cov_cols = [
+            "unscaled_" + cov for cov in self.covariates_delta
+        ] + self.covariates
+        covariates = df[cov_cols]
+
+        Y_cv = Y.copy()
+        for k in range(covariates.shape[1]):
+            Y_cv -= theta[k] * (
+                covariates.values[:, k] - covariates.values[:, k].mean()
+            )
+        return Y_cv
+
+    def get_statistics_cuped(
+        self, df: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, float, float]:
+
+        df = df.copy()
+        # df = self._aggregate_to_cluster(df)
+        df = self._transform_metrics(df)
+        thetas = self._compute_thetas(df)
+        Y_hat = self._get_y_hat(df, thetas)
+
+        is_control = df[self.treatment_col] == 0
+
+        control_mean = Y_hat[is_control].mean()
+        treatment_mean = Y_hat[~is_control].mean()
+        control_ste = Y_hat[is_control].std() / np.sqrt(len(Y_hat))
+        treatment_ste = Y_hat[~is_control].std() / np.sqrt(len(Y_hat))
+
+        return control_mean, treatment_mean, control_ste, treatment_ste
 
     def _extract_variables(self, df: pd.DataFrame):
         class VariableHolder:
@@ -380,74 +467,24 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         ) / group_size
         return group_mean, group_variance
 
-    def _get_cuped_group_mean_and_variance(
-        self, df: pd.DataFrame
-    ) -> tuple[float, float, float, float]:
-        """
-        Returns the mean and variance of the ratio metric (target/scale) for control and treatment as estimated by the delta method for a given group (treatment) using the CUPED method.
-
-        Arguments:
-            df: dataframe containing the data to analyze. Must contain pre-treatment target and scale columns.
-        """
-
-        pre_df = self._aggregate_to_cluster(
-            df.query(f"{self.cuped_time_col} < '{self.cuped_timestamp}'"),
-            strat_treatment=False,
-        )
-        df = self._aggregate_to_cluster(
-            df.query(f"{self.cuped_time_col} >= '{self.cuped_timestamp}'")
-        )
-
-        pre_df = pre_df.rename(
-            columns={
-                self.target_col: "pre_" + self.target_col,
-                self.scale_col: "pre_" + self.scale_col,
-            }
-        )
-
-        df = df.merge(pre_df, on=self.cluster_cols, how="left")
-        df = self._impute_pre_missing_values(df)
-        V = self._extract_variables(df)
-
-        if V.group_size < 1000:
-            self.__warn_small_group_size()
-
-        theta = self._calculate_cuped_theta(V)
-
-        Y_hat_df = self._cuped_y_hat(df, theta)
-
-        is_control = df[self.treatment_col] == 0
-
-        Vt = self._extract_variables(df[~is_control])
-        Vc = self._extract_variables(df[is_control])
-
-        control_mean = Y_hat_df[is_control].mean()
-        treatment_mean = Y_hat_df[~is_control].mean()
-        control_variance = self._cuped_var_y_hat(Vc, theta)
-        treatment_variance = self._cuped_var_y_hat(Vt, theta)
-
-        return treatment_mean, control_mean, treatment_variance, control_variance
-
-    def __warn_covariate_dismissal(self):
-        warnings.warn("Covariates are not used in the Delta Method Analysis")
-
     def __warn_small_group_size(self):
         warnings.warn(
             "Delta Method approximation may not be accurate for small group sizes"
         )
 
-    def _get_mean_variance(self, df: pd.DataFrame) -> tuple[float, float]:
+    def _get_mean_SE(self, df: pd.DataFrame) -> tuple[float, float]:
         """
         Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
         CUPED method is used if cuped_time_split is provided when instantiating class.
         """
         if self.use_cuped:
             (
-                treatment_mean,
                 control_mean,
-                treatment_variance,
-                control_variance,
-            ) = self._get_cuped_group_mean_and_variance(df)
+                treatment_mean,
+                control_ste,
+                treatment_ste,
+            ) = self.get_statistics_cuped(df)
+            SE = treatment_ste + control_ste  # TODO: Do better
         else:
             treatment_mean, treatment_variance = self._get_group_mean_and_variance(
                 df[df[self.treatment_col] == 1]
@@ -455,9 +492,10 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             control_mean, control_variance = self._get_group_mean_and_variance(
                 df[df[self.treatment_col] != 1]
             )
+            SE = math.sqrt(treatment_variance + control_variance)
 
         mean_diff = treatment_mean - control_mean
-        SE = math.sqrt(treatment_variance + control_variance)
+
         return mean_diff, SE
 
     def analysis_pvalue(self, df: pd.DataFrame) -> float:
@@ -468,7 +506,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze.
         """
 
-        mean_diff, SE = self._get_mean_variance(df)
+        mean_diff, SE = self._get_mean_SE(df)
 
         z_score = mean_diff / SE
         p_value = 2 * (1 - norm.cdf(abs(z_score)))
@@ -480,7 +518,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        mean_diff, _SE = self._get_mean_variance(df)
+        mean_diff, _SE = self._get_mean_SE(df)
         return mean_diff
 
     def analysis_standard_error(self, df: pd.DataFrame) -> float:
@@ -489,7 +527,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        _mean_diff, SE = self._get_mean_variance(df)
+        _mean_diff, SE = self._get_mean_SE(df)
         return SE
 
 
