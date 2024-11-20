@@ -152,7 +152,8 @@ class PowerConfig:
                 self._set_and_log("washover_time_delta", None, "splitter")
             if self._are_different(self.washover, ""):
                 self._set_and_log("washover", "", "splitter")
-            if self._are_different(self.time_col, None):
+            # an exception is made when we have no perturbator (normal power analysis)
+            if self._are_different(self.time_col, None) and self.perturbator != "":
                 self._set_and_log("time_col", None, "splitter")
 
         if self.perturbator not in {"normal", "beta_relative_positive"}:

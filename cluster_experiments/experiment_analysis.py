@@ -2,7 +2,8 @@ import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,7 +11,31 @@ import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
 from scipy.stats import norm, ttest_ind, ttest_rel
 
+from cluster_experiments.synthetic_control_utils import get_w
 from cluster_experiments.utils import HypothesisEntries
+
+
+@dataclass
+class ConfidenceInterval:
+    """
+    Class to define the structure of a confidence interval.
+    """
+
+    lower: float
+    upper: float
+    alpha: float
+
+
+@dataclass
+class InferenceResults:
+    """
+    Class to define the structure of complete statistical analysis results.
+    """
+
+    ate: float
+    p_value: float
+    std_error: float
+    conf_int: ConfidenceInterval
 
 
 class ExperimentAnalysis(ABC):
@@ -98,6 +123,40 @@ class ExperimentAnalysis(ABC):
         """
         raise NotImplementedError("Standard error not implemented for this analysis")
 
+    def analysis_confidence_interval(
+        self,
+        df: pd.DataFrame,
+        alpha: float,
+        verbose: bool = False,
+    ) -> ConfidenceInterval:
+        """
+        Returns the confidence interval of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError(
+            "Confidence Interval not implemented for this analysis"
+        )
+
+    def analysis_inference_results(
+        self,
+        df: pd.DataFrame,
+        alpha: float,
+        verbose: bool = False,
+    ) -> InferenceResults:
+        """
+        Returns the InferenceResults object of the analysis. Expects treatment to be 0-1 variable
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        raise NotImplementedError(
+            "Inference results are not implemented for this analysis"
+        )
+
     def _data_checks(self, df: pd.DataFrame) -> None:
         """Checks that the data is correct"""
         if df[self.target_col].isnull().any():
@@ -143,6 +202,32 @@ class ExperimentAnalysis(ABC):
         self._data_checks(df=df)
         return self.analysis_standard_error(df)
 
+    def get_confidence_interval(
+        self, df: pd.DataFrame, alpha: float
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_confidence_interval(df, alpha)
+
+    def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
+        """Returns the inference results of the analysis
+
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_inference_results(df, alpha)
+
     def pvalue_based_on_hypothesis(
         self, model_result
     ) -> float:  # todo add typehint statsmodels result
@@ -162,6 +247,11 @@ class ExperimentAnalysis(ABC):
         if HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
             return p_value
         raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
+
+    def _split_pre_experiment_df(self, df: pd.DataFrame):
+        raise NotImplementedError(
+            "This method should be implemented in the child class"
+        )
 
     @classmethod
     def from_config(cls, config):
@@ -532,6 +622,58 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         results_gee = self.fit_gee(df)
         return results_gee.bse[self.treatment_col]
 
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_gee.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_gee.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
+    def analysis_inference_results(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> InferenceResults:
+        """Returns the inference results of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_gee = self.fit_gee(df)
+
+        std_error = results_gee.bse[self.treatment_col]
+        ate = results_gee.params[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_gee)
+
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_gee.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_gee.summary())
+
+        # Return the confidence interval
+        return InferenceResults(
+            ate=ate,
+            p_value=p_value,
+            std_error=std_error,
+            conf_int=ConfidenceInterval(
+                lower=lower_bound, upper=upper_bound, alpha=alpha
+            ),
+        )
+
 
 class ClusteredOLSAnalysis(ExperimentAnalysis):
     """
@@ -622,6 +764,58 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
         """
         results_ols = self.fit_ols_clustered(df)
         return results_ols.bse[self.treatment_col]
+
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols_clustered(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
+    def analysis_inference_results(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> InferenceResults:
+        """Returns the inference results of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols_clustered(df)
+
+        std_error = results_ols.bse[self.treatment_col]
+        ate = results_ols.params[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_ols)
+
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return InferenceResults(
+            ate=ate,
+            p_value=p_value,
+            std_error=std_error,
+            conf_int=ConfidenceInterval(
+                lower=lower_bound, upper=upper_bound, alpha=alpha
+            ),
+        )
 
 
 class TTestClusteredAnalysis(ExperimentAnalysis):
@@ -899,6 +1093,58 @@ class OLSAnalysis(ExperimentAnalysis):
         results_ols = self.fit_ols(df=df)
         return results_ols.bse[self.treatment_col]
 
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
+    def analysis_inference_results(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> InferenceResults:
+        """Returns the inference results of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_ols = self.fit_ols(df)
+
+        std_error = results_ols.bse[self.treatment_col]
+        ate = results_ols.params[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_ols)
+
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_ols.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_ols.summary())
+
+        # Return the confidence interval
+        return InferenceResults(
+            ate=ate,
+            p_value=p_value,
+            std_error=std_error,
+            conf_int=ConfidenceInterval(
+                lower=lower_bound, upper=upper_bound, alpha=alpha
+            ),
+        )
+
     @classmethod
     def from_config(cls, config):
         """Creates an OLSAnalysis object from a PowerConfig object"""
@@ -1005,3 +1251,221 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         """
         results_mlm = self.fit_mlm(df)
         return results_mlm.bse[self.treatment_col]
+
+
+class SyntheticControlAnalysis(ExperimentAnalysis):
+    """
+    Class to run Synthetic control analysis. It expects only one treatment cluster.
+
+    Arguments:
+
+        target_col (str): The name of the column containing the variable to measure.
+        treatment_col (str): The name of the column containing the treatment variable.
+        treatment (str): The name of the treatment to use as the treated group.
+        cluster_cols (list): A list of columns to use as clusters.
+        hypothesis (str): One of "two-sided", "less", "greater" indicating the hypothesis.
+        time_col (str): The name of the column containing the time data.
+        intervention_date (str): The date when the intervention occurred.
+    Usage:
+
+    ```python
+    from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
+    import pandas as pd
+    import numpy as np
+    from itertools import product
+
+    dates = pd.date_range("2022-01-01", "2022-01-31", freq="d")
+
+    users = [f"User {i}" for i in range(10)]
+
+    # Create a combination of each date with each user
+    combinations = list(product(users, dates))
+
+    target_values = np.random.normal(0, 1, size=len(combinations))
+
+    df = pd.DataFrame(combinations, columns=["user", "date"])
+    df["target"] = target_values
+
+    df["treatment"] = "A"
+    df.loc[(df["user"] == "User 5"), "treatment"] = "B"
+
+    SyntheticControlAnalysis(
+        cluster_cols=["user"], time_col="date", intervention_date="2022-01-15"
+    ).get_pvalue(df)
+
+    ```
+    """
+
+    def __init__(
+        self,
+        intervention_date: str,
+        cluster_cols: List[str],
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        hypothesis: str = "two-sided",
+        time_col: str = "date",
+    ):
+        super().__init__(
+            treatment=treatment,
+            target_col=target_col,
+            treatment_col=treatment_col,
+            hypothesis=hypothesis,
+            cluster_cols=cluster_cols,
+        )
+
+        self.time_col = time_col
+        self.intervention_date = intervention_date
+
+        if time_col in cluster_cols:
+            raise ValueError("time columns should not be in cluster columns")
+
+    def _fit(self, pre_experiment_df: pd.DataFrame, verbose: bool) -> np.ndarray:
+        """Returns the weight of each donor"""
+
+        if not any(pre_experiment_df[self.treatment_col] == 1):
+            raise ValueError("No treatment unit found in the data.")
+
+        X = (
+            pre_experiment_df.query(f"{self.treatment_col} == 0")
+            .pivot(index=self.cluster_cols, columns=self.time_col)[self.target_col]
+            .T
+        )
+
+        y = (
+            pre_experiment_df.query(f"{self.treatment_col} == 1")
+            .pivot(index=self.cluster_cols, columns=self.time_col)[self.target_col]
+            .T.iloc[:, 0]
+        )
+
+        weights = get_w(X, y, verbose)
+
+        return weights
+
+    def _predict(
+        self, df: pd.DataFrame, weights: np.ndarray, treatment_cluster: str
+    ) -> pd.DataFrame:
+        """
+        This method adds a column with the synthetic results and filter only the treatment unit.
+
+        First, it calculates the weights of each donor in the control group using the `fit_synthetic` method.
+        It then uses these weights to create a synthetic control group that closely matches the treatment unit before the intervention.
+        The synthetic control group is added to the treatment unit in the dataframe.
+        """
+        synthetic = (
+            df[self._get_cluster_column(df) != treatment_cluster]
+            .pivot(index=self.time_col, columns=self.cluster_cols)[self.target_col]
+            .values.dot(weights)
+        )
+
+        # add synthetic to treatment cluster
+        return df[self._get_cluster_column(df) == treatment_cluster].assign(
+            synthetic=synthetic
+        )
+
+    def fit_predict_synthetic(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: pd.DataFrame,
+        treatment_cluster: str,
+        verbose: bool = False,
+    ) -> pd.DataFrame:
+        """
+        Fit the synthetic control model and predict the results for the treatment cluster.
+        Args:
+            df: The dataframe containing the data after the intervention.
+            pre_experiment_df: The dataframe containing the data before the intervention.
+            treatment_cluster: The name of the treatment cluster.
+            verbose: If True, print the status of the optimization of weights.
+
+        Returns:
+            The dataframe with the synthetic results added to the treatment cluster.
+        """
+        weights = self._fit(pre_experiment_df=pre_experiment_df, verbose=verbose)
+
+        prediction = self._predict(
+            df=df, weights=weights, treatment_cluster=treatment_cluster
+        )
+        return prediction
+
+    def pvalue_based_on_hypothesis(
+        self, ate: np.float64, avg_effects: Dict[str, float]
+    ) -> float:
+        """
+        Returns the p-value of the analysis.
+        1. Count how many times the average effect is greater than the real treatment unit
+        2. Average it with the number of units. The result is the p-value using Fisher permutation exact test.
+        """
+
+        avg_effects = list(avg_effects.values())
+
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.LESS:
+            return np.mean(avg_effects < ate)
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.GREATER:
+            return np.mean(avg_effects > ate)
+        if HypothesisEntries(self.hypothesis) == HypothesisEntries.TWO_SIDED:
+            avg_effects = np.abs(avg_effects)
+            return np.mean(avg_effects > ate)
+
+        raise ValueError(f"{self.hypothesis} is not a valid HypothesisEntries")
+
+    def _get_treatment_cluster(self, df: pd.DataFrame) -> str:
+        """Returns the first treatment cluster. The current implementation of Synthetic Control only accepts one treatment cluster.
+        This will be left inside Synthetic class because it doesn't apply for other analyses
+        """
+        treatment_df = df[df[self.treatment_col] == 1]
+        treatment_cluster = self._get_cluster_column(treatment_df).unique()[0]
+        return treatment_cluster
+
+    def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
+        """
+        Returns the p-value of the analysis.
+        1. Calculate the average effect after intervention for each unit.
+        2. Count how many times the average effect is greater than the real treatment unit
+        3. Average it with the number of units. The result is the p-value using Fisher permutation test
+        """
+
+        clusters = self._get_cluster_column(df).unique()
+        treatment_cluster = self._get_treatment_cluster(df)
+
+        synthetic_donors = {
+            cluster: self.analysis_point_estimate(
+                treatment_cluster=cluster,
+                df=df,
+                verbose=verbose,
+            )
+            for cluster in clusters
+        }
+
+        ate = synthetic_donors[treatment_cluster]
+        synthetic_donors.pop(treatment_cluster)
+
+        return self.pvalue_based_on_hypothesis(ate=ate, avg_effects=synthetic_donors)
+
+    def analysis_point_estimate(
+        self,
+        df: pd.DataFrame,
+        treatment_cluster: Optional[str] = None,
+        verbose: bool = False,
+    ):
+        """
+        Calculate the point estimate for the treatment effect for a specified cluster by averaging across the time windows.
+        """
+        df, pre_experiment_df = self._split_pre_experiment_df(df)
+
+        if treatment_cluster is None:
+            treatment_cluster = self._get_treatment_cluster(df)
+
+        df = self.fit_predict_synthetic(
+            df, pre_experiment_df, treatment_cluster, verbose=verbose
+        )
+
+        df["effect"] = df[self.target_col] - df["synthetic"]
+        avg_effect = df["effect"].mean()
+        return avg_effect
+
+    def _split_pre_experiment_df(self, df: pd.DataFrame):
+        """Split the dataframe into pre-experiment and experiment dataframes"""
+        pre_experiment_df = df[(df[self.time_col] <= self.intervention_date)]
+        df = df[(df[self.time_col] > self.intervention_date)]
+        return df, pre_experiment_df

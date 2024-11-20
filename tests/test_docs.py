@@ -2,6 +2,7 @@ import pytest
 from mktestdocs import check_docstring, check_md_file, get_codeblock_members
 
 from cluster_experiments import (
+    AnalysisPlan,
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     BetaRelativePerturbator,
@@ -12,10 +13,14 @@ from cluster_experiments import (
     ConstantPerturbator,
     ConstantWashover,
     DeltaMethodAnalysis,
+    Dimension,
     EmptyRegressor,
     EmptyWashover,
     ExperimentAnalysis,
+    FixedSizeClusteredSplitter,
     GeeExperimentAnalysis,
+    HypothesisTest,
+    Metric,
     MLMExperimentAnalysis,
     NonClusteredSplitter,
     NormalPerturbator,
@@ -26,15 +31,19 @@ from cluster_experiments import (
     PowerAnalysis,
     PowerConfig,
     RandomSplitter,
+    RatioMetric,
     RelativePositivePerturbator,
     RepeatedSampler,
     SegmentedBetaRelativePerturbator,
+    SimpleMetric,
     StratifiedClusteredSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
+    SyntheticControlAnalysis,
     TargetAggregation,
     TTestClusteredAnalysis,
     UniformPerturbator,
+    Variant,
 )
 from cluster_experiments.utils import _original_time_column
 
@@ -45,6 +54,7 @@ all_objects = [
     ClusteredSplitter,
     EmptyRegressor,
     ExperimentAnalysis,
+    FixedSizeClusteredSplitter,
     GeeExperimentAnalysis,
     NonClusteredSplitter,
     OLSAnalysis,
@@ -54,6 +64,7 @@ all_objects = [
     PowerConfig,
     RandomSplitter,
     StratifiedClusteredSplitter,
+    SyntheticControlAnalysis,
     TargetAggregation,
     TTestClusteredAnalysis,
     PairedTTestClusteredAnalysis,
@@ -73,6 +84,13 @@ all_objects = [
     BetaRelativePositivePerturbator,
     BetaRelativePerturbator,
     SegmentedBetaRelativePerturbator,
+    AnalysisPlan,
+    Metric,
+    SimpleMetric,
+    RatioMetric,
+    Dimension,
+    Variant,
+    HypothesisTest,
 ]
 
 
