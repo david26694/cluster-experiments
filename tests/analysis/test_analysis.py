@@ -211,7 +211,6 @@ def test_aa_delta_analysis(dates):
 def test_cuped_delta_analysis(analysis_ratio_df, experiment_dates):
     experiment_start_date = min(experiment_dates)
     analyser = DeltaMethodAnalysis(
-        cluster_cols=["user"],
         ratio_covariates=[("pre_target", "pre_scale")],
         scale_col="scale",
     )
@@ -240,7 +239,6 @@ def test_aa_cuped_delta_analysis(dates, experiment_dates):
     p_values = []
     for _ in range(1000):
         analyser = DeltaMethodAnalysis(
-            cluster_cols=["user"],
             scale_col="scale",
             ratio_covariates=[("pre_target", "pre_scale")],
         )
@@ -314,18 +312,12 @@ def test_stats_cuped_delta_vs_ols(analysis_ratio_df, experiment_dates):
     df["pre_scale"] = df["pre_scale"].fillna(df["pre_scale"].mean())
 
     analyser_delta = DeltaMethodAnalysis(
-        cluster_cols=["user"],
         ratio_covariates=[("pre_target", "pre_scale")],
         scale_col="scale",
     )
 
     effect_delta = analyser_delta.get_point_estimate(df)
 
-    analyser_delta = DeltaMethodAnalysis(
-        cluster_cols=["user"],
-        ratio_covariates=[("pre_target", "pre_scale")],
-        scale_col="scale",
-    )
     SE_delta = analyser_delta.get_standard_error(df)
 
     df["treatment"] = df["treatment"].map({"A": 0, "B": 1})

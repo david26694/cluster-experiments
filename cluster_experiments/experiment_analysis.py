@@ -179,22 +179,21 @@ class ExperimentAnalysis(ABC):
 class DeltaMethodAnalysis(ExperimentAnalysis):
     def __init__(
         self,
-        cluster_cols: List[str],
+        cluster_cols: Optional[List[str]] = None,
         target_col: str = "target",
-        scale_col: Optional[str] = None,
+        scale_col: str = "scale",
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
         ratio_covariates: Optional[List[Tuple[str]]] = None,
         hypothesis: str = "two-sided",
-        cuped_time_split: Optional[Tuple[str, str]] = None,
     ):
         """
         Class to run the Delta Method approximation for estimating the treatment effect on a ratio metric (target/scale) under a clustered design.
         The analysis is done on the aggregated data at the cluster level, making computation more efficient.
 
         Arguments:
-            cluster_cols: list of columns to use as clusters.
+            cluster_cols: list of columns to use as clusters. Not available for the CUPED method.
             target_col: name of the column containing the variable to measure (the numerator of the ratio).
             scale_col: name of the column containing the scale variable (the denominator of the ratio).
             treatment_col: name of the column containing the treatment variable.
@@ -202,7 +201,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             covariates: list of columns to use as covariates (not used in the Delta Method Analysis).
             ratio_covariates: list of tuples of columns to use as covariates for the ratio metric. First element is the numerator column, second element is the denominator column.
             hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis.
-            cuped_time_split: (time_cole, timestamp) to split the data for the CUPED method. If None, the CUPED method is not used.
 
             Usage:
             ```python
@@ -225,6 +223,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             ```
         """
         self.target_col = target_col
+        self.target_metric = target_col
         self.scale_col = scale_col
         self.treatment = treatment
         self.treatment_col = treatment_col
@@ -236,26 +235,9 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         if covariates or ratio_covariates:
             self.use_cuped = True
 
-        # TODO: FIX THIS, USE AS PREPROCESSING OR SOMETHING
-        if cuped_time_split is not None:
-            self.cuped_time_col, self.cuped_timestamp = cuped_time_split
-
         self.covariates = covariates or []
         self.covariates_delta = []
         self.ratio_covariates = ratio_covariates or []
-
-    def _impute_pre_missing_values(self, df: pd.DataFrame):
-        """Impute missing values with the mean"""
-        df = df.copy()
-
-        df["pre_" + self.target_col] = df["pre_" + self.target_col].fillna(
-            df["pre_" + self.target_col].mean()
-        )
-        df["pre_" + self.scale_col] = df["pre_" + self.scale_col].fillna(
-            df["pre_" + self.scale_col].mean()
-        )
-
-        return df
 
     def _transform_ratio_metric(
         self, df: pd.DataFrame, numerator: str, denominator: str
@@ -280,7 +262,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             numerator, denominator = self.target_col, self.scale_col
             df = self._transform_ratio_metric(df, numerator, denominator)
             df[f"unscaled_{numerator}_{denominator}"] = df[numerator] / df[denominator]
-            self.target_col = f"{numerator}_{denominator}"
+            self.target_metric = f"{numerator}_{denominator}"
 
         for numerator, denominator in self.ratio_covariates:
             df = self._transform_ratio_metric(df, numerator, denominator)
@@ -293,7 +275,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Computes the theta value for the CUPED method.
         """
 
-        data = df[[self.target_col] + self.covariates + self.covariates_delta]
+        data = df[[self.target_metric] + self.covariates + self.covariates_delta]
         cov_mat = data.cov()  # nxn
         sigma = cov_mat.iloc[1:, 1:]  # (n-1)x(n-1)
         z = cov_mat.iloc[1:, 0]  # (n-1)x1
@@ -306,7 +288,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Compute CUPED estimate
         """
 
-        Y = df["unscaled_" + self.target_col].values.astype(float)
+        Y = df["unscaled_" + self.target_metric].values.astype(float)
         cov_cols = [
             "unscaled_" + cov for cov in self.covariates_delta
         ] + self.covariates
@@ -323,8 +305,10 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self, df: pd.DataFrame
     ) -> Tuple[pd.DataFrame, float, float]:
 
+        if len(df) < 1000:
+            self.__warn_small_group_size()
+
         df = df.copy()
-        # df = self._aggregate_to_cluster(df)
         df = self._transform_metrics(df)
         thetas = self._compute_thetas(df)
         Y_hat = self._get_y_hat(df, thetas)
@@ -337,85 +321,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         treatment_ste = Y_hat[~is_control].std() / np.sqrt(len(Y_hat))
 
         return control_mean, treatment_mean, control_ste, treatment_ste
-
-    def _extract_variables(self, df: pd.DataFrame):
-        class VariableHolder:
-            """
-            Convenient container class to hold common calculations that I have to do several times
-            off of data frames and return all those variables to the previous scope
-
-            df must be aggregated to the iid level, i.e., user
-            """
-
-            group_size = len(df)
-
-            target_mean, scale_mean = df.loc[
-                :, [self.target_col, self.scale_col]
-            ].mean()
-            target_variance, scale_variance = df.loc[
-                :, [self.target_col, self.scale_col]
-            ].var()
-
-            pre_target_mean, pre_scale_mean = df.loc[
-                :, ["pre_" + self.target_col, "pre_" + self.scale_col]
-            ].mean()
-            sigma = df.loc[
-                :,
-                [
-                    self.target_col,
-                    self.scale_col,
-                    "pre_" + self.target_col,
-                    "pre_" + self.scale_col,
-                ],
-            ].cov()
-            beta1 = np.array([1 / scale_mean, -target_mean / scale_mean**2, 0, 0]).T
-            beta2 = np.array(
-                [0, 0, 1 / pre_scale_mean, -pre_target_mean / pre_scale_mean**2]
-            ).T
-
-        return VariableHolder()
-
-    def _calculate_cuped_theta(self, V):
-        # assumes the V, the VariableHolder class is passed in
-
-        # formula from Deng et al. n's would cancel out
-        theta = np.dot(V.beta1, np.matmul(V.sigma, V.beta2)) / np.dot(
-            V.beta2, np.matmul(V.sigma, V.beta2)
-        )
-        return theta
-
-    def _cuped_y_hat(self, df: pd.DataFrame, theta: np.float64) -> pd.DataFrame:
-        """
-        Returns the adjusted ratio metric (target/scale) for the given dataframe.
-
-        Arguments:
-            df: dataframe containing the data to analyze
-            theta: the estimated theta value from the CUPED method
-        """
-
-        target_values = df[self.target_col].values
-        scale_values = df[self.scale_col].values
-        pre_target_values = df["pre_" + self.target_col].values
-        pre_scale_values = df["pre_" + self.scale_col].values
-
-        return target_values / scale_values - theta * (
-            pre_target_values / pre_scale_values
-            - (pre_target_values / pre_scale_values).mean()
-        )
-
-    def _cuped_var_y_hat(self, V, theta: np.float64) -> np.float64:
-        # assumes the V, the VariableHolder class is passed in
-
-        # formula from Deng et al., using the delta method
-        # to arrive at a new formula from Appendix B
-        var_Y_div_N = np.dot(V.beta1, np.matmul(V.sigma, V.beta1.T))
-
-        var_X_div_M = np.dot(V.beta2, np.matmul(V.sigma, V.beta2))
-        cov = np.dot(V.beta1, np.matmul(V.sigma, V.beta2))
-
-        return (
-            var_Y_div_N + (theta**2) * var_X_div_M - 2 * theta * cov
-        ) / V.group_size
 
     def _aggregate_to_cluster(
         self, df: pd.DataFrame, strat_treatment: Optional[bool] = True
@@ -449,13 +354,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         if group_size < 1000:
             self.__warn_small_group_size()
 
-        target_mean = df.loc[:, self.target_col].mean()
-        target_variance = df.loc[:, self.target_col].var()
-        target_sum = df.loc[:, self.target_col].sum()
-
-        scale_mean = df.loc[:, self.scale_col].mean()
-        scale_variance = df.loc[:, self.scale_col].var()
-        scale_sum = df.loc[:, self.scale_col].sum()
+        target_mean, scale_mean = df.loc[:, [self.target_col, self.scale_col]].mean()
+        target_variance, scale_variance = df.loc[
+            :, [self.target_col, self.scale_col]
+        ].var()
+        target_sum, scale_sum = df.loc[:, [self.target_col, self.scale_col]].sum()
 
         target_scale_cov = df.loc[:, self.target_col].cov(df.loc[:, self.scale_col])
 
@@ -475,9 +378,13 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
     def _get_mean_SE(self, df: pd.DataFrame) -> tuple[float, float]:
         """
         Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
-        CUPED method is used if cuped_time_split is provided when instantiating class.
+        CUPED method is used if covariates are present.
         """
         if self.use_cuped:
+
+            if self.cluster_cols is not None:
+                raise ValueError("Clustered columns are not allowed for CUPED method")
+
             (
                 control_mean,
                 treatment_mean,
