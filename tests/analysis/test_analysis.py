@@ -405,6 +405,11 @@ def test_stats_cuped_delta_vs_ols(analysis_ratio_df, experiment_dates):
 
     effect_delta = analyser_delta.get_point_estimate(df)
 
+    analyser_delta = DeltaMethodAnalysis(
+        ratio_covariates=[("pre_target", "pre_scale")],
+        scale_col="scale",
+    )
+
     SE_delta = analyser_delta.get_standard_error(df)
 
     df["treatment"] = df["treatment"].map({"A": 0, "B": 1})

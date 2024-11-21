@@ -117,12 +117,13 @@ class CupacHandler:
         self,
         cupac_model: Optional[BaseEstimator] = None,
         target_col: str = "target",
+        scale_col: Optional[str] = None,
         features_cupac_model: Optional[List[str]] = None,
         cache_fit: bool = True,
     ):
         self.cupac_model: BaseEstimator = cupac_model or EmptyRegressor()
-        self.target_col = target_col
-        self.cupac_outcome_name = f"estimate_{target_col}"
+        self.target_cols = [target_col] + ([scale_col] if scale_col else [])
+        self.cupac_outcome_name = [f"estimate_{col}" for col in self.target_cols]
         self.features_cupac_model: List[str] = features_cupac_model or []
         self.is_cupac = not isinstance(self.cupac_model, EmptyRegressor)
         self.cache_fit = cache_fit
@@ -133,10 +134,10 @@ class CupacHandler:
         """Prepares data for training and prediction"""
         df = df.copy()
         pre_experiment_df = pre_experiment_df.copy()
-        df_predict = df.drop(columns=[self.target_col])
+        df_predict = df.drop(columns=self.target_cols)
         # Split data into X and y
-        pre_experiment_x = pre_experiment_df.drop(columns=[self.target_col])
-        pre_experiment_y = pre_experiment_df[self.target_col]
+        pre_experiment_x = pre_experiment_df.drop(columns=self.target_cols)
+        pre_experiment_y = pre_experiment_df[self.target_cols]
 
         # Keep only cupac features
         if self.features_cupac_model:
@@ -169,13 +170,14 @@ class CupacHandler:
         )
 
         # Fit model if it has not been fitted before
-        self._fit_cupac_model(pre_experiment_x, pre_experiment_y)
+        for target_col, outcome_name in zip(self.target_cols, self.cupac_outcome_name):
+            self._fit_cupac_model(pre_experiment_x, pre_experiment_y[target_col])
 
-        # Predict
-        estimated_target = self._predict_cupac_model(df_predict)
+            # Predict
+            estimated_target = self._predict_cupac_model(df_predict)
 
-        # Add cupac outcome name to df
-        df[self.cupac_outcome_name] = estimated_target
+            # Add cupac outcome name to df
+            df[outcome_name] = estimated_target
         return df
 
     def _fit_cupac_model(

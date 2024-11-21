@@ -35,7 +35,7 @@ def test_prep_data(df_feats, experiment_dates, cupac_power_analysis):
     assert list(pre_experiment_x.columns) == ["x1", "x2"]
     assert (df_predict["x1"] == df_analysis["x1"]).all()
     assert (pre_experiment_x["x1"] == df_pre["x1"]).all()
-    assert (pre_experiment_y == df_pre["target"]).all()
+    assert (pre_experiment_y["target"] == df_pre["target"]).all()
 
 
 def test_cupac_gbm(df_feats, experiment_dates, cupac_power_analysis):

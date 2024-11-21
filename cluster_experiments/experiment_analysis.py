@@ -274,7 +274,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         scale_col: str = "scale",
         treatment_col: str = "treatment",
         treatment: str = "B",
-        covariates: Optional[List[str]] = None,
         ratio_covariates: Optional[List[Tuple[str]]] = None,
         hypothesis: str = "two-sided",
     ):
@@ -288,7 +287,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             scale_col: name of the column containing the scale variable (the denominator of the ratio).
             treatment_col: name of the column containing the treatment variable.
             treatment: name of the treatment to use as the treated group.
-            covariates: list of columns to use as covariates (not used in the Delta Method Analysis).
             ratio_covariates: list of tuples of columns to use as covariates for the ratio metric. First element is the numerator column, second element is the denominator column.
             hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis.
 
@@ -320,12 +318,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self.cluster_cols = cluster_cols
         self.hypothesis = hypothesis
 
-        self.use_cuped = False
-
-        if covariates or ratio_covariates:
-            self.use_cuped = True
-
-        self.covariates = covariates or []
         self.covariates_delta = []
         self.ratio_covariates = ratio_covariates or []
 
@@ -346,17 +338,18 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         These columns are added to the covariates which allows for the Delta Method to be used equally for all covariates (non user-level and user-level metrics).
         """
         df = df.copy()
-
+        # Reset covariates delta for consequent runs
+        self.covariates_delta = []
         # transform target metric if necessary
         if self.scale_col is not None:
             numerator, denominator = self.target_col, self.scale_col
             df = self._transform_ratio_metric(df, numerator, denominator)
-            df[f"unscaled_{numerator}_{denominator}"] = df[numerator] / df[denominator]
+            df[f"original_{numerator}_{denominator}"] = df[numerator] / df[denominator]
             self.target_metric = f"{numerator}_{denominator}"
 
         for numerator, denominator in self.ratio_covariates:
             df = self._transform_ratio_metric(df, numerator, denominator)
-            df[f"unscaled_{numerator}_{denominator}"] = df[numerator] / df[denominator]
+            df[f"original_{numerator}_{denominator}"] = df[numerator] / df[denominator]
             self.covariates_delta.append(f"{numerator}_{denominator}")
         return df
 
@@ -365,7 +358,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Computes the theta value for the CUPED method.
         """
 
-        data = df[[self.target_metric] + self.covariates + self.covariates_delta]
+        data = df[[self.target_metric] + self.covariates_delta]
         cov_mat = data.cov()  # nxn
         sigma = cov_mat.iloc[1:, 1:]  # (n-1)x(n-1)
         z = cov_mat.iloc[1:, 0]  # (n-1)x1
@@ -378,10 +371,8 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Compute CUPED estimate
         """
 
-        Y = df["unscaled_" + self.target_metric].values.astype(float)
-        cov_cols = [
-            "unscaled_" + cov for cov in self.covariates_delta
-        ] + self.covariates
+        Y = df["original_" + self.target_metric].values.astype(float)
+        cov_cols = ["original_" + cov for cov in self.covariates_delta]
         covariates = df[cov_cols]
 
         Y_cv = Y.copy()
@@ -460,38 +451,29 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         ) / group_size
         return group_mean, group_variance
 
-    def __warn_small_group_size(self):
-        warnings.warn(
-            "Delta Method approximation may not be accurate for small group sizes"
-        )
-
     def _get_mean_SE(self, df: pd.DataFrame) -> tuple[float, float]:
         """
         Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
-        CUPED method is used if covariates are present.
+        Variance reduction is used if covariates are given.
         """
-        if self.use_cuped:
 
-            if self.cluster_cols is not None:
-                raise ValueError("Clustered columns are not allowed for CUPED method")
+        if self.hypothesis != "two-sided":
+            raise ValueError(
+                "Delta Method currently only supports two-sided hypothesis"
+            )
 
-            (
-                control_mean,
-                treatment_mean,
-                control_ste,
-                treatment_ste,
-            ) = self.get_statistics_cuped(df)
-            SE = treatment_ste + control_ste  # TODO: Do better
+        if self.ratio_covariates:
+            self.__check_proper_aggregation(df)
+
+            ctrl_mean, treat_mean, ctrl_ste, treat_ste = self.get_statistics_cuped(df)
+            SE = treat_ste + ctrl_ste
         else:
-            treatment_mean, treatment_variance = self._get_group_mean_and_variance(
-                df[df[self.treatment_col] == 1]
-            )
-            control_mean, control_variance = self._get_group_mean_and_variance(
-                df[df[self.treatment_col] != 1]
-            )
-            SE = math.sqrt(treatment_variance + control_variance)
+            is_treatment = df[self.treatment_col] == 1
+            treat_mean, treat_var = self._get_group_mean_and_variance(df[is_treatment])
+            ctrl_mean, ctrl_var = self._get_group_mean_and_variance(df[~is_treatment])
+            SE = math.sqrt(treat_var + ctrl_var)
 
-        mean_diff = treatment_mean - control_mean
+        mean_diff = treat_mean - ctrl_mean
 
         return mean_diff, SE
 
@@ -526,6 +508,25 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
         _mean_diff, SE = self._get_mean_SE(df)
         return SE
+
+    def __warn_small_group_size(self):
+        warnings.warn(
+            "Delta Method approximation may not be accurate for small group sizes"
+        )
+
+    def __check_proper_aggregation(self, df: pd.DataFrame):
+        """
+        If dataframe is not aggregated already, raise an error.
+        """
+        # early return if no clusters are provided
+        if self.cluster_cols is None:
+            return
+
+        df_grouped = df.groupby(self.cluster_cols).size()
+        if df_grouped.max() > 1:
+            raise ValueError(
+                f"Data is not properly aggregated by {self.cluster_cols}. Should be aggregated prior to analysis usage when covariates are given."
+            )
 
 
 class GeeExperimentAnalysis(ExperimentAnalysis):

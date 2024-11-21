@@ -117,11 +117,22 @@ class PowerAnalysis:
         self.alpha = alpha
         self.hypothesis = hypothesis
 
-        self.cupac_handler = CupacHandler(
-            cupac_model=cupac_model,
-            target_col=target_col,
-            features_cupac_model=features_cupac_model,
-        )
+        # check if analysis class name is DeltaMethodAnalysis
+        if self.analysis.__class__.__name__ == "DeltaMethodAnalysis":
+
+            self.cupac_handler = CupacHandler(
+                cupac_model=cupac_model,
+                target_col=target_col,
+                scale_col=self.analysis.scale_col,
+                features_cupac_model=features_cupac_model,
+                cache_fit=False,
+            )
+        else:
+            self.cupac_handler = CupacHandler(
+                cupac_model=cupac_model,
+                target_col=target_col,
+                features_cupac_model=features_cupac_model,
+            )
         if seed is not None:
             random.seed(seed)  # seed for splitter
             np.random.seed(seed)  # seed for the binary perturbator
@@ -493,8 +504,11 @@ class PowerAnalysis:
 
     def check_covariates(self):
         if hasattr(self.analysis, "covariates"):
-            cupac_in_covariates = (
-                self.cupac_handler.cupac_outcome_name in self.analysis.covariates
+            cupac_in_covariates = all(
+                [
+                    x in self.analysis.covariates
+                    for x in self.cupac_handler.cupac_outcome_name
+                ]
             )
 
             assert cupac_in_covariates or not self.cupac_handler.is_cupac, (

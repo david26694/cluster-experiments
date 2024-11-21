@@ -192,6 +192,12 @@ class HypothesisTest:
 
         return inference_results
 
+    def cupac_not_in_covariates(self, covariates: List[str]) -> None:
+        """
+        Checks if any cupac covariate is missing from the covariates provided in the analysis_config.
+        """
+        return any([col not in covariates for col in self.cupac_covariate_col])
+
     def _prepare_analysis_config(
         self, target_col: str, treatment_col: str, treatment: str
     ) -> None:
@@ -216,7 +222,7 @@ class HypothesisTest:
 
         covariates = new_analysis_config.get("covariates", [])
 
-        if self.cupac_covariate_col and self.cupac_covariate_col not in covariates:
+        if self.cupac_covariate_col and self.cupac_not_in_covariates(covariates):
             raise ValueError(
                 f"You provided a cupac configuration but did not provide the cupac covariate called {self.cupac_covariate_col} in the analysis_config"
             )
