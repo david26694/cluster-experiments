@@ -20,15 +20,24 @@ nav:
   - Paired T test: paired_ttest.ipynb
   - Different hypotheses tests: analysis_with_different_hypotheses.ipynb
   - Washover: washover_example.ipynb
-  - Normal Power: normal_power.ipynb
+  - Normal Power:
+      - Compare with simulation: normal_power.ipynb
+      - Time-lines: normal_power_lines.ipynb
+  - Synthetic control: synthetic_control.ipynb
+  - Experiment analysis workflow: experiment_analysis.ipynb
   - API:
-      - Experiment analysis: api/experiment_analysis.md
+      - Experiment analysis methods: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
       - Splitter: api/random_splitter.md
       - Pre experiment outcome model: api/cupac_model.md
       - Power config: api/power_config.md
       - Power analysis: api/power_analysis.md
       - Washover: api/washover.md
+      - Metric: api/metric.md
+      - Variant: api/variant.md
+      - Dimension: api/dimension.md
+      - Hypothesis Test: api/hypothesis_test.md
+      - Analysis Plan: api/analysis_plan.md
 plugins:
   - mkdocstrings:
       watch:

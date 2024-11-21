@@ -13,7 +13,7 @@ only_test_packages = [
     "pytest>=5.4.3",
     "black==22.12.0",
     "ruff==0.0.261",
-    "mktestdocs>=0.2.0",
+    "mktestdocs>=0.2.2",
     "pytest-cov>=2.10.1",
     "pytest-sugar>=0.9.4",
     "pytest-slow-last>=0.1.3",
@@ -39,7 +39,7 @@ docs_packages = [
     "mkdocstrings==0.18.0",
     "jinja2<3.1.0",
     "mkdocs-jupyter==0.22.0",
-    "plotnine==0.8.0",
+    "plotnine>=0.8.0",
     "matplotlib>=3.4.3",
 ]
 
@@ -47,7 +47,7 @@ dev_packages = test_packages + util_packages + docs_packages
 
 setup(
     name="cluster_experiments",
-    version="0.15.0",
+    version="0.20.0",
     packages=find_packages(),
     extras_require={
         "dev": dev_packages,
@@ -64,6 +64,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3 :: Only",
         "Operating System :: OS Independent",
         "License :: OSI Approved :: MIT License",

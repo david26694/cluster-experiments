@@ -6,8 +6,14 @@ from cluster_experiments.experiment_analysis import (
     MLMExperimentAnalysis,
     OLSAnalysis,
     PairedTTestClusteredAnalysis,
+    SyntheticControlAnalysis,
     TTestClusteredAnalysis,
 )
+from cluster_experiments.inference.analysis_plan import AnalysisPlan
+from cluster_experiments.inference.dimension import Dimension
+from cluster_experiments.inference.hypothesis_test import HypothesisTest
+from cluster_experiments.inference.metric import Metric, RatioMetric, SimpleMetric
+from cluster_experiments.inference.variant import Variant
 from cluster_experiments.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
@@ -25,6 +31,7 @@ from cluster_experiments.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
+    FixedSizeClusteredSplitter,
     NonClusteredSplitter,
     RandomSplitter,
     RepeatedSampler,
@@ -68,4 +75,13 @@ __all__ = [
     "ConstantWashover",
     "Washover",
     "MLMExperimentAnalysis",
+    "SyntheticControlAnalysis",
+    "FixedSizeClusteredSplitter",
+    "AnalysisPlan",
+    "Metric",
+    "SimpleMetric",
+    "RatioMetric",
+    "Dimension",
+    "Variant",
+    "HypothesisTest",
 ]
