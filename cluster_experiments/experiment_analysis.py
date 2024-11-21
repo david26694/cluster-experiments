@@ -274,6 +274,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         scale_col: str = "scale",
         treatment_col: str = "treatment",
         treatment: str = "B",
+        covariates: Optional[List[str]] = None,
         ratio_covariates: Optional[List[Tuple[str]]] = None,
         hypothesis: str = "two-sided",
     ):
@@ -318,6 +319,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self.cluster_cols = cluster_cols
         self.hypothesis = hypothesis
 
+        self.covariates = covariates or []
         self.covariates_delta = []
         self.ratio_covariates = ratio_covariates or []
 
@@ -358,7 +360,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Computes the theta value for the CUPED method.
         """
 
-        data = df[[self.target_metric] + self.covariates_delta]
+        data = df[[self.target_metric] + self.covariates_delta + self.covariates]
         cov_mat = data.cov()  # nxn
         sigma = cov_mat.iloc[1:, 1:]  # (n-1)x(n-1)
         z = cov_mat.iloc[1:, 0]  # (n-1)x1
@@ -462,7 +464,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
                 "Delta Method currently only supports two-sided hypothesis"
             )
 
-        if self.ratio_covariates:
+        if self.ratio_covariates or self.covariates:
             self.__check_proper_aggregation(df)
 
             ctrl_mean, treat_mean, ctrl_ste, treat_ste = self.get_statistics_cuped(df)
