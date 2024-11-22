@@ -5,6 +5,7 @@ import pytest
 from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
     ConfidenceInterval,
+    DeltaMethodAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     InferenceResults,
@@ -13,7 +14,11 @@ from cluster_experiments.experiment_analysis import (
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
-from tests.utils import generate_clustered_data, generate_random_data
+from tests.utils import (
+    generate_clustered_data,
+    generate_random_data,
+    generate_ratio_metric_data,
+)
 
 
 @pytest.fixture
@@ -248,3 +253,161 @@ def test_get_inference_results(experiment_analysis, analysis_df_diff):
     assert results.ate > 0
     assert 0 <= results.p_value < 1
     assert results.std_error > 0
+
+
+def test_delta_analysis(analysis_ratio_df, experiment_dates):
+    analyser = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+    experiment_start = min(experiment_dates)
+
+    df_experiment = analysis_ratio_df.query(f"date >= '{experiment_start}'")
+
+    assert 0.05 >= analyser.get_pvalue(df_experiment) >= 0
+
+
+def test_aa_delta_analysis(dates):
+
+    analyser = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+
+    p_values = []
+    for _ in range(100):
+        data = generate_ratio_metric_data(dates, N=100_000, treatment_effect=0)
+        p_values.append(analyser.get_pvalue(data))
+
+    positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
+
+    assert positive_rate == pytest.approx(
+        0.05, abs=0.01
+    ), "P-value A/A calculation is incorrect"
+
+
+def test_cuped_delta_analysis(analysis_ratio_df, experiment_dates):
+    experiment_start_date = min(experiment_dates)
+    analyser = DeltaMethodAnalysis(
+        ratio_covariates=[("pre_target", "pre_scale")],
+        scale_col="scale",
+    )
+    # TODO: Move to preprocessing in class?
+    pre_df = (
+        analysis_ratio_df.query(f" date < '{experiment_start_date}'")
+        .groupby(["user"], as_index=False)
+        .agg(pre_target=("target", "sum"), pre_scale=("scale", "sum"))
+    )
+    df = (
+        analysis_ratio_df.query(f"date >= '{experiment_start_date}'")
+        .groupby(["user", "treatment"], as_index=False)
+        .agg(target=("target", "sum"), scale=("scale", "sum"))
+    )
+
+    df = df.merge(pre_df, on="user", how="left")
+    df["pre_target"] = df["pre_target"].fillna(df["pre_target"].mean())
+    df["pre_scale"] = df["pre_scale"].fillna(df["pre_scale"].mean())
+
+    assert 0.05 >= analyser.get_pvalue(df) >= 0
+
+
+def test_aa_cuped_delta_analysis(dates, experiment_dates):
+    experiment_start_date = min(experiment_dates)
+
+    p_values = []
+    for _ in range(1000):
+        analyser = DeltaMethodAnalysis(
+            scale_col="scale",
+            ratio_covariates=[("pre_target", "pre_scale")],
+        )
+        data = generate_ratio_metric_data(dates, N=100_000, treatment_effect=0)
+        # TODO: Move to preprocessing in class?
+        pre_df = (
+            data.query(f" date < '{experiment_start_date}'")
+            .groupby(["user"], as_index=False)
+            .agg(pre_target=("target", "sum"), pre_scale=("scale", "sum"))
+        )
+        df = (
+            data.query(f"date >= '{experiment_start_date}'")
+            .groupby(["user", "treatment"], as_index=False)
+            .agg(target=("target", "sum"), scale=("scale", "sum"))
+        )
+
+        df = df.merge(pre_df, on="user", how="left")
+        df["pre_target"] = df["pre_target"].fillna(df["pre_target"].mean())
+        df["pre_scale"] = df["pre_scale"].fillna(df["pre_scale"].mean())
+
+        p_values.append(analyser.get_pvalue(df))
+
+    positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
+
+    assert positive_rate == pytest.approx(
+        0.05, abs=0.01
+    ), "P-value A/A calculation is incorrect"
+
+
+def test_stats_delta_vs_ols(analysis_ratio_df, experiment_dates):
+    experiment_start_date = min(experiment_dates)
+
+    analyser_ols = ClusteredOLSAnalysis(cluster_cols=["user"])
+    analyser_delta = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+    df = analysis_ratio_df.query(f"date >= '{experiment_start_date}'")
+
+    point_estimate_ols = analyser_ols.get_point_estimate(df)
+    point_estimate_delta = analyser_delta.get_point_estimate(df)
+
+    SE_ols = analyser_ols.get_standard_error(df)
+    SE_delta = analyser_delta.get_standard_error(df)
+
+    assert point_estimate_delta == pytest.approx(
+        point_estimate_ols, rel=1e-2
+    ), "Point estimate is not consistent with Clustered OLS"
+    assert SE_delta == pytest.approx(
+        SE_ols, rel=1e-2
+    ), "Standard error is not consistent with Clustered OLS"
+
+
+def test_stats_cuped_delta_vs_ols(analysis_ratio_df, experiment_dates):
+
+    from statsmodels.formula.api import ols
+
+    experiment_start_date = min(experiment_dates)
+
+    # TODO: Move to preprocessing in class?
+    pre_df = (
+        analysis_ratio_df.query(f" date < '{experiment_start_date}'")
+        .groupby(["user"], as_index=False)
+        .agg(pre_target=("target", "sum"), pre_scale=("scale", "sum"))
+    )
+    df = (
+        analysis_ratio_df.query(f"date >= '{experiment_start_date}'")
+        .groupby(["user", "treatment"], as_index=False)
+        .agg(target=("target", "sum"), scale=("scale", "sum"))
+    )
+
+    df = df.merge(pre_df, on="user", how="left")
+    df["pre_target"] = df["pre_target"].fillna(df["pre_target"].mean())
+    df["pre_scale"] = df["pre_scale"].fillna(df["pre_scale"].mean())
+
+    analyser_delta = DeltaMethodAnalysis(
+        ratio_covariates=[("pre_target", "pre_scale")],
+        scale_col="scale",
+    )
+
+    effect_delta = analyser_delta.get_point_estimate(df)
+
+    SE_delta = analyser_delta.get_standard_error(df)
+
+    df["treatment"] = df["treatment"].map({"A": 0, "B": 1})
+
+    results = ols(
+        "Y ~ X + d",
+        {
+            "Y": df.target / df.scale,
+            "X": (df.pre_target / df.pre_scale - (df.pre_target / df.pre_scale).mean()),
+            "d": df.treatment,
+        },
+    ).fit(cov_type="cluster", cov_kwds={"groups": df["user"], "use_correction": False})
+    effect_ols = results.params["d"]
+    SE_ols = results.bse["d"]
+
+    assert effect_delta == pytest.approx(
+        effect_ols, rel=1e-2
+    ), "CUPED Point estimate is not consistent with OLS"
+    assert SE_delta == pytest.approx(
+        SE_ols, rel=1e-2
+    ), "CUPED Standard error is not consistent with OLS"
