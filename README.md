@@ -312,6 +312,7 @@ The library offers the following classes:
     * `HypothesisTest`: to define a Hypothesis Test with a metric, analysis method, optional analysis configuration, and optional dimensions
     * `AnalysisPlan`: to define a plan of analysis with a list of Hypothesis Tests for a dataset and the experiment variants. The `analyze()` method runs the analysis and returns the results
     * `AnalysisResults`: to store the results of the analysis
+    * `DeltaMethodAnalysis`: to run Delta Method on simple ratio metrics
 * Other:
     * `PowerConfig`: to conveniently configure `PowerAnalysis` class
     * `ConfidenceInterval`: to store the data representation of a confidence interval
