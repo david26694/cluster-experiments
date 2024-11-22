@@ -335,8 +335,8 @@ python -m pip install cluster-experiments
 
 In case you want to use venv as a virtual environment:
 ```bash
-python -m venv venv
-source venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 ```
 
 After creating the virtual environment (or not), run:
