@@ -25,5 +25,6 @@ jobs:
         pip freeze
     - name: Test with pytest
       run: |
-        make install-only-test
+        make install-test
+        source .venv/bin/activate
         make test
