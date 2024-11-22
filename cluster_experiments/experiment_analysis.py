@@ -268,7 +268,7 @@ class ExperimentAnalysis(ABC):
 class DeltaMethodAnalysis(ExperimentAnalysis):
     def __init__(
         self,
-        cluster_cols: Optional[List[str]] = None,
+        cluster_cols: List[str],
         target_col: str = "target",
         scale_col: str = "scale",
         treatment_col: str = "treatment",
