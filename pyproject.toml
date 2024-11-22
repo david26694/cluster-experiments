@@ -1,0 +1,81 @@
+[project]
+authors = []
+requires-python = "<3.13,>=3.9"
+dependencies = [
+    "pip>=22.2.2",
+    "statsmodels>=0.13.2",
+    "pandas>=1.2.0",
+    "scikit-learn>=1.0.0",
+    "tqdm>=4.0.0",
+    "numpy>=1.20.0",
+]
+name = "cluster-experiments-test"
+version = "0.20.0"
+description = ""
+readme = "README.md"
+classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3 :: Only",
+        "Operating System :: OS Independent",
+        "License :: OSI Approved :: MIT License",
+    ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest<9.0.0,>=8.3.3",
+    "black<25.0.0,>=24.10.0",
+    "ruff<1.0.0,>=0.7.4",
+    "mktestdocs<1.0.0,>=0.2.4",
+    "pytest-cov<7.0.0,>=6.0.0",
+    "pytest-sugar<2.0.0,>=1.0.0",
+    "pytest-slow-last<1.0.0,>=0.1.4",
+    "coverage<8.0.0,>=7.6.7",
+    "pytest-reportlog<1.0.0,>=0.4.0",
+    "pytest-duration-insights<1.0.0,>=0.1.2",
+    "pytest-clarity<2.0.0,>=1.0.1",
+    "pytest-xdist<4.0.0,>=3.6.1",
+    "pre-commit<5.0.0,>=4.0.1",
+    "ipykernel<7.0.0,>=6.29.5",
+    "twine<6.0.0,>=5.1.1",
+    "build<2.0.0.0,>=1.2.2.post1",
+    "tox<5.0.0,>=4.23.2",
+    "mkdocs<2.0.0,>=1.6.1",
+    "mkdocs-material<10.0.0,>=9.5.45",
+    "mkdocstrings<1.0.0,>=0.27.0",
+    "jinja2<4.0.0,>=3.1.4",
+    "mkdocs-jupyter<1.0.0,>=0.25.1",
+    "matplotlib<4.0.0,>=3.9.2",
+    "plotnine<1.0.0,>=0.13.0",
+]
+
+test = [
+    "pytest<9.0.0,>=8.3.3",
+    "black<25.0.0,>=24.10.0",
+    "ruff<1.0.0,>=0.7.4",
+    "mktestdocs<1.0.0,>=0.2.4",
+    "pytest-cov<7.0.0,>=6.0.0",
+    "pytest-sugar<2.0.0,>=1.0.0",
+    "pytest-slow-last<1.0.0,>=0.1.4",
+    "coverage<8.0.0,>=7.6.7",
+    "pytest-reportlog<1.0.0,>=0.4.0",
+    "pytest-duration-insights<1.0.0,>=0.1.2",
+    "pytest-clarity<2.0.0,>=1.0.1",
+    "pytest-xdist<4.0.0,>=3.6.1",
+]
+
+docs = [
+    "mkdocs<2.0.0,>=1.6.1",
+    "mkdocs-material<10.0.0,>=9.5.45",
+    "mkdocstrings<1.0.0,>=0.27.0",
+    "jinja2<4.0.0,>=3.1.4",
+    "mkdocs-jupyter<1.0.0,>=0.25.1",
+    "plotnine<1.0.0,>=0.13.0",
+    "matplotlib<4.0.0,>=3.9.2",
+]
