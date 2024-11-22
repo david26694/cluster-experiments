@@ -151,5 +151,6 @@ def generate_ratio_metric_data(
             "treatment": mapped_treatment[user_sessions],
             "target": targets_observed,
             "scale": np.ones_like(user_sessions),
+            "user_target_mean": user_target_means[user_sessions],
         }
     )

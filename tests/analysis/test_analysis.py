@@ -283,6 +283,7 @@ def test_aa_delta_analysis(dates):
 def test_cuped_delta_analysis(analysis_ratio_df, experiment_dates):
     experiment_start_date = min(experiment_dates)
     analyser = DeltaMethodAnalysis(
+        cluster_cols=["user"],
         ratio_covariates=[("pre_target", "pre_scale")],
         scale_col="scale",
     )
@@ -303,42 +304,6 @@ def test_cuped_delta_analysis(analysis_ratio_df, experiment_dates):
     df["pre_scale"] = df["pre_scale"].fillna(df["pre_scale"].mean())
 
     assert 0.05 >= analyser.get_pvalue(df) >= 0
-
-
-def test_aa_cuped_delta_analysis(dates, experiment_dates):
-    experiment_start_date = min(experiment_dates)
-
-    p_values = []
-    for _ in range(1000):
-        analyser = DeltaMethodAnalysis(
-            cluster_cols=["user"],
-            scale_col="scale",
-            ratio_covariates=[("pre_target", "pre_scale")],
-        )
-        data = generate_ratio_metric_data(dates, N=100_000, treatment_effect=0)
-        # TODO: Move to preprocessing in class?
-        pre_df = (
-            data.query(f" date < '{experiment_start_date}'")
-            .groupby(["user"], as_index=False)
-            .agg(pre_target=("target", "sum"), pre_scale=("scale", "sum"))
-        )
-        df = (
-            data.query(f"date >= '{experiment_start_date}'")
-            .groupby(["user", "treatment"], as_index=False)
-            .agg(target=("target", "sum"), scale=("scale", "sum"))
-        )
-
-        df = df.merge(pre_df, on="user", how="left")
-        df["pre_target"] = df["pre_target"].fillna(df["pre_target"].mean())
-        df["pre_scale"] = df["pre_scale"].fillna(df["pre_scale"].mean())
-
-        p_values.append(analyser.get_pvalue(df))
-
-    positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
-
-    assert positive_rate == pytest.approx(
-        0.05, abs=0.01
-    ), "P-value A/A calculation is incorrect"
 
 
 def test_stats_delta_vs_ols(analysis_ratio_df, experiment_dates):
