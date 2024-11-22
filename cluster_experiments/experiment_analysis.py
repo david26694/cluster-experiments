@@ -359,7 +359,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Computes the theta value for the CUPED method.
         """
 
-        data = df[[self.target_metric] + self.covariates_delta + self.covariates]
+        data = df[[self.target_metric] + self.covariates_delta]
         cov_mat = data.cov()  # nxn
         sigma = cov_mat.iloc[1:, 1:]  # (n-1)x(n-1)
         z = cov_mat.iloc[1:, 0]  # (n-1)x1
@@ -418,9 +418,21 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             if strat_treatment
             else self.cluster_cols
         )
-        aggregate_df = df.groupby(by=group_cols, as_index=False).agg(
-            {self.target_col: "sum", self.scale_col: "sum"}
-        )
+
+        ratio_covariates_exploded = [
+            item for sublist in self.ratio_covariates for item in sublist
+        ]
+
+        agg_dict = {
+            col: "sum"
+            for col in set(
+                [self.target_col, self.scale_col]
+                + self.covariates
+                + ratio_covariates_exploded
+            )
+        }
+
+        aggregate_df = df.groupby(by=group_cols, as_index=False).agg(agg_dict)
         return aggregate_df
 
     def _get_group_mean_and_variance(self, df: pd.DataFrame) -> tuple[float, float]:
@@ -464,8 +476,9 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             )
 
         # TODO: Add aggregation with _aggregate_to_cluster if David greenlights proposal
+        df = self._aggregate_to_cluster(df)
 
-        if self.ratio_covariates or self.covariates:
+        if self.ratio_covariates:
             self.__check_proper_aggregation(df)
 
             ctrl_mean, treat_mean, ctrl_ste, treat_ste = self.get_statistics_cuped(df)
