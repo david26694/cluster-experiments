@@ -41,7 +41,7 @@ A Python library for end-to-end A/B testing workflows, featuring:
 - **Statistical Methods**:
   - GEE
   - Mixed Linear Models
-  - Clustered OLS
+  - Clustered / regular OLS
   - T-tests
   - Synthetic Control
 - **Dict config**: Easy to define analysis plans with a dictionary
