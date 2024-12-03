@@ -48,7 +48,7 @@ A Python library for end-to-end A/B testing workflows, featuring:
 
 ### 3. Variance Reduction
 - **CUPED** (Controlled-experiment Using Pre-Experiment Data):
-  - Leverage historical data to reduce variance, choose any granularity
+  - Use historical outcome data to reduce variance, choose any granularity
   - Support for several covariates
 - **CUPAC** (Control Using Predictors as Covariates):
   - Use any scikit-learn estimator to predict the outcome with pre-experiment data
