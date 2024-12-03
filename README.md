@@ -135,7 +135,7 @@ variants = [
 ]
 city_dimension = Dimension(name="city", values=["NYC", "LA"])
 
-# Create analysis plan with CUPAC
+# Create analysis plan
 plan = AnalysisPlan.from_metrics(
     metrics=[aov, delivery_time],
     variants=variants,
@@ -149,8 +149,7 @@ plan = AnalysisPlan.from_metrics(
 
 # Run analysis
 results = plan.analyze(experiment_data)
-scorecard = results.to_dataframe()
-print(scorecard)
+print(results.to_dataframe())
 ```
 
 ### Variance Reduction Example
@@ -183,24 +182,14 @@ pre_experiment_data = pd.DataFrame({
     "customer_id": np.random.randint(1, 100, size=N),
 })
 
-# Define metrics
-aov = SimpleMetric(alias="AOV", name="order_value")
-delivery_time = SimpleMetric(alias="Delivery Time", name="delivery_time")
-
-# Define variants and dimensions
-variants = [
-    Variant("control", is_control=True),
-    Variant("treatment", is_control=False),
-]
-city_dimension = Dimension(name="city", values=["NYC", "LA"])
-
+# Define test
 cupac_model = TargetAggregation(
     agg_col="customer_id",
     target_col="order_value"
 )
 
 hypothesis_test = HypothesisTest(
-    metric=aov,
+    metric=SimpleMetric(alias="AOV", name="order_value"),
     analysis_type="clustered_ols",
     analysis_config={
         "cluster_cols": ["customer_id"],
@@ -212,17 +201,19 @@ hypothesis_test = HypothesisTest(
     },
 )
 
-# Create analysis plan with CUPAC
+# Create analysis plan
 plan = AnalysisPlan(
     tests=[hypothesis_test],
-    variants=variants,
+    variants=[
+        Variant("control", is_control=True),
+        Variant("treatment", is_control=False),
+    ],
     variant_col="experiment_group",
 )
 
 # Run analysis
 results = plan.analyze(experiment_data, pre_experiment_data)
-scorecard = results.to_dataframe()
-print(scorecard)
+print(results.to_dataframe())
 ```
 
 ## Installation
