@@ -93,6 +93,8 @@ npw = NormalPowerAnalysis.from_dict({
     "time_col": "date",
 })
 power_normal = npw.power_analysis(df, average_effect=0.1)
+power_line_normal = npw.power_line(df, average_effects=[0.1, 0.2, 0.3])
+
 
 # MDE calculation
 mde = npw.mde(df, power=0.8)
@@ -104,7 +106,7 @@ mde_timeline = npw.mde_time_line(
     experiment_length=[7, 14, 21]
 )
 
-print(power, power_normal, mde, mde_timeline)
+print(power, power_line_normal, power_normal, mde, mde_timeline)
 ```
 
 ### Experiment Analysis Example
