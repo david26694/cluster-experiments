@@ -235,7 +235,7 @@ You can install this package via `pip`.
 pip install cluster-experiments
 ```
 
-For detailed documentation and examples, visit our [documentation site](https://cluster-experiments.readthedocs.io/en/latest/).
+For detailed documentation and examples, visit our [documentation site](https://david26694.github.io/cluster-experiments/).
 
 ## Features
 
