@@ -92,12 +92,15 @@ npw = NormalPowerAnalysis.from_dict({
 })
 power_normal = npw.power_analysis(df, average_effect=0.1)
 
-
 # MDE calculation
 mde = npw.mde(df, power=0.8)
 
 # MDE line with length
-mde_timeline = npw.mde_time_line(df, powers=[0.8], experiment_length=[7, 14, 21])
+mde_timeline = npw.mde_time_line(
+    df,
+    powers=[0.8],
+    experiment_length=[7, 14, 21]
+)
 
 print(power, power_normal, mde, mde_timeline)
 ```
@@ -105,9 +108,11 @@ print(power, power_normal, mde, mde_timeline)
 ### Experiment Analysis Example
 
 ```python
-from cluster_experiments import AnalysisPlan, SimpleMetric, Variant, Dimension
+import numpy as np
 import pandas as pd
+from cluster_experiments import AnalysisPlan, SimpleMetric, Variant, Dimension
 
+N = 1_000
 experiment_data = pd.DataFrame({
     "order_value": np.random.normal(100, 10, size=N),
     "delivery_time": np.random.normal(10, 1, size=N),
@@ -149,8 +154,16 @@ print(scorecard)
 ### Variance Reduction Example
 
 ```python
-from cluster_experiments import AnalysisPlan, SimpleMetric, Variant, Dimension, TargetAggregation, HypothesisTest
+import numpy as np
 import pandas as pd
+from cluster_experiments import (
+    AnalysisPlan,
+    SimpleMetric,
+    Variant,
+    Dimension,
+    TargetAggregation,
+    HypothesisTest
+)
 
 N = 1000
 
@@ -179,8 +192,11 @@ variants = [
 ]
 city_dimension = Dimension(name="city", values=["NYC", "LA"])
 
-# Define hypothesis test
-cupac_model = TargetAggregation(agg_col="customer_id", target_col="order_value")
+cupac_model = TargetAggregation(
+    agg_col="customer_id",
+    target_col="order_value"
+)
+
 hypothesis_test = HypothesisTest(
     metric=aov,
     analysis_type="clustered_ols",
@@ -192,18 +208,16 @@ hypothesis_test = HypothesisTest(
         "cupac_model": cupac_model,
         "target_col": "order_value",
     },
-    dimensions=[city_dimension],
 )
 
-
-# Create analysis plan with CUPED
+# Create analysis plan with CUPAC
 plan = AnalysisPlan(
     tests=[hypothesis_test],
     variants=variants,
     variant_col="experiment_group",
 )
 
-# # Run analysis
+# Run analysis
 results = plan.analyze(experiment_data, pre_experiment_data)
 scorecard = results.to_dataframe()
 print(scorecard)
