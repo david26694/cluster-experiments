@@ -17,8 +17,6 @@ A Python library for end-to-end A/B testing workflows, featuring:
 - Variance reduction techniques (CUPED, CUPAC)
 - Support for complex experimental designs (cluster randomization, switchback experiments)
 
-<img src="theme/flow.png">
-
 ## Key Features
 
 ### 1. Power Analysis
