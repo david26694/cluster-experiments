@@ -926,7 +926,7 @@ class NormalPowerAnalysis:
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
         verbose: bool = False,
-        powers: Iterable[float] = (),
+        powers: Iterable[float] = (),  # todo set default value or break if not provided
         experiment_length: Iterable[int] = (),
         n_simulations: Optional[int] = None,
         alpha: Optional[float] = None,
