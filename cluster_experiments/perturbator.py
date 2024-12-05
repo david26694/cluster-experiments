@@ -776,11 +776,11 @@ class RelativeMixedPerturbator(Perturbator):
         Usage:
 
         ```python
-        from cluster_experiments.perturbator import RelativeConstantPerturbator
+        from cluster_experiments.perturbator import RelativeMixedPerturbator
         import pandas as pd
-        df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
-        perturbator = RelativeConstantPerturbator()
-        perturbator.perturbate(df, average_effect=1)
+        df = pd.DataFrame({"target": [1, -2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = RelativeMixedPerturbator()
+        perturbator.perturbate(df, average_effect=0.1)
         ```
         """
         df = df.copy().reset_index(drop=True)

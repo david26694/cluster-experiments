@@ -276,6 +276,7 @@ The library offers the following classes:
     * `ConstantPerturbator`: to artificially perturb treated group with constant perturbations
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
     * `RelativePositivePerturbator`: to artificially perturb treated group with relative positive perturbations
+    * `RelativeMixedPerturbator`: to artificially perturb treated group with relative perturbations for positive and negative targets
     * `NormalPerturbator`: to artificially perturb treated group with normal distribution perturbations
     * `BetaRelativePositivePerturbator`: to artificially perturb treated group with relative positive beta distribution perturbations
     * `BetaRelativePerturbator`: to artificially perturb treated group with relative beta distribution perturbations in a specified support interval
