@@ -31,6 +31,7 @@ from cluster_experiments import (
     PowerConfig,
     RandomSplitter,
     RatioMetric,
+    RelativeMixedPerturbator,
     RelativePositivePerturbator,
     RepeatedSampler,
     SegmentedBetaRelativePerturbator,
@@ -89,6 +90,7 @@ all_objects = [
     Dimension,
     Variant,
     HypothesisTest,
+    RelativeMixedPerturbator,
 ]
 
 
