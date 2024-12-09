@@ -8,6 +8,7 @@ from cluster_experiments.perturbator import (
     BinaryPerturbator,
     ConstantPerturbator,
     NormalPerturbator,
+    RelativeMixedPerturbator,
     RelativePositivePerturbator,
     SegmentedBetaRelativePerturbator,
     UniformPerturbator,
@@ -413,3 +414,20 @@ def test_beta_raises_effect_equals_1(continuous_df):
         match=f"Simulated effect needs to be less than 100%, got {average_effect*100:.1f}%",
     ):
         rp.perturbate(continuous_df, average_effect)
+
+
+@pytest.mark.parametrize(
+    "average_effect, avg_target, perturbator",
+    [
+        (0.1, 5.0, RelativeMixedPerturbator),
+        (-0.1, -5.0, RelativeMixedPerturbator),
+    ],
+)
+def test_relative_mixed_perturbator(
+    average_effect, avg_target, perturbator, continuous_mixed_df
+):
+    up = perturbator(average_effect=average_effect)
+    assert (
+        up.perturbate(continuous_mixed_df).query("treatment == 'B'")["target"].mean()
+        == avg_target
+    )

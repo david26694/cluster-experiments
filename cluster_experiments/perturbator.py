@@ -757,3 +757,55 @@ class BinaryPerturbator(Perturbator):
         )
         df.loc[idx, self.target_col] = to_target
         return df
+
+
+class RelativeMixedPerturbator(Perturbator):
+    """
+    RelativeMixedPerturbator is a Perturbator that applies a multiplicative effect to the target column
+    of treated instances, modifying their values by a relative factor depending on whether they are positive
+    or negative.
+    """
+
+    def perturbate(
+        self, df: pd.DataFrame, average_effect: Optional[float] = None
+    ) -> pd.DataFrame:
+        """
+        Apply the multiplicative effect to the target column of the treated instances. The effect is calculated
+        as a factor of (1 + effect) for non-negative values, and (1 - effect) for negative values.
+
+        Usage:
+
+        ```python
+        from cluster_experiments.perturbator import RelativeMixedPerturbator
+        import pandas as pd
+        df = pd.DataFrame({"target": [1, -2, 3], "treatment": ["A", "B", "A"]})
+        perturbator = RelativeMixedPerturbator()
+        perturbator.perturbate(df, average_effect=0.1)
+        ```
+        """
+        df = df.copy().reset_index(drop=True)
+        average_effect = self.get_average_effect(average_effect)
+        df = self.apply_multiplicative_effect(df, average_effect)
+        return df
+
+    def apply_multiplicative_effect(
+        self, df: pd.DataFrame, effect: Union[float, np.ndarray]
+    ) -> pd.DataFrame:
+        """
+        Apply the relative multiplicative effect to the target column, adjusting values based on whether
+        they are positive or negative.
+        """
+        mask = df[self.treatment_col] == self.treatment
+        original_values = df.loc[mask, self.target_col]
+
+        # Calculate new values: apply (1 + effect) for non-negative, (1 - effect) for negative values
+        new_values = np.where(
+            original_values >= 0,
+            original_values * (1 + effect),
+            original_values * (1 - effect),
+        )
+
+        # The round is required to avoid float imprecision
+        df.loc[mask, self.target_col] = np.round(new_values, 2)
+
+        return df
