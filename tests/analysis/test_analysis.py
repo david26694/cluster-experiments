@@ -27,7 +27,10 @@ def analysis_df_diff():
         }
     )
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
-    analysis_df_full.loc[analysis_df_full["treatment"] == "B", "target"] = 0.1
+    np.random.seed(2024)
+    analysis_df_full.loc[
+        analysis_df_full["treatment"] == "B", "target"
+    ] = 0.1 + np.random.normal(0, 0.00001, (analysis_df_full["treatment"] == "B").sum())
     return analysis_df_full
 
 
