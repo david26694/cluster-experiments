@@ -1,6 +1,5 @@
 <img src="theme/icon-cluster.png" width=200 height=200 align="right">
 
-
 # cluster_experiments
 
 [![Downloads](https://static.pepy.tech/badge/cluster-experiments)](https://pepy.tech/project/cluster-experiments)
@@ -12,258 +11,220 @@ https://codecov.io/gh/david26694/cluster-experiments/branch/main/graph/badge.svg
 ![License](https://img.shields.io/github/license/david26694/cluster-experiments)
 [![Pypi version](https://img.shields.io/pypi/pyversions/cluster-experiments.svg)](https://pypi.python.org/pypi/cluster-experiments)
 
-A library to run simulation-based power analysis, including cluster-randomized trial data. Also useful to design and analyse cluster-randomized and switchback experiments.
+A Python library for end-to-end A/B testing workflows, featuring:
+- Experiment analysis and scorecards
+- Power analysis (simulation-based and normal approximation)
+- Variance reduction techniques (CUPED, CUPAC)
+- Support for complex experimental designs (cluster randomization, switchback experiments)
 
+## Key Features
 
-<img src="theme/flow.png">
+### 1. Power Analysis
+- **Simulation-based**: Run Monte Carlo simulations to estimate power
+- **Normal approximation**: Fast power estimation using CLT
+- **Minimum Detectable Effect**: Calculate required effect sizes
+- **Multiple designs**: Support for:
+  - Simple randomization
+  - Variance reduction techniques in power analysis
+  - Cluster randomization
+  - Switchback experiments
+- **Dict config**: Easy to configure power analysis with a dictionary
 
-## Examples
+### 2. Experiment Analysis
+- **Analysis Plans**: Define structured analysis plans
+- **Metrics**:
+  - Simple metrics
+  - Ratio metrics
+- **Dimensions**: Slice results by dimensions
+- **Statistical Methods**:
+  - GEE
+  - Mixed Linear Models
+  - Clustered / regular OLS
+  - T-tests
+  - Synthetic Control
+- **Dict config**: Easy to define analysis plans with a dictionary
 
-### Experiment Design
-#### Hello world
+### 3. Variance Reduction
+- **CUPED** (Controlled-experiment Using Pre-Experiment Data):
+  - Use historical outcome data to reduce variance, choose any granularity
+  - Support for several covariates
+- **CUPAC** (Control Using Predictors as Covariates):
+  - Use any scikit-learn compatible estimator to predict the outcome with pre-experiment data
 
-Hello world of the library, non-clustered version. There is an outcome variable analyzed with a linear regression. The perturbator adds a constant effect to treated units, and the splitter is random.
+## Quick Start
 
-```python title="Non-clustered"
+### Power Analysis Example
+
+```python
 import numpy as np
 import pandas as pd
-from cluster_experiments import PowerAnalysis
+from cluster_experiments import PowerAnalysis, NormalPowerAnalysis
 
-# Create fake data
+# Create sample data
 N = 1_000
-df = pd.DataFrame(
-    {
-        "target": np.random.normal(0, 1, size=N),
-    }
-)
+df = pd.DataFrame({
+    "target": np.random.normal(0, 1, size=N),
+    "date": pd.to_datetime(
+        np.random.randint(
+            pd.Timestamp("2024-01-01").value,
+            pd.Timestamp("2024-01-31").value,
+            size=N,
+        )
+    ),
+})
 
+# Simulation-based power analysis with CUPED
 config = {
-    "analysis": "ols_non_clustered",
+    "analysis": "ols",
     "perturbator": "constant",
     "splitter": "non_clustered",
     "n_simulations": 50,
 }
 pw = PowerAnalysis.from_dict(config)
-
-# Keep in mind that the average effect is the absolute effect added, this is not relative!
 power = pw.power_analysis(df, average_effect=0.1)
 
-# You may also get the power curve by running the power analysis with different average effects
-power_line = pw.power_line(df, average_effects=[0, 0.1, 0.2])
+# Normal approximation (faster)
+npw = NormalPowerAnalysis.from_dict({
+    "analysis": "ols",
+    "splitter": "non_clustered",
+    "n_simulations": 5,
+    "time_col": "date",
+})
+power_normal = npw.power_analysis(df, average_effect=0.1)
+power_line_normal = npw.power_line(df, average_effects=[0.1, 0.2, 0.3])
 
 
-# A faster method can be used to run the power analysis, using the approximation of
-# the central limit theorem, which is stable with less simulations
-from cluster_experiments import NormalPowerAnalysis
-npw = NormalPowerAnalysis.from_dict(
-    {
-        "analysis": "ols_non_clustered",
-        "splitter": "non_clustered",
-        "n_simulations": 5,
-    }
-)
-power_line_normal = npw.power_line(df, average_effects=[0, 0.1, 0.2])
-
-# you can also use the normal power to get mde from a power level
+# MDE calculation
 mde = npw.mde(df, power=0.8)
 
+# MDE line with length
+mde_timeline = npw.mde_time_line(
+    df,
+    powers=[0.8],
+    experiment_length=[7, 14, 21]
+)
+
+print(power, power_line_normal, power_normal, mde, mde_timeline)
 ```
 
-#### Switchback
+### Experiment Analysis Example
 
-Hello world of this library, clustered version. Since it uses dates as clusters, we consider it a switchback experiment. However, if you want to run a clustered experiment, you can use the same code without the dates.
-
-```python title="Switchback - config-based"
-
-from datetime import date
-
-import numpy as np
-import pandas as pd
-from cluster_experiments.power_analysis import PowerAnalysis
-
-# Create fake data
-N = 1_000
-clusters = [f"Cluster {i}" for i in range(100)]
-dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
-df = pd.DataFrame(
-    {
-        "cluster": np.random.choice(clusters, size=N),
-        "target": np.random.normal(0, 1, size=N),
-        "date": np.random.choice(dates, size=N),
-    }
-)
-
-config = {
-    "cluster_cols": ["cluster", "date"],
-    "analysis": "gee",
-    "perturbator": "constant",
-    "splitter": "clustered",
-    "n_simulations": 50,
-}
-pw = PowerAnalysis.from_dict(config)
-
-print(df)
-# Keep in mind that the average effect is the absolute effect added, this is not relative!
-power = pw.power_analysis(df, average_effect=0.1)
-print(f"{power = }")
-```
-
-#### Long example
-
-This is a more comprehensive example of how to use this library. There are simpler ways to run this power analysis above but this shows all the building blocks of the library.
-
-```python title="Switchback - using classes"
-from datetime import date
-
-import numpy as np
-import pandas as pd
-from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_analysis import PowerAnalysis, NormalPowerAnalysis
-from cluster_experiments.random_splitter import ClusteredSplitter
-
-# Create fake data
-N = 1_000
-clusters = [f"Cluster {i}" for i in range(100)]
-dates = [f"{date(2022, 1, i):%Y-%m-%d}" for i in range(1, 32)]
-df = pd.DataFrame(
-    {
-        "cluster": np.random.choice(clusters, size=N),
-        "target": np.random.normal(0, 1, size=N),
-        "date": np.random.choice(dates, size=N),
-    }
-)
-
-# A switchback experiment is going to be run, prepare the switchback splitter for the analysis
-sw = ClusteredSplitter(
-    cluster_cols=["cluster", "date"],
-)
-
-# We use a constant perturbator to add artificial effect on the treated on the power analysis
-perturbator = ConstantPerturbator()
-
-# Use gee to run the analysis
-analysis = GeeExperimentAnalysis(
-    cluster_cols=["cluster", "date"],
-)
-
-# Run the power analysis
-pw = PowerAnalysis(
-    perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50, seed=123
-)
-
-# Keep in mind that the average effect is the absolute effect added, this is not relative!
-power = pw.power_analysis(df, average_effect=0.1)
-print(f"{power = }")
-
-# You can also use normal power analysis, that uses central limit theorem to estimate power, and it should be stable in less simulations
-npw = NormalPowerAnalysis(
-    splitter=sw, analysis=analysis, n_simulations=50, seed=123
-)
-power = npw.power_analysis(df, average_effect=0.1)
-print(f"{power = }")
-
-```
-
-### Experiment Analysis
-
-#### Simple analysis plan
-
-```python title="Simple Analysis Plan"
-
+```python
 import numpy as np
 import pandas as pd
 from cluster_experiments import AnalysisPlan, SimpleMetric, Variant, Dimension
 
-# ---------------------------------------
-# ----------- Create fake data ----------
-# ---------------------------------------
+N = 1_000
+experiment_data = pd.DataFrame({
+    "order_value": np.random.normal(100, 10, size=N),
+    "delivery_time": np.random.normal(10, 1, size=N),
+    "experiment_group": np.random.choice(["control", "treatment"], size=N),
+    "city": np.random.choice(["NYC", "LA"], size=N),
+    "customer_id": np.random.randint(1, 100, size=N),
+    "customer_age": np.random.randint(20, 60, size=N),
+})
 
-NUM_ORDERS = 10_000
-NUM_CUSTOMERS = 3_000
-EXPERIMENT_GROUPS = ["control", "treatment_1", "treatment_2"]
-GROUP_SIZE = NUM_CUSTOMERS // len(EXPERIMENT_GROUPS)
+# Define metrics
+aov = SimpleMetric(alias="AOV", name="order_value")
+delivery_time = SimpleMetric(alias="Delivery Time", name="delivery_time")
 
-# Generate customers and assign them to experiment groups
-customer_ids = np.arange(1, NUM_CUSTOMERS + 1)
-np.random.shuffle(customer_ids)
-experiment_group = np.repeat(EXPERIMENT_GROUPS, GROUP_SIZE)
-experiment_group = np.concatenate(
-    (
-        experiment_group,
-        np.random.choice(EXPERIMENT_GROUPS, NUM_CUSTOMERS - len(experiment_group)),
-    )
-)
-customer_group_mapping = dict(zip(customer_ids, experiment_group))
-
-# Generate orders
-order_ids = np.arange(1, NUM_ORDERS + 1)
-customers = np.random.choice(customer_ids, NUM_ORDERS)
-order_values = np.abs(
-    np.random.normal(loc=10, scale=2, size=NUM_ORDERS)
-)  # Normally distributed around 10 and positive
-order_delivery_times = np.abs(
-    np.random.normal(loc=30, scale=5, size=NUM_ORDERS)
-)  # Normally distributed around 30 minutes and positive
-order_city_codes = np.random.randint(
-    1, 3, NUM_ORDERS
-)  # Random city codes between 1 and 2
-
-# Create DataFrame
-data = {
-    "order_id": order_ids,
-    "customer_id": customers,
-    "experiment_group": [
-        customer_group_mapping[customer_id] for customer_id in customers
-    ],
-    "order_value": order_values,
-    "order_delivery_time": order_delivery_times,
-    "order_city_code": order_city_codes,
-}
-
-df = pd.DataFrame(data)
-df.order_city_code = df.order_city_code.astype(str)
-
-# -------------------------------------------------
-# ---- Define metrics, variants and dimensions ----
-# -------------------------------------------------
-
-dimension__city_code = Dimension(name="order_city_code", values=["1", "2"])
-
-metric__order_value = SimpleMetric(alias="AOV", name="order_value")
-
-metric__delivery_time = SimpleMetric(
-    alias="AVG DT", name="order_delivery_time_in_minutes"
-)
-
+# Define variants and dimensions
 variants = [
     Variant("control", is_control=True),
-    Variant("treatment_1", is_control=False),
-    Variant("treatment_2", is_control=False),
+    Variant("treatment", is_control=False),
 ]
+city_dimension = Dimension(name="city", values=["NYC", "LA"])
 
-# --------------------------------------------------------
-# ---- Define a simple analysis plan from the metrics ----
-# --------------------------------------------------------
-
-simple_analysis_plan = AnalysisPlan.from_metrics(
-    metrics=[metric__delivery_time, metric__order_value],
+# Create analysis plan
+plan = AnalysisPlan.from_metrics(
+    metrics=[aov, delivery_time],
     variants=variants,
     variant_col="experiment_group",
-    alpha=0.01,
-    dimensions=[dimension__city_code],
+    dimensions=[city_dimension],
     analysis_type="clustered_ols",
-    analysis_config={"cluster_cols": ["customer_id"]},
+    analysis_config={
+        "cluster_cols": ["customer_id"],
+    },
 )
 
-# --------------------------------------------------------
-# ---- Run analysis and get the experiment scorecard  ----
-# --------------------------------------------------------
-
-simple_results = simple_analysis_plan.analyze(exp_data=df, verbose=True)
-
-simple_results_df = simple_results.to_dataframe()
+# Run analysis
+results = plan.analyze(experiment_data)
+print(results.to_dataframe())
 ```
+
+### Variance Reduction Example
+
+```python
+import numpy as np
+import pandas as pd
+from cluster_experiments import (
+    AnalysisPlan,
+    SimpleMetric,
+    Variant,
+    Dimension,
+    TargetAggregation,
+    HypothesisTest
+)
+
+N = 1000
+
+experiment_data = pd.DataFrame({
+    "order_value": np.random.normal(100, 10, size=N),
+    "delivery_time": np.random.normal(10, 1, size=N),
+    "experiment_group": np.random.choice(["control", "treatment"], size=N),
+    "city": np.random.choice(["NYC", "LA"], size=N),
+    "customer_id": np.random.randint(1, 100, size=N),
+    "customer_age": np.random.randint(20, 60, size=N),
+})
+
+pre_experiment_data = pd.DataFrame({
+    "order_value": np.random.normal(100, 10, size=N),
+    "customer_id": np.random.randint(1, 100, size=N),
+})
+
+# Define test
+cupac_model = TargetAggregation(
+    agg_col="customer_id",
+    target_col="order_value"
+)
+
+hypothesis_test = HypothesisTest(
+    metric=SimpleMetric(alias="AOV", name="order_value"),
+    analysis_type="clustered_ols",
+    analysis_config={
+        "cluster_cols": ["customer_id"],
+        "covariates": ["customer_age", "estimate_order_value"],
+    },
+    cupac_config={
+        "cupac_model": cupac_model,
+        "target_col": "order_value",
+    },
+)
+
+# Create analysis plan
+plan = AnalysisPlan(
+    tests=[hypothesis_test],
+    variants=[
+        Variant("control", is_control=True),
+        Variant("treatment", is_control=False),
+    ],
+    variant_col="experiment_group",
+)
+
+# Run analysis
+results = plan.analyze(experiment_data, pre_experiment_data)
+print(results.to_dataframe())
+```
+
+## Installation
+
+You can install this package via `pip`.
+
+```bash
+pip install cluster-experiments
+```
+
+For detailed documentation and examples, visit our [documentation site](https://david26694.github.io/cluster-experiments/).
 
 ## Features
 
@@ -317,19 +278,7 @@ The library offers the following classes:
     * `ConfidenceInterval`: to store the data representation of a confidence interval
     * `InferenceResults`: to store the structure of complete statistical analysis results
 
-## Installation
 
-You can install this package via `pip`.
-
-```bash
-pip install cluster-experiments
-```
-
-It may be safer to install via;
-
-```bash
-python -m pip install cluster-experiments
-```
 
 ## Contributing
 
