@@ -21,6 +21,7 @@ from cluster_experiments.perturbator import (
     ConstantPerturbator,
     NormalPerturbator,
     Perturbator,
+    RelativeMixedPerturbator,
     RelativePositivePerturbator,
     SegmentedBetaRelativePerturbator,
     UniformPerturbator,
@@ -84,4 +85,5 @@ __all__ = [
     "Dimension",
     "Variant",
     "HypothesisTest",
+    "RelativeMixedPerturbator",
 ]
