@@ -16,5 +16,6 @@ jobs:
       - run: cp README.md docs/index.md
       - run: cp -r theme docs/theme
       - run: make install-dev
+      - run: source .venv/bin/activate
       - run: pip install lxml_html_clean
       - run: mkdocs gh-deploy --force
