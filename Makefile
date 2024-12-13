@@ -68,7 +68,7 @@ prep-dist: clean
 	uv build
 
 pypi: prep-dist
-	twine upload --repository cluster-experiments dist/*
+	twine upload --repository ab-lab dist/*
 
 pypi-gh-actions: prep-dist
 # todo: fix this

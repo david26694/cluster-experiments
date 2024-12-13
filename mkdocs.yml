@@ -1,7 +1,7 @@
 site_name: Cluster Experiments Docs
 extra_css: [style.css]
-repo_url: https://github.com/david26694/cluster-experiments
-site_url: https://david26694.github.io/cluster-experiments/
+repo_url: https://github.com/david26694/ab-lab
+site_url: https://david26694.github.io/ab-lab/
 site_description: Functions to design and run clustered experiments
 site_author: David Masip
 use_directory_urls: false
