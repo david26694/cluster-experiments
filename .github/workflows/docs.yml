@@ -16,6 +16,6 @@ jobs:
           python-version: 3.9
       - run: cp README.md docs/index.md
       - run: cp -r theme docs/theme
-      - run:
+      - run: |
           make install-dev-gh-action
           make docs-deploy-gh-action
