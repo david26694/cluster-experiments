@@ -394,7 +394,7 @@ requires-dist = [
     { name = "mkdocs-jupyter", marker = "extra == 'docs'", specifier = ">=0.22.0,<1.0.0" },
     { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=8.5.0,<10.0.0" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=8.5.0,<10.0.0" },
-    { name = "mkdocstrings", marker = "extra == 'dev'", specifier = ">=0.18.0,<1.0.0" },
+    { name = "mkdocstrings", marker = "extra == 'dev'", specifier = ">=0.25.0,<1.0.0" },
     { name = "mkdocstrings", marker = "extra == 'docs'", specifier = ">=0.18.0,<1.0.0" },
     { name = "mktestdocs", marker = "extra == 'dev'", specifier = ">=0.2.2,<1.0.0" },
     { name = "mktestdocs", marker = "extra == 'test'", specifier = ">=0.2.2,<1.0.0" },
