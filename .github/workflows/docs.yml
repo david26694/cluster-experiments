@@ -18,4 +18,6 @@ jobs:
       - run: cp -r theme docs/theme
       - run: |
           make install-dev-gh-action
-          make docs-deploy-gh-action
+          source .venv/bin/activate
+          pip install lxml_html_clean
+          mkdocs gh-deploy --force
