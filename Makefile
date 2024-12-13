@@ -15,19 +15,20 @@ coverage_xml:
 check: black ruff test coverage_xml
 
 install:
-	python -m pip install uv
-	uv sync
+	python -m pip install -e .
 
 install-dev:
 	pip install --upgrade pip setuptools wheel
-	python -m pip install uv
-	uv sync --extra "dev"
+	python -m pip install -e ".[dev]"
 	pre-commit install
 
 install-test:
 	pip install --upgrade pip setuptools wheel
-	python -m pip install uv
-	uv sync --extra "test"
+	python -m pip install -e ".[test]"
+
+install-only-test:
+	pip install --upgrade pip setuptools wheel
+	python -m pip install -e ".[only-test]"
 
 docs-deploy:
 	mkdocs gh-deploy
@@ -60,7 +61,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 prep-dist: clean
-	uv build
+	python -m build
 
 pypi: prep-dist
 	twine upload --repository cluster-experiments dist/*

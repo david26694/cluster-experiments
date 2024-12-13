@@ -24,9 +24,7 @@ jobs:
     - name: Install Testing Dependencies
       run: make install-test
     - name: Automated Checking Mechanism
-      run:
-        source .venv/bin/activate
-        make check
+      run: make check
     - name: Code coverage
       uses: codecov/codecov-action@v3
       with:
