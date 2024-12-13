@@ -2,7 +2,7 @@
 
 # cluster_experiments
 
-[![Downloads](https://static.pepy.tech/badge/ab-lab)](https://pepy.tech/project/ab-lab)
+[![Downloads](https://static.pepy.tech/badge/ab-lab)](https://pepy.tech/project/cluster-experiments)
 [![PyPI](https://img.shields.io/pypi/v/ab-lab)](
 https://pypi.org/project/ab-lab/)
 [![Unit tests](https://github.com/david26694/ab-lab/workflows/Release%20unit%20Tests/badge.svg)](https://github.com/david26694/ab-lab/actions)
