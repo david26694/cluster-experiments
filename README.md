@@ -237,6 +237,7 @@ The library offers the following classes:
     * `ConstantPerturbator`: to artificially perturb treated group with constant perturbations
     * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
     * `RelativePositivePerturbator`: to artificially perturb treated group with relative positive perturbations
+    * `RelativeMixedPerturbator`: to artificially perturb treated group with relative perturbations for positive and negative targets
     * `NormalPerturbator`: to artificially perturb treated group with normal distribution perturbations
     * `BetaRelativePositivePerturbator`: to artificially perturb treated group with relative positive beta distribution perturbations
     * `BetaRelativePerturbator`: to artificially perturb treated group with relative beta distribution perturbations in a specified support interval
@@ -277,20 +278,3 @@ The library offers the following classes:
     * `PowerConfig`: to conveniently configure `PowerAnalysis` class
     * `ConfidenceInterval`: to store the data representation of a confidence interval
     * `InferenceResults`: to store the structure of complete statistical analysis results
-
-
-
-## Contributing
-
-In case you want to use venv as a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-After creating the virtual environment (or not), run:
-```bash
-git clone git@github.com:david26694/cluster-experiments.git
-cd cluster-experiments
-make install-dev
-```
