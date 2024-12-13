@@ -3,10 +3,10 @@ from datetime import date
 import numpy as np
 import pandas as pd
 
-from cluster_experiments.experiment_analysis import PairedTTestClusteredAnalysis
-from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.random_splitter import StratifiedSwitchbackSplitter
+from ab_lab.experiment_analysis import PairedTTestClusteredAnalysis
+from ab_lab.perturbator import ConstantPerturbator
+from ab_lab.power_analysis import PowerAnalysis
+from ab_lab.random_splitter import StratifiedSwitchbackSplitter
 
 
 def generate_random_data(clusters, dates, N):

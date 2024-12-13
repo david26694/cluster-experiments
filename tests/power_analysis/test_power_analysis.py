@@ -1,6 +1,6 @@
-from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.power_config import PowerConfig
-from cluster_experiments.random_splitter import ClusteredSplitter
+from ab_lab.power_analysis import PowerAnalysis
+from ab_lab.power_config import PowerConfig
+from ab_lab.random_splitter import ClusteredSplitter
 
 
 def test_power_analysis(df, perturbator, analysis_gee_vainilla):

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from cluster_experiments.synthetic_control_utils import loss_w
-from cluster_experiments.utils import _get_mapping_key
+from ab_lab.synthetic_control_utils import loss_w
+from ab_lab.utils import _get_mapping_key
 
 
 def test_get_mapping_key():

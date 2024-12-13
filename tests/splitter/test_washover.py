@@ -4,8 +4,8 @@ from datetime import timedelta
 import pandas as pd
 import pytest
 
-from cluster_experiments import SwitchbackSplitter
-from cluster_experiments.washover import ConstantWashover, EmptyWashover
+from ab_lab import SwitchbackSplitter
+from ab_lab.washover import ConstantWashover, EmptyWashover
 
 
 @pytest.mark.parametrize("minutes, n_rows", [(30, 2), (10, 4), (15, 3)])

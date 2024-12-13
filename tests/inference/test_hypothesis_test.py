@@ -2,13 +2,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cluster_experiments import TargetAggregation
-from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
-from cluster_experiments.inference.dimension import Dimension
-from cluster_experiments.inference.hypothesis_test import HypothesisTest
-from cluster_experiments.inference.metric import SimpleMetric
-from cluster_experiments.inference.variant import Variant
-from cluster_experiments.power_config import analysis_mapping
+from ab_lab import TargetAggregation
+from ab_lab.experiment_analysis import ClusteredOLSAnalysis
+from ab_lab.inference.dimension import Dimension
+from ab_lab.inference.hypothesis_test import HypothesisTest
+from ab_lab.inference.metric import SimpleMetric
+from ab_lab.inference.variant import Variant
+from ab_lab.power_config import analysis_mapping
 
 # Set up constants for the data
 NUM_ORDERS = 10000

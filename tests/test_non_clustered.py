@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 from sklearn.model_selection import train_test_split
 
-from cluster_experiments.cupac import TargetAggregation
-from cluster_experiments.experiment_analysis import OLSAnalysis
-from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.random_splitter import NonClusteredSplitter
+from ab_lab.cupac import TargetAggregation
+from ab_lab.experiment_analysis import OLSAnalysis
+from ab_lab.perturbator import ConstantPerturbator
+from ab_lab.power_analysis import PowerAnalysis
+from ab_lab.random_splitter import NonClusteredSplitter
 from tests.utils import generate_non_clustered_data
 
 N = 10_000

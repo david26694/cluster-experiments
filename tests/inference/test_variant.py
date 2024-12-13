@@ -1,6 +1,6 @@
 import pytest
 
-from cluster_experiments.inference.variant import Variant
+from ab_lab.inference.variant import Variant
 
 
 def test_variant_initialization():

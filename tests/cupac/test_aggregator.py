@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pandas as pd
 
-from cluster_experiments.cupac import TargetAggregation
+from ab_lab.cupac import TargetAggregation
 
 
 def split_x_y(binary_df_agg: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:

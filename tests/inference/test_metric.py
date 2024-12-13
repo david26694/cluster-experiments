@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from cluster_experiments.inference.metric import Metric, RatioMetric, SimpleMetric
+from ab_lab.inference.metric import Metric, RatioMetric, SimpleMetric
 
 # Sample DataFrame for testing
 sample_data = pd.DataFrame(

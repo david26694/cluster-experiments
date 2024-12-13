@@ -1,7 +1,7 @@
 import pytest
 
-from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.power_config import PowerConfig
+from ab_lab.power_analysis import PowerAnalysis
+from ab_lab.power_config import PowerConfig
 
 
 def test_raise_n_jobs(df):

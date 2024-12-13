@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cluster_experiments.perturbator import (
+from ab_lab.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
@@ -13,7 +13,7 @@ from cluster_experiments.perturbator import (
     SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
-from cluster_experiments.power_config import PowerConfig
+from ab_lab.power_config import PowerConfig
 
 
 def test_binary_perturbator_from_config():

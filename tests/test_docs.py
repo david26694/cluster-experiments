@@ -1,7 +1,7 @@
 import pytest
 from mktestdocs import check_docstring, check_md_file, get_codeblock_members
 
-from cluster_experiments import (
+from ab_lab import (
     AnalysisPlan,
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
@@ -45,7 +45,7 @@ from cluster_experiments import (
     UniformPerturbator,
     Variant,
 )
-from cluster_experiments.utils import _original_time_column
+from ab_lab.utils import _original_time_column
 
 all_objects = [
     BalancedClusteredSplitter,

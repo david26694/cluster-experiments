@@ -1,9 +1,9 @@
 import pytest
 
-from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
+from ab_lab.experiment_analysis import GeeExperimentAnalysis
+from ab_lab.perturbator import ConstantPerturbator
+from ab_lab.power_analysis import PowerAnalysis
+from ab_lab.random_splitter import ClusteredSplitter, NonClusteredSplitter
 
 
 def test_raises_cupac():

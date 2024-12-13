@@ -1,6 +1,6 @@
 import pytest
 
-from cluster_experiments.inference.dimension import DefaultDimension, Dimension
+from ab_lab.inference.dimension import DefaultDimension, Dimension
 
 
 def test_dimension_initialization():

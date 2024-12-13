@@ -2,12 +2,13 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
-from cluster_experiments.experiment_analysis import ExperimentAnalysis
-from cluster_experiments.inference.analysis_results import AnalysisPlanResults
-from cluster_experiments.inference.dimension import Dimension
-from cluster_experiments.inference.hypothesis_test import HypothesisTest
-from cluster_experiments.inference.metric import Metric
-from cluster_experiments.inference.variant import Variant
+
+from ab_lab.experiment_analysis import ExperimentAnalysis
+from ab_lab.inference.analysis_results import AnalysisPlanResults
+from ab_lab.inference.dimension import Dimension
+from ab_lab.inference.hypothesis_test import HypothesisTest
+from ab_lab.inference.metric import Metric
+from ab_lab.inference.variant import Variant
 
 logger = logging.getLogger(__name__)
 

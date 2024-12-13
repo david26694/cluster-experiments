@@ -3,7 +3,7 @@ from dataclasses import asdict
 import pandas as pd
 import pytest
 
-from cluster_experiments.inference.analysis_results import AnalysisPlanResults
+from ab_lab.inference.analysis_results import AnalysisPlanResults
 
 
 def test_analysis_plan_results_initialization():
