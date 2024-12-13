@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cluster_experiments.experiment_analysis import (
+from ab_lab.experiment_analysis import (
     ClusteredOLSAnalysis,
     ConfidenceInterval,
     ExperimentAnalysis,

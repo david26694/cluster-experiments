@@ -77,7 +77,7 @@ class ConstantPerturbator(Perturbator):
         Usage:
 
         ```python
-        from cluster_experiments.perturbator import ConstantPerturbator
+        from ab_lab.perturbator import ConstantPerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = ConstantPerturbator()
@@ -121,7 +121,7 @@ class UniformPerturbator(Perturbator):
         Usage:
 
         ```python
-        from cluster_experiments.perturbator import UniformPerturbator
+        from ab_lab.perturbator import UniformPerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = UniformPerturbator()
@@ -186,7 +186,7 @@ class NormalPerturbator(ConstantPerturbator):
         Usage:
 
         ```python
-        from cluster_experiments.perturbator import NormalPerturbator
+        from ab_lab.perturbator import NormalPerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = NormalPerturbator()
@@ -250,7 +250,7 @@ class RelativePositivePerturbator(Perturbator):
         """
         Usage:
         ```python
-        from cluster_experiments.perturbator import RelativePositivePerturbator
+        from ab_lab.perturbator import RelativePositivePerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = RelativePositivePerturbator()
@@ -354,7 +354,7 @@ class BetaRelativePositivePerturbator(NormalPerturbator, RelativePositivePerturb
         """
         Usage:
         ```python
-        from cluster_experiments.perturbator import BetaRelativePositivePerturbator
+        from ab_lab.perturbator import BetaRelativePositivePerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = BetaRelativePositivePerturbator()
@@ -478,7 +478,7 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
         """
         Usage:
         ```python
-        from cluster_experiments.perturbator import BetaRelativePerturbator
+        from ab_lab.perturbator import BetaRelativePerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 2, 3], "treatment": ["A", "B", "A"]})
         perturbator = BetaRelativePerturbator(range_min = -0.5, range_max = 2)
@@ -731,7 +731,7 @@ class BinaryPerturbator(Perturbator):
         Usage:
 
         ```python
-        from cluster_experiments.perturbator import BinaryPerturbator
+        from ab_lab.perturbator import BinaryPerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, 0, 1], "treatment": ["A", "B", "A"]})
         perturbator = BinaryPerturbator()
@@ -776,7 +776,7 @@ class RelativeMixedPerturbator(Perturbator):
         Usage:
 
         ```python
-        from cluster_experiments.perturbator import RelativeMixedPerturbator
+        from ab_lab.perturbator import RelativeMixedPerturbator
         import pandas as pd
         df = pd.DataFrame({"target": [1, -2, 3], "treatment": ["A", "B", "A"]})
         perturbator = RelativeMixedPerturbator()

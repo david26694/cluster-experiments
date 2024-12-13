@@ -1,13 +1,13 @@
 .PHONY: clean clean-test clean-pyc clean-build
 
 black:
-	black cluster_experiments tests setup.py --check
+	black ab_lab tests setup.py --check
 
 ruff:
-	ruff cluster_experiments tests setup.py
+	ruff ab_lab tests setup.py
 
 test:
-	pytest --cov=./cluster_experiments
+	pytest --cov=./ab_lab
 
 coverage_xml:
 	coverage xml
@@ -68,7 +68,7 @@ prep-dist: clean
 	uv build
 
 pypi: prep-dist
-	twine upload --repository cluster-experiments dist/*
+	twine upload --repository ab-lab dist/*
 
 pypi-gh-actions: prep-dist
 # todo: fix this

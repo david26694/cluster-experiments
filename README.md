@@ -1,15 +1,15 @@
 <img src="theme/icon-cluster.png" width=200 height=200 align="right">
 
-# cluster_experiments
+# ab_lab
 
-[![Downloads](https://static.pepy.tech/badge/cluster-experiments)](https://pepy.tech/project/cluster-experiments)
-[![PyPI](https://img.shields.io/pypi/v/cluster-experiments)](
-https://pypi.org/project/cluster-experiments/)
-[![Unit tests](https://github.com/david26694/cluster-experiments/workflows/Release%20unit%20Tests/badge.svg)](https://github.com/david26694/cluster-experiments/actions)
+[![Downloads](https://static.pepy.tech/badge/ab-lab)](https://pepy.tech/project/cluster-experiments)
+[![PyPI](https://img.shields.io/pypi/v/ab-lab)](
+https://pypi.org/project/ab-lab/)
+[![Unit tests](https://github.com/david26694/ab-lab/workflows/Release%20unit%20Tests/badge.svg)](https://github.com/david26694/ab-lab/actions)
 [![CodeCov](
-https://codecov.io/gh/david26694/cluster-experiments/branch/main/graph/badge.svg)](https://app.codecov.io/gh/david26694/cluster-experiments/)
-![License](https://img.shields.io/github/license/david26694/cluster-experiments)
-[![Pypi version](https://img.shields.io/pypi/pyversions/cluster-experiments.svg)](https://pypi.python.org/pypi/cluster-experiments)
+https://codecov.io/gh/david26694/ab-lab/branch/main/graph/badge.svg)](https://app.codecov.io/gh/david26694/ab-lab/)
+![License](https://img.shields.io/github/license/david26694/ab-lab)
+[![Pypi version](https://img.shields.io/pypi/pyversions/ab-lab.svg)](https://pypi.python.org/pypi/ab-lab)
 
 A Python library for end-to-end A/B testing workflows, featuring:
 - Experiment analysis and scorecards
@@ -58,7 +58,7 @@ A Python library for end-to-end A/B testing workflows, featuring:
 ```python
 import numpy as np
 import pandas as pd
-from cluster_experiments import PowerAnalysis, NormalPowerAnalysis
+from ab_lab import PowerAnalysis, NormalPowerAnalysis
 
 # Create sample data
 N = 1_000
@@ -112,7 +112,7 @@ print(power, power_line_normal, power_normal, mde, mde_timeline)
 ```python
 import numpy as np
 import pandas as pd
-from cluster_experiments import AnalysisPlan, SimpleMetric, Variant, Dimension
+from ab_lab import AnalysisPlan, SimpleMetric, Variant, Dimension
 
 N = 1_000
 experiment_data = pd.DataFrame({
@@ -157,7 +157,7 @@ print(results.to_dataframe())
 ```python
 import numpy as np
 import pandas as pd
-from cluster_experiments import (
+from ab_lab import (
     AnalysisPlan,
     SimpleMetric,
     Variant,
@@ -221,10 +221,10 @@ print(results.to_dataframe())
 You can install this package via `pip`.
 
 ```bash
-pip install cluster-experiments
+pip install ab-lab
 ```
 
-For detailed documentation and examples, visit our [documentation site](https://david26694.github.io/cluster-experiments/).
+For detailed documentation and examples, visit our [documentation site](https://david26694.github.io/ab-lab/).
 
 ## Features
 

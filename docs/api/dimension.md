@@ -1,3 +1,3 @@
-# `from cluster_experiments.inference.dimension import *`
+# `from ab_lab.inference.dimension import *`
 
-::: cluster_experiments.inference.dimension
+::: ab_lab.inference.dimension

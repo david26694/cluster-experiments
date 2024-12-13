@@ -1,10 +1,10 @@
 import pandas as pd
 
-from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
-from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_analysis import PowerAnalysisWithPreExperimentData
-from cluster_experiments.random_splitter import FixedSizeClusteredSplitter
-from cluster_experiments.synthetic_control_utils import generate_synthetic_control_data
+from ab_lab.experiment_analysis import SyntheticControlAnalysis
+from ab_lab.perturbator import ConstantPerturbator
+from ab_lab.power_analysis import PowerAnalysisWithPreExperimentData
+from ab_lab.random_splitter import FixedSizeClusteredSplitter
+from ab_lab.synthetic_control_utils import generate_synthetic_control_data
 
 
 def test_power_analysis_with_pre_experiment_data():

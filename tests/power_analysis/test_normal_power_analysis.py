@@ -1,10 +1,10 @@
 import pandas as pd
 import pytest
 
-from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis, OLSAnalysis
-from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_analysis import NormalPowerAnalysis, PowerAnalysis
-from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
+from ab_lab.experiment_analysis import ClusteredOLSAnalysis, OLSAnalysis
+from ab_lab.perturbator import ConstantPerturbator
+from ab_lab.power_analysis import NormalPowerAnalysis, PowerAnalysis
+from ab_lab.random_splitter import ClusteredSplitter, NonClusteredSplitter
 
 
 def test_aa_power_analysis(df, analysis_gee_vainilla):

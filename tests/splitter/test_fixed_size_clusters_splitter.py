@@ -3,9 +3,9 @@ from itertools import product
 import numpy as np
 import pandas as pd
 
-from cluster_experiments import ConstantPerturbator, PowerAnalysis
-from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
-from cluster_experiments.random_splitter import (
+from ab_lab import ConstantPerturbator, PowerAnalysis
+from ab_lab.experiment_analysis import ClusteredOLSAnalysis
+from ab_lab.random_splitter import (
     FixedSizeClusteredSplitter,
 )
 

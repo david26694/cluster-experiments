@@ -33,7 +33,7 @@ class TargetAggregation(BaseEstimator):
     Usage:
     ```python
     import pandas as pd
-    from cluster_experiments.cupac import TargetAggregation
+    from ab_lab.cupac import TargetAggregation
 
     df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"], "target_col": [1, 2, 3, 4, 5, 6]})
     new_df = pd.DataFrame({"agg_col": ["a", "a", "b", "b", "c", "c"]})

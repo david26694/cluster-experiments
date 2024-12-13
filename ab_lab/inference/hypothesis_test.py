@@ -3,13 +3,13 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from cluster_experiments.cupac import CupacHandler
-from cluster_experiments.experiment_analysis import ExperimentAnalysis, InferenceResults
-from cluster_experiments.inference.analysis_results import AnalysisPlanResults
-from cluster_experiments.inference.dimension import DefaultDimension, Dimension
-from cluster_experiments.inference.metric import Metric
-from cluster_experiments.inference.variant import Variant
-from cluster_experiments.power_config import analysis_mapping
+from ab_lab.cupac import CupacHandler
+from ab_lab.experiment_analysis import ExperimentAnalysis, InferenceResults
+from ab_lab.inference.analysis_results import AnalysisPlanResults
+from ab_lab.inference.dimension import DefaultDimension, Dimension
+from ab_lab.inference.metric import Metric
+from ab_lab.inference.variant import Variant
+from ab_lab.power_config import analysis_mapping
 
 
 class HypothesisTest:

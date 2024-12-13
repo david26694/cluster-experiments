@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
-from cluster_experiments.synthetic_control_utils import get_w
+from ab_lab.experiment_analysis import SyntheticControlAnalysis
+from ab_lab.synthetic_control_utils import get_w
 
 
 def generate_2_clusters_data(N, start_date, end_date):

@@ -1,5 +1,5 @@
-from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
-from cluster_experiments.experiment_analysis import (
+from ab_lab.cupac import EmptyRegressor, TargetAggregation
+from ab_lab.experiment_analysis import (
     ClusteredOLSAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
@@ -9,12 +9,12 @@ from cluster_experiments.experiment_analysis import (
     SyntheticControlAnalysis,
     TTestClusteredAnalysis,
 )
-from cluster_experiments.inference.analysis_plan import AnalysisPlan
-from cluster_experiments.inference.dimension import Dimension
-from cluster_experiments.inference.hypothesis_test import HypothesisTest
-from cluster_experiments.inference.metric import Metric, RatioMetric, SimpleMetric
-from cluster_experiments.inference.variant import Variant
-from cluster_experiments.perturbator import (
+from ab_lab.inference.analysis_plan import AnalysisPlan
+from ab_lab.inference.dimension import Dimension
+from ab_lab.inference.hypothesis_test import HypothesisTest
+from ab_lab.inference.metric import Metric, RatioMetric, SimpleMetric
+from ab_lab.inference.variant import Variant
+from ab_lab.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
@@ -26,9 +26,9 @@ from cluster_experiments.perturbator import (
     SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
-from cluster_experiments.power_analysis import NormalPowerAnalysis, PowerAnalysis
-from cluster_experiments.power_config import PowerConfig
-from cluster_experiments.random_splitter import (
+from ab_lab.power_analysis import NormalPowerAnalysis, PowerAnalysis
+from ab_lab.power_config import PowerConfig
+from ab_lab.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
@@ -40,7 +40,7 @@ from cluster_experiments.random_splitter import (
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
 )
-from cluster_experiments.washover import ConstantWashover, EmptyWashover, Washover
+from ab_lab.washover import ConstantWashover, EmptyWashover, Washover
 
 __all__ = [
     "ExperimentAnalysis",

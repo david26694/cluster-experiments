@@ -1,3 +1,3 @@
-# `from cluster_experiments.perturbator import *`
+# `from ab_lab.perturbator import *`
 
-::: cluster_experiments.perturbator
+::: ab_lab.perturbator

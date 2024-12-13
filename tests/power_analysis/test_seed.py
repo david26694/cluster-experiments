@@ -1,6 +1,6 @@
 import numpy as np
 
-from cluster_experiments.power_analysis import PowerAnalysis
+from ab_lab.power_analysis import PowerAnalysis
 
 
 def get_config(perturbator: str) -> dict:

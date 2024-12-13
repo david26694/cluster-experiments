@@ -1,6 +1,6 @@
 import pandas as pd
 
-from cluster_experiments.experiment_analysis import OLSAnalysis
+from ab_lab.experiment_analysis import OLSAnalysis
 
 
 def test_binary_treatment(analysis_df):

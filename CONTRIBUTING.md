@@ -11,8 +11,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Clone repo and go to the project directory:
 
 ```bash
-git clone git@github.com:david26694/cluster-experiments.git
-cd cluster-experiments
+git clone git@github.com:david26694/ab-lab.git
+cd ab-lab
 ```
 
 Create virtual environment and activate it:

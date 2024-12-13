@@ -1,6 +1,6 @@
 import logging
 
-from cluster_experiments.power_config import PowerConfig
+from ab_lab.power_config import PowerConfig
 
 
 def test_config_warning_superfluous_param_switch_frequency(caplog):

@@ -9,8 +9,8 @@ import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
 from scipy.stats import ttest_ind, ttest_rel
 
-from cluster_experiments.synthetic_control_utils import get_w
-from cluster_experiments.utils import HypothesisEntries
+from ab_lab.synthetic_control_utils import get_w
+from ab_lab.utils import HypothesisEntries
 
 
 @dataclass
@@ -279,7 +279,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+    from ab_lab.experiment_analysis import GeeExperimentAnalysis
     import pandas as pd
 
     df = pd.DataFrame({
@@ -426,7 +426,7 @@ class ClusteredOLSAnalysis(ExperimentAnalysis):
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
+    from ab_lab.experiment_analysis import ClusteredOLSAnalysis
     import pandas as pd
 
     df = pd.DataFrame({
@@ -568,7 +568,7 @@ class TTestClusteredAnalysis(ExperimentAnalysis):
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import TTestClusteredAnalysis
+    from ab_lab.experiment_analysis import TTestClusteredAnalysis
     import pandas as pd
 
     df = pd.DataFrame({
@@ -645,7 +645,7 @@ class PairedTTestClusteredAnalysis(ExperimentAnalysis):
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import PairedTTestClusteredAnalysis
+    from ab_lab.experiment_analysis import PairedTTestClusteredAnalysis
     import pandas as pd
 
     df = pd.DataFrame({
@@ -764,7 +764,7 @@ class OLSAnalysis(ExperimentAnalysis):
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import OLSAnalysis
+    from ab_lab.experiment_analysis import OLSAnalysis
     import pandas as pd
 
     df = pd.DataFrame({
@@ -908,7 +908,7 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import MLMExperimentAnalysis
+    from ab_lab.experiment_analysis import MLMExperimentAnalysis
     import pandas as pd
 
     df = pd.DataFrame({
@@ -1005,7 +1005,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
     Usage:
 
     ```python
-    from cluster_experiments.experiment_analysis import SyntheticControlAnalysis
+    from ab_lab.experiment_analysis import SyntheticControlAnalysis
     import pandas as pd
     import numpy as np
     from itertools import product

@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.random_splitter import (
+from ab_lab.power_analysis import PowerAnalysis
+from ab_lab.random_splitter import (
     BalancedSwitchbackSplitter,
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,

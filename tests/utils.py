@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from cluster_experiments.random_splitter import RandomSplitter
+from ab_lab.random_splitter import RandomSplitter
 
 TARGETS = {
     "binary": lambda x: np.random.choice([0, 1], size=x),

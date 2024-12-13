@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cluster_experiments.power_config import PowerConfig
-from cluster_experiments.random_splitter import (
+from ab_lab.power_config import PowerConfig
+from ab_lab.random_splitter import (
     BalancedClusteredSplitter,
     ClusteredSplitter,
     RepeatedSampler,

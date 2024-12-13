@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.washover import ConstantWashover
+from ab_lab.power_analysis import PowerAnalysis
+from ab_lab.washover import ConstantWashover
 
 
 def test_switchback(switchback_power_analysis, df):

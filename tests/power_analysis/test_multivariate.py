@@ -1,6 +1,6 @@
 import pytest
 
-from cluster_experiments import (
+from ab_lab import (
     ConstantPerturbator,
     NonClusteredSplitter,
     OLSAnalysis,

@@ -3,8 +3,8 @@ from datetime import date
 import numpy as np
 import pandas as pd
 
-from cluster_experiments.power_analysis import PowerAnalysis
-from cluster_experiments.power_config import PowerConfig
+from ab_lab.power_analysis import PowerAnalysis
+from ab_lab.power_config import PowerConfig
 
 
 def generate_random_data(clusters, dates, N):

@@ -1,3 +1,3 @@
-# `from cluster_experiments.inference.analysis_plan import *`
+# `from ab_lab.inference.analysis_plan import *`
 
-::: cluster_experiments.inference.analysis_plan
+::: ab_lab.inference.analysis_plan

@@ -1,3 +1,3 @@
-# `from cluster_experiments.cupac import *`
+# `from ab_lab.cupac import *`
 
-::: cluster_experiments.cupac
+::: ab_lab.cupac

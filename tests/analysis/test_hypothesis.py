@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from cluster_experiments.experiment_analysis import (
+from ab_lab.experiment_analysis import (
     ClusteredOLSAnalysis,
     GeeExperimentAnalysis,
     MLMExperimentAnalysis,
@@ -9,7 +9,7 @@ from cluster_experiments.experiment_analysis import (
     SyntheticControlAnalysis,
     TTestClusteredAnalysis,
 )
-from cluster_experiments.synthetic_control_utils import generate_synthetic_control_data
+from ab_lab.synthetic_control_utils import generate_synthetic_control_data
 from tests.utils import generate_clustered_data
 
 

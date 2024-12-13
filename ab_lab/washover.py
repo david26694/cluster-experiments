@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import pandas as pd
 
-from cluster_experiments.utils import _original_time_column
+from ab_lab.utils import _original_time_column
 
 
 class Washover(ABC):
@@ -80,8 +80,8 @@ class EmptyWashover(Washover):
 
         Usage:
         ```python
-        from cluster_experiments import SwitchbackSplitter
-        from cluster_experiments import EmptyWashover
+        from ab_lab import SwitchbackSplitter
+        from ab_lab import EmptyWashover
 
         washover = EmptyWashover()
 
@@ -145,7 +145,7 @@ class ConstantWashover(Washover):
         import pandas as pd
         from datetime import datetime, timedelta
 
-        from cluster_experiments import ConstantWashover
+        from ab_lab import ConstantWashover
 
         np.random.seed(42)
 

@@ -1,3 +1,3 @@
-# `from cluster_experiments.power_config import *`
+# `from ab_lab.power_config import *`
 
-::: cluster_experiments.power_config
+::: ab_lab.power_config

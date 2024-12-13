@@ -1,6 +1,6 @@
 import pytest
 
-from cluster_experiments.power_config import MissingArgumentError, PowerConfig
+from ab_lab.power_config import MissingArgumentError, PowerConfig
 
 
 def test_missing_argument_segment_cols(caplog):
