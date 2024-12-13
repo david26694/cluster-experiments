@@ -1,3 +1,3 @@
-# `from cluster_experiments.inference.hypothesis_test import *`
+# `from ab_lab.inference.hypothesis_test import *`
 
-::: cluster_experiments.inference.hypothesis_test
+::: ab_lab.inference.hypothesis_test

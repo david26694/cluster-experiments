@@ -8,18 +8,18 @@ from scipy.stats import norm
 from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
-from cluster_experiments.cupac import CupacHandler
-from cluster_experiments.experiment_analysis import ExperimentAnalysis
-from cluster_experiments.perturbator import Perturbator
-from cluster_experiments.power_config import (
+from ab_lab.cupac import CupacHandler
+from ab_lab.experiment_analysis import ExperimentAnalysis
+from ab_lab.perturbator import Perturbator
+from ab_lab.power_config import (
     PowerConfig,
     analysis_mapping,
     cupac_model_mapping,
     perturbator_mapping,
     splitter_mapping,
 )
-from cluster_experiments.random_splitter import RandomSplitter, RepeatedSampler
-from cluster_experiments.utils import HypothesisEntries, _get_mapping_key
+from ab_lab.random_splitter import RandomSplitter, RepeatedSampler
+from ab_lab.utils import HypothesisEntries, _get_mapping_key
 
 
 class PowerAnalysis:
@@ -52,10 +52,10 @@ class PowerAnalysis:
 
     import numpy as np
     import pandas as pd
-    from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-    from cluster_experiments.perturbator import ConstantPerturbator
-    from cluster_experiments.power_analysis import PowerAnalysis
-    from cluster_experiments.random_splitter import ClusteredSplitter
+    from ab_lab.experiment_analysis import GeeExperimentAnalysis
+    from ab_lab.perturbator import ConstantPerturbator
+    from ab_lab.power_analysis import PowerAnalysis
+    from ab_lab.random_splitter import ClusteredSplitter
 
     N = 1_000
     users = [f"User {i}" for i in range(1000)]
@@ -602,9 +602,9 @@ class NormalPowerAnalysis:
 
     import numpy as np
     import pandas as pd
-    from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
-    from cluster_experiments.power_analysis import NormalPowerAnalysis
-    from cluster_experiments.random_splitter import ClusteredSplitter
+    from ab_lab.experiment_analysis import GeeExperimentAnalysis
+    from ab_lab.power_analysis import NormalPowerAnalysis
+    from ab_lab.random_splitter import ClusteredSplitter
 
     N = 1_000
     users = [f"User {i}" for i in range(1000)]

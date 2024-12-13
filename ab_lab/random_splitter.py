@@ -5,8 +5,8 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 
-from cluster_experiments.utils import _get_mapping_key, _original_time_column
-from cluster_experiments.washover import EmptyWashover, Washover, washover_mapping
+from ab_lab.utils import _get_mapping_key, _original_time_column
+from ab_lab.washover import EmptyWashover, Washover, washover_mapping
 
 
 class RandomSplitter(ABC):
@@ -72,7 +72,7 @@ class ClusteredSplitter(RandomSplitter):
     Usage:
     ```python
     import pandas as pd
-    from cluster_experiments.random_splitter import ClusteredSplitter
+    from ab_lab.random_splitter import ClusteredSplitter
     splitter = ClusteredSplitter(cluster_cols=["city"])
     df = pd.DataFrame({"city": ["A", "B", "C"]})
     df = splitter.assign_treatment_df(df)
@@ -148,7 +148,7 @@ class SwitchbackSplitter(ClusteredSplitter):
     Usage:
     ```python
     import pandas as pd
-    from cluster_experiments.random_splitter import SwitchbackSplitter
+    from ab_lab.random_splitter import SwitchbackSplitter
     splitter = SwitchbackSplitter(time_col="date", switch_frequency="1D", cluster_cols=["date"])
     df = pd.DataFrame({"date": pd.date_range("2020-01-01", "2020-01-03")})
     df = splitter.assign_treatment_df(df)
@@ -278,7 +278,7 @@ class NonClusteredSplitter(RandomSplitter):
     Usage:
     ```python
     import pandas as pd
-    from cluster_experiments.random_splitter import NonClusteredSplitter
+    from ab_lab.random_splitter import NonClusteredSplitter
     splitter = NonClusteredSplitter(
         treatments=["A", "B"],
     )
@@ -339,7 +339,7 @@ class StratifiedClusteredSplitter(RandomSplitter):
     Usage:
     ```python
     import pandas as pd
-    from cluster_experiments.random_splitter import StratifiedClusteredSplitter
+    from ab_lab.random_splitter import StratifiedClusteredSplitter
     splitter = StratifiedClusteredSplitter(cluster_cols=["city"],strata_cols=["country"])
     df = pd.DataFrame({"city": ["A", "B", "C","D"], "country":["C1","C2","C2","C1"]})
     df = splitter.assign_treatment_df(df)
@@ -435,7 +435,7 @@ class StratifiedSwitchbackSplitter(StratifiedClusteredSplitter, SwitchbackSplitt
     Usage:
     ```python
     import pandas as pd
-    from cluster_experiments.random_splitter import StratifiedSwitchbackSplitter
+    from ab_lab.random_splitter import StratifiedSwitchbackSplitter
     splitter = StratifiedSwitchbackSplitter(time_col="date",switch_frequency="1D",strata_cols=["country"], cluster_cols=["country", "date"])
     df = pd.DataFrame({"date": ["2020-01-01", "2020-01-02", "2020-01-03","2020-01-04"], "country":["C1","C2","C2","C1"]})
     df = splitter.assign_treatment_df(df)
@@ -506,7 +506,7 @@ class RepeatedSampler(RandomSplitter):
     Usage:
     ```python
     import pandas as pd
-    from cluster_experiments.random_splitter import RepeatedSampler
+    from ab_lab.random_splitter import RepeatedSampler
     splitter = RepeatedSampler(
         treatments=["A", "B"],
     )

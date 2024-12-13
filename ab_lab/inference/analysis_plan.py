@@ -2,7 +2,6 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
-
 from cluster_experiments.experiment_analysis import ExperimentAnalysis
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import Dimension

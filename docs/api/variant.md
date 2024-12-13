@@ -1,3 +1,3 @@
-# `from cluster_experiments.inference.variant import *`
+# `from ab_lab.inference.variant import *`
 
-::: cluster_experiments.inference.variant
+::: ab_lab.inference.variant

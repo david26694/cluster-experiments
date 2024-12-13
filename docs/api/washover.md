@@ -1,3 +1,3 @@
-# `from cluster_experiments.washover import *`
+# `from ab_lab.washover import *`
 
-::: cluster_experiments.washover
+::: ab_lab.washover

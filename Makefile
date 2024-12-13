@@ -1,13 +1,13 @@
 .PHONY: clean clean-test clean-pyc clean-build
 
 black:
-	black cluster_experiments tests setup.py --check
+	black ab_lab tests setup.py --check
 
 ruff:
-	ruff cluster_experiments tests setup.py
+	ruff ab_lab tests setup.py
 
 test:
-	pytest --cov=./cluster_experiments
+	pytest --cov=./ab_lab
 
 coverage_xml:
 	coverage xml

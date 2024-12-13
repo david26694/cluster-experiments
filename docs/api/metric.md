@@ -1,3 +1,3 @@
-# `from cluster_experiments.inference.metric import *`
+# `from ab_lab.inference.metric import *`
 
-::: cluster_experiments.inference.metric
+::: ab_lab.inference.metric

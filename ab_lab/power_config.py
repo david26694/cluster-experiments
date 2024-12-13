@@ -3,8 +3,8 @@ import logging
 from dataclasses import dataclass
 from typing import List, Optional, Union
 
-from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
-from cluster_experiments.experiment_analysis import (
+from ab_lab.cupac import EmptyRegressor, TargetAggregation
+from ab_lab.experiment_analysis import (
     ClusteredOLSAnalysis,
     GeeExperimentAnalysis,
     MLMExperimentAnalysis,
@@ -12,7 +12,7 @@ from cluster_experiments.experiment_analysis import (
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
-from cluster_experiments.perturbator import (
+from ab_lab.perturbator import (
     BetaRelativePerturbator,
     BetaRelativePositivePerturbator,
     BinaryPerturbator,
@@ -22,7 +22,7 @@ from cluster_experiments.perturbator import (
     SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
-from cluster_experiments.random_splitter import (
+from ab_lab.random_splitter import (
     BalancedClusteredSplitter,
     BalancedSwitchbackSplitter,
     ClusteredSplitter,
@@ -77,8 +77,8 @@ class PowerConfig:
     Usage:
 
     ```python
-    from cluster_experiments.power_config import PowerConfig
-    from cluster_experiments.power_analysis import PowerAnalysis, NormalPowerAnalysis
+    from ab_lab.power_config import PowerConfig
+    from ab_lab.power_analysis import PowerAnalysis, NormalPowerAnalysis
 
     p = PowerConfig(
         analysis="gee",

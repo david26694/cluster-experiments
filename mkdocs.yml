@@ -41,7 +41,7 @@ nav:
 plugins:
   - mkdocstrings:
       watch:
-        - cluster_experiments
+        - ab_lab
   - mkdocs-jupyter
   - search
 copyright: Copyright &copy; 2022 Maintained by David Masip.

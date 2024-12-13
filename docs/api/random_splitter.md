@@ -1,3 +1,3 @@
-# `from cluster_experiments.random_splitter import *`
+# `from ab_lab.random_splitter import *`
 
-::: cluster_experiments.random_splitter
+::: ab_lab.random_splitter

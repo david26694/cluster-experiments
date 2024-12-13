@@ -1,6 +1,6 @@
 <img src="theme/icon-cluster.png" width=200 height=200 align="right">
 
-# cluster_experiments
+# ab_lab
 
 [![Downloads](https://static.pepy.tech/badge/ab-lab)](https://pepy.tech/project/cluster-experiments)
 [![PyPI](https://img.shields.io/pypi/v/ab-lab)](
@@ -58,7 +58,7 @@ A Python library for end-to-end A/B testing workflows, featuring:
 ```python
 import numpy as np
 import pandas as pd
-from cluster_experiments import PowerAnalysis, NormalPowerAnalysis
+from ab_lab import PowerAnalysis, NormalPowerAnalysis
 
 # Create sample data
 N = 1_000
@@ -112,7 +112,7 @@ print(power, power_line_normal, power_normal, mde, mde_timeline)
 ```python
 import numpy as np
 import pandas as pd
-from cluster_experiments import AnalysisPlan, SimpleMetric, Variant, Dimension
+from ab_lab import AnalysisPlan, SimpleMetric, Variant, Dimension
 
 N = 1_000
 experiment_data = pd.DataFrame({
@@ -157,7 +157,7 @@ print(results.to_dataframe())
 ```python
 import numpy as np
 import pandas as pd
-from cluster_experiments import (
+from ab_lab import (
     AnalysisPlan,
     SimpleMetric,
     Variant,
