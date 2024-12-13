@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - main
+    - fix-docs-deploy
 
 jobs:
   deploy:
@@ -18,4 +19,5 @@ jobs:
       - run: make install-dev-gh-action
       - run: source .venv/bin/activate
       - run: pip install lxml_html_clean
+      - run: which python
       - run: mkdocs gh-deploy --force
