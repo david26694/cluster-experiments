@@ -37,6 +37,11 @@ install-test:
 docs-deploy:
 	mkdocs gh-deploy
 
+docs-deploy-gh-action:
+	source .venv/bin/activate
+	pip install lxml_html_clean
+	mkdocs gh-deploy --force
+
 docs-serve:
 	cp README.md docs/index.md
 	rm -rf docs/theme
