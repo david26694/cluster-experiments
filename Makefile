@@ -24,6 +24,11 @@ install-dev:
 	uv sync --extra "dev"
 	pre-commit install
 
+install-dev-gh-action:
+	pip install --upgrade pip setuptools wheel
+	python -m pip install uv
+	uv sync --extra "dev"
+
 install-test:
 	pip install --upgrade pip setuptools wheel
 	python -m pip install uv
