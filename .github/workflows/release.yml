@@ -19,7 +19,7 @@ jobs:
           python-version: 3.9
 
       - name: Install dependencies
-        run: make install-dev
+        run: make install-dev-gh-action
 
       - name: Prepare dist/
         run: make prep-dist
