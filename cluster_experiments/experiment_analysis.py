@@ -1254,17 +1254,16 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             ).get_pvalue(df)
             ```
         """
-        self.target_col = target_col
-        self.target_metric = target_col
-        self.scale_col = scale_col
-        self.treatment = treatment
-        self.treatment_col = treatment_col
-        self.cluster_cols = cluster_cols
-        self.hypothesis = hypothesis
 
-        self.covariates = covariates or []
-        self.covariates_delta = []
-        self.ratio_covariates = ratio_covariates or []
+        super().__init__(
+            target_col=target_col,
+            treatment_col=treatment_col,
+            cluster_cols=cluster_cols,
+            treatment=treatment,
+            covariates=covariates,
+            hypothesis=hypothesis,
+        )
+        self.scale_col = scale_col
 
     def _aggregate_to_cluster(
         self, df: pd.DataFrame, strat_treatment: Optional[bool] = True
@@ -1320,11 +1319,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Variance reduction is used if covariates are given.
         """
 
-        if self.hypothesis != "two-sided":
-            raise ValueError(
-                "Delta Method currently only supports two-sided hypothesis"
-            )
-
         is_treatment = df[self.treatment_col] == 1
         treat_mean, treat_var = self._get_group_mean_and_variance(df[is_treatment])
         ctrl_mean, ctrl_var = self._get_group_mean_and_variance(df[~is_treatment])
@@ -1346,6 +1340,14 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         z_score = mean_diff / SE
         p_value = 2 * (1 - norm.cdf(abs(z_score)))
+
+        results_delta = {
+            "params": {self.treatment_col: mean_diff},
+            "pvalues": {self.treatment_col: p_value},
+        }
+
+        p_value = self.pvalue_based_on_hypothesis(results_delta)
+
         return p_value
 
     def analysis_point_estimate(self, df: pd.DataFrame) -> float:
