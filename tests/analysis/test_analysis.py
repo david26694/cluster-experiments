@@ -5,6 +5,7 @@ import pytest
 from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
     ConfidenceInterval,
+    DeltaMethodAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     InferenceResults,
@@ -13,7 +14,11 @@ from cluster_experiments.experiment_analysis import (
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
-from tests.utils import generate_clustered_data, generate_random_data
+from tests.utils import (
+    generate_clustered_data,
+    generate_random_data,
+    generate_ratio_metric_data,
+)
 
 
 @pytest.fixture
@@ -27,10 +32,7 @@ def analysis_df_diff():
         }
     )
     analysis_df_full = pd.concat([analysis_df for _ in range(100)])
-    np.random.seed(2024)
-    analysis_df_full.loc[
-        analysis_df_full["treatment"] == "B", "target"
-    ] = 0.1 + np.random.normal(0, 0.00001, (analysis_df_full["treatment"] == "B").sum())
+    analysis_df_full.loc[analysis_df_full["treatment"] == "B", "target"] = 0.1
     return analysis_df_full
 
 
@@ -251,3 +253,49 @@ def test_get_inference_results(experiment_analysis, analysis_df_diff):
     assert results.ate > 0
     assert 0 <= results.p_value < 1
     assert results.std_error > 0
+
+
+def test_delta_analysis(analysis_ratio_df, experiment_dates):
+    analyser = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+    experiment_start = min(experiment_dates)
+
+    df_experiment = analysis_ratio_df.query(f"date >= '{experiment_start}'")
+
+    assert 0.05 >= analyser.get_pvalue(df_experiment) >= 0
+
+
+def test_aa_delta_analysis(dates):
+
+    analyser = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+
+    p_values = []
+    for _ in range(1000):
+        data = generate_ratio_metric_data(dates, N=100_000, treatment_effect=0)
+        p_values.append(analyser.get_pvalue(data))
+
+    positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
+
+    assert positive_rate == pytest.approx(
+        0.05, abs=0.01
+    ), "P-value A/A calculation is incorrect"
+
+
+def test_stats_delta_vs_ols(analysis_ratio_df, experiment_dates):
+    experiment_start_date = min(experiment_dates)
+
+    analyser_ols = ClusteredOLSAnalysis(cluster_cols=["user"])
+    analyser_delta = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+    df = analysis_ratio_df.query(f"date >= '{experiment_start_date}'")
+
+    point_estimate_ols = analyser_ols.get_point_estimate(df)
+    point_estimate_delta = analyser_delta.get_point_estimate(df)
+
+    SE_ols = analyser_ols.get_standard_error(df)
+    SE_delta = analyser_delta.get_standard_error(df)
+
+    assert point_estimate_delta == pytest.approx(
+        point_estimate_ols, rel=1e-2
+    ), "Point estimate is not consistent with Clustered OLS"
+    assert SE_delta == pytest.approx(
+        SE_ols, rel=1e-2
+    ), "Standard error is not consistent with Clustered OLS"
