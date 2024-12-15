@@ -263,6 +263,7 @@ The library offers the following classes:
     * `PairedTTestClusteredAnalysis`: to run a paired t-test on aggregated data for clusters
     * `ClusteredOLSAnalysis`: to run OLS analysis on the results of a clustered design
     * `OLSAnalysis`: to run OLS analysis for non-clustered data
+    * `DeltaMethodAnalysis`: to run Delta Method Analysis on clustered design
     * `TargetAggregation`: to add pre-experimental data of the outcome to reduce variance
     * `SyntheticControlAnalysis`: to run synthetic control analysis
 * Regarding experiment analysis workflow:

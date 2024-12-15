@@ -6,6 +6,7 @@ from typing import List, Optional, Union
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
+    DeltaMethodAnalysis,
     GeeExperimentAnalysis,
     MLMExperimentAnalysis,
     OLSAnalysis,
@@ -254,6 +255,7 @@ analysis_mapping = {
     "ttest_clustered": TTestClusteredAnalysis,
     "paired_ttest_clustered": PairedTTestClusteredAnalysis,
     "mlm": MLMExperimentAnalysis,
+    "delta": DeltaMethodAnalysis,
 }
 
 cupac_model_mapping = {"": EmptyRegressor, "mean_cupac_model": TargetAggregation}
