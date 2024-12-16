@@ -2,7 +2,7 @@ import logging
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -1217,7 +1217,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
-        ratio_covariates: Optional[List[Tuple[str]]] = None,
         hypothesis: str = "two-sided",
     ):
         """
@@ -1264,6 +1263,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             hypothesis=hypothesis,
         )
         self.scale_col = scale_col
+
+        if covariates is not None:
+            warnings.warn(
+                "Covariates are not supported in the Delta Method approximation for the time being. They will be ignored."
+            )
 
     def _aggregate_to_cluster(
         self, df: pd.DataFrame, strat_treatment: Optional[bool] = True
@@ -1313,7 +1317,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         ) / group_size
         return group_mean, group_variance
 
-    def _get_mean_SE(self, df: pd.DataFrame) -> tuple[float, float]:
+    def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
         """
         Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
         Variance reduction is used if covariates are given.
@@ -1324,9 +1328,9 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         ctrl_mean, ctrl_var = self._get_group_mean_and_variance(df[~is_treatment])
 
         mean_diff = treat_mean - ctrl_mean
-        SE = np.sqrt(treat_var + ctrl_var)
+        standard_error = np.sqrt(treat_var + ctrl_var)
 
-        return mean_diff, SE
+        return mean_diff, standard_error
 
     def analysis_pvalue(self, df: pd.DataFrame) -> float:
         """
@@ -1336,9 +1340,9 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze.
         """
 
-        mean_diff, SE = self._get_mean_SE(df)
+        mean_diff, standard_error = self._get_mean_standard_error(df)
 
-        z_score = mean_diff / SE
+        z_score = mean_diff / standard_error
         p_value = 2 * (1 - norm.cdf(abs(z_score)))
 
         results_delta = {
@@ -1356,7 +1360,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        mean_diff, _SE = self._get_mean_SE(df)
+        mean_diff, _standard_error = self._get_mean_standard_error(df)
         return mean_diff
 
     def analysis_standard_error(self, df: pd.DataFrame) -> float:
@@ -1365,8 +1369,8 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze
             verbose (Optional): bool, prints the regression summary if True
         """
-        _mean_diff, SE = self._get_mean_SE(df)
-        return SE
+        _mean_diff, standard_error = self._get_mean_standard_error(df)
+        return standard_error
 
     def __warn_small_group_size(self):
         warnings.warn(
