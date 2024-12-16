@@ -270,10 +270,12 @@ def test_delta_analysis(analysis_ratio_df, experiment_dates):
 def test_aa_delta_analysis(dates):
 
     analyser = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
-
+    np.random.seed(2024)
     p_values = []
     for _ in range(1000):
-        data = generate_ratio_metric_data(dates, N=100_000, treatment_effect=0)
+        data = generate_ratio_metric_data(
+            dates, 40_000, num_users=5000, treatment_effect=0
+        )
         p_values.append(analyser.get_pvalue(data))
 
     positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
