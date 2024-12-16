@@ -11,7 +11,7 @@ from pandas.api.types import is_numeric_dtype
 from scipy.stats import norm, ttest_ind, ttest_rel
 
 from cluster_experiments.synthetic_control_utils import get_w
-from cluster_experiments.utils import HypothesisEntries
+from cluster_experiments.utils import HypothesisEntries, ModelResults
 
 
 @dataclass
@@ -1345,10 +1345,10 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         z_score = mean_diff / standard_error
         p_value = 2 * (1 - norm.cdf(abs(z_score)))
 
-        results_delta = {
-            "params": {self.treatment_col: mean_diff},
-            "pvalues": {self.treatment_col: p_value},
-        }
+        results_delta = ModelResults(
+            params={self.treatment_col: mean_diff},
+            pvalues={self.treatment_col: p_value},
+        )
 
         p_value = self.pvalue_based_on_hypothesis(results_delta)
 
