@@ -1269,20 +1269,14 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
                 "Covariates are not supported in the Delta Method approximation for the time being. They will be ignored."
             )
 
-    def _aggregate_to_cluster(
-        self, df: pd.DataFrame, strat_treatment: Optional[bool] = True
-    ) -> pd.DataFrame:
+    def _aggregate_to_cluster(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Returns an aggreegated dataframe of the target and scale variables at the cluster (and treatment) level.
 
         Arguments:
             df: dataframe containing the data to analyze
         """
-        group_cols = (
-            self.cluster_cols + [self.treatment_col]
-            if strat_treatment
-            else self.cluster_cols
-        )
+        group_cols = self.cluster_cols + [self.treatment_col]
         aggregate_df = df.groupby(by=group_cols, as_index=False).agg(
             {self.target_col: "sum", self.scale_col: "sum"}
         )
