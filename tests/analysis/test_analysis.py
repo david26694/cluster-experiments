@@ -285,6 +285,27 @@ def test_aa_delta_analysis(dates):
     ), "P-value A/A calculation is incorrect"
 
 
+def test_delta_analysis_aggregation(dates):
+    analyser = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+
+    # Generate data without effect so pvalues are not zero
+    np.random.seed(2024)
+    df_experiment = generate_ratio_metric_data(
+        dates, 40_000, num_users=5000, treatment_effect=0
+    )
+
+    df_experiment_aggregated = df_experiment.groupby(
+        ["user", "treatment"], as_index=False
+    ).agg({"target": "sum", "scale": "sum"})
+
+    pvalue = analyser.get_pvalue(df_experiment)
+    pvalue_agg = analyser.get_pvalue(df_experiment_aggregated)
+
+    assert pvalue == pytest.approx(
+        pvalue_agg, rel=1e-8
+    ), "Aggregation method is not working properly"
+
+
 def test_stats_delta_vs_ols(analysis_ratio_df, experiment_dates):
     experiment_start_date = min(experiment_dates)
 
