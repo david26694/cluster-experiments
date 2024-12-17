@@ -5,6 +5,7 @@ import pytest
 from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
     ConfidenceInterval,
+    DeltaMethodAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
     InferenceResults,
@@ -13,7 +14,11 @@ from cluster_experiments.experiment_analysis import (
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
-from tests.utils import generate_clustered_data, generate_random_data
+from tests.utils import (
+    generate_clustered_data,
+    generate_random_data,
+    generate_ratio_metric_data,
+)
 
 
 @pytest.fixture
@@ -251,3 +256,72 @@ def test_get_inference_results(experiment_analysis, analysis_df_diff):
     assert results.ate > 0
     assert 0 <= results.p_value < 1
     assert results.std_error > 0
+
+
+def test_delta_analysis(analysis_ratio_df, experiment_dates):
+    analyser = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+    experiment_start = min(experiment_dates)
+
+    df_experiment = analysis_ratio_df.query(f"date >= '{experiment_start}'")
+
+    assert 0.05 >= analyser.get_pvalue(df_experiment) >= 0
+
+
+def test_aa_delta_analysis(dates):
+
+    analyser = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+    np.random.seed(2024)
+    p_values = []
+    for _ in range(1000):
+        data = generate_ratio_metric_data(
+            dates, 40_000, num_users=5000, treatment_effect=0
+        )
+        p_values.append(analyser.get_pvalue(data))
+
+    positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
+
+    assert positive_rate == pytest.approx(
+        0.05, abs=0.01
+    ), "P-value A/A calculation is incorrect"
+
+
+def test_delta_analysis_aggregation(dates):
+    analyser = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+
+    # Generate data without effect so pvalues are not zero
+    np.random.seed(2024)
+    df_experiment = generate_ratio_metric_data(
+        dates, 40_000, num_users=5000, treatment_effect=0
+    )
+
+    df_experiment_aggregated = df_experiment.groupby(
+        ["user", "treatment"], as_index=False
+    ).agg({"target": "sum", "scale": "sum"})
+
+    pvalue = analyser.get_pvalue(df_experiment)
+    pvalue_agg = analyser.get_pvalue(df_experiment_aggregated)
+
+    assert pvalue == pytest.approx(
+        pvalue_agg, rel=1e-8
+    ), "Aggregation method is not working properly"
+
+
+def test_stats_delta_vs_ols(analysis_ratio_df, experiment_dates):
+    experiment_start_date = min(experiment_dates)
+
+    analyser_ols = ClusteredOLSAnalysis(cluster_cols=["user"])
+    analyser_delta = DeltaMethodAnalysis(cluster_cols=["user"], scale_col="scale")
+    df = analysis_ratio_df.query(f"date >= '{experiment_start_date}'")
+
+    point_estimate_ols = analyser_ols.get_point_estimate(df)
+    point_estimate_delta = analyser_delta.get_point_estimate(df)
+
+    SE_ols = analyser_ols.get_standard_error(df)
+    SE_delta = analyser_delta.get_standard_error(df)
+
+    assert point_estimate_delta == pytest.approx(
+        point_estimate_ols, rel=1e-2
+    ), "Point estimate is not consistent with Clustered OLS"
+    assert SE_delta == pytest.approx(
+        SE_ols, rel=1e-2
+    ), "Standard error is not consistent with Clustered OLS"

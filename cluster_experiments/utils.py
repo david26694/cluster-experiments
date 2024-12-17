@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict
 
 
 def _original_time_column(time_col: str) -> str:
@@ -26,3 +27,9 @@ class HypothesisEntries(Enum):
     TWO_SIDED = "two-sided"
     LESS = "less"
     GREATER = "greater"
+
+
+class ModelResults:
+    def __init__(self, params: Dict, pvalues: Dict):
+        self.params = params
+        self.pvalues = pvalues

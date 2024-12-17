@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -109,3 +109,56 @@ def generate_clustered_data() -> pd.DataFrame:
         }
     )
     return analysis_df
+
+
+def generate_ratio_metric_data(
+    dates,
+    N,
+    user_target_means: Optional[np.ndarray] = None,
+    num_users=2000,
+    treatment_effect=0.25,
+) -> pd.DataFrame:
+
+    if user_target_means is None:
+        user_target_means = np.random.normal(0.3, 0.15, num_users)
+
+    user_sessions = np.random.choice(num_users, N)
+    user_dates = np.random.choice(dates, N)
+
+    # assign treatment groups
+    treatment = np.random.choice([0, 1], num_users)
+
+    x1 = np.random.normal(0, 0.01, N)
+    x2 = np.random.normal(0, 0.01, N)
+    noise = np.random.normal(0, 0.01, N)
+
+    # create target rate per session level
+    target_percent_per_session = (
+        treatment_effect * treatment[user_sessions]
+        + user_target_means[user_sessions]
+        + x1
+        + x2**2
+        + noise
+    )
+
+    # Remove <0 or >1
+    target_percent_per_session[target_percent_per_session > 1] = 1
+    target_percent_per_session[target_percent_per_session < 0] = 0
+
+    targets_observed = np.random.binomial(1, target_percent_per_session)
+
+    # rename treatment array 0-->A, 1-->B
+    mapped_treatment = np.where(treatment == 0, "A", "B")
+
+    return pd.DataFrame(
+        {
+            "user": user_sessions,
+            "date": user_dates,
+            "treatment": mapped_treatment[user_sessions],
+            "target": targets_observed,
+            "scale": np.ones_like(user_sessions),
+            "x1": x1,
+            "x2": x2,
+            "user_target_means": user_target_means[user_sessions],
+        }
+    )
