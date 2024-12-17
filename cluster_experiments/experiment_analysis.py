@@ -1263,10 +1263,15 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             hypothesis=hypothesis,
         )
         self.scale_col = scale_col
+        self.cluster_cols = cluster_cols or []
 
         if covariates is not None:
             warnings.warn(
                 "Covariates are not supported in the Delta Method approximation for the time being. They will be ignored."
+            )
+        if cluster_cols is None:
+            raise ValueError(
+                "cluster_cols must be provided for the Delta Method analysis"
             )
 
     def _aggregate_to_cluster(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -1365,6 +1370,18 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
         _mean_diff, standard_error = self._get_mean_standard_error(df)
         return standard_error
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a DeltaMethodAnalysis object from a PowerConfig object"""
+        return cls(
+            cluster_cols=config.cluster_cols,
+            target_col=config.target_col,
+            scale_col=config.scale_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            hypothesis=config.hypothesis,
+        )
 
     def __warn_small_group_size(self):
         warnings.warn(

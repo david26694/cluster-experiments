@@ -39,6 +39,10 @@ class MissingArgumentError(ValueError):
     pass
 
 
+class UnexpectedArgumentError(ValueError):
+    pass
+
+
 @dataclass(eq=True)
 class PowerConfig:
     """
@@ -106,6 +110,7 @@ class PowerConfig:
 
     # optional mappings
     cupac_model: str = ""
+    scale_col: Optional[str] = None
 
     # Shared
     target_col: str = "target"
@@ -197,6 +202,10 @@ class PowerConfig:
         if "segmented" in self.perturbator:
             self._raise_error_if_missing("segment_cols", "perturbator")
 
+        if "delta" not in self.analysis:
+            if self.scale_col is not None:
+                self._raise_error_if_missing("scale_col", "analysis")
+
     def _are_different(self, arg1, arg2) -> bool:
         return arg1 != arg2
 
@@ -212,6 +221,13 @@ class PowerConfig:
         if getattr(self, attr) is None:
             raise MissingArgumentError(
                 f"{attr} is required when using "
+                f"{other_attr} = {getattr(self, other_attr)}."
+            )
+
+    def _raise_error_if_present(self, attr, other_attr):
+        if getattr(self, attr) is None:
+            raise UnexpectedArgumentError(
+                f"{attr} is not expected when using "
                 f"{other_attr} = {getattr(self, other_attr)}."
             )
 
