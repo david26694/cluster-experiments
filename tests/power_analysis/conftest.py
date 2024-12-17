@@ -16,7 +16,7 @@ from cluster_experiments.random_splitter import (
     ClusteredSplitter,
     StratifiedSwitchbackSplitter,
 )
-from tests.utils import generate_random_data
+from tests.utils import generate_random_data, generate_ratio_metric_data
 
 N = 1_000
 
@@ -178,3 +178,19 @@ def switchback_washover():
             "washover_time_delta": timedelta(hours=2),
         }
     )
+
+
+@pytest.fixture
+def delta_df(experiment_dates):
+
+    user_sample_mean = 0.3
+    user_standard_error = 0.15
+    users = 2000
+    N = 50_000
+
+    user_target_means = np.random.normal(user_sample_mean, user_standard_error, users)
+
+    data = generate_ratio_metric_data(
+        experiment_dates, N, user_target_means, users, treatment_effect=0
+    )
+    return data
