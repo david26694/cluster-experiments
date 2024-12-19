@@ -1378,7 +1378,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Arguments:
             df: dataframe containing the data to analyze
             alpha: significance level
-            verbose (Optional): bool, prints the regression summary if True
         """
         ate, std_error = self._get_mean_standard_error(df)
 
@@ -1407,7 +1406,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Arguments:
             df: dataframe containing the data to analyze
             alpha: significance level
-            verbose (Optional): bool, prints the regression summary if True
         """
         ate, std_error = self._get_mean_standard_error(df)
 
