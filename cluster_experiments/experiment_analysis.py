@@ -1371,6 +1371,35 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         _mean_diff, standard_error = self._get_mean_standard_error(df)
         return standard_error
 
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        ate, std_error = self._get_mean_standard_error(df)
+
+        z_score = ate / std_error
+        p_value = 2 * (1 - norm.cdf(abs(z_score)))
+
+        results_delta = ModelResults(
+            params={self.treatment_col: ate},
+            pvalues={self.treatment_col: p_value},
+        )
+
+        p_value = self.pvalue_based_on_hypothesis(results_delta)
+
+        # Extract the confidence interval for the treatment column
+        crit_z_score = norm.ppf(1 - alpha / 2)
+        conf_int = crit_z_score * std_error
+        lower_bound, upper_bound = ate - conf_int, ate + conf_int
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
     def analysis_inference_results(
         self, df: pd.DataFrame, alpha: float, verbose: bool = False
     ) -> InferenceResults:
