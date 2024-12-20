@@ -2,7 +2,7 @@ import logging
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -786,6 +786,20 @@ class OLSAnalysis(ExperimentAnalysis):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
+        cov_type: Optional[
+            Literal[
+                "nonrobust",
+                "fixed scale",
+                "HC0",
+                "HC1",
+                "HC2",
+                "HC3",
+                "HAC",
+                "hac-panel",
+                "hac-groupsum",
+                "cluster",
+            ]
+        ] = None,
     ):
         self.target_col = target_col
         self.treatment = treatment
@@ -794,10 +808,24 @@ class OLSAnalysis(ExperimentAnalysis):
         self.regressors = [self.treatment_col] + self.covariates
         self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
         self.hypothesis = hypothesis
+        self.cov_type: Literal[
+            "nonrobust",
+            "fixed scale",
+            "HC0",
+            "HC1",
+            "HC2",
+            "HC3",
+            "HAC",
+            "hac-panel",
+            "hac-groupsum",
+            "cluster",
+        ] = (
+            "HC3" if cov_type is None else cov_type
+        )
 
     def fit_ols(self, df: pd.DataFrame):
         """Returns the fitted OLS model"""
-        return sm.OLS.from_formula(self.formula, data=df).fit()
+        return sm.OLS.from_formula(self.formula, data=df).fit(cov_type=self.cov_type)
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
@@ -891,6 +919,7 @@ class OLSAnalysis(ExperimentAnalysis):
             treatment=config.treatment,
             covariates=config.covariates,
             hypothesis=config.hypothesis,
+            cov_type=config.cov_type,
         )
 
 
