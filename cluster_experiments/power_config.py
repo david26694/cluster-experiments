@@ -151,6 +151,7 @@ class PowerConfig:
             "cluster",
         ]
     ] = None
+    add_covariate_interaction: bool = False
 
     # Power analysis
     n_simulations: int = 100

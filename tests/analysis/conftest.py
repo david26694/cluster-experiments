@@ -48,3 +48,15 @@ def analysis_ratio_df(dates, experiment_dates):
         experiment_dates, N, user_target_means, users
     )
     return pd.concat([pre_data, post_data])
+
+
+@pytest.fixture
+def covariate_data():
+    """generates data via y ~ T + X"""
+    N = 1000
+    np.random.seed(123)
+    X = np.random.normal(size=N)
+    T = np.random.choice(["A", "B"], size=N)
+    y = 0.5 * X + 0.1 * (T == "B") + np.random.normal(size=N)
+    df = pd.DataFrame({"y": y, "T": T, "X": X})
+    return df

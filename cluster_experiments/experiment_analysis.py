@@ -64,6 +64,7 @@ class ExperimentAnalysis(ABC):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
+        add_covariate_interaction: bool = False,
     ):
         self.target_col = target_col
         self.treatment = treatment
@@ -71,6 +72,7 @@ class ExperimentAnalysis(ABC):
         self.cluster_cols = cluster_cols
         self.covariates = covariates or []
         self.hypothesis = hypothesis
+        self.add_covariate_interaction = add_covariate_interaction
 
     def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
         """Paste all strings of cluster_cols in one single column"""
@@ -82,6 +84,42 @@ class ExperimentAnalysis(ABC):
         df = df.copy()
         df[self.treatment_col] = (df[self.treatment_col] == self.treatment).astype(int)
         return df
+
+    def _add_interaction_covariates(self, df: pd.DataFrame) -> pd.DataFrame:
+        """For each covariate, adds a column with treatment * (x - mean(x))
+        This is used to build a more efficient estimator of the ATE
+
+        Args
+        ----
+            df (pd.DataFrame): input data frame
+
+        Returns
+        -------
+            pd.DataFrame: data frame with additional columns
+
+        """
+        df = df.copy()
+        if self.covariates is None:
+            return df
+
+        for covariate in self.covariates:
+            df[f"__{covariate}__interaction"] = (
+                df[covariate] - df[covariate].mean()
+            ) * df[self.treatment_col]
+        return df
+
+    @property
+    def formula(self):
+        if len(self.covariates) == 0:
+            # simple case, no covariates
+            return f"{self.target_col} ~ {self.treatment_col}"
+
+        if not self.add_covariate_interaction:
+            # second case: covariates but not interaction
+            return f"{self.target_col} ~ {self.treatment_col} + {' + '.join(self.covariates)}"
+
+        # third case: covariates and interaction
+        return f"{self.target_col} ~ {self.treatment_col} + {' + '.join(self.covariates)} + {' + '.join([f'__{covariate}__interaction' for covariate in self.covariates])}"
 
     @abstractmethod
     def analysis_pvalue(
@@ -262,6 +300,7 @@ class ExperimentAnalysis(ABC):
             treatment=config.treatment,
             covariates=config.covariates,
             hypothesis=config.hypothesis,
+            add_covariate_interaction=config.add_covariate_interaction,
         )
 
 
@@ -304,6 +343,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
+        add_covariate_interaction: bool = False,
     ):
         super().__init__(
             target_col=target_col,
@@ -312,14 +352,15 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
             treatment=treatment,
             covariates=covariates,
             hypothesis=hypothesis,
+            add_covariate_interaction=add_covariate_interaction,
         )
-        self.regressors = [self.treatment_col] + self.covariates
-        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
         self.fam = sm.families.Gaussian()
         self.va = sm.cov_struct.Exchangeable()
 
     def fit_gee(self, df: pd.DataFrame) -> sm.GEE:
         """Returns the fitted GEE model"""
+        if self.add_covariate_interaction:
+            df = self._add_interaction_covariates(df)
         return sm.GEE.from_formula(
             self.formula,
             data=df,
@@ -658,13 +699,12 @@ class OLSAnalysis(ExperimentAnalysis):
                 "cluster",
             ]
         ] = None,
+        add_covariate_interaction: bool = False,
     ):
         self.target_col = target_col
         self.treatment = treatment
         self.treatment_col = treatment_col
         self.covariates = covariates or []
-        self.regressors = [self.treatment_col] + self.covariates
-        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
         self.hypothesis = hypothesis
         self.cov_type: Literal[
             "nonrobust",
@@ -680,9 +720,12 @@ class OLSAnalysis(ExperimentAnalysis):
         ] = (
             "HC3" if cov_type is None else cov_type
         )
+        self.add_covariate_interaction = add_covariate_interaction
 
     def fit_ols(self, df: pd.DataFrame):
         """Returns the fitted OLS model"""
+        if self.add_covariate_interaction:
+            df = self._add_interaction_covariates(df)
         return sm.OLS.from_formula(self.formula, data=df).fit(cov_type=self.cov_type)
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
@@ -778,6 +821,7 @@ class OLSAnalysis(ExperimentAnalysis):
             covariates=config.covariates,
             hypothesis=config.hypothesis,
             cov_type=config.cov_type,
+            add_covariate_interaction=config.add_covariate_interaction,
         )
 
 
@@ -792,6 +836,7 @@ class ClusteredOLSAnalysis(OLSAnalysis):
         treatment: name of the treatment to use as the treated group
         covariates: list of columns to use as covariates
         hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
+        add_covariate_interaction: bool, if True, adds interaction terms between covariates and treatment
 
     Usage:
 
@@ -820,6 +865,7 @@ class ClusteredOLSAnalysis(OLSAnalysis):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
+        add_covariate_interaction: bool = False,
     ):
         super().__init__(
             target_col=target_col,
@@ -828,11 +874,14 @@ class ClusteredOLSAnalysis(OLSAnalysis):
             covariates=covariates,
             hypothesis=hypothesis,
             cov_type="cluster",
+            add_covariate_interaction=add_covariate_interaction,
         )
         self.cluster_cols = cluster_cols
 
     def fit_ols(self, df: pd.DataFrame):
         """Returns the fitted OLS model"""
+        if self.add_covariate_interaction:
+            df = self._add_interaction_covariates(df)
         return sm.OLS.from_formula(self.formula, data=df,).fit(
             cov_type=self.cov_type,
             cov_kwds={"groups": self._get_cluster_column(df)},
@@ -848,6 +897,7 @@ class ClusteredOLSAnalysis(OLSAnalysis):
             covariates=config.covariates,
             hypothesis=config.hypothesis,
             cluster_cols=config.cluster_cols,
+            add_covariate_interaction=config.add_covariate_interaction,
         )
 
 
@@ -890,6 +940,7 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
+        add_covariate_interaction: bool = False,
     ):
         super().__init__(
             target_col=target_col,
@@ -898,15 +949,15 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
             treatment=treatment,
             covariates=covariates,
             hypothesis=hypothesis,
+            add_covariate_interaction=add_covariate_interaction,
         )
-        self.regressors = [self.treatment_col] + self.covariates
-        self.formula = f"{self.target_col} ~ {' + '.join(self.regressors)}"
-
         self.re_formula = None
         self.vc_formula = None
 
     def fit_mlm(self, df: pd.DataFrame) -> sm.MixedLM:
         """Returns the fitted MLM model"""
+        if self.add_covariate_interaction:
+            df = self._add_interaction_covariates(df)
         return sm.MixedLM.from_formula(
             formula=self.formula,
             data=df,

@@ -30,3 +30,19 @@ def test_cov_type_default():
 
     # then
     assert power_analysis.analysis.cov_type == "HC3"
+
+
+def test_covariate_interaction_flows():
+    # given
+    config = {
+        "analysis": "ols_non_clustered",
+        "perturbator": "constant",
+        "splitter": "non_clustered",
+        "add_covariate_interaction": True,
+    }
+
+    # when
+    power_analysis = NormalPowerAnalysis.from_dict(config)
+
+    # then
+    assert power_analysis.analysis.add_covariate_interaction is True
