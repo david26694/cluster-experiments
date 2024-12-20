@@ -3,6 +3,9 @@ name: Release unit Tests
 on:
   schedule:
     - cron: "0 0 * * *"
+  push:
+    branches:
+      - windows-release-tests-fix
 
 jobs:
   test-release:
