@@ -26,5 +26,9 @@ jobs:
     - name: Test with pytest
       run: |
         make install-test
-        source .venv/bin/activate
+        if [[ "$RUNNER_OS" == "Windows" ]]; then \
+          .venv\\Scripts\\activate; \
+        else \
+          source .venv/bin/activate; \
+        fi
         make test
