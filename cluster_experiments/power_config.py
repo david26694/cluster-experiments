@@ -1,7 +1,7 @@
 import datetime
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Literal, Optional, Union
 
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
@@ -137,6 +137,21 @@ class PowerConfig:
     # Analysis
     covariates: Optional[List[str]] = None
     hypothesis: str = "two-sided"
+    cov_type: Optional[
+        Literal[
+            "nonrobust",
+            "fixed scale",
+            "HC0",
+            "HC1",
+            "HC2",
+            "HC3",
+            "HAC",
+            "hac-panel",
+            "hac-groupsum",
+            "cluster",
+        ]
+    ] = None
+    add_covariate_interaction: bool = False
 
     # Power analysis
     n_simulations: int = 100

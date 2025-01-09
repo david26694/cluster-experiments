@@ -5,12 +5,12 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  test-release:
+  test-release-ubuntu:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12']
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
 
     steps:
     - uses: actions/checkout@v2
@@ -28,3 +28,27 @@ jobs:
         make install-test
         source .venv/bin/activate
         make test
+
+  test-release-windows:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+        os: [windows-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install cluster-experiments
+          pip freeze
+      - name: Test with pytest
+        run: |
+          make install-test
+          .venv\\Scripts\\activate
+          make test
