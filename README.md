@@ -124,17 +124,6 @@ experiment_data = pd.DataFrame({
     "customer_age": np.random.randint(20, 60, size=N),
 })
 
-# Define metrics
-aov = SimpleMetric(alias="AOV", name="order_value")
-delivery_time = SimpleMetric(alias="Delivery Time", name="delivery_time")
-
-# Define variants and dimensions
-variants = [
-    Variant("control", is_control=True),
-    Variant("treatment", is_control=False),
-]
-city_dimension = Dimension(name="city", values=["NYC", "LA"])
-
 # Create analysis plan
 plan = AnalysisPlan.from_metrics_dict({
     "metrics": [
