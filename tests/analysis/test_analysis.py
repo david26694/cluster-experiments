@@ -28,6 +28,7 @@ def analysis_df_diff():
             "cluster": ["ES"] * 4 + ["IT"] * 4 + ["PL"] * 4 + ["RO"] * 4,
             "date": ["2022-01-01", "2022-01-02"] * 8,
             "treatment": (["A"] * 4 + ["B"] * 4) * 2,
+            "scale": [1] * 16,
             "target": [0] * 16,
         }
     )
@@ -46,6 +47,7 @@ def analysis_df_diff_realistic():
             "cluster": ["ES"] * 4 + ["IT"] * 4 + ["PL"] * 4 + ["RO"] * 4,
             "date": ["2022-01-01", "2022-01-02"] * 8,
             "treatment": (["A"] * 4 + ["B"] * 4) * 2,
+            "scale": [1] * 16,
             "target": [1] * 16,
         }
     )
@@ -219,6 +221,7 @@ def test_inference_results():
             cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
         ),
         OLSAnalysis(target_col="target", treatment_col="treatment"),
+        DeltaMethodAnalysis(cluster_cols=["cluster"], scale_col="scale"),
     ],
 )  # Add other child classes as necessary
 def test_get_confidence_interval(experiment_analysis, analysis_df_diff_realistic):
@@ -244,6 +247,7 @@ def test_get_confidence_interval(experiment_analysis, analysis_df_diff_realistic
             cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
         ),
         OLSAnalysis(target_col="target", treatment_col="treatment"),
+        DeltaMethodAnalysis(cluster_cols=["cluster"], scale_col="scale"),
     ],
 )  # Add other child classes as necessary
 def test_get_inference_results(experiment_analysis, analysis_df_diff):
