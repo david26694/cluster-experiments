@@ -112,7 +112,7 @@ print(power, power_line_normal, power_normal, mde, mde_timeline)
 ```python
 import numpy as np
 import pandas as pd
-from cluster_experiments import AnalysisPlan, SimpleMetric, Variant, Dimension
+from cluster_experiments import AnalysisPlan
 
 N = 1_000
 experiment_data = pd.DataFrame({
