@@ -136,20 +136,25 @@ variants = [
 city_dimension = Dimension(name="city", values=["NYC", "LA"])
 
 # Create analysis plan
-plan = AnalysisPlan.from_metrics(
-    metrics=[aov, delivery_time],
-    variants=variants,
-    variant_col="experiment_group",
-    dimensions=[city_dimension],
-    analysis_type="clustered_ols",
-    analysis_config={
-        "cluster_cols": ["customer_id"],
-    },
-)
-
+plan = AnalysisPlan.from_metrics_dict({
+    "metrics": [
+        {"alias": "AOV", "name": "order_value"},
+        {"alias": "delivery_time", "name": "delivery_time"},
+    ],
+    "variants": [
+        {"name": "control", "is_control": True},
+        {"name": "treatment", "is_control": False},
+    ],
+    "variant_col": "experiment_group",
+    "alpha": 0.05,
+    "dimensions": [
+        {"name": "city", "values": ["NYC", "LA"]},
+    ],
+    "analysis_type": "clustered_ols",
+    "analysis_config": {"cluster_cols": ["customer_id"]},
+})
 # Run analysis
-results = plan.analyze(experiment_data)
-print(results.to_dataframe())
+print(plan.analyze(experiment_data).to_dataframe())
 ```
 
 ### Variance Reduction Example
