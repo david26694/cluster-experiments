@@ -36,3 +36,20 @@ class Variant:
             raise TypeError("Variant name must be a string")
         if not isinstance(self.is_control, bool):
             raise TypeError("Variant is_control must be a boolean")
+
+    @classmethod
+    def from_metrics_config(cls, config: dict) -> "Variant":
+        """
+        Creates a Variant object from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration for the Variant
+
+        Returns
+        -------
+        Variant
+            A Variant object
+        """
+        return cls(name=config["name"], is_control=config["is_control"])

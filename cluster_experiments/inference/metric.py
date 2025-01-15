@@ -60,6 +60,25 @@ class Metric(ABC):
         """
         pass
 
+    @classmethod
+    def from_metrics_config(cls, config: dict) -> "Metric":
+        """
+        Class method to create a Metric instance from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration of the metric
+
+        Returns
+        -------
+        Metric
+            A Metric instance
+        """
+        if "numerator_name" in config:
+            return RatioMetric.from_metrics_config(config)
+        return SimpleMetric.from_metrics_config(config)
+
 
 class SimpleMetric(Metric):
     """
@@ -127,6 +146,23 @@ class SimpleMetric(Metric):
             The mean value of the metric
         """
         return df[self.name].mean()
+
+    @classmethod
+    def from_metrics_config(cls, config: dict) -> "Metric":
+        """
+        Class method to create a SimpleMetric instance from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration of the metric
+
+        Returns
+        -------
+        SimpleMetric
+            A SimpleMetric instance
+        """
+        return cls(alias=config["alias"], name=config["name"])
 
 
 class RatioMetric(Metric):
@@ -203,3 +239,24 @@ class RatioMetric(Metric):
             The mean value of the metric
         """
         return df[self.numerator_name].mean() / df[self.denominator_name].mean()
+
+    @classmethod
+    def from_metrics_config(cls, config: dict) -> "Metric":
+        """
+        Class method to create a RatioMetric instance from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration of the metric
+
+        Returns
+        -------
+        RatioMetric
+            A RatioMetric instance
+        """
+        return cls(
+            alias=config["alias"],
+            numerator_name=config["numerator_name"],
+            denominator_name=config["denominator_name"],
+        )

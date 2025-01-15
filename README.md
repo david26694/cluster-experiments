@@ -112,7 +112,7 @@ print(power, power_line_normal, power_normal, mde, mde_timeline)
 ```python
 import numpy as np
 import pandas as pd
-from cluster_experiments import AnalysisPlan, SimpleMetric, Variant, Dimension
+from cluster_experiments import AnalysisPlan
 
 N = 1_000
 experiment_data = pd.DataFrame({
@@ -124,32 +124,26 @@ experiment_data = pd.DataFrame({
     "customer_age": np.random.randint(20, 60, size=N),
 })
 
-# Define metrics
-aov = SimpleMetric(alias="AOV", name="order_value")
-delivery_time = SimpleMetric(alias="Delivery Time", name="delivery_time")
-
-# Define variants and dimensions
-variants = [
-    Variant("control", is_control=True),
-    Variant("treatment", is_control=False),
-]
-city_dimension = Dimension(name="city", values=["NYC", "LA"])
-
 # Create analysis plan
-plan = AnalysisPlan.from_metrics(
-    metrics=[aov, delivery_time],
-    variants=variants,
-    variant_col="experiment_group",
-    dimensions=[city_dimension],
-    analysis_type="clustered_ols",
-    analysis_config={
-        "cluster_cols": ["customer_id"],
-    },
-)
-
+plan = AnalysisPlan.from_metrics_dict({
+    "metrics": [
+        {"alias": "AOV", "name": "order_value"},
+        {"alias": "delivery_time", "name": "delivery_time"},
+    ],
+    "variants": [
+        {"name": "control", "is_control": True},
+        {"name": "treatment", "is_control": False},
+    ],
+    "variant_col": "experiment_group",
+    "alpha": 0.05,
+    "dimensions": [
+        {"name": "city", "values": ["NYC", "LA"]},
+    ],
+    "analysis_type": "clustered_ols",
+    "analysis_config": {"cluster_cols": ["customer_id"]},
+})
 # Run analysis
-results = plan.analyze(experiment_data)
-print(results.to_dataframe())
+print(plan.analyze(experiment_data).to_dataframe())
 ```
 
 ### Variance Reduction Example

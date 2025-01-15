@@ -55,6 +55,23 @@ class Dimension:
                 seen.add(value)
                 yield value
 
+    @classmethod
+    def from_metrics_config(cls, config: dict) -> "Dimension":
+        """
+        Creates a Dimension object from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration for the Dimension
+
+        Returns
+        -------
+        Dimension
+            A Dimension object
+        """
+        return cls(name=config["name"], values=config["values"])
+
 
 @dataclass
 class DefaultDimension(Dimension):
