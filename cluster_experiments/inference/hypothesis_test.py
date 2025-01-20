@@ -134,7 +134,7 @@ class HypothesisTest:
             or not all(isinstance(dim, Dimension) for dim in dimensions)
         ):
             raise TypeError(
-                "Dimensions must be a list of Dimension instances if provided"
+                f"Dimensions must be a list of Dimension instances if provided, got {dimensions}"
             )
 
         # Validate custom_analysis_type_mapper if provided
@@ -335,3 +335,32 @@ class HypothesisTest:
         )
 
         return test_results
+
+    @classmethod
+    def from_config(cls, config: dict) -> "HypothesisTest":
+        """
+        Class method to create an HypothesisTest instance from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration of the HypothesisTest
+
+        Returns
+        -------
+        Metric
+            A HypothesisTest instance
+        """
+        metric = Metric.from_metrics_config(config["metric"])
+        dimensions = [
+            Dimension.from_metrics_config(dimension_config)
+            for dimension_config in config.get("dimensions", [])
+        ]
+        return cls(
+            metric=metric,
+            analysis_type=config["analysis_type"],
+            analysis_config=config.get("analysis_config"),
+            dimensions=dimensions,
+            cupac_config=config.get("cupac_config"),
+            custom_analysis_type_mapper=config.get("custom_analysis_type_mapper"),
+        )
