@@ -2,7 +2,7 @@ import logging
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -1225,6 +1225,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
+        ratio_covariates: Optional[List[Tuple[str]]] = None,
         hypothesis: str = "two-sided",
     ):
         """
@@ -1272,19 +1273,120 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         )
         self.scale_col = scale_col
         self.cluster_cols = cluster_cols or []
+        self.covariates = covariates or []
+        self.ratio_covariates = ratio_covariates or []
 
-        if covariates is not None:
-            warnings.warn(
-                "Covariates are not supported in the Delta Method approximation for the time being. They will be ignored."
-            )
         if cluster_cols is None:
             raise ValueError(
                 "cluster_cols must be provided for the Delta Method analysis"
             )
 
+    def _transform_ratio_metric(
+        self, df: pd.DataFrame, numerator: str, denominator: str
+    ) -> pd.DataFrame:
+        df = df.copy()
+        mean_numerator, mean_denominator = df.loc[:, [numerator, denominator]].mean()
+        df[f"{numerator}_{denominator}"] = (
+            df[numerator] / mean_denominator
+            - df[denominator] * mean_numerator / mean_denominator**2
+        )
+        return df
+
+    def _transform_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Transforms ratio metrics that are not at user level into a column with linearization from Delta Method done already.
+        These columns are added to the covariates which allows for the Delta Method to be used equally for all covariates (non user-level and user-level metrics).
+        """
+        df = df.copy()
+        # Reset covariates delta for consequent runs
+        self.covariates_delta = []
+        # transform target metric if necessary
+        numerator, denominator = self.target_col, self.scale_col
+        df = self._transform_ratio_metric(df, numerator, denominator)
+        df[f"original_{numerator}_{denominator}"] = df[numerator] / df[denominator]
+        self.target_metric = f"{numerator}_{denominator}"
+
+        for numerator, denominator in self.ratio_covariates:
+            df = self._transform_ratio_metric(df, numerator, denominator)
+            df[f"original_{numerator}_{denominator}"] = df[numerator] / df[denominator]
+            self.covariates_delta.append(f"{numerator}_{denominator}")
+
+        return df
+
+    def _compute_thetas(self, df: pd.DataFrame) -> np.array:
+        """
+        Computes the theta value for the CUPED method.
+        """
+
+        data = df[[self.target_metric] + self.covariates_delta + self.covariates]
+        cov_mat = data.cov()  # nxn
+        sigma = cov_mat.iloc[1:, 1:]  # (n-1)x(n-1)
+        z = cov_mat.iloc[1:, 0]  # (n-1)x1
+
+        thetas = np.dot(np.linalg.inv(sigma), z)
+        return thetas
+
+    def _get_y_hat(
+        self, df: pd.DataFrame, theta: Optional[np.array] = None
+    ) -> pd.DataFrame:
+        """
+        Compute CUPED estimate
+        """
+
+        Y = df["original_" + self.target_metric].values.astype(float)
+        cov_cols = ["original_" + cov for cov in self.covariates_delta]
+        covariates = df[cov_cols + self.covariates]
+
+        Y_cv = Y.copy()
+        for k, _covariate in enumerate(cov_cols + self.covariates):
+            Y_cv -= theta[k] * (
+                covariates.values[:, k] - covariates.values[:, k].mean()
+            )
+        return Y_cv
+
+    def _get_var_y_hat(
+        self, df: pd.DataFrame, theta: Optional[np.array] = None
+    ) -> float:
+        """
+        Compute variance from CUPED estimate. Should also work for non-CUPED estimates if no covariate is given.
+        """
+
+        cov_cols = ["original_" + cov for cov in self.covariates_delta]
+        group_size = len(df)
+
+        Y_var = df[self.target_metric].var()
+        for k, covariate in enumerate(cov_cols + self.covariates):
+            Y_var += (
+                theta[k] ** 2 * df[covariate].var()
+                - 2 * theta[k] * np.cov(df[covariate], df[self.target_metric])[0, 1]
+            )
+        return Y_var / group_size
+
+    def get_statistics_cuped(
+        self, df: pd.DataFrame
+    ) -> Tuple[float, float, float, float]:
+        """
+        Uses linearization to easen the variance calculation when using CUPED method.
+        Should also be usable for non-CUPED estimates if no covariate is given.
+        """
+
+        df = df.copy()
+        df = self._transform_metrics(df)
+        thetas = self._compute_thetas(df)
+        Y_hat = self._get_y_hat(df, thetas)
+
+        is_control = df[self.treatment_col] == 0
+
+        control_mean = Y_hat[is_control].mean()
+        treatment_mean = Y_hat[~is_control].mean()
+        control_var = self._get_var_y_hat(df[is_control], thetas)
+        treatment_var = self._get_var_y_hat(df[~is_control], thetas)
+
+        return control_mean, treatment_mean, control_var, treatment_var
+
     def _aggregate_to_cluster(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Returns an aggreegated dataframe of the target and scale variables at the cluster (and treatment) level.
+        Returns an aggregated dataframe of the target and scale variables at the cluster (and treatment) level.
 
         Arguments:
             df: dataframe containing the data to analyze
@@ -1302,26 +1404,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Arguments:
             df: dataframe containing the data to analyze.
         """
-        df = self._aggregate_to_cluster(df)
-        group_size = len(df)
+        df = self._transform_metrics(df)
+        Y_hat = self._get_y_hat(df)
 
-        if group_size < 1000:
-            self.__warn_small_group_size()
-
-        target_mean, scale_mean = df.loc[:, [self.target_col, self.scale_col]].mean()
-        target_variance, scale_variance = df.loc[
-            :, [self.target_col, self.scale_col]
-        ].var()
-        target_sum, scale_sum = df.loc[:, [self.target_col, self.scale_col]].sum()
-
-        target_scale_cov = df.loc[:, self.target_col].cov(df.loc[:, self.scale_col])
-
-        group_mean = target_sum / scale_sum
-        group_variance = (
-            (1 / (scale_mean**2)) * target_variance
-            + (target_mean**2) / (scale_mean**4) * scale_variance
-            - (2 * target_mean) / (scale_mean**3) * target_scale_cov
-        ) / group_size
+        group_mean = Y_hat.mean()
+        group_variance = self._get_var_y_hat(df)
         return group_mean, group_variance
 
     def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
@@ -1330,9 +1417,17 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Variance reduction is used if covariates are given.
         """
 
-        is_treatment = df[self.treatment_col] == 1
-        treat_mean, treat_var = self._get_group_mean_and_variance(df[is_treatment])
-        ctrl_mean, ctrl_var = self._get_group_mean_and_variance(df[~is_treatment])
+        if (self._get_num_clusters(df) < 1000).any():
+            self.__warn_small_group_size()
+
+        if self.covariates or self.ratio_covariates:
+            self.__check_data_is_aggregated(df)
+            ctrl_mean, treat_mean, ctrl_var, treat_var = self.get_statistics_cuped(df)
+        else:
+            df = self._aggregate_to_cluster(df)
+            is_treatment = df[self.treatment_col] == 1
+            treat_mean, treat_var = self._get_group_mean_and_variance(df[is_treatment])
+            ctrl_mean, ctrl_var = self._get_group_mean_and_variance(df[~is_treatment])
 
         mean_diff = treat_mean - ctrl_mean
         standard_error = np.sqrt(treat_var + ctrl_var)
@@ -1452,6 +1547,24 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             treatment_col=config.treatment_col,
             treatment=config.treatment,
             hypothesis=config.hypothesis,
+        )
+
+    def __check_data_is_aggregated(self, df):
+        """
+        Check if the data is already aggregated at the cluster level.
+        """
+
+        if df.groupby(self.cluster_cols).size().max() > 1:
+            raise ValueError(
+                "The data should be aggregated at the cluster level for the Delta Method analysis using CUPED."
+            )
+
+    def _get_num_clusters(self, df):
+        """
+        Check if there are enough clusters to run the analysis.
+        """
+        return df.groupby(self.treatment_col).apply(
+            lambda x: self._get_cluster_column(x).nunique()
         )
 
     def __warn_small_group_size(self):

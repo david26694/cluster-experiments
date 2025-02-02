@@ -329,3 +329,64 @@ def test_stats_delta_vs_ols(analysis_ratio_df, experiment_dates):
     assert SE_delta == pytest.approx(
         SE_ols, rel=1e-2
     ), "Standard error is not consistent with Clustered OLS"
+
+
+def test_delta_cuped_analysis(analysis_ratio_df, experiment_dates):
+    experiment_start = min(experiment_dates)
+
+    df_experiment = analysis_ratio_df.query(f"date >= '{experiment_start}'")
+    df_pre_experiment = analysis_ratio_df.query(f"date < '{experiment_start}'")
+    df_experiment = df_experiment.groupby(["user", "treatment"], as_index=False).agg(
+        {"target": "sum", "scale": "sum", "user_target_means": "mean"}
+    )
+    df_pre_experiment = df_pre_experiment.groupby(
+        ["user", "treatment"], as_index=False
+    ).agg(
+        pre_target=("target", "sum"),
+        pre_scale=("scale", "sum"),
+    )
+    df = df_experiment.merge(df_pre_experiment, on=["user", "treatment"])
+
+    analyser = DeltaMethodAnalysis(
+        cluster_cols=["user"],
+        scale_col="scale",
+        covariates=["user_target_means"],
+        ratio_covariates=[("pre_target", "pre_scale")],
+    )
+
+    assert 0.05 >= analyser.get_pvalue(df) >= 0
+
+
+def test_aa_delta_cuped_analysis(dates):
+
+    analyser = DeltaMethodAnalysis(
+        cluster_cols=["user"],
+        scale_col="scale",
+        covariates=["user_target_means"],
+        ratio_covariates=[("pre_target", "pre_scale")],
+    )
+    np.random.seed(2024)
+    p_values = []
+    for _ in range(1000):
+        data = generate_ratio_metric_data(
+            dates, 40_000, num_users=5000, treatment_effect=0
+        )
+        pre_data = generate_ratio_metric_data(
+            dates, 40_000, num_users=5000, treatment_effect=0
+        )
+
+        data = data.groupby(["user", "treatment"], as_index=False).agg(
+            {"target": "sum", "scale": "sum", "user_target_means": "mean"}
+        )
+        pre_data = pre_data.groupby(["user", "treatment"], as_index=False).agg(
+            pre_target=("target", "sum"),
+            pre_scale=("scale", "sum"),
+        )
+        data = data.merge(pre_data, on=["user", "treatment"])
+        p_values.append(analyser.get_pvalue(data))
+
+    positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
+
+    assert positive_rate == pytest.approx(
+        0.05, abs=0.01
+    ), "P-value A/A calculation is incorrect"
