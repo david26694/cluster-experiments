@@ -4,7 +4,10 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from cluster_experiments.experiment_analysis import ExperimentAnalysis
-from cluster_experiments.inference.analysis_plan_config import AnalysisPlanConfig
+from cluster_experiments.inference.analysis_plan_config import (
+    AnalysisPlanConfig,
+    AnalysisPlanMetricsConfig,
+)
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import Dimension
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
@@ -263,14 +266,14 @@ class AnalysisPlan:
         )
 
     @classmethod
-    def from_metrics_config(cls, config: AnalysisPlanConfig) -> "AnalysisPlan":
+    def from_metrics_config(cls, config: AnalysisPlanMetricsConfig) -> "AnalysisPlan":
         """
-        Creates an AnalysisPlan instance from a configuration object.
+        Creates an AnalysisPlan instance from a metris-based configuration object.
 
         Parameters
         ----------
-        config : AnalysisPlanConfig
-            An instance of AnalysisPlanConfig
+        config : AnalysisPlanMetricsConfig
+            An instance of AnalysisPlanMetricsConfig
 
         Returns
         -------
@@ -301,7 +304,52 @@ class AnalysisPlan:
         )
 
     @classmethod
+    def from_config(cls, config: AnalysisPlanConfig) -> "AnalysisPlan":
+        """
+        Creates an AnalysisPlan instance from a configuration object.
+
+        Parameters
+        ----------
+        config : AnalysisPlanConfig
+            An instance of AnalysisPlanConfig
+
+        Returns
+        -------
+        AnalysisPlan
+            An instance of AnalysisPlan
+        """
+        tests = [HypothesisTest.from_config(test) for test in config.tests]
+        variants = [
+            Variant.from_metrics_config(variant_config)
+            for variant_config in config.variants
+        ]
+        return cls(
+            tests=tests,
+            variants=variants,
+            variant_col=config.variant_col,
+            alpha=config.alpha,
+        )
+
+    @classmethod
     def from_metrics_dict(cls, d: Dict[str, Any]) -> "AnalysisPlan":
+        """
+        Creates an AnalysisPlan instance from a metrics-based dictionary.
+
+        Parameters
+        ----------
+        d : Dict[str, Any]
+            A dictionary containing the analysis plan configuration, parametrised via metrics
+
+        Returns
+        -------
+        AnalysisPlan
+            An instance of AnalysisPlan
+        """
+        config = AnalysisPlanMetricsConfig(**d)
+        return cls.from_metrics_config(config)
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "AnalysisPlan":
         """
         Creates an AnalysisPlan instance from a dictionary.
 
@@ -316,4 +364,4 @@ class AnalysisPlan:
             An instance of AnalysisPlan
         """
         config = AnalysisPlanConfig(**d)
-        return cls.from_metrics_config(config)
+        return cls.from_config(config)
