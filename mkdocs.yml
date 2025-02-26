@@ -12,18 +12,19 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Core Documentation:
-      - Experiment analysis methods: api/experiment_analysis.md
-      - Perturbators: api/perturbator.md
-      - Splitter: api/random_splitter.md
-      - Pre experiment outcome model: api/cupac_model.md
-      - Power config: api/power_config.md
-      - Power analysis: api/power_analysis.md
-      - Washover: api/washover.md
-      - Metric: api/metric.md
-      - Variant: api/variant.md
-      - Dimension: api/dimension.md
-      - Hypothesis Test: api/hypothesis_test.md
-      - Analysis Plan: api/analysis_plan.md
+      - API:
+        - Experiment analysis methods: api/experiment_analysis.md
+        - Perturbators: api/perturbator.md
+        - Splitter: api/random_splitter.md
+        - Pre experiment outcome model: api/cupac_model.md
+        - Power config: api/power_config.md
+        - Power analysis: api/power_analysis.md
+        - Washover: api/washover.md
+        - Metric: api/metric.md
+        - Variant: api/variant.md
+        - Dimension: api/dimension.md
+        - Hypothesis Test: api/hypothesis_test.md
+        - Analysis Plan: api/analysis_plan.md
   - Usage Examples:
       - CUPAC: cupac_example.ipynb
       - Switchback:
