@@ -28,8 +28,7 @@ jobs:
         source .venv/bin/activate
         make check
     - name: Code coverage
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: true
-        version: "v0.1.15"
