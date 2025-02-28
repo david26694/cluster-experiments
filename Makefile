@@ -71,7 +71,6 @@ pypi: prep-dist
 	twine upload --repository cluster-experiments dist/*
 
 pypi-gh-actions: prep-dist
-# todo: fix this
 	twine upload --skip-existing dist/*
 
 # Report log
