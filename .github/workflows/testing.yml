@@ -25,10 +25,11 @@ jobs:
       run: make install-test
     - name: Automated Checking Mechanism
       run:
-        make check-gh-actions
-    - name: Coverage report
-      uses: codecov/codecov-action@v5
+        source .venv/bin/activate
+        make check
+    - name: Code coverage
+      uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: true
-        verbose: true # optional (default = false)
+        version: "v0.1.15"
