@@ -7,7 +7,7 @@ ruff:
 	ruff check cluster_experiments tests setup.py
 
 test:
-	pytest --cov=./cluster_experiments tests/analysis/test_formula.py
+	pytest --cov=./cluster_experiments
 
 coverage_xml:
 	coverage xml
