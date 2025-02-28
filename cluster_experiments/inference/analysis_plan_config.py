@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 
 
 @dataclass(eq=True)
-class AnalysisPlanConfig:
+class AnalysisPlanMetricsConfig:
     metrics: List[Dict[str, str]]
     variants: List[Dict[str, Union[str, bool]]]
     analysis_type: str
@@ -12,3 +12,11 @@ class AnalysisPlanConfig:
     dimensions: List[Dict[str, Union[str, List]]] = field(default_factory=lambda: [])
     analysis_config: Dict = field(default_factory=lambda: {})
     custom_analysis_type_mapper: Optional[Dict] = None
+
+
+@dataclass(eq=True)
+class AnalysisPlanConfig:
+    tests: List[Dict[str, Union[List[Dict], Dict, str]]]
+    variants: List[Dict[str, Union[str, bool]]]
+    variant_col: str = "experiment_group"
+    alpha: float = 0.05
