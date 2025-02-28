@@ -24,11 +24,10 @@ jobs:
     - name: Install Testing Dependencies
       run: make install-test
     - name: Code coverage
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v4
       with:
         fail_ci_if_error: true
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ secrets.CODECOV_TOKEN }}
     - name: Automated Checking Mechanism
       run: |
         source .venv/bin/activate
