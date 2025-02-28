@@ -27,9 +27,8 @@ jobs:
       run:
         source .venv/bin/activate
         make check
-    - name: Code coverage
-      uses: codecov/codecov-action@v3
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: true
-        version: "v0.1.15"
