@@ -28,6 +28,7 @@ jobs:
       with:
         fail_ci_if_error: true
         token: ${{ secrets.CODECOV_TOKEN }}
+        files: coverage.xml
     - name: Automated Checking Mechanism
       run: |
         source .venv/bin/activate
