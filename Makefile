@@ -74,7 +74,7 @@ pypi-gh-actions: prep-dist
 # todo: fix this
 	twine upload --skip-existing dist/*
 
-check-gh-actions: install-test-gh-action check
+check-gh-actions: install-test check
 
 # Report log
 report-log:
