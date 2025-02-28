@@ -25,5 +25,13 @@ jobs:
       run: make install-test
     - name: Automated Checking Mechanism
       run:
-        source .venv/bin/activate
         make check
+    - name: Upload Coverage Report
+      steps:
+      - uses: actions/checkout@main
+      - uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
