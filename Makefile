@@ -7,7 +7,7 @@ ruff:
 	ruff cluster_experiments tests setup.py
 
 test:
-	pytest --cov=./cluster_experiments --junitxml=junit.xml -o junit_family=legacy
+	pytest --cov=./cluster_experiments
 
 coverage_xml:
 	coverage xml
