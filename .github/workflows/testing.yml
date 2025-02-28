@@ -26,12 +26,9 @@ jobs:
     - name: Automated Checking Mechanism
       run:
         make check
-    - name: Upload Coverage Report
-      steps:
-      - uses: actions/checkout@main
-      - uses: codecov/codecov-action@v5
-        with:
-          fail_ci_if_error: true # optional (default = false)
-          verbose: true # optional (default = false)
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    - name: Coverage report
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true
+        verbose: true # optional (default = false)
