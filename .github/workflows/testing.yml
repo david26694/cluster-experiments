@@ -27,6 +27,7 @@ jobs:
       run:
         source .venv/bin/activate
         make check
+        pytest --cov=./cluster-experiments
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
       uses: codecov/test-results-action@v1
