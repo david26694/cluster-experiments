@@ -103,6 +103,7 @@ class PowerAnalysis:
         n_simulations: int = 100,
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
+        scale_col: Optional[str] = None,
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
     ):
@@ -120,6 +121,7 @@ class PowerAnalysis:
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
             target_col=target_col,
+            scale_col=scale_col,
             features_cupac_model=features_cupac_model,
         )
         if seed is not None:
