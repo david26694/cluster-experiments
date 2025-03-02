@@ -1225,7 +1225,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         treatment_col: str = "treatment",
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
-        ratio_covariates: Optional[List[Tuple[str]]] = None,
         hypothesis: str = "two-sided",
     ):
         """
@@ -1239,7 +1238,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             treatment_col: name of the column containing the treatment variable.
             treatment: name of the treatment to use as the treated group.
             covariates: list of columns to use as covariates.
-            ratio_covariates: list of tuples of columns to use as covariates for ratio metrics. First element is the numerator column, second element is the denominator column.
             hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis.
 
             Usage:
@@ -1274,7 +1272,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self.scale_col = scale_col
         self.cluster_cols = cluster_cols or []
         self.covariates = covariates or []
-        self.ratio_covariates = ratio_covariates or []
 
         if cluster_cols is None:
             raise ValueError(
@@ -1305,11 +1302,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         df = self._transform_ratio_metric(df, numerator, denominator)
         df[f"original_{numerator}_{denominator}"] = df[numerator] / df[denominator]
         self.target_metric = f"{numerator}_{denominator}"
-
-        for numerator, denominator in self.ratio_covariates:
-            df = self._transform_ratio_metric(df, numerator, denominator)
-            df[f"original_{numerator}_{denominator}"] = df[numerator] / df[denominator]
-            self.covariates_delta.append(f"{numerator}_{denominator}")
 
         return df
 
@@ -1420,7 +1412,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         if (self._get_num_clusters(df) < 1000).any():
             self.__warn_small_group_size()
 
-        if self.covariates or self.ratio_covariates:
+        if self.covariates:
             self.__check_data_is_aggregated(df)
             ctrl_mean, treat_mean, ctrl_var, treat_var = self.get_statistics_cuped(df)
         else:
