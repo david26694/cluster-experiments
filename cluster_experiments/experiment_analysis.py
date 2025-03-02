@@ -882,7 +882,10 @@ class ClusteredOLSAnalysis(OLSAnalysis):
         """Returns the fitted OLS model"""
         if self.add_covariate_interaction:
             df = self._add_interaction_covariates(df)
-        return sm.OLS.from_formula(self.formula, data=df,).fit(
+        return sm.OLS.from_formula(
+            self.formula,
+            data=df,
+        ).fit(
             cov_type=self.cov_type,
             cov_kwds={"groups": self._get_cluster_column(df)},
         )

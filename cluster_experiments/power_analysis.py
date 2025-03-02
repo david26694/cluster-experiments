@@ -478,6 +478,10 @@ class PowerAnalysis:
 
     def check_treatment(self):
         assert (
+            self.treatment != self.control
+        ), f"treatment in PowerAnalysis ({self.treatment}) must not be the same as control in PowerAnalysis ({self.control})"
+
+        assert (
             self.analysis.treatment == self.perturbator.treatment
         ), f"treatment in analysis ({self.analysis.treatment}) must be the same as treatment in perturbator ({self.perturbator.treatment})"
 

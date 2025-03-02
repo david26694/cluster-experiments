@@ -268,7 +268,7 @@ The library offers the following classes:
     * `Dimension`: to define a dimension to slice the results of the experiment
     * `HypothesisTest`: to define a Hypothesis Test with a metric, analysis method, optional analysis configuration, and optional dimensions
     * `AnalysisPlan`: to define a plan of analysis with a list of Hypothesis Tests for a dataset and the experiment variants. The `analyze()` method runs the analysis and returns the results
-    * `AnalysisResults`: to store the results of the analysis
+    * `AnalysisResults`: to store the results of an analysis
 * Other:
     * `PowerConfig`: to conveniently configure `PowerAnalysis` class
     * `ConfidenceInterval`: to store the data representation of a confidence interval
