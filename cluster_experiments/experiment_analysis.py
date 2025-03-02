@@ -2,7 +2,7 @@ import logging
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -1354,28 +1354,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             )
         return Y_var / group_size
 
-    def get_statistics_cuped(
-        self, df: pd.DataFrame
-    ) -> Tuple[float, float, float, float]:
-        """
-        Uses linearization to easen the variance calculation when using CUPED method.
-        Should also be usable for non-CUPED estimates if no covariate is given.
-        """
-
-        df = df.copy()
-        df = self._transform_metrics(df)
-        thetas = self._compute_thetas(df)
-        Y_hat = self._get_y_hat(df, thetas)
-
-        is_control = df[self.treatment_col] == 0
-
-        control_mean = Y_hat[is_control].mean()
-        treatment_mean = Y_hat[~is_control].mean()
-        control_var = self._get_var_y_hat(df[is_control], thetas)
-        treatment_var = self._get_var_y_hat(df[~is_control], thetas)
-
-        return control_mean, treatment_mean, control_var, treatment_var
-
     def _aggregate_to_cluster(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Returns an aggregated dataframe of the target and scale variables at the cluster (and treatment) level.
@@ -1392,15 +1370,23 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
     def _get_group_mean_and_variance(self, df: pd.DataFrame) -> tuple[float, float]:
         """
         Returns the mean and variance of the ratio metric (target/scale) as estimated by the delta method for a given group (treatment).
+        If covariates are given, variance reduction is used. For it to work, the dataframe must be aggregated first at the cluster level, so no assumptions on aggregation of covariates has to be done.
 
         Arguments:
             df: dataframe containing the data to analyze.
         """
+        df = df.copy()
         df = self._transform_metrics(df)
-        Y_hat = self._get_y_hat(df)
+        if self.covariates:
+            thetas = self._compute_thetas(df)
+            Y_hat = self._get_y_hat(df, thetas)
+            group_mean = Y_hat.mean()
+            group_variance = self._get_var_y_hat(df, thetas)
+        else:
+            Y_hat = self._get_y_hat(df)
+            group_mean = Y_hat.mean()
+            group_variance = self._get_var_y_hat(df)
 
-        group_mean = Y_hat.mean()
-        group_variance = self._get_var_y_hat(df)
         return group_mean, group_variance
 
     def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
@@ -1414,12 +1400,12 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         if self.covariates:
             self.__check_data_is_aggregated(df)
-            ctrl_mean, treat_mean, ctrl_var, treat_var = self.get_statistics_cuped(df)
         else:
             df = self._aggregate_to_cluster(df)
-            is_treatment = df[self.treatment_col] == 1
-            treat_mean, treat_var = self._get_group_mean_and_variance(df[is_treatment])
-            ctrl_mean, ctrl_var = self._get_group_mean_and_variance(df[~is_treatment])
+
+        is_treatment = df[self.treatment_col] == 1
+        treat_mean, treat_var = self._get_group_mean_and_variance(df[is_treatment])
+        ctrl_mean, ctrl_var = self._get_group_mean_and_variance(df[~is_treatment])
 
         mean_diff = treat_mean - ctrl_mean
         standard_error = np.sqrt(treat_var + ctrl_var)
