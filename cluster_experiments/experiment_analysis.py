@@ -1222,7 +1222,7 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 class DeltaMethodAnalysis(ExperimentAnalysis):
     def __init__(
         self,
-        cluster_cols: Optional[List[str]] = None,
+        cluster_cols: List[str],
         target_col: str = "target",
         scale_col: str = "scale",
         treatment_col: str = "treatment",
@@ -1235,12 +1235,12 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         The analysis is done on the aggregated data at the cluster level, making computation more efficient.
 
         Arguments:
-            cluster_cols: list of columns to use as clusters. Not available for the CUPED method.
+            cluster_cols: list of columns to use as clusters.
             target_col: name of the column containing the variable to measure (the numerator of the ratio).
             scale_col: name of the column containing the scale variable (the denominator of the ratio).
             treatment_col: name of the column containing the treatment variable.
             treatment: name of the treatment to use as the treated group.
-            covariates: list of columns to use as covariates.
+            covariates: list of columns to use as covariates. Have to be previously aggregated at the cluster level.
             hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis.
 
             Usage:
@@ -1259,7 +1259,8 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             DeltaMethodAnalysis(
                 cluster_cols=['cluster'],
                 target_col='x',
-                scale_col='y'
+                scale_col='y',
+                covariates=['x']
             ).get_pvalue(df)
             ```
         """
@@ -1275,11 +1276,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self.scale_col = scale_col
         self.cluster_cols = cluster_cols or []
         self.covariates = covariates or []
-
-        if cluster_cols is None:
-            raise ValueError(
-                "cluster_cols must be provided for the Delta Method analysis"
-            )
 
     def _transform_ratio_metric(
         self, df: pd.DataFrame, numerator: str, denominator: str
@@ -1298,8 +1294,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         These columns are added to the covariates which allows for the Delta Method to be used equally for all covariates (non user-level and user-level metrics).
         """
         df = df.copy()
-        # Reset covariates delta for consequent runs
-        self.covariates_delta = []
         # transform target metric if necessary
         numerator, denominator = self.target_col, self.scale_col
         df = self._transform_ratio_metric(df, numerator, denominator)
@@ -1313,7 +1307,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Computes the theta value for the CUPED method.
         """
 
-        data = df[[self.target_metric] + self.covariates_delta + self.covariates]
+        data = df[[self.target_metric] + self.covariates]
         cov_mat = data.cov()  # nxn
         sigma = cov_mat.iloc[1:, 1:]  # (n-1)x(n-1)
         z = cov_mat.iloc[1:, 0]  # (n-1)x1
@@ -1329,11 +1323,10 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
 
         Y = df["original_" + self.target_metric].values.astype(float)
-        cov_cols = ["original_" + cov for cov in self.covariates_delta]
-        covariates = df[cov_cols + self.covariates]
+        covariates = df[self.covariates]
 
         Y_cv = Y.copy()
-        for k, _covariate in enumerate(cov_cols + self.covariates):
+        for k, _covariate in enumerate(self.covariates):
             Y_cv -= theta[k] * (
                 covariates.values[:, k] - covariates.values[:, k].mean()
             )
@@ -1346,11 +1339,10 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Compute variance from CUPED estimate. Should also work for non-CUPED estimates if no covariate is given.
         """
 
-        cov_cols = ["original_" + cov for cov in self.covariates_delta]
         group_size = len(df)
 
         Y_var = df[self.target_metric].var()
-        for k, covariate in enumerate(cov_cols + self.covariates):
+        for k, covariate in enumerate(self.covariates):
             Y_var += (
                 theta[k] ** 2 * df[covariate].var()
                 - 2 * theta[k] * np.cov(df[covariate], df[self.target_metric])[0, 1]
