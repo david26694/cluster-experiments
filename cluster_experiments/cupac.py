@@ -138,15 +138,12 @@ class CupacHandler:
         df = df.copy()
         pre_experiment_df = pre_experiment_df.copy()
         df_predict = df.drop(columns=[self.target_col])
-
-        pre_experiment_x = pre_experiment_df.drop(columns=[self.target_col])
-
         # Split data into X and y
+        pre_experiment_x = pre_experiment_df.drop(columns=[self.target_col])
         if self.scale_col:
             pre_experiment_y = (
                 pre_experiment_df[self.target_col] / pre_experiment_df[self.scale_col]
             )
-
         else:
             pre_experiment_y = pre_experiment_df[self.target_col]
 
