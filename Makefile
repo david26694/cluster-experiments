@@ -4,7 +4,7 @@ black:
 	black cluster_experiments tests setup.py --check
 
 ruff:
-	ruff cluster_experiments tests setup.py
+	ruff check cluster_experiments tests setup.py
 
 test:
 	pytest --cov=./cluster_experiments
