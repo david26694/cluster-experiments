@@ -1,0 +1,9 @@
+/* Apply text justification to all paragraphs in the documentation */
+.md-content p {
+    text-align: justify;
+}
+
+/* Optionally, justify lists or other specific elements */
+.md-content ul, .md-content ol {
+    text-align: justify;
+}

@@ -11,89 +11,50 @@ https://codecov.io/gh/david26694/cluster-experiments/branch/main/graph/badge.svg
 ![License](https://img.shields.io/github/license/david26694/cluster-experiments)
 [![Pypi version](https://img.shields.io/pypi/pyversions/cluster-experiments.svg)](https://pypi.python.org/pypi/cluster-experiments)
 
-A Python library for end-to-end A/B testing workflows, featuring:
-- Experiment analysis and scorecards
-- Power analysis (simulation-based and normal approximation)
-- Variance reduction techniques (CUPED, CUPAC)
-- Support for complex experimental designs (cluster randomization, switchback experiments)
+**`cluster experiments`** is a comprehensive Python library for end-to-end A/B testing workflows, designed for seamless integration with Pandas in production environments.  
 
-## Key Features
+---
 
-### 1. Power Analysis
-- **Simulation-based**: Run Monte Carlo simulations to estimate power
-- **Normal approximation**: Fast power estimation using CLT
-- **Minimum Detectable Effect**: Calculate required effect sizes
-- **Multiple designs**: Support for:
-  - Simple randomization
-  - Variance reduction techniques in power analysis
-  - Cluster randomization
-  - Switchback experiments
-- **Dict config**: Easy to configure power analysis with a dictionary
+## 🚀 Key Features  
 
-### 2. Experiment Analysis
-- **Analysis Plans**: Define structured analysis plans
-- **Metrics**:
-  - Simple metrics
-  - Ratio metrics
-- **Dimensions**: Slice results by dimensions
-- **Statistical Methods**:
-  - GEE
-  - Mixed Linear Models
-  - Clustered / regular OLS
-  - T-tests
-  - Synthetic Control
-- **Dict config**: Easy to define analysis plans with a dictionary
+### 📌 **Experiment Design & Planning**  
+- **Power analysis** and **Minimal Detectable Effect (MDE)** estimation  
+- Support for **complex experimental designs**, including:  
+  - 🏢 **Cluster randomization**  
+  - 🔄 **Switchback experiments**  
 
-### 3. Variance Reduction
-- **CUPED** (Controlled-experiment Using Pre-Experiment Data):
-  - Use historical outcome data to reduce variance, choose any granularity
-  - Support for several covariates
-- **CUPAC** (Control Using Predictors as Covariates):
-  - Use any scikit-learn compatible estimator to predict the outcome with pre-experiment data
+### 🛠 **Data Preprocessing**  
+- Tools for **efficient data preparation**  
+- Seamlessly integrates with **Pandas** for streamlined workflows  
 
-## Quick Start
+### 📊 **Comprehensive Experiment Analysis**  
+##### **✅ Metrics**  
+- Simple and **ratio-based metrics** for evaluating experiment outcomes  
 
-### Power Analysis Example
+##### **📈 Statistical Methods**  
+- 📌 **Generalized Estimating Equations (GEE)**  
+- 📌 **Mixed Linear Models** for robust inference  
+- 📌 **Ordinary Least Squares (OLS)** and **Clustered OLS** with covariates  
+- 📌 **T-tests** with variance reduction techniques (**CUPED, CUPAC**)  
+- 📌 **Synthetic control methods** for causal inference in observational studies  
 
-```python
-import numpy as np
-import pandas as pd
-from cluster_experiments import PowerAnalysis, NormalPowerAnalysis
+---
 
-# Create sample data
-N = 1_000
-df = pd.DataFrame({
-    "target": np.random.normal(0, 1, size=N),
-    "date": pd.to_datetime(
-        np.random.randint(
-            pd.Timestamp("2024-01-01").value,
-            pd.Timestamp("2024-01-31").value,
-            size=N,
-        )
-    ),
-})
+### ⚡ Why Use `cluster experiments`?  
+✅ **Production-ready** – built for real-world applications  
+✅ **Data-driven decision-making** – designed for rigorous statistical analysis  
+✅ **Easy to work** – integrates effortlessly with Pandas  
 
-# Simulation-based power analysis with CUPED
-config = {
-    "analysis": "ols",
-    "perturbator": "constant",
-    "splitter": "non_clustered",
-    "n_simulations": 50,
-}
-pw = PowerAnalysis.from_dict(config)
-power = pw.power_analysis(df, average_effect=0.1)
+---
 
-# Normal approximation (faster)
-npw = NormalPowerAnalysis.from_dict({
-    "analysis": "ols",
-    "splitter": "non_clustered",
-    "n_simulations": 5,
-    "time_col": "date",
-})
-power_normal = npw.power_analysis(df, average_effect=0.1)
-power_line_normal = npw.power_line(df, average_effects=[0.1, 0.2, 0.3])
+`cluster experiments` empowers analysts and data scientists with **scalable, reproducible, and statistically robust** A/B testing workflows.  
 
+🔗 **Get Started:** [Documentation Link]  
 
+📦 **Installation:**  
+```sh
+pip install cluster-experiments
+=======
 # MDE calculation
 mde = npw.mde(df, power=0.8)
 
