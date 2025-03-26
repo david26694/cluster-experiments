@@ -7,7 +7,7 @@ from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.experiment_analysis import ExperimentAnalysis, InferenceResults
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
-from cluster_experiments.inference.metric import Metric
+from cluster_experiments.inference.metric import Metric, RatioMetric
 from cluster_experiments.inference.variant import Variant
 from cluster_experiments.power_config import analysis_mapping
 
@@ -167,6 +167,10 @@ class HypothesisTest:
             raise ValueError(
                 f"Analysis type '{analysis_type}' not found in analysis_mapping"
             )
+
+        # If a RatioMetric is provided, the only analysis_type allowed is 'delta'
+        if isinstance(metric, RatioMetric) and analysis_type != "delta":
+            raise ValueError("RatioMetric can only be used with analysis_type 'delta'")
 
     def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
         """
