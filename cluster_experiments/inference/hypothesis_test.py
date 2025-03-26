@@ -192,9 +192,7 @@ class HypothesisTest:
 
         return inference_results
 
-    def _prepare_analysis_config(
-        self, target_col: str, treatment_col: str, treatment: str
-    ) -> None:
+    def _prepare_analysis_config(self, treatment_col: str, treatment: str) -> None:
         """
         Extends the analysis_config provided by the user, by adding or overriding the following keys:
         - target_col
@@ -210,9 +208,11 @@ class HypothesisTest:
         """
         new_analysis_config = copy.deepcopy(self.analysis_config)
 
-        new_analysis_config["target_col"] = target_col
+        new_analysis_config["target_col"] = self.metric.target_column
         new_analysis_config["treatment_col"] = treatment_col
         new_analysis_config["treatment"] = treatment
+        if self.metric.scale_column:
+            new_analysis_config["scale_col"] = self.metric.scale_column
 
         covariates = new_analysis_config.get("covariates", [])
 
@@ -294,7 +294,6 @@ class HypothesisTest:
             The results of the hypothesis test
         """
         self._prepare_analysis_config(
-            target_col=self.metric.target_column,
             treatment_col=variant_col,
             treatment=treatment_variant.name,
         )

@@ -193,7 +193,6 @@ def test_hypothesis_test_with_cupac_no_covariates(
     # Add covariates using CUPAC configuration
     with pytest.raises(ValueError):
         test_delivery_time._prepare_analysis_config(
-            target_col="order_delivery_time_in_minutes",
             treatment_col="experiment_group",
             treatment="treatment_1",
         )
