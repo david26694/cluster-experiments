@@ -9,6 +9,7 @@ edit_uri: blob/main/docs/
 nav:
   - Home:
     - Index: index.md
+  - End-to-end example: e2e_mde.ipynb
   - Cupac example: cupac_example.ipynb
   - Custom classes: create_custom_classes.ipynb
   - Switchback:
