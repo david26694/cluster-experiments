@@ -6,7 +6,7 @@ from cluster_experiments.inference.analysis_plan import AnalysisPlan
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import Dimension
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
-from cluster_experiments.inference.metric import SimpleMetric
+from cluster_experiments.inference.metric import RatioMetric, SimpleMetric
 from cluster_experiments.inference.variant import Variant
 
 # Set up constants for the data
@@ -51,6 +51,7 @@ def exp_data():
             "order_value": order_values,
             "order_delivery_time_in_minutes": order_delivery_times,
             "order_city_code": order_city_codes,
+            "n_orders": 1,
         }
     )
 
@@ -90,6 +91,15 @@ def sample_tests():
         dimensions=[dimension],
     )
     return [test]
+
+
+@pytest.fixture
+def ratio_metric():
+    return RatioMetric(
+        alias="AOV RATIO METRIC",
+        numerator_name="order_value",
+        denominator_name="n_orders",
+    )
 
 
 def test_analysis_plan_initialization(sample_tests, sample_variants):
@@ -190,3 +200,31 @@ def test_from_metrics_classmethod(sample_variants):
     assert plan.tests[0].metric == metric
     assert plan.variant_col == "experiment_group"
     assert plan.alpha == 0.05
+
+
+def test_delta_method(exp_data, sample_variants, ratio_metric):
+    analysis_plan = AnalysisPlan.from_metrics(
+        metrics=[ratio_metric],
+        variants=sample_variants,
+        variant_col="experiment_group",
+        alpha=0.05,
+        analysis_type="delta",
+        analysis_config={"cluster_cols": ["customer_id"]},
+    )
+
+    results = analysis_plan.analyze(exp_data=exp_data)
+    assert results.to_dataframe().shape[0] >= 1
+
+
+def test_ratio_metric_validate(sample_variants, ratio_metric):
+    with pytest.raises(
+        ValueError, match="RatioMetric can only be used with analysis_type 'delta'"
+    ):
+        _ = AnalysisPlan.from_metrics(
+            metrics=[ratio_metric],
+            variants=sample_variants,
+            variant_col="experiment_group",
+            alpha=0.05,
+            analysis_type="gee",
+            analysis_config={"cluster_cols": ["customer_id"]},
+        )

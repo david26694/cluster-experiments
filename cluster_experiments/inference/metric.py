@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import pandas as pd
 
@@ -47,6 +48,18 @@ class Metric(ABC):
             The target column name
         """
         pass
+
+    @property
+    def scale_column(self) -> Optional[str]:
+        """
+        Abstract property to return the scale column to feed the experiment analysis class, from the metric definition.
+
+        Returns
+        -------
+        str
+            The scale column name
+        """
+        return None
 
     @abstractmethod
     def get_mean(self, df: pd.DataFrame) -> float:
@@ -228,6 +241,18 @@ class RatioMetric(Metric):
             The numerator name of the metric
         """
         return self.numerator_name
+
+    @property
+    def scale_column(self) -> str:
+        """
+        Returns the scale column for the RatioMetric.
+
+        Returns
+        -------
+        str
+            The denominator name of the metric
+        """
+        return self.denominator_name
 
     def get_mean(self, df: pd.DataFrame) -> float:
         """
