@@ -68,7 +68,7 @@ The `Perturbator` classes define the type of effect you want to test. It simulat
 from cluster_experiments import ConstantPerturbator
 
 perturbator = ConstantPerturbator(
-    average_effect=5.0  # Simulate a nominal 5% uplift 
+    average_effect=5.0  # Simulate a nominal 5% uplift
 )
 ```
 

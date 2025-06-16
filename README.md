@@ -11,47 +11,37 @@ https://codecov.io/gh/david26694/cluster-experiments/branch/main/graph/badge.svg
 ![License](https://img.shields.io/github/license/david26694/cluster-experiments)
 [![Pypi version](https://img.shields.io/pypi/pyversions/cluster-experiments.svg)](https://pypi.python.org/pypi/cluster-experiments)
 
-**`cluster experiments`** is a comprehensive Python library for end-to-end A/B testing workflows, designed for seamless integration with Pandas in production environments.  
+**`cluster experiments`** is a comprehensive Python library for end-to-end A/B testing workflows.
 
 ---
 
-## 🚀 Key Features  
+## 🚀 Key Features
 
-### 📌 **Experiment Design & Planning**  
-- **Power analysis** and **Minimal Detectable Effect (MDE)** estimation  
-- Support for **complex experimental designs**, including:  
-  - 🏢 **Cluster randomization**  
-  - 🔄 **Switchback experiments**  
+### 📌 Experiment Design & Planning
+- **Power analysis** and **Minimal Detectable Effect (MDE)** estimation
+  - **Normal Approximation (CLT-based)**: Fast, analytical formulas assuming approximate normality
+    - Best for large sample sizes and standard A/B tests
+  - **Monte Carlo Simulation**: Empirically estimate power or MDE by simulating many experiments
+    - Ideal for complex or non-standard designs (e.g., clustering, non-normal outcomes)
 
-### 🛠 **Data Preprocessing**  
-- Tools for **efficient data preparation**  
-- Seamlessly integrates with **Pandas** for streamlined workflows  
+- Supports complex **experimental designs**, including:
+  - 🏢 **Cluster randomization**
+  - 🔄 **Switchback experiments**
+  - 📊 **Observational studies**, including **synthetic control**
 
-### 📊 **Comprehensive Experiment Analysis**  
-##### **✅ Metrics**  
-- Simple and **ratio-based metrics** for evaluating experiment outcomes  
+### 🧪 Statistical Methods for Analysis
+- 📌 **Ordinary Least Squares (OLS)** and **Clustered OLS**, with support for covariates
+- 🎯 **Variance Reduction Techniques**: **CUPED** and **CUPAC**
 
-##### **📈 Statistical Methods**  
-- 📌 **Generalized Estimating Equations (GEE)**  
-- 📌 **Mixed Linear Models** for robust inference  
-- 📌 **Ordinary Least Squares (OLS)** and **Clustered OLS** with covariates  
-- 📌 **T-tests** with variance reduction techniques (**CUPED, CUPAC**)  
-- 📌 **Synthetic control methods** for causal inference in observational studies  
+### 📈 Scalable Experiment Analysis with Scorecards
+- Generate **Scorecards** to summarize experiment results, allowing analysis for multiple metrics
+- Include **confidence intervals, relative and absolute effect sizes, p-values**,
 
----
+`cluster experiments` empowers analysts and data scientists with **scalable, reproducible, and statistically robust** A/B testing workflows.
 
-### ⚡ Why Use `cluster experiments`?  
-✅ **Production-ready** – built for real-world applications  
-✅ **Data-driven decision-making** – designed for rigorous statistical analysis  
-✅ **Easy to work** – integrates effortlessly with Pandas  
+🔗 **Get Started:** [Documentation Link]
 
----
-
-`cluster experiments` empowers analysts and data scientists with **scalable, reproducible, and statistically robust** A/B testing workflows.  
-
-🔗 **Get Started:** [Documentation Link]  
-
-📦 **Installation:**  
+📦 **Installation:**
 ```sh
 pip install cluster-experiments
 =======
@@ -67,7 +57,6 @@ mde_timeline = npw.mde_time_line(
 
 print(power, power_line_normal, power_normal, mde, mde_timeline)
 ```
-
 ### Experiment Analysis Example
 
 ```python

@@ -9,7 +9,7 @@ docs_dir: docs
 site_dir: site
 
 nav:
-  - Home: index.md
+  - Home: ../README.md
   - Quickstart: quickstart.md
   - Core Documentation:
       - API:
@@ -26,22 +26,23 @@ nav:
         - Hypothesis Test: api/hypothesis_test.md
         - Analysis Plan: api/analysis_plan.md
   - Usage Examples:
-      - CUPAC: cupac_example.ipynb
+      - Variance Reduction:
+          - CUPAC: cupac_example.ipynb
       - Switchback:
           - Stratified switchback: switchback.ipynb
           - Switchback calendar visualization: plot_calendars.ipynb
           - Visualization - 4-hour switches: plot_calendars_hours.ipynb
-          - Multiple treatments: multivariate.ipynb
-          - AA test clustered: aa_test.ipynb
-          - Paired T test: paired_ttest.ipynb
-          - Different hypotheses tests: analysis_with_different_hypotheses.ipynb
-          - Washover: washover_example.ipynb
-          - Normal Power:
-              - Compare with simulation: normal_power.ipynb
-              - Time-lines: normal_power_lines.ipynb
-          - Synthetic control: synthetic_control.ipynb
-          - Experiment analysis workflow: experiment_analysis.ipynb
-          - Delta Method Analysis: delta_method.ipynb
+      - Multiple treatments: multivariate.ipynb
+      - AA test clustered: aa_test.ipynb
+      - Paired T test: paired_ttest.ipynb
+      - Different hypotheses tests: analysis_with_different_hypotheses.ipynb
+      - Washover: washover_example.ipynb
+      - Normal Power:
+          - Compare with simulation: normal_power.ipynb
+          - Time-lines: normal_power_lines.ipynb
+      - Synthetic control: synthetic_control.ipynb
+      - Delta Method Analysis: delta_method.ipynb
+      - Experiment analysis workflow: experiment_analysis.ipynb
   - Contribute:
       - Contributing Guidelines: development/contributing.md
       - Code Structure: development/code_structure.md
