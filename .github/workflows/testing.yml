@@ -25,8 +25,8 @@ jobs:
       run: make install-test
     - name: Automated Checking Mechanism
       run: |
-        source .venv/bin/activate
-        make check
+        .venv\\Scripts\\activate
+        make test
     - name: Code coverage
       uses: codecov/codecov-action@v4
       with:
