@@ -55,96 +55,9 @@ A Python library for end-to-end A/B testing workflows, featuring:
 
 ### Power Analysis Example
 
-```python
-import numpy as np
-import pandas as pd
-from cluster_experiments import PowerAnalysis, NormalPowerAnalysis
-
-# Create sample data
-N = 1_000
-df = pd.DataFrame({
-    "target": np.random.normal(0, 1, size=N),
-    "date": pd.to_datetime(
-        np.random.randint(
-            pd.Timestamp("2024-01-01").value,
-            pd.Timestamp("2024-01-31").value,
-            size=N,
-        )
-    ),
-})
-
-# Simulation-based power analysis with CUPED
-config = {
-    "analysis": "ols",
-    "perturbator": "constant",
-    "splitter": "non_clustered",
-    "n_simulations": 50,
-}
-pw = PowerAnalysis.from_dict(config)
-power = pw.power_analysis(df, average_effect=0.1)
-
-# Normal approximation (faster)
-npw = NormalPowerAnalysis.from_dict({
-    "analysis": "ols",
-    "splitter": "non_clustered",
-    "n_simulations": 5,
-    "time_col": "date",
-})
-power_normal = npw.power_analysis(df, average_effect=0.1)
-power_line_normal = npw.power_line(df, average_effects=[0.1, 0.2, 0.3])
-
-
-# MDE calculation
-mde = npw.mde(df, power=0.8)
-
-# MDE line with length
-mde_timeline = npw.mde_time_line(
-    df,
-    powers=[0.8],
-    experiment_length=[7, 14, 21]
-)
-
-print(power, power_line_normal, power_normal, mde, mde_timeline)
-```
 
 ### Experiment Analysis Example
 
-```python
-import numpy as np
-import pandas as pd
-from cluster_experiments import AnalysisPlan
-
-N = 1_000
-experiment_data = pd.DataFrame({
-    "order_value": np.random.normal(100, 10, size=N),
-    "delivery_time": np.random.normal(10, 1, size=N),
-    "experiment_group": np.random.choice(["control", "treatment"], size=N),
-    "city": np.random.choice(["NYC", "LA"], size=N),
-    "customer_id": np.random.randint(1, 100, size=N),
-    "customer_age": np.random.randint(20, 60, size=N),
-})
-
-# Create analysis plan
-plan = AnalysisPlan.from_metrics_dict({
-    "metrics": [
-        {"alias": "AOV", "name": "order_value"},
-        {"alias": "delivery_time", "name": "delivery_time"},
-    ],
-    "variants": [
-        {"name": "control", "is_control": True},
-        {"name": "treatment", "is_control": False},
-    ],
-    "variant_col": "experiment_group",
-    "alpha": 0.05,
-    "dimensions": [
-        {"name": "city", "values": ["NYC", "LA"]},
-    ],
-    "analysis_type": "clustered_ols",
-    "analysis_config": {"cluster_cols": ["customer_id"]},
-})
-# Run analysis
-print(plan.analyze(experiment_data).to_dataframe())
-```
 
 ### Variance Reduction Example
 

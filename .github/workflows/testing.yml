@@ -25,7 +25,7 @@ jobs:
       run: make install-test
     - name: Setup tmate session on failure
       uses: mxschmitt/action-tmate@v3
-      timeout-minutes: 30
+      timeout-minutes: 90
     - name: Automated Checking Mechanism
       run: |
         source .venv/bin/activate
