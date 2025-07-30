@@ -10,10 +10,10 @@ on:
 
 jobs:
   test-coverage:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
     - uses: actions/checkout@v2
@@ -25,8 +25,8 @@ jobs:
       run: make install-test
     - name: Automated Checking Mechanism
       run: |
-        .venv\\Scripts\\activate
-        make test-windows
+        source .venv/bin/activate
+        make check
     - name: Code coverage
       uses: codecov/codecov-action@v4
       with:
