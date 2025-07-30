@@ -51,4 +51,4 @@ jobs:
         run: |
           make install-test
           .venv\\Scripts\\activate
-          make test
+          make test-windows

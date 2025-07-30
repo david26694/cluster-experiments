@@ -268,7 +268,7 @@ class AnalysisPlan:
     @classmethod
     def from_metrics_config(cls, config: AnalysisPlanMetricsConfig) -> "AnalysisPlan":
         """
-        Creates an AnalysisPlan instance from a metris-based configuration object.
+        Creates an AnalysisPlan instance from a metrics-based configuration object.
 
         Parameters
         ----------

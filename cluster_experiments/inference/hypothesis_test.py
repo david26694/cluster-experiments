@@ -7,7 +7,7 @@ from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.experiment_analysis import ExperimentAnalysis, InferenceResults
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
-from cluster_experiments.inference.metric import Metric
+from cluster_experiments.inference.metric import Metric, RatioMetric
 from cluster_experiments.inference.variant import Variant
 from cluster_experiments.power_config import analysis_mapping
 
@@ -168,6 +168,10 @@ class HypothesisTest:
                 f"Analysis type '{analysis_type}' not found in analysis_mapping"
             )
 
+        # If a RatioMetric is provided, the only analysis_type allowed is 'delta'
+        if isinstance(metric, RatioMetric) and analysis_type != "delta":
+            raise ValueError("RatioMetric can only be used with analysis_type 'delta'")
+
     def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
         """
         Performs inference analysis on the provided DataFrame using the analysis class.
@@ -192,9 +196,7 @@ class HypothesisTest:
 
         return inference_results
 
-    def _prepare_analysis_config(
-        self, target_col: str, treatment_col: str, treatment: str
-    ) -> None:
+    def _prepare_analysis_config(self, treatment_col: str, treatment: str) -> None:
         """
         Extends the analysis_config provided by the user, by adding or overriding the following keys:
         - target_col
@@ -210,9 +212,11 @@ class HypothesisTest:
         """
         new_analysis_config = copy.deepcopy(self.analysis_config)
 
-        new_analysis_config["target_col"] = target_col
+        new_analysis_config["target_col"] = self.metric.target_column
         new_analysis_config["treatment_col"] = treatment_col
         new_analysis_config["treatment"] = treatment
+        if self.metric.scale_column:
+            new_analysis_config["scale_col"] = self.metric.scale_column
 
         covariates = new_analysis_config.get("covariates", [])
 
@@ -294,7 +298,6 @@ class HypothesisTest:
             The results of the hypothesis test
         """
         self._prepare_analysis_config(
-            target_col=self.metric.target_column,
             treatment_col=variant_col,
             treatment=treatment_variant.name,
         )
