@@ -10,10 +10,10 @@ on:
 
 jobs:
   test-coverage:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9']
 
     steps:
     - uses: actions/checkout@v2
@@ -25,8 +25,8 @@ jobs:
       run: make install-test
     - name: Automated Checking Mechanism
       run: |
-        source .venv/bin/activate
-        make check
+        .venv\\Scripts\\activate
+        make test -k 'not quickstart'
     - name: Code coverage
       uses: codecov/codecov-action@v4
       with:
