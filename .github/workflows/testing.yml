@@ -26,7 +26,7 @@ jobs:
     - name: Automated Checking Mechanism
       run: |
         .venv\\Scripts\\activate
-        make test -k 'not quickstart'
+        make test-windows
     - name: Code coverage
       uses: codecov/codecov-action@v4
       with:

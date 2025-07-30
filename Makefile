@@ -9,6 +9,10 @@ ruff:
 test:
 	pytest --cov=./cluster_experiments
 
+test-windows:
+	pytest --cov=./cluster_experiments -k 'not quickstart'
+
+
 coverage_xml:
 	coverage xml
 
