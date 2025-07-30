@@ -1254,13 +1254,14 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
                 'y': [2, 2, 5, 1, 1, 1] * 2,
                 'treatment': ["A"] * 6 + ["B"] * 6,
                 'cluster': [1, 2, 3, 1, 2, 3] * 2,
+                'z': [1, 2, 3, 4, 5, 6] * 2,
             })
 
             DeltaMethodAnalysis(
                 cluster_cols=['cluster'],
                 target_col='x',
                 scale_col='y',
-                covariates=['x']
+                covariates=['z']
             ).get_pvalue(df)
             ```
         """
