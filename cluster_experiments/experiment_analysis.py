@@ -1220,6 +1220,8 @@ class SyntheticControlAnalysis(ExperimentAnalysis):
 
 
 class DeltaMethodAnalysis(ExperimentAnalysis):
+    n_clusters_warning_limit = 1000
+
     def __init__(
         self,
         cluster_cols: List[str],
@@ -1391,7 +1393,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Variance reduction is used if covariates are given.
         """
 
-        if (self._get_num_clusters(df) < 1000).any():
+        if (self._get_num_clusters(df) < self.n_clusters_warning_limit).any():
             self.__warn_small_group_size()
 
         if self.covariates:

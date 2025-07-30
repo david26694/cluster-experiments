@@ -9,7 +9,10 @@ from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
 from cluster_experiments.cupac import CupacHandler
-from cluster_experiments.experiment_analysis import ExperimentAnalysis
+from cluster_experiments.experiment_analysis import (
+    DeltaMethodAnalysis,
+    ExperimentAnalysis,
+)
 from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.power_config import (
     PowerConfig,
@@ -117,6 +120,7 @@ class PowerAnalysis:
         self.treatment_col = treatment_col
         self.alpha = alpha
         self.hypothesis = hypothesis
+        self.scale_col = scale_col
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
@@ -547,12 +551,20 @@ class PowerAnalysis:
             and self.splitter.time_col not in self.splitter.cluster_cols
         ), "in switchback splitters, time_col must be in cluster_cols"
 
+    def check_scale_col(self):
+        if self.scale_col is not None:
+            if not isinstance(self.analysis, DeltaMethodAnalysis):
+                raise ValueError(
+                    "If scale_col is provided, the analysis method must be DeltaMethodAnalysis, since it is the only one that supports scale_col."
+                )
+
     def check_inputs(self):
         self.check_covariates()
         self.check_treatment_col()
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+        self.check_scale_col()
 
 
 class PowerAnalysisWithPreExperimentData(PowerAnalysis):
@@ -655,6 +667,7 @@ class NormalPowerAnalysis:
         n_simulations: int = 100,
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
+        scale_col: Optional[str] = None,
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
         time_col: Optional[str] = None,
@@ -669,6 +682,7 @@ class NormalPowerAnalysis:
         self.alpha = alpha
         self.hypothesis = hypothesis
         self.time_col = time_col
+        self.scale_col = scale_col
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
@@ -1133,9 +1147,17 @@ class NormalPowerAnalysis:
             and self.splitter.time_col not in self.splitter.cluster_cols
         ), "in switchback splitters, time_col must be in cluster_cols"
 
+    def check_scale_col(self):
+        if self.scale_col is not None:
+            if not isinstance(self.analysis, DeltaMethodAnalysis):
+                raise ValueError(
+                    "If scale_col is provided, the analysis method must be DeltaMethodAnalysis, since it is the only one that supports scale_col."
+                )
+
     def check_inputs(self):
         self.check_covariates()
         self.check_treatment_col()
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+        self.check_scale_col()

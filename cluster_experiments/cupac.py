@@ -131,6 +131,14 @@ class CupacHandler:
 
         self.check_cupac_config()
 
+    def get_pre_experiment_y(self, pre_experiment_df: pd.DataFrame) -> pd.Series:
+        """Returns the pre-experiment target variable, scaled if scale_col is provided."""
+        if self.scale_col:
+            return (
+                pre_experiment_df[self.target_col] / pre_experiment_df[self.scale_col]
+            )
+        return pre_experiment_df[self.target_col]
+
     def _prep_data_cupac(
         self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
@@ -140,12 +148,7 @@ class CupacHandler:
         df_predict = df.drop(columns=[self.target_col])
         # Split data into X and y
         pre_experiment_x = pre_experiment_df.drop(columns=[self.target_col])
-        if self.scale_col:
-            pre_experiment_y = (
-                pre_experiment_df[self.target_col] / pre_experiment_df[self.scale_col]
-            )
-        else:
-            pre_experiment_y = pre_experiment_df[self.target_col]
+        pre_experiment_y = self.get_pre_experiment_y(pre_experiment_df)
 
         # Keep only cupac features
         if self.features_cupac_model:
@@ -220,8 +223,7 @@ class CupacHandler:
 
         if not self.is_cupac and pre_experiment_df is not None:
             raise ValueError(
-                "If cupac is not used, pre_experiment_df should not be provided - "
-                "remove pre_experiment_df argument or set cupac_model to not None."
+                "If cupac is not used, pre_experiment_df should not be provided - remove pre_experiment_df argument or set cupac_model to not None."
             )
 
     def check_cupac_config(self):
