@@ -120,8 +120,8 @@ experiment_data = pd.DataFrame({
     "delivery_time": np.random.normal(10, 1, size=N),
     "experiment_group": np.random.choice(["control", "treatment"], size=N),
     "city": np.random.choice(["NYC", "LA"], size=N),
-    "customer_id": np.random.randint(1, 100, size=N),
-    "customer_age": np.random.randint(20, 60, size=N),
+    "customer_id": np.random.choice(list(range(100)), size=N),
+    "customer_age": np.random.randint(list(range(20, 60)), size=N),
 })
 
 # Create analysis plan
@@ -167,13 +167,13 @@ experiment_data = pd.DataFrame({
     "delivery_time": np.random.normal(10, 1, size=N),
     "experiment_group": np.random.choice(["control", "treatment"], size=N),
     "city": np.random.choice(["NYC", "LA"], size=N),
-    "customer_id": np.random.randint(1, 100, size=N),
-    "customer_age": np.random.randint(20, 60, size=N),
+    "customer_id": np.random.choice(list(range(100)), size=N),
+    "customer_age": np.random.choice(list(range(20, 60)), size=N),
 })
 
 pre_experiment_data = pd.DataFrame({
     "order_value": np.random.normal(100, 10, size=N),
-    "customer_id": np.random.randint(1, 100, size=N),
+    "customer_id": np.random.choice(list(range(100)), size=N),
 })
 
 # Define test
