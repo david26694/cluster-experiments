@@ -51,9 +51,14 @@ def test_delta_analysis_aggregation(dates):
 
     pvalue = analyser.get_pvalue(df_experiment)
     pvalue_agg = analyser.get_pvalue(df_experiment_aggregated)
+    point_estimate = analyser.get_point_estimate(df_experiment)
+    point_estimate_agg = analyser.get_point_estimate(df_experiment_aggregated)
 
     assert pvalue == pytest.approx(
         pvalue_agg, rel=1e-8
+    ), "Aggregation method is not working properly"
+    assert point_estimate == pytest.approx(
+        point_estimate_agg, rel=1e-8
     ), "Aggregation method is not working properly"
 
 
@@ -72,7 +77,7 @@ def test_stats_delta_vs_ols(analysis_ratio_df, experiment_dates):
     SE_delta = analyser_delta.get_standard_error(df)
 
     assert point_estimate_delta == pytest.approx(
-        point_estimate_ols, rel=1e-1
+        point_estimate_ols, rel=1e-3
     ), "Point estimate is not consistent with Clustered OLS"
     assert SE_delta == pytest.approx(
         SE_ols, rel=1e-1
@@ -191,7 +196,7 @@ def test_stats_delta_cuped_vs_ols(analysis_ratio_df_large, experiment_dates):
     SE_delta = analyser_delta.get_standard_error(df_delta)
 
     assert point_estimate_delta == pytest.approx(
-        point_estimate_ols, rel=3e-2
+        point_estimate_ols, rel=1e-3
     ), "Point estimate is not consistent with Clustered OLS"
     assert SE_delta == pytest.approx(
         SE_ols, rel=3e-2
