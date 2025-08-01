@@ -455,6 +455,7 @@ class PowerAnalysis:
             features_cupac_model=config.features_cupac_model,
             seed=config.seed,
             hypothesis=config.hypothesis,
+            scale_col=config.scale_col,
         )
 
     def check_treatment_col(self):
@@ -506,7 +507,6 @@ class PowerAnalysis:
             cupac_in_covariates = (
                 self.cupac_handler.cupac_outcome_name in self.analysis.covariates
             )
-
             assert cupac_in_covariates or not self.cupac_handler.is_cupac, (
                 f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
                 f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
@@ -1067,6 +1067,7 @@ class NormalPowerAnalysis:
             seed=config.seed,
             hypothesis=config.hypothesis,
             time_col=config.time_col,
+            scale_col=config.scale_col,
         )
 
     def check_treatment_col(self):

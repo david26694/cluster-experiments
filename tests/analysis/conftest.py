@@ -31,13 +31,12 @@ def analysis_df():
     )
 
 
-@pytest.fixture
-def analysis_ratio_df(dates, experiment_dates):
+def analysis_ratio_df_base(dates, experiment_dates, n_users=2000):
     pre_exp_dates = [d for d in dates if d not in experiment_dates]
 
     user_sample_mean = 0.3
     user_standard_error = 0.15
-    users = 2000
+    users = n_users
 
     user_target_means = np.random.normal(user_sample_mean, user_standard_error, users)
 
@@ -48,6 +47,16 @@ def analysis_ratio_df(dates, experiment_dates):
         experiment_dates, N, user_target_means, users
     )
     return pd.concat([pre_data, post_data])
+
+
+@pytest.fixture
+def analysis_ratio_df(dates, experiment_dates):
+    return analysis_ratio_df_base(dates, experiment_dates, n_users=2000)
+
+
+@pytest.fixture
+def analysis_ratio_df_large(dates, experiment_dates, n_users=200000):
+    return analysis_ratio_df_base(dates, experiment_dates, n_users=n_users)
 
 
 @pytest.fixture

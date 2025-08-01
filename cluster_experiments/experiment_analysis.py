@@ -1524,6 +1524,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             treatment_col=config.treatment_col,
             treatment=config.treatment,
             hypothesis=config.hypothesis,
+            covariates=config.covariates,
         )
 
     def __check_data_is_aggregated(self, df):
