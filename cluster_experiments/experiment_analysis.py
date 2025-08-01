@@ -1324,12 +1324,14 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
         Compute CUPED estimate
         """
+        Y_cv = df["original_" + self.target_metric].values.astype(float).copy()
+        # no covariates, no theta: return original metric
+        if theta is None:
+            return Y_cv
 
-        Y = df["original_" + self.target_metric].values.astype(float)
+        # if covariates are given, subtract the covariate effects
         covariates = df[self.covariates]
-
-        Y_cv = Y.copy()
-        for k, _covariate in enumerate(self.covariates):
+        for k in range(len(self.covariates)):
             Y_cv -= theta[k] * (
                 covariates.values[:, k] - covariates.values[:, k].mean()
             )
@@ -1375,16 +1377,15 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
         df = df.copy()
         df = self._transform_metrics(df)
+
+        # only compute thetas if covariates are given
+        thetas = None
         if self.covariates:
             thetas = self._compute_thetas(df)
-            Y_hat = self._get_y_hat(df, thetas)
-            group_mean = Y_hat.mean()
-            group_variance = self._get_var_y_hat(df, thetas)
-        else:
-            Y_hat = self._get_y_hat(df)
-            group_mean = Y_hat.mean()
-            group_variance = self._get_var_y_hat(df)
 
+        Y_hat = self._get_y_hat(df, thetas)
+        group_mean = float(Y_hat.mean())
+        group_variance = self._get_var_y_hat(df, thetas)
         return group_mean, group_variance
 
     def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
@@ -1532,7 +1533,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         if df.groupby(self.cluster_cols).size().max() > 1:
             raise ValueError(
-                "The data should be aggregated at the cluster level for the Delta Method analysis using CUPED."
+                "The data should be aggregated at the cluster level for the Delta Method analysis using covariates."
             )
 
     def _get_num_clusters(self, df):
