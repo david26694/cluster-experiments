@@ -1319,22 +1319,22 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         return thetas
 
     def _get_y_hat(
-        self, df: pd.DataFrame, theta: Optional[np.array] = None
+        self,
+        df: pd.DataFrame,
+        theta: Optional[np.array] = None,
+        covariates_means: Optional[List[float]] = None,
     ) -> pd.DataFrame:
         """
         Compute CUPED estimate
         """
         Y_cv = df["original_" + self.target_metric].values.astype(float).copy()
-        # no covariates, no theta: return original metric
         if theta is None:
             return Y_cv
 
         # if covariates are given, subtract the covariate effects
         covariates = df[self.covariates]
         for k in range(len(self.covariates)):
-            Y_cv -= theta[k] * (
-                covariates.values[:, k] - covariates.values[:, k].mean()
-            )
+            Y_cv -= theta[k] * (covariates.values[:, k] - covariates_means[k])
         return Y_cv
 
     def _get_var_y_hat(
@@ -1367,7 +1367,12 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         )
         return aggregate_df
 
-    def _get_group_mean_and_variance(self, df: pd.DataFrame) -> tuple[float, float]:
+    def _get_group_mean_and_variance(
+        self,
+        df: pd.DataFrame,
+        thetas: Optional[np.array],
+        covariates_means: List[float],
+    ) -> tuple[float, float]:
         """
         Returns the mean and variance of the ratio metric (target/scale) as estimated by the delta method for a given group (treatment).
         If covariates are given, variance reduction is used. For it to work, the dataframe must be aggregated first at the cluster level, so no assumptions on aggregation of covariates has to be done.
@@ -1375,15 +1380,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         Arguments:
             df: dataframe containing the data to analyze.
         """
-        df = df.copy()
-        df = self._transform_metrics(df)
-
-        # only compute thetas if covariates are given
-        thetas = None
-        if self.covariates:
-            thetas = self._compute_thetas(df)
-
-        Y_hat = self._get_y_hat(df, thetas)
+        Y_hat = self._get_y_hat(df, thetas, covariates_means)
         group_mean = float(Y_hat.mean())
         group_variance = self._get_var_y_hat(df, thetas)
         return group_mean, group_variance
@@ -1403,8 +1400,18 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df = self._aggregate_to_cluster(df)
 
         is_treatment = df[self.treatment_col] == 1
-        treat_mean, treat_var = self._get_group_mean_and_variance(df[is_treatment])
-        ctrl_mean, ctrl_var = self._get_group_mean_and_variance(df[~is_treatment])
+
+        # TODO: this code can be cleaned up, split in a couple of methods
+        df = self._transform_metrics(df)
+        thetas = self._compute_thetas(df) if self.covariates else None
+        covariates_means = [df[covariate].mean() for covariate in self.covariates]
+
+        treat_mean, treat_var = self._get_group_mean_and_variance(
+            df[is_treatment], thetas, covariates_means
+        )
+        ctrl_mean, ctrl_var = self._get_group_mean_and_variance(
+            df[~is_treatment], thetas, covariates_means
+        )
 
         mean_diff = treat_mean - ctrl_mean
         standard_error = np.sqrt(treat_var + ctrl_var)
