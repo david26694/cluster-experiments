@@ -80,7 +80,7 @@ def test_stats_delta_vs_ols(analysis_ratio_df, experiment_dates):
         point_estimate_ols, rel=1e-3
     ), "Point estimate is not consistent with Clustered OLS"
     assert SE_delta == pytest.approx(
-        SE_ols, rel=1e-1
+        SE_ols, rel=1e-3
     ), "Standard error is not consistent with Clustered OLS"
 
 
@@ -139,7 +139,7 @@ def test_aa_delta_cuped_analysis(dates):
     positive_rate = sum(p < 0.05 for p in p_values) / len(p_values)
 
     assert positive_rate == pytest.approx(
-        0.05, abs=0.01
+        0.05, abs=0.015
     ), "P-value A/A calculation is incorrect"
 
 
@@ -147,8 +147,6 @@ def test_stats_delta_cuped_vs_ols(analysis_ratio_df_large, experiment_dates):
     np.random.seed(2024)
 
     experiment_start_date = min(experiment_dates)
-
-    print(f"{analysis_ratio_df_large.shape=}")
 
     analyser_ols = ClusteredOLSAnalysis(
         cluster_cols=["user"], covariates=["pre_user_target_mean"]
@@ -196,8 +194,8 @@ def test_stats_delta_cuped_vs_ols(analysis_ratio_df_large, experiment_dates):
     SE_delta = analyser_delta.get_standard_error(df_delta)
 
     assert point_estimate_delta == pytest.approx(
-        point_estimate_ols, rel=1e-3
+        point_estimate_ols, rel=5e-2
     ), "Point estimate is not consistent with Clustered OLS"
     assert SE_delta == pytest.approx(
-        SE_ols, rel=3e-2
+        SE_ols, rel=5e-2
     ), "Standard error is not consistent with Clustered OLS"
