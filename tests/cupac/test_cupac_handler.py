@@ -96,3 +96,25 @@ def test_no_cupac(missing_cupac, df_feats):
     """Checks that if there is no cupac model, pre_experiment_df should not be provided"""
     with pytest.raises(ValueError, match="remove pre_experiment_df argument"):
         missing_cupac.add_covariates(df_feats, df_feats.head(10))
+
+
+def test_no_scale_covariates():
+    """Checks that if we are using Delta Method, the scale should not be in features_cupac_model"""
+    with pytest.raises(ValueError, match="should not be in features_cupac_model"):
+        CupacHandler(
+            cupac_model=HistGradientBoostingRegressor(max_iter=3),
+            target_col="target",
+            scale_col="scale",
+            features_cupac_model=["x1", "x2", "scale"],
+        )
+
+
+def test_no_target_covariates():
+    """Checks that if we are using Delta Method, the target should not be in features_cupac_model"""
+    with pytest.raises(ValueError, match="should not be in features_cupac_model"):
+        CupacHandler(
+            cupac_model=HistGradientBoostingRegressor(max_iter=3),
+            target_col="target",
+            scale_col="scale",
+            features_cupac_model=["x1", "x2", "target"],
+        )
