@@ -123,6 +123,8 @@ class CupacHandler:
     ):
         self.cupac_model: BaseEstimator = cupac_model or EmptyRegressor()
         self.target_col = target_col
+        # TODO: implement CUPAC with both target_col and scale_col,
+        # right now it only supports target_col for delta method
         self.scale_col = scale_col
         self.cupac_outcome_name = f"estimate_{target_col}"
         self.features_cupac_model: List[str] = features_cupac_model or []
@@ -133,10 +135,6 @@ class CupacHandler:
 
     def get_pre_experiment_y(self, pre_experiment_df: pd.DataFrame) -> pd.Series:
         """Returns the pre-experiment target variable, scaled if scale_col is provided."""
-        if self.scale_col:
-            return (
-                pre_experiment_df[self.target_col] / pre_experiment_df[self.scale_col]
-            )
         return pre_experiment_df[self.target_col]
 
     def _prep_data_cupac(
