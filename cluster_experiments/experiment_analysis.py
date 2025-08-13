@@ -1280,84 +1280,32 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self.cluster_cols = cluster_cols or []
         self.covariates = covariates or []
 
-    @staticmethod
-    def cuped_ratio_ate(df, y_col, z_col, covar_cols, group_col, treatment_label):
-        """
-        Computes CUPED-adjusted ratio ATE and its variance (Delta method).
-
-        df: DataFrame with one row per unit
-        y_col: name of numerator metric
-        z_col: name of denominator metric
-        covar_cols: list of covariate columns
-        group_col: treatment group column
-        treatment_label: label in group_col for treatment group
-        """
-        # Center covariates
-        C = df[covar_cols].values
-        C_mean = C.mean(axis=0, keepdims=True)
-        C_centered = C - C_mean
-
-        # Estimate theta coefficients (pooled)
-        Sigma_C = np.cov(C_centered, rowvar=False)
-        inv_Sigma_C = np.linalg.inv(Sigma_C)
-
-        def theta_for(metric):
-            cov_C_metric = np.cov(C_centered.T, df[metric].values, ddof=1)[:-1, -1]
-            return inv_Sigma_C @ cov_C_metric
-
-        theta_Y = theta_for(y_col)
-        theta_Z = theta_for(z_col)
-
-        # Add adjusted metrics
-        df["Y_adj"] = df[y_col].values - C_centered @ theta_Y
-        df["Z_adj"] = df[z_col].values - C_centered @ theta_Z
-
-        results = {}
-        for g in df[group_col].unique():
-            grp = df[df[group_col] == g]
-            Y_mean = grp["Y_adj"].mean()
-            Z_mean = grp["Z_adj"].mean()
-
-            # Sample variances and covariance
-            varY = grp["Y_adj"].var(ddof=1)
-            varZ = grp["Z_adj"].var(ddof=1)
-            covYZ = np.cov(grp["Y_adj"], grp["Z_adj"], ddof=1)[0, 1]
-
-            r_hat = Y_mean / Z_mean
-            var_r = (
-                varY / (Z_mean**2)
-                + (Y_mean**2) * varZ / (Z_mean**4)
-                - 2 * Y_mean * covYZ / (Z_mean**3)
-            )
-
-            results[g] = {"r_hat": r_hat, "var_r": var_r}
-
-        gT, gC = treatment_label, [g for g in results if g != treatment_label][0]
-        ate_hat = results[gT]["r_hat"] - results[gC]["r_hat"]
-        var_ate = results[gT]["var_r"] + results[gC]["var_r"]
-
-        return ate_hat, var_ate, results
-
     def _compute_thetas(self, df: pd.DataFrame) -> np.array:
         """
         Computes the theta value for the CUPED method.
         Thetas are computed as the inverse of the covariance matrix of covariates multiplied by the covariance between covariates and target metric.
         """
-        Y = np.asarray(df[self.target_col])
-        Z = np.asarray(df[self.covariates])
-        return (
-            np.linalg.inv(np.cov(Z, rowvar=False)) @ np.cov(Z, Y, rowvar=False)[:-1, -1]
-        )
+        target = np.asarray(df[self.target_col])
+        covariates = np.asarray(df[self.covariates])
+        centered_covariates = covariates - np.mean(covariates, axis=0)
+        sigma_covariates = np.cov(centered_covariates, rowvar=False, ddof=0)
+        cov_covariates_target = np.cov(
+            np.column_stack([centered_covariates, target]), rowvar=False, ddof=0
+        )[:-1, -1]
+
+        if len(self.covariates) > 1:
+            return np.linalg.pinv(sigma_covariates) @ cov_covariates_target
+        return cov_covariates_target / sigma_covariates
 
     def _get_ratio_variance_simple(self, df: pd.DataFrame) -> float:
         """
-        Variance of the ratio of means (sum(Y)/sum(N)) via delta method.
+        Variance of the ratio of means (sum(target)/sum(scale)) via delta method.
 
         Parameters
         ----------
-        Y : array-like
+        target : array-like
             Numerator per unit.
-        N : array-like
+        scale : array-like
             Denominator per unit.
 
         Returns
@@ -1365,52 +1313,89 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         variance : float
             Estimated variance of the ratio metric.
         """
-        Y = np.asarray(df[self.target_col])
-        N = np.asarray(df[self.scale_col])
+        target = np.asarray(df[self.target_col])
+        scale = np.asarray(df[self.scale_col])
 
-        Y_bar = np.mean(Y)
-        N_bar = np.mean(N)
+        target_mean, scale_mean = np.mean(target), np.mean(scale)
 
         # Sample variances and covariance
-        var_Y = np.var(Y, ddof=0)
-        var_N = np.var(N, ddof=0)
-        cov_YN = np.cov(Y, N, ddof=0)[0, 1]
+        var_target, var_scale = np.var(target, ddof=0), np.var(scale, ddof=0)
+        cov_target_scale = np.cov(target, scale, ddof=0)[0, 1]
 
-        # Gradient of g(Ȳ, N̄) = Ȳ / N̄
-        grad_Y = 1.0 / N_bar
-        grad_N = -Y_bar / (N_bar**2)
+        # Gradient of g(Ȳ, scalē) = Ȳ / scalē
+        grad_target = 1.0 / scale_mean
+        grad_scale = -target_mean / (scale_mean**2)
 
         # Delta method variance
         var_ratio = (
-            (grad_Y**2) * var_Y + (grad_N**2) * var_N + 2 * grad_Y * grad_N * cov_YN
+            (grad_target**2) * var_target
+            + (grad_scale**2) * var_scale
+            + 2 * grad_target * grad_scale * cov_target_scale
         )
 
-        return var_ratio / len(Y)
+        return var_ratio / len(target)
 
     def _get_ratio_variance_cuped(
-        self, df: pd.DataFrame, corrected_target: pd.Series, thetas: np.array
+        self, df: pd.DataFrame, corrected_target: pd.Series, thetas: np.ndarray
     ) -> float:
         """
-        Variance of CUPED-adjusted ratio metric via delta method.
+        Y-only CUPED delta variance for the ratio of means on this group's rows.
+        Uses pooled theta, but per-arm moments for the variance pieces.
         """
-        Y = corrected_target
-        N = np.asarray(df[self.scale_col])
-        Z = np.asarray(df[self.covariates])
+        # data
+        target = df[self.target_col].to_numpy()
+        scale = df[self.scale_col].to_numpy()
+        covariates = df[self.covariates].to_numpy()
 
-        # Compute theta values for CUPED
-        var_Y = (
-            np.var(df[self.target_col], ddof=0)
-            - np.cov(Z, df[self.target_col], rowvar=False)[:-1, -1] @ thetas
-        )
-        var_N = np.var(N, ddof=0)
-        cov_YN = np.cov(Y, N, ddof=0)[0, 1]
+        n = len(df)
+        scale_mean = scale.mean()
+        target_mean_adj = corrected_target.mean()
 
-        var_ratio = (
-            var_Y / (np.mean(N) ** 2)
-            + (np.mean(Y) ** 2) * var_N / (np.mean(N) ** 4)
-            - 2 * np.mean(Y) * cov_YN / (np.mean(N) ** 3)
-        )
-        return var_ratio / len(Y)
+        # per-arm covariate moments (centered by this arm's means)
+        sigma_covariates = np.cov(covariates, rowvar=False, ddof=0)
+        cov_target_covariates = np.cov(
+            np.column_stack([covariates, target]), rowvar=False, ddof=0
+        )[:-1, -1]
+        cov_scale_covariates = np.cov(
+            np.column_stack([covariates, scale]), rowvar=False, ddof=0
+        )[:-1, -1]
+
+        # pieces
+        var_target = np.var(target, ddof=0)
+        var_scale = np.var(scale, ddof=0)
+        cov_target_scale = np.cov(target, scale, ddof=0)[0, 1]
+
+        # CUPED-adjusted variance and covariance with pooled theta
+        if len(self.covariates) > 1:
+            var_target_adj = (
+                var_target
+                - 2.0 * (thetas @ cov_target_covariates)
+                + (thetas @ sigma_covariates @ thetas)
+            )
+            cov_target_adj_scale = cov_target_scale - (thetas @ cov_scale_covariates)
+
+            # delta variance for the arm; then divide by n (mean)
+            var_ratio_g = (
+                (var_target_adj / scale_mean**2)
+                + (target_mean_adj**2 * var_scale / scale_mean**4)
+                - (2.0 * target_mean_adj * cov_target_adj_scale / scale_mean**3)
+            )
+            return var_ratio_g / n
+        else:
+            var_target_adj = (
+                var_target
+                - 2.0 * thetas * cov_target_covariates
+                + thetas**2 * sigma_covariates
+            )
+            cov_target_adj_scale = cov_target_scale - thetas * cov_scale_covariates
+
+            # delta variance for the arm; then divide by n (mean)
+            var_ratio_g = (
+                (var_target_adj / scale_mean**2)
+                + (target_mean_adj**2 * var_scale / scale_mean**4)
+                - (2.0 * target_mean_adj * cov_target_adj_scale / scale_mean**3)
+            )
+            return var_ratio_g / n
 
     def _aggregate_to_cluster(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -1461,8 +1446,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         df: pd.DataFrame,
         thetas: Optional[np.array],
         covariates_means: List[float],
-        target_mean: float,
-        scale_mean: float,
     ) -> tuple[float, float]:
         """
         Returns the mean and variance of the ratio metric (target/scale) as estimated by the delta method for a given group (treatment).
@@ -1473,7 +1456,13 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
         corrected_target = self._correct_target(df, thetas, covariates_means)
         group_mean = sum(corrected_target) / sum(df[self.scale_col])
-        group_variance = self._get_ratio_variance(df, corrected_target, thetas)
+
+        if self.covariates:
+            group_variance = self._get_ratio_variance(df, corrected_target, thetas)
+        else:
+            group_variance = self._get_ratio_variance_simple(df)
+
+        # Return the mean and variance of the ratio metric
         return group_mean, group_variance
 
     def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
@@ -1492,16 +1481,14 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         is_treatment = df[self.treatment_col] == 1
 
-        # TODO: this code can be cleaned up, split in a couple of methods
         thetas = self._compute_thetas(df) if self.covariates else None
         covariates_means = [df[covariate].mean() for covariate in self.covariates]
-        target_mean, scale_mean = df[self.target_col].mean(), df[self.scale_col].mean()
 
         treat_mean, treat_var = self._get_group_mean_and_variance(
-            df[is_treatment], thetas, covariates_means, target_mean, scale_mean
+            df[is_treatment], thetas, covariates_means
         )
         ctrl_mean, ctrl_var = self._get_group_mean_and_variance(
-            df[~is_treatment], thetas, covariates_means, target_mean, scale_mean
+            df[~is_treatment], thetas, covariates_means
         )
 
         mean_diff = treat_mean - ctrl_mean

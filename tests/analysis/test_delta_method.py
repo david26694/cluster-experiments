@@ -199,3 +199,65 @@ def test_stats_delta_cuped_vs_ols(analysis_ratio_df_large, experiment_dates):
     assert SE_delta == pytest.approx(
         SE_ols, rel=5e-2
     ), "Standard error is not consistent with Clustered OLS"
+
+
+def test_stats_delta_cuped_vs_ols_multiple_covariates(
+    analysis_ratio_df_large, experiment_dates
+):
+    np.random.seed(2024)
+
+    experiment_start_date = min(experiment_dates)
+
+    analyser_ols = ClusteredOLSAnalysis(
+        cluster_cols=["user"], covariates=["pre_user_target_mean"]
+    )
+    analyser_delta = DeltaMethodAnalysis(
+        cluster_cols=["user"],
+        scale_col="scale",
+        covariates=["pre_user_target_mean", "other_random_covariate"],
+    )
+
+    df_experiment = analysis_ratio_df_large.query(f"date >= '{experiment_start_date}'")
+    df_pre_experiment = analysis_ratio_df_large.query(
+        f"date < '{experiment_start_date}'"
+    )
+
+    df_pre_experiment = df_pre_experiment.groupby(
+        ["user", "treatment"], as_index=False
+    ).agg(
+        pre_target=("target", "sum"),
+        pre_scale=("scale", "sum"),
+        pre_user_target_mean=("user_target_means", "mean"),
+    )
+    df = df_experiment.merge(df_pre_experiment, on=["user", "treatment"])
+    # impute nans with mean values
+    df["pre_target"] = df["pre_target"].fillna(df["pre_target"].mean())
+    df["pre_scale"] = df["pre_scale"].fillna(df["pre_scale"].mean())
+    df["pre_user_target_mean"] = df["pre_user_target_mean"].fillna(
+        df["pre_user_target_mean"].mean()
+    )
+    df["other_random_covariate"] = np.random.rand(len(df))  # Add a random covariate
+
+    df_delta = df.groupby(["user", "treatment"], as_index=False).agg(
+        {
+            "target": "sum",
+            "scale": "sum",
+            "pre_target": "mean",
+            "pre_scale": "mean",
+            "pre_user_target_mean": "mean",
+            "other_random_covariate": "mean",
+        }
+    )
+
+    point_estimate_ols = analyser_ols.get_point_estimate(df)
+    point_estimate_delta = analyser_delta.get_point_estimate(df_delta)
+
+    SE_ols = analyser_ols.get_standard_error(df)
+    SE_delta = analyser_delta.get_standard_error(df_delta)
+
+    assert point_estimate_delta == pytest.approx(
+        point_estimate_ols, rel=5e-2
+    ), "Point estimate is not consistent with Clustered OLS"
+    assert SE_delta == pytest.approx(
+        SE_ols, rel=5e-2
+    ), "Standard error is not consistent with Clustered OLS"
