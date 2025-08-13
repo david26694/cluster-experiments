@@ -1395,7 +1395,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
                 + (target_mean_adj**2 * var_scale / scale_mean**4)
                 - (2.0 * target_mean_adj * cov_target_adj_scale / scale_mean**3)
             )
-            return var_ratio_g / n
+            return var_ratio_g[0] / n
 
     def _aggregate_to_cluster(self, df: pd.DataFrame) -> pd.DataFrame:
         """
