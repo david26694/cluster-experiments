@@ -1284,18 +1284,36 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
         Computes the theta value for the CUPED method.
         Thetas are computed as the inverse of the covariance matrix of covariates multiplied by the covariance between covariates and target metric.
+
+        Delta method with CUPED should work like the following. For each randomization unit i we observe $Y_i$, $N_i$.
+
+        Our estimator of the mean will have the form
         """
         target = np.asarray(df[self.target_col])
-        covariates = np.asarray(df[self.covariates])
-        centered_covariates = covariates - np.mean(covariates, axis=0)
-        sigma_covariates = np.cov(centered_covariates, rowvar=False, ddof=0)
-        cov_covariates_target = np.cov(
-            np.column_stack([centered_covariates, target]), rowvar=False, ddof=0
-        )[:-1, -1]
+        scale = np.asarray(df[self.scale_col])
+        # TODO: fix this, dirty hack
+        covariates = np.asarray(df[self.covariates].iloc[:, 0].values)
 
-        if len(self.covariates) > 1:
-            return np.linalg.pinv(sigma_covariates) @ cov_covariates_target
-        return cov_covariates_target / sigma_covariates
+        # Sample means
+        if len(self.covariates) == 1:
+            Y, N = target, scale
+            X, M = covariates, scale
+            sigma = np.cov([Y, N, X, M])  # 4
+
+            mu_Y, mu_N = Y.mean(), N.mean()
+            mu_X, mu_M = X.mean(), M.mean()
+            beta1 = np.array([1 / mu_N, -mu_Y / mu_N**2, 0, 0]).T
+            beta2 = np.array([0, 0, 1 / mu_M, -mu_X / mu_M**2]).T
+
+            # formula from Deng et al. n's would cancel out
+            theta = np.dot(beta1, np.matmul(sigma, beta2)) / np.dot(
+                beta2, np.matmul(sigma, beta2)
+            )
+            return np.array([theta])
+        else:
+            raise NotImplementedError(
+                "Delta method with multiple covariates is not implemented yet."
+            )
 
     def _get_ratio_variance_simple(self, df: pd.DataFrame) -> float:
         """
@@ -1345,7 +1363,30 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         # data
         target = df[self.target_col].to_numpy()
         scale = df[self.scale_col].to_numpy()
-        covariates = df[self.covariates].to_numpy()
+        # TODO: fix this, dirty hack
+        covariates = np.asarray(df[self.covariates].iloc[:, 0].values)
+
+        if len(self.covariates) == 1:
+            Y, N = target, scale
+            X, M = covariates, scale
+            sigma = np.cov([Y, N, X, M])  # 4
+
+            mu_Y, mu_N = Y.mean(), N.mean()
+            mu_X, mu_M = X.mean(), M.mean()
+            beta1 = np.array([1 / mu_N, -mu_Y / mu_N**2, 0, 0]).T
+            beta2 = np.array([0, 0, 1 / mu_M, -mu_X / mu_M**2]).T
+
+            var_Y_div_N = np.dot(beta1, np.matmul(sigma, beta1.T))
+            var_X_div_M = np.dot(beta2, np.matmul(sigma, beta2))
+            cov = np.dot(beta1, np.matmul(sigma, beta2))
+
+            # theta is a scalar in this case
+            theta = thetas[0]
+
+            # can also use traditional delta method for the var_Y_div_N type terms
+            return (var_Y_div_N + (theta**2) * var_X_div_M - 2 * theta * cov) / len(
+                target
+            )
 
         n = len(df)
         scale_mean = scale.mean()
