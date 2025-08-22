@@ -50,9 +50,21 @@ Where $\bar{Y} = \frac{1}{n} \sum_{i=1}^n Y_i$, $\bar{Z} = \frac{1}{n} \sum_{i=1
 
 Because the user is the randomisation unit and user level observations are iid, we have:
 $$
-\sqrt(n) (\bar{Y}, \bar{Z}, \bar{N}) \xrightarrow{d} N(\mu, \Sigma)
+\sqrt(n) (\bar{Y}, \bar{Z}, \bar{N}, \bar{N}) \xrightarrow{d} N(\mu, \Sigma)
 $$
-Where $\mu = (E[Y], E[Z], E[N])$ and $\Sigma$ is the covariance matrix of $(Y, Z, N)$.
+Where $\mu = (E[Y], E[Z], E[N], E[N])$ and $\Sigma$ is the covariance matrix of $(Y, Z, N, N)$.
+
+If we define
+$$
+\beta_1 = (1 / E[N], - E[Y] / E[N]^2, 0, 0)^T
+$$
+$$
+\beta_2 = (0, 0, 1 / E[N], - E[Z] / E[N]^2)^T
+$$
+then we can express the optimal $\theta$ as:
+$$
+\theta = \beta_1^T \Sigma \beta_2 / \beta_2^T \Sigma \beta_2
+$$
 
 In this case, the variance of the estimator can be expressed as:
 $$\begin{align}
@@ -86,4 +98,16 @@ This can be computed using matrix operations, where $\theta$ is a vector of coef
 Using linearisation, the optimal $\theta$ can also be expressed as:
 $$
 \theta = \text{Cov}\left(\frac{\bar{Y}}{E[N]} - \frac{\bar{N} E[Y]}{E[N]^2}, \frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right) \text{Var}\left(\frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right)^{-1}
+$$
+
+If we have multiple covariates, we can define:
+$$\beta_1 = \left(\frac{1}{E[N]}, -\frac{E[Y]}{E[N]^2}, 0, \ldots,0\right)^T$$
+And the $\beta_2$ matrix as:
+$$
+\beta_2 = \left(0, 0, \ldots, 0, \frac{1}{E[N]}, -\frac{E[Z_1]}{E[N]^2}, -\frac{E[Z_2]}{E[N]^2}, \ldots, -\frac{E[Z_k]}{E[N]^2}\right)^T
+$$
+
+Then we can compute the covariance matrix $\Sigma$ of $(Y, Z_1, Z_2, \ldots, Z_k, N)$ and express the optimal $\theta$ as:
+$$
+\theta = \beta_1^T \Sigma \beta_2 \cdot (\beta_2^T \Sigma \beta_2)^{-1}
 $$

@@ -1291,13 +1291,12 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
         target = np.asarray(df[self.target_col])
         scale = np.asarray(df[self.scale_col])
-        # TODO: fix this, dirty hack
-        covariates = np.asarray(df[self.covariates].iloc[:, 0].values)
+        covariates = np.asarray(df[self.covariates])
 
         # Sample means
         if len(self.covariates) == 1:
             Y, N = target, scale
-            X, M = covariates, scale
+            X, M = np.squeeze(covariates), scale
             sigma = np.cov([Y, N, X, M])  # 4
 
             mu_Y, mu_N = Y.mean(), N.mean()
@@ -1312,7 +1311,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             return np.array([theta])
         else:
             raise NotImplementedError(
-                "Delta method with multiple covariates is not implemented yet."
+                "CUPED delta method is not implemented for multiple covariates yet. "
             )
 
     def _get_ratio_variance_simple(self, df: pd.DataFrame) -> float:
@@ -1363,12 +1362,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         # data
         target = df[self.target_col].to_numpy()
         scale = df[self.scale_col].to_numpy()
-        # TODO: fix this, dirty hack
-        covariates = np.asarray(df[self.covariates].iloc[:, 0].values)
+        covariates = np.asarray(df[self.covariates])
 
         if len(self.covariates) == 1:
             Y, N = target, scale
-            X, M = covariates, scale
+            X, M = np.squeeze(covariates), scale
             sigma = np.cov([Y, N, X, M])  # 4
 
             mu_Y, mu_N = Y.mean(), N.mean()
@@ -1387,6 +1385,12 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             return (var_Y_div_N + (theta**2) * var_X_div_M - 2 * theta * cov) / len(
                 target
             )
+
+        else:
+            # multiple covariates
+            Y, N, M = target, scale, scale
+            X = covariates
+            sigma = np.cov(np.column_stack([Y, N, M]), rowvar=False, ddof=0)
 
         n = len(df)
         scale_mean = scale.mean()
