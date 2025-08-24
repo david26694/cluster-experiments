@@ -1280,7 +1280,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self.cluster_cols = cluster_cols or []
         self.covariates = covariates or []
 
-    def _compute_thetas(self, df: pd.DataFrame) -> dict:
+    def _compute_thetas(self, df: pd.DataFrame) -> Dict[str, np.ndarray]:
         """
         Computes the theta value for the CUPED method.
         Thetas are computed as the inverse of the covariance matrix of covariates multiplied by the covariance between covariates and target metric.
@@ -1296,6 +1296,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         if len(self.covariates) == 1:
             # Code for n = 1 (deng et al)
             Y, N = target, scale
+
             # need to covariate * scale to get X_i = covariate_i * N_i
             X, M = np.squeeze(covariates) * scale, scale
             sigma = np.cov([Y, N, X, M])  # 4
@@ -1320,6 +1321,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         mu_X, mu_M = X.mean(axis=0), M.mean()
         k = len(self.covariates)
 
+        # numerator (follow delta.md)
         cov_YX = sigma[0, 2 : 2 + k]
         cov_NX = sigma[1, 2 : 2 + k]
         cov_YN = sigma[0, 1]
@@ -1331,6 +1333,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             + mu_X * mu_Y * (cov_NN / mu_N**4)
         )
 
+        # denominator (follow delta.md, K * D * K^T)
         d_matrix = sigma[2:, 2:]  # (k + 1) x (k + 1)
         k_matrix = np.zeros((k, k + 1))
         k_matrix[np.diag_indices(k)] = 1 / mu_M
@@ -1338,6 +1341,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         denominator = k_matrix @ d_matrix @ k_matrix.T
 
         theta = np.dot(np.linalg.pinv(denominator), numerator)
+        # return both theta and pieces for variance calculation
         return {"theta": theta, "numerator": numerator, "denominator": denominator}
 
     def _get_ratio_variance_simple(self, df: pd.DataFrame) -> float:
@@ -1379,7 +1383,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         return var_ratio / len(target)
 
     def _get_ratio_variance_cuped(
-        self, df: pd.DataFrame, corrected_target: pd.Series, thetas: dict
+        self, df: pd.DataFrame, thetas: Optional[Dict[str, np.ndarray]]
     ) -> float:
         """
         Y-only CUPED delta variance for the ratio of means on this group's rows.
@@ -1397,7 +1401,10 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             sigma = np.cov([Y, N, X, M])  # 4
 
             mu_Y, mu_N = Y.mean(), N.mean()
+            # M is the same as N, in general it could be different,
+            # but we're copying Deng et al. here and it's easier
             mu_X, mu_M = X.mean(), M.mean()
+            # the betas are from the deng paper
             beta1 = np.array([1 / mu_N, -mu_Y / mu_N**2, 0, 0]).T
             beta2 = np.array([0, 0, 1 / mu_M, -mu_X / mu_M**2]).T
 
@@ -1419,6 +1426,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         numerator = thetas["numerator"]
         denominator = thetas["denominator"]
 
+        # follow delta.md notation, but in general it's var(Y/N) + theta Var(X/M) theta^T - 2 theta cov(Y/N, X/M)
         var_cuped = (
             variance_simple + (theta @ denominator @ theta) - 2 * (theta @ numerator)
         )
@@ -1440,7 +1448,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
     def _correct_target(
         self,
         df: pd.DataFrame,
-        thetas: Optional[dict],
+        thetas: Optional[Dict[str, np.ndarray]],
         covariates_means: List[float],
     ) -> pd.Series:
         """
@@ -1461,21 +1469,21 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         return corrected_target
 
     def _get_ratio_variance(
-        self, df: pd.DataFrame, corrected_target: pd.Series, thetas: dict
+        self, df: pd.DataFrame, thetas: Optional[Dict[str, np.ndarray]]
     ) -> float:
         """
         Returns the variance of the ratio metric (target/scale) as estimated by the delta method.
         If covariates are given, variance reduction is used.
         """
         if self.covariates:
-            return self._get_ratio_variance_cuped(df, corrected_target, thetas)
+            return self._get_ratio_variance_cuped(df, thetas)
         else:
             return self._get_ratio_variance_simple(df)
 
     def _get_group_mean_and_variance(
         self,
         df: pd.DataFrame,
-        thetas: Optional[dict],
+        thetas: Optional[Dict[str, np.ndarray]],
         covariates_means: List[float],
     ) -> tuple[float, float]:
         """
@@ -1489,7 +1497,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         group_mean = sum(corrected_target) / sum(df[self.scale_col])
 
         if self.covariates:
-            group_variance = self._get_ratio_variance(df, corrected_target, thetas)
+            group_variance = self._get_ratio_variance(df, thetas)
         else:
             group_variance = self._get_ratio_variance_simple(df)
 
