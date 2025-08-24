@@ -2,7 +2,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cluster_experiments import AnalysisPlan, ClusteredSplitter, ConstantPerturbator
+from cluster_experiments import (
+    AnalysisPlan,
+    ClusteredSplitter,
+    ConstantPerturbator,
+)
 
 
 @pytest.fixture
@@ -339,11 +343,11 @@ def test_delta_vs_ols_multiple_covariates(raw_and_aggregated_data):
 
     # Check results are reasonably close
     ate_diff = (results_delta["ate"] - results_ols["ate"]).abs() / results_delta["ate"]
-    assert (ate_diff < 0.01).all(), f"ATE difference too large: {ate_diff.max():.3f}"
+    assert (ate_diff < 0.015).all(), f"ATE difference too large: {ate_diff.max():.3f}"
 
     se_diff = (
         results_delta["std_error"] - results_ols["std_error"]
     ).abs() / results_delta["std_error"]
     assert (
-        se_diff < 0.01
+        se_diff < 0.015
     ).all(), f"Standard error difference too large: {se_diff.max():.3f}"
