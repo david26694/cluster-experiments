@@ -688,6 +688,7 @@ class NormalPowerAnalysis:
             cupac_model=cupac_model,
             target_col=target_col,
             features_cupac_model=features_cupac_model,
+            scale_col=scale_col,
         )
         if seed is not None:
             random.seed(seed)  # seed for splitter

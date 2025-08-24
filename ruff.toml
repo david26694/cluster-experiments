@@ -1,4 +1,4 @@
-line-length = 160
+line-length = 80
 
 extend-select = ["I001"]
 
