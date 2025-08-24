@@ -55,8 +55,8 @@ def analysis_ratio_df(dates, experiment_dates):
 
 
 @pytest.fixture
-def analysis_ratio_df_large(dates, experiment_dates, n_users=200000):
-    return analysis_ratio_df_base(dates, experiment_dates, n_users=n_users)
+def analysis_ratio_df_large(dates, experiment_dates):
+    return analysis_ratio_df_base(dates, experiment_dates, n_users=200000)
 
 
 @pytest.fixture
