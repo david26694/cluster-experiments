@@ -100,14 +100,34 @@ $$
 \theta = \text{Cov}\left(\frac{\bar{Y}}{E[N]} - \frac{\bar{N} E[Y]}{E[N]^2}, \frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right) \text{Var}\left(\frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right)^{-1}
 $$
 
-If we have multiple covariates, we can define:
-$$\beta_1 = \left(\frac{1}{E[N]}, -\frac{E[Y]}{E[N]^2}, 0, \ldots,0\right)^T$$
+If we have multiple covariates, we consider the vector $(Y, N, Z_1, Z_2, \ldots, Z_k, N)$ where $Z_1, Z_2, \ldots, Z_k$ are the covariates.
+
+
+Then, we can define the matrices:
+$$\beta_1 =
+\begin{pmatrix}
+\frac{1}{E[N]}, -\frac{E[Y]}{E[N]^2},0,\cdots, 0\\
+\frac{1}{E[N]}, -\frac{E[Y]}{E[N]^2},0,\cdots, 0\\
+\vdots \\
+\frac{1}{E[N]}, -\frac{E[Y]}{E[N]^2},0,\cdots, 0
+\end{pmatrix}
+
+$$
 And the $\beta_2$ matrix as:
 $$
-\beta_2 = \left(0, 0, \ldots, 0, \frac{1}{E[N]}, -\frac{E[Z_1]}{E[N]^2}, -\frac{E[Z_2]}{E[N]^2}, \ldots, -\frac{E[Z_k]}{E[N]^2}\right)^T
+\beta_2 = \begin{pmatrix}
+0, 0, \cdots, 0 \\
+0, 0,  \cdots, 0 \\
+c, 0,  \cdots, 0 \\
+0, c,  \cdots, 0 \\
+\vdots \\
+0, 0,  \cdots, c \\
+d_1, d_2, \cdots, d_k
+\end{pmatrix}
 $$
+where $c = 1 / E[N]$ and $d_i = - E[Z_i] / E[N]^2$ for each covariate $Z_i$.
 
-Then we can compute the covariance matrix $\Sigma$ of $(Y, Z_1, Z_2, \ldots, Z_k, N)$ and express the optimal $\theta$ as:
+Then we can compute the covariance matrix $\Sigma$ of $(Y, N, Z_1, Z_2, \ldots, Z_k, N)$ and express the optimal $\theta$ as:
 $$
 \theta = \beta_1^T \Sigma \beta_2 \cdot (\beta_2^T \Sigma \beta_2)^{-1}
 $$

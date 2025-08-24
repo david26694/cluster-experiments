@@ -1308,11 +1308,34 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             theta = np.dot(beta1, np.matmul(sigma, beta2)) / np.dot(
                 beta2, np.matmul(sigma, beta2)
             )
+            print(f"{theta = }")
             return np.array([theta])
         else:
-            raise NotImplementedError(
-                "CUPED delta method is not implemented for multiple covariates yet. "
-            )
+            # This is wrong, doesn't pass unit tests
+            Y, N, M = target, scale, scale
+            X = covariates
+            sigma = np.cov(np.column_stack([Y, N, X, M]), rowvar=False, ddof=0)
+
+            mu_Y, mu_N = Y.mean(), N.mean()
+            mu_X, mu_M = X.mean(), M.mean()
+            k = len(self.covariates)
+            beta1 = np.zeros(k + 3)
+            # first column should be 1/mu_N
+            beta1[0] = 1 / mu_N
+            # second column should be -mu_Y/mu_N^2
+            beta1[1] = -mu_Y / mu_N**2
+
+            beta2 = np.zeros((k + 3, k))
+            # diagional after first two should rows be 1/mu_M
+            beta2[2:-1, :] = np.eye(k) / mu_M
+            # last row should be -mu_X/mu_M^2
+            beta2[-1] = -mu_X / mu_M**2
+
+            # formula from Deng et al. n's would cancel out
+            numerator = np.dot(beta1, np.matmul(sigma, beta2))
+            denominator = np.dot(beta2.T, np.matmul(sigma, beta2))
+            theta = np.dot(numerator, np.linalg.pinv(denominator))
+            return theta
 
     def _get_ratio_variance_simple(self, df: pd.DataFrame) -> float:
         """
@@ -1470,8 +1493,13 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         # Apply correction using thetas and covariates means
         corrected_target = df[self.target_col].copy()
+        print(f"Initial target mean: {corrected_target.mean()}")
         for covariate, theta, mean in zip(self.covariates, thetas, covariates_means):
+            print(
+                f"Using theta {theta} for covariate {covariate} with mean {mean}, {df[covariate].mean()= }"
+            )
             corrected_target -= theta * (df[covariate] - mean)
+            print(f"Corrected target mean: {corrected_target.mean()}")
         return corrected_target
 
     def _get_ratio_variance(
@@ -1501,6 +1529,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
         corrected_target = self._correct_target(df, thetas, covariates_means)
         group_mean = sum(corrected_target) / sum(df[self.scale_col])
+        print(f"Group mean: {group_mean}")
 
         if self.covariates:
             group_variance = self._get_ratio_variance(df, corrected_target, thetas)
