@@ -9,7 +9,10 @@ from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
 from cluster_experiments.cupac import CupacHandler
-from cluster_experiments.experiment_analysis import ExperimentAnalysis
+from cluster_experiments.experiment_analysis import (
+    DeltaMethodAnalysis,
+    ExperimentAnalysis,
+)
 from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.power_config import (
     PowerConfig,
@@ -103,6 +106,7 @@ class PowerAnalysis:
         n_simulations: int = 100,
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
+        scale_col: Optional[str] = None,
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
     ):
@@ -116,10 +120,12 @@ class PowerAnalysis:
         self.treatment_col = treatment_col
         self.alpha = alpha
         self.hypothesis = hypothesis
+        self.scale_col = scale_col
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
             target_col=target_col,
+            scale_col=scale_col,
             features_cupac_model=features_cupac_model,
         )
         if seed is not None:
@@ -449,6 +455,7 @@ class PowerAnalysis:
             features_cupac_model=config.features_cupac_model,
             seed=config.seed,
             hypothesis=config.hypothesis,
+            scale_col=config.scale_col,
         )
 
     def check_treatment_col(self):
@@ -500,7 +507,6 @@ class PowerAnalysis:
             cupac_in_covariates = (
                 self.cupac_handler.cupac_outcome_name in self.analysis.covariates
             )
-
             assert cupac_in_covariates or not self.cupac_handler.is_cupac, (
                 f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
                 f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
@@ -545,12 +551,20 @@ class PowerAnalysis:
             and self.splitter.time_col not in self.splitter.cluster_cols
         ), "in switchback splitters, time_col must be in cluster_cols"
 
+    def check_scale_col(self):
+        if self.scale_col is not None:
+            if not isinstance(self.analysis, DeltaMethodAnalysis):
+                raise ValueError(
+                    "If scale_col is provided, the analysis method must be DeltaMethodAnalysis, since it is the only one that supports scale_col."
+                )
+
     def check_inputs(self):
         self.check_covariates()
         self.check_treatment_col()
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+        self.check_scale_col()
 
 
 class PowerAnalysisWithPreExperimentData(PowerAnalysis):
@@ -653,6 +667,7 @@ class NormalPowerAnalysis:
         n_simulations: int = 100,
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
+        scale_col: Optional[str] = None,
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
         time_col: Optional[str] = None,
@@ -667,11 +682,13 @@ class NormalPowerAnalysis:
         self.alpha = alpha
         self.hypothesis = hypothesis
         self.time_col = time_col
+        self.scale_col = scale_col
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
             target_col=target_col,
             features_cupac_model=features_cupac_model,
+            scale_col=scale_col,
         )
         if seed is not None:
             random.seed(seed)  # seed for splitter
@@ -1051,6 +1068,7 @@ class NormalPowerAnalysis:
             seed=config.seed,
             hypothesis=config.hypothesis,
             time_col=config.time_col,
+            scale_col=config.scale_col,
         )
 
     def check_treatment_col(self):
@@ -1131,9 +1149,17 @@ class NormalPowerAnalysis:
             and self.splitter.time_col not in self.splitter.cluster_cols
         ), "in switchback splitters, time_col must be in cluster_cols"
 
+    def check_scale_col(self):
+        if self.scale_col is not None:
+            if not isinstance(self.analysis, DeltaMethodAnalysis):
+                raise ValueError(
+                    "If scale_col is provided, the analysis method must be DeltaMethodAnalysis, since it is the only one that supports scale_col."
+                )
+
     def check_inputs(self):
         self.check_covariates()
         self.check_treatment_col()
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+        self.check_scale_col()

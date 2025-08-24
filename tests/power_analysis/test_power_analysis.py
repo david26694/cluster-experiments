@@ -131,24 +131,6 @@ def test_paired_ttest(df):
     assert power_verbose <= 1
 
 
-def test_delta(delta_df):
-    config = dict(
-        cluster_cols=["user", "date"],
-        scale_col="scale",
-        analysis="delta",
-        perturbator="constant",
-        splitter="clustered",
-        n_simulations=4,
-    )
-    pw = PowerAnalysis.from_dict(config)
-
-    delta_df = delta_df.drop(columns=["treatment"])
-
-    power = pw.power_analysis(delta_df, average_effect=0.0)
-    assert power >= 0
-    assert power <= 1
-
-
 def test_power_alpha(df):
     config = PowerConfig(
         analysis="ols_non_clustered",

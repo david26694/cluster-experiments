@@ -27,7 +27,9 @@ nav:
       - Time-lines: normal_power_lines.ipynb
   - Synthetic control: synthetic_control.ipynb
   - Experiment analysis workflow: experiment_analysis.ipynb
-  - Delta Method Analysis: delta_method.ipynb
+  - Delta method:
+      - Delta Method Analysis: delta_method.ipynb
+      - End-to-end delta method example: e2e_mde_delta.ipynb
   - API:
       - Experiment analysis methods: api/experiment_analysis.md
       - Perturbators: api/perturbator.md
