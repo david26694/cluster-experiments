@@ -50,9 +50,9 @@ Where $\bar{Y} = \frac{1}{n} \sum_{i=1}^n Y_i$, $\bar{Z} = \frac{1}{n} \sum_{i=1
 
 Because the user is the randomisation unit and user level observations are iid, we have:
 $$
-\sqrt(n) (\bar{Y}, \bar{Z}, \bar{N}, \bar{N}) \xrightarrow{d} N(\mu, \Sigma)
+\sqrt(n) (\bar{Y}, \bar{N}, \bar{Z}, \bar{N}) \xrightarrow{d} N(\mu, \Sigma)
 $$
-Where $\mu = (E[Y], E[Z], E[N], E[N])$ and $\Sigma$ is the covariance matrix of $(Y, Z, N, N)$.
+Where $\mu = (E[Y], E[N], E[Z], E[N])$ and $\Sigma$ is the covariance matrix of $(Y, N, Z, N)$.
 
 If we define
 $$
@@ -91,43 +91,55 @@ $$\begin{align}
 $$
 
 The optimal $\theta$ in this case is given by:
-$$\theta = \text{Cov}\left( \frac{\sum_{i=1}^n Y_i}{\sum_{i=1}^n N_i}, \frac{\sum_{i=1}^n \bold{Z}_i}{\sum_{i=1}^n N_i} \right) \text{Var}\left( \frac{\sum_{i=1}^n \bold{Z}_i}{\sum_{i=1}^n N_i} \right)^{-1}$$
+$$\theta = \text{Var}\left( \frac{\sum_{i=1}^n \bold{Z}_i}{\sum_{i=1}^n N_i} \right)^{-1} \cdot \text{Cov}\left( \frac{\sum_{i=1}^n Y_i}{\sum_{i=1}^n N_i}, \frac{\sum_{i=1}^n \bold{Z}_i}{\sum_{i=1}^n N_i} \right) $$
 
 This can be computed using matrix operations, where $\theta$ is a vector of coefficients corresponding to each covariate in $\bold{Z}$. The term $\text{Cov}\left( \frac{\sum_{i=1}^n Y_i}{\sum_{i=1}^n N_i}, \frac{\sum_{i=1}^n \bold{Z}_i}{\sum_{i=1}^n N_i} \right)$ is a vector of covariances between the outcome and each covariate, and $\text{Var}\left( \frac{\sum_{i=1}^n \bold{Z}_i}{\sum_{i=1}^n N_i} \right)$ is the covariance matrix of the covariates.
 
 Using linearisation, the optimal $\theta$ can also be expressed as:
 $$
-\theta = \text{Cov}\left(\frac{\bar{Y}}{E[N]} - \frac{\bar{N} E[Y]}{E[N]^2}, \frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right) \text{Var}\left(\frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right)^{-1}
+\theta =
+\text{Var}\left(\frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right)^{-1} \cdot
+\text{Cov}\left(\frac{\bar{Y}}{E[N]} - \frac{\bar{N} E[Y]}{E[N]^2}, \frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right)
 $$
 
 If we have multiple covariates, we consider the vector $(Y, N, Z_1, Z_2, \ldots, Z_k, N)$ where $Z_1, Z_2, \ldots, Z_k$ are the covariates.
 
+For
+$$
+\text{Cov}\left(\frac{\bar{Y}}{E[N]} - \frac{\bar{N} E[Y]}{E[N]^2}, \frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right)
+$$, its component $l$ is given by:
+$$\text{Cov}\left(\frac{\bar{Y}}{E[N]} - \frac{\bar{N} E[Y]}{E[N]^2}, \frac{\bar{Z_l}}{E[N]} - \frac{E[Z_l] \bar{N}}{E[N]^2}\right)
+$$
+By expanding the covariance, we get:
+$$\begin{align}
+&= \frac{\text{Cov}(\bar{Y}, \bar{Z_l})}{E[N]^2} - \frac{E[Y] \text{Cov}(\bar{N}, \bar{Z_l})}{E[N]^3} - \frac{E[Z_l] \text{Cov}(\bar{Y}, \bar{N})}{E[N]^3} + \frac{E[Y] E[Z_l] \text{Var}(\bar{N})}{E[N]^4}
+\end{align}$$
 
-Then, we can define the matrices:
-$$\beta_1 =
-\begin{pmatrix}
-\frac{1}{E[N]}, -\frac{E[Y]}{E[N]^2},0,\cdots, 0\\
-\frac{1}{E[N]}, -\frac{E[Y]}{E[N]^2},0,\cdots, 0\\
-\vdots \\
-\frac{1}{E[N]}, -\frac{E[Y]}{E[N]^2},0,\cdots, 0
-\end{pmatrix}
+If we define the vectors:
+$$cov(Y, \bold{Z}) = (\text{Cov}(Y, Z_1), \text{Cov}(Y, Z_2), \ldots, \text{Cov}(Y, Z_k))^T$$
+$$cov(N, \bold{Z}) = (\text{Cov}(N, Z_1), \text{Cov}(N, Z_2), \ldots, \text{Cov}(N, Z_k))^T$$
+$$E[\bold{Z}] = (E[Z_1], E[Z_2], \ldots, E[Z_k])^T$$
 
+Then we can express the covariance vector as:
+$$\text{Cov}\left(\frac{\bar{Y}}{E[N]} - \frac{\bar{N} E[Y]}{E[N]^2}, \frac{\bar{\bold{Z}}}{E[N]} - \frac{E[\bold{Z}] \bar{N}}{E[N]^2}\right) = \frac{cov(Y, \bold{Z})}{E[N]^2} - \frac{E[Y] cov(N, \bold{Z})}{E[N]^3} - \frac{E[\bold{Z}] \text{Cov}(Y, N)}{E[N]^3} + \frac{E[Y] E[\bold{Z}] \text{Var}(N)}{E[N]^4}
 $$
-And the $\beta_2$ matrix as:
-$$
-\beta_2 = \begin{pmatrix}
-0, 0, \cdots, 0 \\
-0, 0,  \cdots, 0 \\
-c, 0,  \cdots, 0 \\
-0, c,  \cdots, 0 \\
-\vdots \\
-0, 0,  \cdots, c \\
-d_1, d_2, \cdots, d_k
-\end{pmatrix}
-$$
-where $c = 1 / E[N]$ and $d_i = - E[Z_i] / E[N]^2$ for each covariate $Z_i$.
 
-Then we can compute the covariance matrix $\Sigma$ of $(Y, N, Z_1, Z_2, \ldots, Z_k, N)$ and express the optimal $\theta$ as:
-$$
-\theta = \beta_1^T \Sigma \beta_2 \cdot (\beta_2^T \Sigma \beta_2)^{-1}
-$$
+I have a matrix $A = (a_{ij})$ where $a_{ij} = \text{Cov}(Z_i, Z_j)$ for $i, j = 1, 2, \ldots, k$ and a vector $b = (b_i)$ where $b_i = \text{Cov}(Z_i, N)$ for $i = 1, 2, \ldots, k$. I build the matrix:
+$$ D =\begin{bmatrix}
+A & b \\
+b^T & \text{Var}(N)
+\end{bmatrix}$$
+
+I have a matrix $$c_{ij} = x^2 a_{ij} + y_i y_j \text{Var}(N) - x y_j b_i - x y_i b_j$$
+for some constants $x$ and a vector $\bold{y} = (y_i)$.
+
+I want to get a matrix $K$ such that:
+$$ K D K^T = C $$
+
+If
+$$ K = \begin{bmatrix}x I & -\bold{y}
+\end{bmatrix}$$
+where $I$ is the identity matrix of size $k$ and $\bold{y}$ is a column vector of ones of size $k$, then we have:
+$$ K D K^T = C $$
+
+In our case, we have $x = 1 / E[N]$ and $\bold{y} = E[\bold{Z} ] / E[N]^2$.

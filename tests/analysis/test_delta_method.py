@@ -194,10 +194,10 @@ def test_stats_delta_cuped_vs_ols(analysis_ratio_df_large, experiment_dates):
     SE_delta = analyser_delta.get_standard_error(df_delta)
 
     assert point_estimate_delta == pytest.approx(
-        point_estimate_ols, rel=5e-2
+        point_estimate_ols, rel=1e-2
     ), "Point estimate is not consistent with Clustered OLS"
     assert SE_delta == pytest.approx(
-        SE_ols, rel=5e-2
+        SE_ols, rel=1e-2
     ), "Standard error is not consistent with Clustered OLS"
 
 
@@ -256,8 +256,8 @@ def test_stats_delta_cuped_vs_ols_multiple_covariates(
     SE_delta = analyser_delta.get_standard_error(df_delta)
 
     assert point_estimate_delta == pytest.approx(
-        point_estimate_ols, rel=5e-2
+        point_estimate_ols, rel=1e-2
     ), "Point estimate is not consistent with Clustered OLS"
     assert SE_delta == pytest.approx(
-        SE_ols, rel=5e-2
+        SE_ols, rel=1e-2
     ), "Standard error is not consistent with Clustered OLS"

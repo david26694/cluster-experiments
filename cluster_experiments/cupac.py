@@ -135,6 +135,10 @@ class CupacHandler:
 
     def get_pre_experiment_y(self, pre_experiment_df: pd.DataFrame) -> pd.Series:
         """Returns the pre-experiment target variable, scaled if scale_col is provided."""
+        if self.scale_col:
+            return (
+                pre_experiment_df[self.target_col] / pre_experiment_df[self.scale_col]
+            )
         return pre_experiment_df[self.target_col]
 
     def _prep_data_cupac(
