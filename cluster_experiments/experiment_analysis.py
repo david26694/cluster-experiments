@@ -1838,3 +1838,66 @@ class DiDAnalysis(ExperimentAnalysis):
             hypothesis=config.hypothesis,
             cov_type=getattr(config, "cov_type", "HC3"),
         )
+
+
+class ClusteredDiDAnalysis(DiDAnalysis):
+    """
+    Difference-in-Differences (DiD) analysis with clustered standard errors.
+
+    Arguments:
+        cluster_cols: list of columns to use as clusters
+        target_col: name of the outcome column
+        treatment_col: column identifying treatment/control
+        treatment: value in treatment_col to consider as treated
+        time_col: column containing date or time of observation
+        intervention_date: date when the intervention occurs (used to convert time_col to 0/1)
+        covariates: optional list of covariates
+        hypothesis: "two-sided", "less", "greater"
+    """
+
+    def __init__(
+        self,
+        cluster_cols: List[str],
+        target_col: str = "target",
+        treatment_col: str = "treatment",
+        treatment: str = "B",
+        time_col: str = "time_col",
+        intervention_date: str = None,
+        covariates: Optional[List[str]] = None,
+        hypothesis: str = "two-sided",
+    ):
+        if intervention_date is None:
+            raise ValueError("intervention_date is required")
+        super().__init__(
+            target_col=target_col,
+            treatment_col=treatment_col,
+            treatment=treatment,
+            time_col=time_col,
+            intervention_date=intervention_date,
+            covariates=covariates,
+            hypothesis=hypothesis,
+            cov_type="cluster",
+            cluster_cols=cluster_cols,
+        )
+
+    def fit_did(self, df: pd.DataFrame):
+        """Returns the fitted DiD model with clustered standard errors"""
+        df_prepared = self._prepare_time(df)
+        return sm.OLS.from_formula(self.formula, data=df_prepared).fit(
+            cov_type="cluster",
+            cov_kwds={"groups": self._get_cluster_column(df_prepared)},
+        )
+
+    @classmethod
+    def from_config(cls, config):
+        """Creates a ClusteredDiDAnalysis object from a PowerConfig object"""
+        return cls(
+            cluster_cols=config.cluster_cols,
+            target_col=config.target_col,
+            treatment_col=config.treatment_col,
+            treatment=config.treatment,
+            time_col=config.time_col,
+            intervention_date=config.intervention_date,
+            covariates=config.covariates,
+            hypothesis=config.hypothesis,
+        )
