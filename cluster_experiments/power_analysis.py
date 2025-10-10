@@ -1,6 +1,6 @@
 import logging
 import random
-from typing import Dict, Generator, Iterable, List, Optional, Tuple
+from typing import Dict, Generator, Iterable, List, Optional, Tuple, Literal, Callable, Any
 
 import numpy as np
 import pandas as pd
@@ -969,6 +969,116 @@ class NormalPowerAnalysis:
                 results.append(
                     {"power": power, "mde": mde, "experiment_length": n_days}
                 )
+        return results
+
+    def mde_sliding_time_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        powers: Iterable[float] = (),
+        time_col: Optional[str] = None,
+        experiment_length: Iterable[int] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+        agg_func: Optional[
+            Literal[
+                "sum", 
+                "mean", 
+                "median", 
+                "min", 
+                "max",
+                "count", 
+                "std", 
+                "var", 
+                "nunique", 
+                "first", 
+                "last",
+            ]
+        ] = None,
+        post_process_func: Optional[Callable[[float], float]] = None,
+    ) -> List[Dict]:
+        """
+        Computes the Minimum Detectable Effect (MDE) for varying experiment lengths
+        using a sliding time window, with optional element-wise post-processing 
+        on the aggregated metric.
+
+        Args:
+            df: Input DataFrame.
+            pre_experiment_df: Optional pre-experiment DataFrame.
+            powers: Iterable of powers for MDE computation (e.g., [0.8, 0.9]).
+            experiment_length: Iterable of experiment durations in days.
+            n_simulations: Number of simulations to run (default = self.n_simulations).
+            alpha: Significance level (default = self.alpha).
+            agg_func: Aggregation function applied to the metric in each cluster window.
+            post_process_func: Optional callable applied element-wise to the aggregated metric
+                            (like `Series.apply`). Must take a single scalar as input
+                            and return a scalar.
+
+        Example with post_process_func:
+            def flag_positive(x):
+                return 1 if x > 0 else 0
+
+            results = pw.mde_sliding_time_line(
+                df=df,
+                pre_experiment_df=None,
+                time_col="date",
+                powers=[0.8],
+                experiment_length=[7, 14, 21],
+                n_simulations=5,
+                agg_func="sum",
+                post_process_func=flag_positive
+            )
+
+            print(results)
+        """
+        used_time_col = self.time_col or time_col
+        if used_time_col is None:
+            raise ValueError(
+                "Time column not specified. Set `time_col` when initializing NormalPowerAnalysis "
+                "or pass `time_col` to this method."
+            )
+
+        if agg_func is None:
+            raise ValueError(
+                "Aggregation function `agg_func` must be specified. "
+                "Choose one of: 'sum', 'mean', 'median', 'min', 'max', 'count', 'std', 'var', 'nunique', 'first', 'last'."
+            )
+
+        alpha = self.alpha if alpha is None else alpha
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+        cluster_cols = self.splitter.cluster_cols
+        results = []
+
+        experiment_start = df[used_time_col].min()
+
+        for n_days in experiment_length:
+            df_time = df[df[used_time_col] <= experiment_start + pd.Timedelta(days=n_days)]
+
+            df_grouped = df_time.groupby(
+                cluster_cols, 
+                as_index=False
+            )[self.target_col].agg(agg_func)
+
+            if post_process_func is not None:
+                df_grouped[self.target_col] = df_grouped[self.target_col].apply(post_process_func)
+
+            std_error_mean = self._get_average_standard_error(
+                df=df_grouped,
+                pre_experiment_df=pre_experiment_df,
+                n_simulations=n_simulations,
+            )
+
+            for power in powers:
+                mde_value = self._normal_mde_calculation(
+                    alpha=alpha, std_error=std_error_mean, power=power
+                )
+                results.append({
+                    "power": power,
+                    "mde": mde_value,
+                    "experiment_length": n_days,
+                    "aggregation": agg_func,
+                })
+
         return results
 
     def power_line(
