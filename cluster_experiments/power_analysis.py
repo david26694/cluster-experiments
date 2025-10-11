@@ -971,7 +971,7 @@ class NormalPowerAnalysis:
                 )
         return results
 
-    def mde_sliding_time_line(
+    def mde_rolling_time_line(
         self,
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
