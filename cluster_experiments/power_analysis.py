@@ -1,6 +1,15 @@
 import logging
 import random
-from typing import Dict, Generator, Iterable, List, Optional, Tuple, Literal, Callable, Any
+from typing import (
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+)
 
 import numpy as np
 import pandas as pd
@@ -656,8 +665,17 @@ class NormalPowerAnalysis:
     """
 
     VALID_AGG_FUNCS = (
-        "sum", "mean", "median", "min", "max",
-        "count", "std", "var", "nunique", "first", "last"
+        "sum",
+        "mean",
+        "median",
+        "min",
+        "max",
+        "count",
+        "std",
+        "var",
+        "nunique",
+        "first",
+        "last",
     )
 
     def __init__(
@@ -779,7 +797,7 @@ class NormalPowerAnalysis:
             )
 
         return float(z_alpha + z_beta) * std_error
-    
+
     def _get_time_col(self) -> str:
         if self.time_col is None:
             raise ValueError(
@@ -1009,7 +1027,7 @@ class NormalPowerAnalysis:
     ) -> List[Dict]:
         """
         Computes the Minimum Detectable Effect (MDE) for varying experiment lengths
-        using a sliding time window, with optional element-wise post-processing 
+        using a sliding time window, with optional element-wise post-processing
         on the aggregated metric.
 
         Args:
@@ -1056,13 +1074,14 @@ class NormalPowerAnalysis:
         for n_days in experiment_length:
             df_time = df[df[time_col] <= experiment_start + pd.Timedelta(days=n_days)]
 
-            df_grouped = df_time.groupby(
-                cluster_cols, 
-                as_index=False
-            )[self.target_col].agg(agg_func)
+            df_grouped = df_time.groupby(cluster_cols, as_index=False)[
+                self.target_col
+            ].agg(agg_func)
 
             if post_process_func is not None:
-                df_grouped[self.target_col] = df_grouped[self.target_col].apply(post_process_func)
+                df_grouped[self.target_col] = df_grouped[self.target_col].apply(
+                    post_process_func
+                )
 
             std_error_mean = self._get_average_standard_error(
                 df=df_grouped,
@@ -1077,12 +1096,14 @@ class NormalPowerAnalysis:
 
                 relative_mde = mde_value / abs(df_grouped[self.target_col].mean())
 
-                results.append({
-                    "power": power,
-                    "mde": mde_value,
-                    "experiment_length": n_days,
-                    "relative_mde": relative_mde,
-                })
+                results.append(
+                    {
+                        "power": power,
+                        "mde": mde_value,
+                        "experiment_length": n_days,
+                        "relative_mde": relative_mde,
+                    }
+                )
 
         return results
 

@@ -417,13 +417,9 @@ def test_power_time_line(df):
 
 def test_mde_rolling_time_line(df):
     # given
-    splitter = ClusteredSplitter(
-        cluster_cols=['cluster']
-    )
+    splitter = ClusteredSplitter(cluster_cols=["cluster"])
 
-    analysis = ClusteredOLSAnalysis(
-        cluster_cols=['cluster']
-    )
+    analysis = ClusteredOLSAnalysis(cluster_cols=["cluster"])
 
     pw = NormalPowerAnalysis(
         splitter=splitter,
