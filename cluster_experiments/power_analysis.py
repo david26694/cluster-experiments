@@ -1075,7 +1075,7 @@ class NormalPowerAnalysis:
                     alpha=alpha, std_error=std_error_mean, power=power
                 )
 
-                relative_mde = mde_value / df_grouped[self.target_col].mean()
+                relative_mde = mde_value / abs(df_grouped[self.target_col].mean())
 
                 results.append({
                     "power": power,
