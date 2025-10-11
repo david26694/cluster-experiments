@@ -413,3 +413,45 @@ def test_power_time_line(df):
         power_df.query("experiment_length == 2")["power"].squeeze()
         < power_df.query("experiment_length == 3")["power"].squeeze()
     )
+
+
+def test_mde_rolling_time_line(df):
+    # given
+    splitter = ClusteredSplitter(
+        cluster_cols=['cluster']
+    )
+
+    analysis = ClusteredOLSAnalysis(
+        cluster_cols=['cluster']
+    )
+
+    pw = NormalPowerAnalysis(
+        splitter=splitter,
+        analysis=analysis,
+        n_simulations=100,
+        seed=20240922,
+        time_col="date",
+    )
+
+    df_cp = df.copy()
+    df_cp["date"] = pd.to_datetime(df_cp["date"])
+
+    # when
+    mde_rolling_time_line = pw.mde_rolling_time_line(
+        df_cp,
+        powers=[0.8],
+        experiment_length=[1, 2, 3],
+        agg_func="sum",
+    )
+
+    mde_df = pd.DataFrame(mde_rolling_time_line)
+
+    # then
+    assert (
+        mde_df.query("experiment_length == 1")["relative_mde"].squeeze()
+        > mde_df.query("experiment_length == 2")["relative_mde"].squeeze()
+    )
+    assert (
+        mde_df.query("experiment_length == 2")["relative_mde"].squeeze()
+        > mde_df.query("experiment_length == 3")["relative_mde"].squeeze()
+    )
