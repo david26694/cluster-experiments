@@ -774,6 +774,13 @@ class NormalPowerAnalysis:
             )
 
         return float(z_alpha + z_beta) * std_error
+    
+    def _get_time_col(self) -> str:
+        if self.time_col is None:
+            raise ValueError(
+                "Time column not specified. You must provide `time_col` when initializing NormalPowerAnalysis."
+            )
+        return self.time_col
 
     def mde_power_line(
         self,
@@ -885,12 +892,13 @@ class NormalPowerAnalysis:
             experiment_length: Length of the experiment in days.
         """
         n_simulations = self.n_simulations if n_simulations is None else n_simulations
+        time_col = self._get_time_col()
 
         for n_days in experiment_length:
             df_time = df.copy()
-            experiment_start = df_time[self.time_col].min()
+            experiment_start = df_time[time_col].min()
             df_time = df_time.loc[
-                df_time[self.time_col] < experiment_start + pd.Timedelta(days=n_days)
+                df_time[time_col] < experiment_start + pd.Timedelta(days=n_days)
             ]
             std_error_mean = self._get_average_standard_error(
                 df=df_time,
@@ -976,7 +984,6 @@ class NormalPowerAnalysis:
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
         powers: Iterable[float] = (),
-        time_col: Optional[str] = None,
         experiment_length: Iterable[int] = (),
         n_simulations: Optional[int] = None,
         alpha: Optional[float] = None,
@@ -1031,12 +1038,7 @@ class NormalPowerAnalysis:
 
             print(results)
         """
-        used_time_col = self.time_col or time_col
-        if used_time_col is None:
-            raise ValueError(
-                "Time column not specified. Set `time_col` when initializing NormalPowerAnalysis "
-                "or pass `time_col` to this method."
-            )
+        time_col = self._get_time_col()
 
         if agg_func is None:
             raise ValueError(
@@ -1049,10 +1051,10 @@ class NormalPowerAnalysis:
         cluster_cols = self.splitter.cluster_cols
         results = []
 
-        experiment_start = df[used_time_col].min()
+        experiment_start = df[time_col].min()
 
         for n_days in experiment_length:
-            df_time = df[df[used_time_col] <= experiment_start + pd.Timedelta(days=n_days)]
+            df_time = df[df[time_col] <= experiment_start + pd.Timedelta(days=n_days)]
 
             df_grouped = df_time.groupby(
                 cluster_cols, 
