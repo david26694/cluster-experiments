@@ -1037,8 +1037,6 @@ class NormalPowerAnalysis:
                 n_simulations=5,
                 post_process_func=flag_positive
             )
-
-            print(results)
         """
         time_col = self._get_time_col()
 
@@ -1076,11 +1074,14 @@ class NormalPowerAnalysis:
                 mde_value = self._normal_mde_calculation(
                     alpha=alpha, std_error=std_error_mean, power=power
                 )
+
+                relative_mde = mde_value / df_grouped[self.target_col].mean()
+
                 results.append({
                     "power": power,
                     "mde": mde_value,
                     "experiment_length": n_days,
-                    "aggregation": agg_func,
+                    "relative_mde": relative_mde,
                 })
 
         return results
