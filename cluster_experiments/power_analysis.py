@@ -655,6 +655,11 @@ class NormalPowerAnalysis:
     ```
     """
 
+    VALID_AGG_FUNCS = (
+        "sum", "mean", "median", "min", "max",
+        "count", "std", "var", "nunique", "first", "last"
+    )
+
     def __init__(
         self,
         splitter: RandomSplitter,
@@ -982,26 +987,12 @@ class NormalPowerAnalysis:
     def mde_rolling_time_line(
         self,
         df: pd.DataFrame,
+        agg_func: Literal[*NormalPowerAnalysis.VALID_AGG_FUNCS],
         pre_experiment_df: Optional[pd.DataFrame] = None,
         powers: Iterable[float] = (),
         experiment_length: Iterable[int] = (),
         n_simulations: Optional[int] = None,
         alpha: Optional[float] = None,
-        agg_func: Optional[
-            Literal[
-                "sum", 
-                "mean", 
-                "median", 
-                "min", 
-                "max",
-                "count", 
-                "std", 
-                "var", 
-                "nunique", 
-                "first", 
-                "last",
-            ]
-        ] = None,
         post_process_func: Optional[Callable[[float], float]] = None,
     ) -> List[Dict]:
         """
@@ -1011,12 +1002,12 @@ class NormalPowerAnalysis:
 
         Args:
             df: Input DataFrame.
+            agg_func: Aggregation function applied to the metric in each cluster window.
             pre_experiment_df: Optional pre-experiment DataFrame.
             powers: Iterable of powers for MDE computation (e.g., [0.8, 0.9]).
             experiment_length: Iterable of experiment durations in days.
             n_simulations: Number of simulations to run (default = self.n_simulations).
             alpha: Significance level (default = self.alpha).
-            agg_func: Aggregation function applied to the metric in each cluster window.
             post_process_func: Optional callable applied element-wise to the aggregated metric
                             (like `Series.apply`). Must take a single scalar as input
                             and return a scalar.
@@ -1027,12 +1018,11 @@ class NormalPowerAnalysis:
 
             results = pw.mde_sliding_time_line(
                 df=df,
+                agg_func="sum",
                 pre_experiment_df=None,
-                time_col="date",
                 powers=[0.8],
                 experiment_length=[7, 14, 21],
                 n_simulations=5,
-                agg_func="sum",
                 post_process_func=flag_positive
             )
 
@@ -1040,10 +1030,10 @@ class NormalPowerAnalysis:
         """
         time_col = self._get_time_col()
 
-        if agg_func is None:
+        if agg_func not in self.VALID_AGG_FUNCS:
             raise ValueError(
-                "Aggregation function `agg_func` must be specified. "
-                "Choose one of: 'sum', 'mean', 'median', 'min', 'max', 'count', 'std', 'var', 'nunique', 'first', 'last'."
+                f"Invalid aggregation function `{agg_func}`. "
+                f"Choose one of: {', '.join(self.VALID_AGG_FUNCS)}."
             )
 
         alpha = self.alpha if alpha is None else alpha
