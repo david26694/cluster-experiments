@@ -1005,6 +1005,12 @@ class NormalPowerAnalysis:
     def mde_rolling_time_line(
         self,
         df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        powers: Iterable[float] = (),
+        experiment_length: Iterable[int] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+        *,
         agg_func: Literal[
             "sum",
             "mean",
@@ -1018,11 +1024,6 @@ class NormalPowerAnalysis:
             "first",
             "last",
         ],
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        powers: Iterable[float] = (),
-        experiment_length: Iterable[int] = (),
-        n_simulations: Optional[int] = None,
-        alpha: Optional[float] = None,
         post_process_func: Optional[Callable[[float], float]] = None,
     ) -> List[Dict]:
         """
@@ -1032,15 +1033,15 @@ class NormalPowerAnalysis:
 
         Args:
             df: Input DataFrame.
-            agg_func: Aggregation function applied to the metric in each cluster window.
             pre_experiment_df: Optional pre-experiment DataFrame.
             powers: Iterable of powers for MDE computation (e.g., [0.8, 0.9]).
             experiment_length: Iterable of experiment durations in days.
             n_simulations: Number of simulations to run (default = self.n_simulations).
             alpha: Significance level (default = self.alpha).
+            agg_func: Aggregation function applied to the metric in each cluster window.
             post_process_func: Optional callable applied element-wise to the aggregated metric
-                            (like `Series.apply`). Must take a single scalar as input
-                            and return a scalar.
+                (like `Series.apply`). Must take a single scalar as input
+                and return a scalar.
 
         Example with post_process_func:
             def flag_positive(x):
@@ -1072,9 +1073,11 @@ class NormalPowerAnalysis:
         experiment_start = df[time_col].min()
 
         for n_days in experiment_length:
-            df_time = df[df[time_col] <= experiment_start + pd.Timedelta(days=n_days)]
+            df_time_filter = df[
+                df[time_col] <= experiment_start + pd.Timedelta(days=n_days)
+            ]
 
-            df_grouped = df_time.groupby(cluster_cols, as_index=False)[
+            df_grouped = df_time_filter.groupby(cluster_cols, as_index=False)[
                 self.target_col
             ].agg(agg_func)
 
