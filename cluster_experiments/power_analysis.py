@@ -1040,22 +1040,56 @@ class NormalPowerAnalysis:
             alpha: Significance level (default = self.alpha).
             agg_func: Aggregation function applied to the metric in each cluster window.
             post_process_func: Optional callable applied element-wise to the aggregated metric
-                (like `Series.apply`). Must take a single scalar as input
-                and return a scalar.
+                (like `Series.apply`). Must take a single scalar as input and return a scalar.
 
-        Example with post_process_func:
-            def flag_positive(x):
-                return 1 if x > 0 else 0
+        Usage:
 
-            results = pw.mde_sliding_time_line(
-                df=df,
-                agg_func="sum",
-                pre_experiment_df=None,
-                powers=[0.8],
-                experiment_length=[7, 14, 21],
-                n_simulations=5,
-                post_process_func=flag_positive
-            )
+        ```python
+        import pandas as pd
+        import numpy as np
+        from cluster_experiments.random_splitter import ClusteredSplitter
+        from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
+        from cluster_experiments.power_analysis import NormalPowerAnalysis
+
+        # Set seed for reproducibility
+        np.random.seed(42)
+
+        # Create a synthetic dataset
+        n_customers = 10
+        n_days = 30
+
+        df = pd.DataFrame({
+            "customer_id": np.repeat(np.arange(1, n_customers+1), 3),
+            "variant": ["A", "B", "A"] * n_customers,
+            "conversion": np.random.binomial(1, 0.2, size=n_customers*3),
+            "date": pd.date_range("2024-01-01", periods=n_customers*3)
+        })
+
+        # Define a post-processing function
+        def flag_positive(x):
+            return 1 if x > 0 else 0
+
+        splitter = ClusteredSplitter(cluster_cols=["customer_id"])
+        analysis = ClusteredOLSAnalysis(cluster_cols=["customer_id"])
+
+        pw = NormalPowerAnalysis(
+            splitter=splitter,
+            analysis=analysis,
+            n_simulations=100,
+            time_col="date",
+        )
+
+        results = pw.mde_sliding_time_line(
+            df=df,
+            pre_experiment_df=None,
+            powers=[0.8],
+            experiment_length=[7, 14, 21],
+            n_simulations=5,
+            alpha=0.05,
+            agg_func="sum",
+            post_process_func=flag_positive,
+        )
+        ```
         """
         time_col = self._get_time_col()
 
