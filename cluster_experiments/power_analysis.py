@@ -1079,7 +1079,7 @@ class NormalPowerAnalysis:
             time_col="date",
         )
 
-        results = pw.mde_sliding_time_line(
+        results = pw.mde_rolling_time_line(
             df=df,
             pre_experiment_df=None,
             powers=[0.8],
