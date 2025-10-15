@@ -1051,30 +1051,47 @@ class NormalPowerAnalysis:
         from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
         from cluster_experiments.power_analysis import NormalPowerAnalysis
 
-        # Set seed for reproducibility
         np.random.seed(42)
 
         # Create a synthetic dataset
         n_customers = 10
-        n_days = 30
+        n_days = 60
 
         df = pd.DataFrame({
-            "customer_id": np.repeat(np.arange(1, n_customers+1), 3),
-            "variant": ["A", "B", "A"] * n_customers,
-            "conversion": np.random.binomial(1, 0.2, size=n_customers*3),
-            "date": pd.date_range("2024-01-01", periods=n_customers*3)
+            "customer_id": np.repeat(np.arange(1, n_customers + 1), n_days),
+            "date": np.tile(pd.date_range("2024-01-01", periods=n_days), n_customers),
         })
+
+        p_values = np.concatenate([
+            np.full(20, 0.1),
+            np.full(20, 0.2),
+            np.full(20, 0.3),
+        ])
+
+        p = np.tile(p_values, n_customers)
+        df["conversion"] = np.random.binomial(1, p)
 
         # Define a post-processing function
         def flag_positive(x):
             return 1 if x > 0 else 0
 
-        splitter = ClusteredSplitter(cluster_cols=["customer_id"])
-        analysis = ClusteredOLSAnalysis(cluster_cols=["customer_id"])
+        splitter = ClusteredSplitter(
+            cluster_cols=['customer_id'],
+            splitter_weights=[0.5, 0.5],
+            treatments=['A', 'B'],
+        )
+
+        analysis = ClusteredOLSAnalysis(
+            cluster_cols=['customer_id'],
+            target_col='conversion',
+        )
 
         pw = NormalPowerAnalysis(
             splitter=splitter,
             analysis=analysis,
+            target_col="conversion",
+            treatment="B",
+            control="A",
             n_simulations=100,
             time_col="date",
         )
@@ -1083,7 +1100,7 @@ class NormalPowerAnalysis:
             df=df,
             pre_experiment_df=None,
             powers=[0.8],
-            experiment_length=[7, 14, 21],
+            experiment_length=[7, 14, 21, 28, 56],
             n_simulations=5,
             alpha=0.05,
             agg_func="sum",
