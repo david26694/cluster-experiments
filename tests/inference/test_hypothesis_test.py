@@ -6,7 +6,7 @@ from cluster_experiments import TargetAggregation
 from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
 from cluster_experiments.inference.dimension import Dimension
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
-from cluster_experiments.inference.metric import SimpleMetric
+from cluster_experiments.inference.metric import RatioMetric, SimpleMetric
 from cluster_experiments.inference.variant import Variant
 from cluster_experiments.power_config import analysis_mapping
 
@@ -87,6 +87,11 @@ def metrics():
         "order_value": SimpleMetric(alias="AOV", name="order_value"),
         "delivery_time": SimpleMetric(
             alias="AVG DT", name="order_delivery_time_in_minutes"
+        ),
+        "delivery_time_ratio": RatioMetric(
+            alias="DT Ratio",
+            numerator_name="order_delivery_time_in_minutes",
+            denominator_name="order_value",
         ),
     }
 
@@ -177,11 +182,8 @@ def test_hypothesis_test_with_cupac(
             )
 
 
-def test_hypothesis_test_with_cupac_no_covariates(
-    experiment_data, metrics, dimensions, variants, cupac_config
-):
+def test_hypothesis_test_with_cupac_no_covariates(metrics, dimensions, cupac_config):
     """Tests that a value error is raised if covariates are not provided in the analysis config."""
-    df, pre_exp_df = experiment_data
     test_delivery_time = HypothesisTest(
         metric=metrics["delivery_time"],
         analysis_type="gee",
@@ -193,10 +195,29 @@ def test_hypothesis_test_with_cupac_no_covariates(
     # Add covariates using CUPAC configuration
     with pytest.raises(ValueError):
         test_delivery_time._prepare_analysis_config(
-            target_col="order_delivery_time_in_minutes",
             treatment_col="experiment_group",
             treatment="treatment_1",
         )
+
+
+def test_ratio_metric_validate(metrics):
+    with pytest.raises(
+        ValueError, match="RatioMetric can only be used with analysis_type 'delta'"
+    ):
+        _ = HypothesisTest(
+            metric=metrics["delivery_time_ratio"],
+            analysis_type="gee",
+            analysis_config={"cluster_cols": ["customer_id"]},
+        )
+
+
+def test_ratio_metric_validate_delta(metrics):
+    delta_hypothesis = HypothesisTest(
+        metric=metrics["delivery_time_ratio"],
+        analysis_type="delta",
+        analysis_config={"cluster_cols": ["customer_id"]},
+    )
+    assert delta_hypothesis.analysis_type == "delta"
 
 
 def test_invalid_dimension_value(experiment_data, metrics, dimensions, variants):

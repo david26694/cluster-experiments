@@ -1,6 +1,15 @@
 import logging
 import random
-from typing import Dict, Generator, Iterable, List, Optional, Tuple
+from typing import (
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+)
 
 import numpy as np
 import pandas as pd
@@ -9,7 +18,10 @@ from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
 from cluster_experiments.cupac import CupacHandler
-from cluster_experiments.experiment_analysis import ExperimentAnalysis
+from cluster_experiments.experiment_analysis import (
+    DeltaMethodAnalysis,
+    ExperimentAnalysis,
+)
 from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.power_config import (
     PowerConfig,
@@ -103,6 +115,7 @@ class PowerAnalysis:
         n_simulations: int = 100,
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
+        scale_col: Optional[str] = None,
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
     ):
@@ -116,10 +129,12 @@ class PowerAnalysis:
         self.treatment_col = treatment_col
         self.alpha = alpha
         self.hypothesis = hypothesis
+        self.scale_col = scale_col
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
             target_col=target_col,
+            scale_col=scale_col,
             features_cupac_model=features_cupac_model,
         )
         if seed is not None:
@@ -449,6 +464,7 @@ class PowerAnalysis:
             features_cupac_model=config.features_cupac_model,
             seed=config.seed,
             hypothesis=config.hypothesis,
+            scale_col=config.scale_col,
         )
 
     def check_treatment_col(self):
@@ -500,7 +516,6 @@ class PowerAnalysis:
             cupac_in_covariates = (
                 self.cupac_handler.cupac_outcome_name in self.analysis.covariates
             )
-
             assert cupac_in_covariates or not self.cupac_handler.is_cupac, (
                 f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
                 f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
@@ -545,12 +560,20 @@ class PowerAnalysis:
             and self.splitter.time_col not in self.splitter.cluster_cols
         ), "in switchback splitters, time_col must be in cluster_cols"
 
+    def check_scale_col(self):
+        if self.scale_col is not None:
+            if not isinstance(self.analysis, DeltaMethodAnalysis):
+                raise ValueError(
+                    "If scale_col is provided, the analysis method must be DeltaMethodAnalysis, since it is the only one that supports scale_col."
+                )
+
     def check_inputs(self):
         self.check_covariates()
         self.check_treatment_col()
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+        self.check_scale_col()
 
 
 class PowerAnalysisWithPreExperimentData(PowerAnalysis):
@@ -641,6 +664,20 @@ class NormalPowerAnalysis:
     ```
     """
 
+    VALID_AGG_FUNCS = (
+        "sum",
+        "mean",
+        "median",
+        "min",
+        "max",
+        "count",
+        "std",
+        "var",
+        "nunique",
+        "first",
+        "last",
+    )
+
     def __init__(
         self,
         splitter: RandomSplitter,
@@ -653,6 +690,7 @@ class NormalPowerAnalysis:
         n_simulations: int = 100,
         alpha: float = 0.05,
         features_cupac_model: Optional[List[str]] = None,
+        scale_col: Optional[str] = None,
         seed: Optional[int] = None,
         hypothesis: str = "two-sided",
         time_col: Optional[str] = None,
@@ -667,11 +705,13 @@ class NormalPowerAnalysis:
         self.alpha = alpha
         self.hypothesis = hypothesis
         self.time_col = time_col
+        self.scale_col = scale_col
 
         self.cupac_handler = CupacHandler(
             cupac_model=cupac_model,
             target_col=target_col,
             features_cupac_model=features_cupac_model,
+            scale_col=scale_col,
         )
         if seed is not None:
             random.seed(seed)  # seed for splitter
@@ -757,6 +797,13 @@ class NormalPowerAnalysis:
             )
 
         return float(z_alpha + z_beta) * std_error
+
+    def _get_time_col(self) -> str:
+        if self.time_col is None:
+            raise ValueError(
+                "Time column not specified. You must provide `time_col` when initializing NormalPowerAnalysis."
+            )
+        return self.time_col
 
     def mde_power_line(
         self,
@@ -868,12 +915,13 @@ class NormalPowerAnalysis:
             experiment_length: Length of the experiment in days.
         """
         n_simulations = self.n_simulations if n_simulations is None else n_simulations
+        time_col = self._get_time_col()
 
         for n_days in experiment_length:
             df_time = df.copy()
-            experiment_start = df_time[self.time_col].min()
+            experiment_start = df_time[time_col].min()
             df_time = df_time.loc[
-                df_time[self.time_col] < experiment_start + pd.Timedelta(days=n_days)
+                df_time[time_col] < experiment_start + pd.Timedelta(days=n_days)
             ]
             std_error_mean = self._get_average_standard_error(
                 df=df_time,
@@ -952,6 +1000,165 @@ class NormalPowerAnalysis:
                 results.append(
                     {"power": power, "mde": mde, "experiment_length": n_days}
                 )
+        return results
+
+    def mde_rolling_time_line(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        powers: Iterable[float] = (),
+        experiment_length: Iterable[int] = (),
+        n_simulations: Optional[int] = None,
+        alpha: Optional[float] = None,
+        *,
+        agg_func: Literal[
+            "sum",
+            "mean",
+            "median",
+            "min",
+            "max",
+            "count",
+            "std",
+            "var",
+            "nunique",
+            "first",
+            "last",
+        ],
+        post_process_func: Optional[Callable[[float], float]] = None,
+    ) -> List[Dict]:
+        """
+        Computes the Minimum Detectable Effect (MDE) for varying experiment lengths
+        using a sliding time window, with optional element-wise post-processing
+        on the aggregated metric.
+
+        Args:
+            df: Input DataFrame.
+            pre_experiment_df: Optional pre-experiment DataFrame.
+            powers: Iterable of powers for MDE computation (e.g., [0.8, 0.9]).
+            experiment_length: Iterable of experiment durations in days.
+            n_simulations: Number of simulations to run (default = self.n_simulations).
+            alpha: Significance level (default = self.alpha).
+            agg_func: Aggregation function applied to the metric in each cluster window.
+            post_process_func: Optional callable applied element-wise to the aggregated metric
+                (like `Series.apply`). Must take a single scalar as input and return a scalar.
+
+        Usage:
+
+        ```python
+        import pandas as pd
+        import numpy as np
+        from cluster_experiments.random_splitter import ClusteredSplitter
+        from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
+        from cluster_experiments.power_analysis import NormalPowerAnalysis
+
+        np.random.seed(42)
+
+        # Create a synthetic dataset
+        n_customers = 10
+        n_days = 60
+
+        df = pd.DataFrame({
+            "customer_id": np.repeat(np.arange(1, n_customers + 1), n_days),
+            "date": np.tile(pd.date_range("2024-01-01", periods=n_days), n_customers),
+        })
+
+        p_values = np.concatenate([
+            np.full(20, 0.1),
+            np.full(20, 0.2),
+            np.full(20, 0.3),
+        ])
+
+        p = np.tile(p_values, n_customers)
+        df["conversion"] = np.random.binomial(1, p)
+
+        # Define a post-processing function
+        def flag_positive(x):
+            return 1 if x > 0 else 0
+
+        splitter = ClusteredSplitter(
+            cluster_cols=['customer_id'],
+            splitter_weights=[0.5, 0.5],
+            treatments=['A', 'B'],
+        )
+
+        analysis = ClusteredOLSAnalysis(
+            cluster_cols=['customer_id'],
+            target_col='conversion',
+        )
+
+        pw = NormalPowerAnalysis(
+            splitter=splitter,
+            analysis=analysis,
+            target_col="conversion",
+            treatment="B",
+            control="A",
+            n_simulations=100,
+            time_col="date",
+        )
+
+        results = pw.mde_rolling_time_line(
+            df=df,
+            pre_experiment_df=None,
+            powers=[0.8],
+            experiment_length=[7, 14, 21, 28, 56],
+            n_simulations=5,
+            alpha=0.05,
+            agg_func="sum",
+            post_process_func=flag_positive,
+        )
+        ```
+        """
+        time_col = self._get_time_col()
+
+        if agg_func not in self.VALID_AGG_FUNCS:
+            raise ValueError(
+                f"Invalid aggregation function `{agg_func}`. "
+                f"Choose one of: {', '.join(self.VALID_AGG_FUNCS)}."
+            )
+
+        alpha = self.alpha if alpha is None else alpha
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+        cluster_cols = self.splitter.cluster_cols
+        results = []
+
+        experiment_start = df[time_col].min()
+
+        for n_days in experiment_length:
+            df_time_filter = df[
+                df[time_col] <= experiment_start + pd.Timedelta(days=n_days)
+            ]
+
+            df_grouped = df_time_filter.groupby(cluster_cols, as_index=False)[
+                self.target_col
+            ].agg(agg_func)
+
+            if post_process_func is not None:
+                df_grouped[self.target_col] = df_grouped[self.target_col].apply(
+                    post_process_func
+                )
+
+            std_error_mean = self._get_average_standard_error(
+                df=df_grouped,
+                pre_experiment_df=pre_experiment_df,
+                n_simulations=n_simulations,
+            )
+
+            for power in powers:
+                mde_value = self._normal_mde_calculation(
+                    alpha=alpha, std_error=std_error_mean, power=power
+                )
+
+                relative_mde = mde_value / abs(df_grouped[self.target_col].mean())
+
+                results.append(
+                    {
+                        "power": power,
+                        "mde": mde_value,
+                        "experiment_length": n_days,
+                        "relative_mde": relative_mde,
+                    }
+                )
+
         return results
 
     def power_line(
@@ -1051,6 +1258,7 @@ class NormalPowerAnalysis:
             seed=config.seed,
             hypothesis=config.hypothesis,
             time_col=config.time_col,
+            scale_col=config.scale_col,
         )
 
     def check_treatment_col(self):
@@ -1131,9 +1339,17 @@ class NormalPowerAnalysis:
             and self.splitter.time_col not in self.splitter.cluster_cols
         ), "in switchback splitters, time_col must be in cluster_cols"
 
+    def check_scale_col(self):
+        if self.scale_col is not None:
+            if not isinstance(self.analysis, DeltaMethodAnalysis):
+                raise ValueError(
+                    "If scale_col is provided, the analysis method must be DeltaMethodAnalysis, since it is the only one that supports scale_col."
+                )
+
     def check_inputs(self):
         self.check_covariates()
         self.check_treatment_col()
         self.check_target_col()
         self.check_treatment()
         self.check_clusters()
+        self.check_scale_col()
