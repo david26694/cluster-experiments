@@ -13,7 +13,7 @@
 
 ## 📖 What is cluster-experiments?
 
-`cluster-experiments` provides a complete toolkit for designing, running, and analyzing experiments, with particular strength in handling **clustered randomization** and complex experimental designs. Originally developed to address challenges in **switchback experiments** and scenarios with **network effects** where standard randomization isn't feasible, it has evolved into a general-purpose experimentation framework supporting both simple A/B tests and sophisticated designs.
+`cluster-experiments` provides a complete toolkit for designing, running, and analyzing experiments, with particular strength in handling **clustered randomization** and complex experimental designs. Originally developed to address challenges in **switchback experiments** and scenarios with **network effects** where standard randomization isn't feasible, it has evolved into a general-purpose experimentation framework supporting both simple A/B tests and other randomization designs.
 
 ### Why "cluster"?
 
@@ -23,16 +23,16 @@ The name reflects the library's origins in handling **cluster-randomized experim
 - **Operational Constraints**: You can't randomize individuals (e.g., testing restaurant menu changes)
 - **Switchback Designs**: Treatment alternates over time periods within the same unit
 
-While the library excels at these complex scenarios, it's equally capable of handling standard A/B tests with individual-level randomization.
+While the library is aimed at these scenarios, it's equally capable of handling standard A/B tests with individual-level randomization.
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-### 📊 **Comprehensive Experiment Design**
+### **Experiment Design**
 - **Power Analysis & Sample Size Calculation**
   - Simulation-based (Monte Carlo) for any design complexity
-  - Analytical (CLT-based) for standard designs
+  - Analytical, (CLT-based) for standard designs
   - Minimal Detectable Effect (MDE) estimation
   
 - **Multiple Experimental Designs**
@@ -42,10 +42,9 @@ While the library excels at these complex scenarios, it's equally capable of han
   - Stratified randomization
   - Observational studies with Synthetic Control
 
-### 🔬 **Advanced Statistical Methods**
+### **Statistical Methods**
 - **Multiple Analysis Methods**
   - OLS and Clustered OLS regression
-  - T-tests and Paired T-tests
   - GEE (Generalized Estimating Equations)
   - Mixed Linear Models (MLM)
   - Delta Method for ratio metrics
@@ -56,7 +55,7 @@ While the library excels at these complex scenarios, it's equally capable of han
   - CUPAC (CUPED with Pre-experiment Aggregations)
   - Covariate adjustment
 
-### 📈 **Scalable Analysis Workflow**
+### **Analysis Workflow**
 - **Scorecard Generation**: Analyze multiple metrics simultaneously
 - **Multi-dimensional Slicing**: Break down results by segments
 - **Multiple Treatment Arms**: Compare several treatments at once
@@ -74,75 +73,110 @@ pip install cluster-experiments
 
 ## ⚡ Quick Example
 
-Here's a simple example showing how to analyze an experiment with two metrics: a simple metric (conversions) and a ratio metric (conversion rate).
+Here's a simple example showing how to analyze an experiment with multiple metrics organized by category - a common production pattern:
 
 ```python
 import pandas as pd
 import numpy as np
-from cluster_experiments import AnalysisPlan
+from cluster_experiments import (
+    AnalysisPlan, SimpleMetric, RatioMetric, 
+    Variant, HypothesisTest
+)
 
 # Simulate experiment data
 np.random.seed(42)
-n_users = 1000
+n_users = 5000
 
 data = pd.DataFrame({
     'user_id': range(n_users),
     'variant': np.random.choice(['control', 'treatment'], n_users),
-    'orders': np.random.poisson(2.5, n_users),  # Number of orders (simple metric)
-    'visits': np.random.poisson(10, n_users),   # Number of visits (for ratio)
+    'orders': np.random.poisson(2.5, n_users),  # Number of orders
+    'visits': np.random.poisson(10, n_users),   # Number of visits
 })
 
-# Add a small treatment effect to orders
-data.loc[data['variant'] == 'treatment', 'orders'] += np.random.poisson(0.5, (data['variant'] == 'treatment').sum())
+# Add treatment effect: +20% orders for treatment
+data.loc[data['variant'] == 'treatment', 'orders'] += \
+    np.random.poisson(0.5, (data['variant'] == 'treatment').sum())
 
-# Calculate conversions (users who ordered)
-data['converted'] = (data['orders'] > 0).astype(int)
+# Prepare data
+data['converted'] = data['orders'].astype(int)
 
-# Define analysis plan
-analysis_plan = AnalysisPlan.from_metrics_dict({
-    'metrics': [
-        # Simple metric: total conversions
-        {
-            'alias': 'conversions',
-            'name': 'converted',
-            'metric_type': 'simple'
-        },
-        # Ratio metric: conversion rate (conversions / visits)
-        {
-            'alias': 'conversion_rate', 
-            'metric_type': 'ratio',
-            'numerator': 'converted',
-            'denominator': 'visits'
-        },
-    ],
-    'variants': [
-        {'name': 'control', 'is_control': True},
-        {'name': 'treatment', 'is_control': False},
-    ],
-    'variant_col': 'variant',
-    'analysis_type': 'ols',  # Use OLS for simple A/B test
-})
+# Define metrics by type and category
+absolute_metrics = {
+    "orders": "revenue"  # metric_name: category
+}
 
-# Run analysis
-results = analysis_plan.analyze(data)
+ratio_metrics = {
+    "conversion_rate": {
+        "category": "conversion",
+        "components": ["converted", "visits"]  # [numerator, denominator]
+    }
+}
 
-# View results as a dataframe
-print(results.to_dataframe())
+# Define variants
+variants = [
+    Variant("control", is_control=True),
+    Variant("treatment", is_control=False)
+]
+
+# Build hypothesis tests from metric definitions
+hypothesis_tests = []
+
+# 1. Ratio metrics: use delta method for proper ratio analysis
+for metric_name, config in ratio_metrics.items():
+    metric = RatioMetric(
+        alias=f"{config['category']}__{metric_name}",
+        numerator_name=config['components'][0],
+        denominator_name=config['components'][1]
+    )
+    hypothesis_tests.append(
+        HypothesisTest(
+            metric=metric,
+            analysis_type="delta",
+            analysis_config={
+                "scale_col": metric.denominator_name,
+                "cluster_cols": ["user_id"]
+            }
+        )
+    )
+
+# 2. Absolute metrics: use standard OLS
+for metric_name, category in absolute_metrics.items():
+    metric = SimpleMetric(
+        alias=f"{category}__{metric_name}",
+        name=metric_name
+    )
+    hypothesis_tests.append(
+        HypothesisTest(
+            metric=metric,
+            analysis_type="ols"
+        )
+    )
+
+# Create and run analysis plan
+analysis_plan = AnalysisPlan(
+    tests=hypothesis_tests,
+    variants=variants,
+    variant_col='variant'
+)
+
+results = analysis_plan.analyze(data, verbose=True)
+results_df = results.to_dataframe()
+print(results_df)
 ```
 
-**Output**: A comprehensive scorecard with treatment effects, confidence intervals, and p-values for each metric:
+**Output**: A comprehensive scorecard with treatment effects, confidence intervals, and p-values:
 
 ```
-        metric  control_mean  treatment_mean  ...  p_value  ci_lower  ci_upper
-0  conversions         0.485           0.532  ...    0.023     0.006     0.088
-1  conversion_rate     0.048           0.053  ...    0.031     0.0004    0.009
+  metric_alias                    control  treatment    ate   p_value  ...
+  conversion__conversion_rate      0.250     0.303   +20.9%   < 0.001  ...
+  revenue__orders                  2.510     3.005   +19.7%   < 0.001  ...
 ```
 
-This simple example demonstrates:
-- ✅ Working with both **simple** and **ratio metrics**
-- ✅ Easy experiment setup with **dictionary-based configuration**
-- ✅ Statistical inference with **confidence intervals and p-values**
-- ✅ **Automatic scorecard generation** for multiple metrics
+This example demonstrates:
+- ✅ **Organized metric definitions** - Group metrics by type and category
+- ✅ **Multiple analysis methods** - Delta method for ratios, OLS for totals
+- ✅ **Scalable** - Easy to add more metrics by updating dictionaries
 
 ---
 
@@ -157,7 +191,7 @@ For detailed guides, API references, and advanced examples, visit our [**documen
 
 ---
 
-## 🎯 Core Concepts
+##  Core Concepts
 
 The library is built around three main components:
 
@@ -189,7 +223,7 @@ For **power analysis**, combine these with:
 
 ---
 
-## 🔍 When to Use cluster-experiments
+## When to Use cluster-experiments
 
 ✅ **Use cluster-experiments when you need to:**
 - Design and analyze **cluster-randomized experiments**
@@ -200,81 +234,117 @@ For **power analysis**, combine these with:
 - Analyze **multiple metrics** with dimensional slicing
 - Work with **ratio metrics** (rates, averages, etc.)
 
-📊 **Perfect for:**
-- Marketplace/platform experiments (drivers, restaurants, stores)
+ **Perfect for:**
+ - A/B tests
+- Marketplace/platform experiments (drivers, restaurants, stores,...)
 - Geographic experiments (cities, regions)
 - Time-based tests (switchbacks, dayparting)
-- Standard A/B tests with advanced analysis needs
 
 ---
 
 ## 🛠️ Advanced Features
 
-### Variance Reduction with CUPAC
+### Variance Reduction (CUPED/CUPAC)
 
-Reduce variance by leveraging pre-experiment data:
+Reduce variance and detect smaller effects by leveraging pre-experiment data. Use historical metrics as covariates to control for pre-existing differences between groups.
 
-```python
-from cluster_experiments import AnalysisPlan, TargetAggregation, HypothesisTest, SimpleMetric, Variant
+**Use cases:**
+- Have pre-experiment metrics for your users/clusters
+- Want to detect smaller treatment effects
+- Need more sensitive tests with same sample size
 
-# Define CUPAC model
-cupac_model = TargetAggregation(
-    agg_col="customer_id",
-    target_col="order_value"
-)
+See the [CUPAC Example](https://david26694.github.io/cluster-experiments/cupac_example.html) for detailed implementation.
 
-# Create hypothesis test with CUPAC
-test = HypothesisTest(
-    metric=SimpleMetric(alias="revenue", name="order_value"),
-    analysis_type="clustered_ols",
-    analysis_config={
-        "cluster_cols": ["customer_id"],
-        "covariates": ["customer_age", "estimate_order_value"],
-    },
-    cupac_config={
-        "cupac_model": cupac_model,
-        "target_col": "order_value",
-    },
-)
+### Cluster Randomization
 
-plan = AnalysisPlan(
-    tests=[test],
-    variants=[Variant("control", is_control=True), Variant("treatment")],
-    variant_col="variant",
-)
+Handle experiments where randomization occurs at group level (stores, cities, regions) rather than individual level. Essential for managing spillover effects and operational constraints.
 
-# Analyze with pre-experiment data
-results = plan.analyze(experiment_df, pre_experiment_df)
-```
+See the [Cluster Randomization Guide](https://david26694.github.io/cluster-experiments/examples/cluster_randomization.html) for details.
 
-### Power Analysis
+### Switchback Experiments
 
-Estimate the power of your experiment design:
+Design and analyze time-based crossover experiments where the same units receive both control and treatment at different times.
+
+See the [Switchback Example](https://david26694.github.io/cluster-experiments/switchback.html) for implementation.
+
+---
+
+## Power Analysis
+
+Design your experiment by estimating required sample size and detectable effects. Here's a complete example using **analytical (CLT-based) power analysis**:
 
 ```python
-from cluster_experiments import PowerAnalysis, NormalPowerAnalysis
-from cluster_experiments import ClusteredSplitter, ConstantPerturbator, ClusteredOLSAnalysis
+import numpy as np
+import pandas as pd
+from cluster_experiments import NormalPowerAnalysis
 
-# Simulation-based power analysis
-power_sim = PowerAnalysis(
-    splitter=ClusteredSplitter(cluster_cols=['city']),
-    perturbator=ConstantPerturbator(average_effect=0.1),
-    analysis=ClusteredOLSAnalysis(cluster_cols=['city']),
-    n_simulations=1000
-)
+# Create sample historical data
+np.random.seed(42)
+N = 500
 
-power = power_sim.power_analysis(historical_data, average_effect=0.1)
-print(f"Estimated power: {power:.2%}")
-
-# Analytical power analysis (faster for standard designs)
-power_analytical = NormalPowerAnalysis.from_dict({
-    'cluster_cols': ['city'],
-    'analysis': 'clustered_ols'
+historical_data = pd.DataFrame({
+    'user_id': range(N),
+    'metric': np.random.normal(100, 20, N),
+    'date': pd.to_datetime('2025-10-01') + pd.to_timedelta(np.random.randint(0, 30, N), unit='d')
 })
 
-mde = power_analytical.mde(historical_data, power=0.8)
-print(f"Minimum Detectable Effect at 80% power: {mde:.4f}")
+# Initialize analytical power analysis (fast, CLT-based)
+power_analysis = NormalPowerAnalysis.from_dict({
+    'analysis': 'ols',
+    'splitter': 'non_clustered',
+    'target_col': 'metric',
+    'time_col': 'date'  # Required for mde_time_line
+})
+
+# 1. Calculate power for a given effect size
+power = power_analysis.power_analysis(historical_data, average_effect=5.0)
+print(f"Power for detecting +5 unit effect: {power:.1%}")
+
+# 2. Calculate Minimum Detectable Effect (MDE) for desired power
+mde = power_analysis.mde(historical_data, power=0.8)
+print(f"Minimum detectable effect at 80% power: {mde:.2f}")
+
+# 3. Power curve: How power changes with effect size
+power_curve = power_analysis.power_line(
+    historical_data,
+    average_effects=[2.0, 4.0, 6.0, 8.0, 10.0]
+)
+
+# 4. MDE timeline: How MDE changes with experiment length
+mde_timeline = power_analysis.mde_time_line(
+    historical_data,
+    powers=[0.8],
+    experiment_length=[7, 14, 21, 30]
+)
 ```
+
+**Output:**
+```
+Power for detecting +5 unit effect: 81.1%
+Minimum detectable effect at 80% power: 4.93
+
+Power Curve:
+  effect  power
+    2.0   20.6%
+    4.0   62.2%
+    6.0   92.6%
+    8.0   99.5%
+   10.0  100.0%
+
+MDE Timeline (experiment length → MDE):
+   7 days: 10.64
+  14 days:  7.62
+  21 days:  6.14
+  30 days:  4.93
+```
+
+**Key methods:**
+- `power_analysis()`: Calculate power for a given effect
+- `mde()`: Calculate minimum detectable effect
+- `power_line()`: Generate power curves across effect sizes
+- `mde_time_line()`: Calculate MDE for different experiment lengths
+
+For simulation-based power analysis (for complex designs), see the [Power Analysis Guide](https://david26694.github.io/cluster-experiments/power_analysis_guide.html).
 
 ---
 

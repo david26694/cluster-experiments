@@ -11,7 +11,7 @@ site_dir: site
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
-  - Power Analysis Guide: power_analysis_guide.md
+  - Power Analysis: normal_power_lines.ipynb
   
   - API Reference:
       - Experiment Analysis:
