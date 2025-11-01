@@ -1,139 +1,231 @@
 <img src="theme/icon-cluster.png" width=200 height=200 align="right">
 
-# cluster_experiments
+# cluster-experiments
 
 [![Downloads](https://static.pepy.tech/badge/cluster-experiments)](https://pepy.tech/project/cluster-experiments)
-[![PyPI](https://img.shields.io/pypi/v/cluster-experiments)](
-https://pypi.org/project/cluster-experiments/)
+[![PyPI](https://img.shields.io/pypi/v/cluster-experiments)](https://pypi.org/project/cluster-experiments/)
 [![Unit tests](https://github.com/david26694/cluster-experiments/workflows/Release%20unit%20Tests/badge.svg)](https://github.com/david26694/cluster-experiments/actions)
-[![CodeCov](
-https://codecov.io/gh/david26694/cluster-experiments/branch/main/graph/badge.svg)](https://app.codecov.io/gh/david26694/cluster-experiments/)
+[![CodeCov](https://codecov.io/gh/david26694/cluster-experiments/branch/main/graph/badge.svg)](https://app.codecov.io/gh/david26694/cluster-experiments/)
 ![License](https://img.shields.io/github/license/david26694/cluster-experiments)
 [![Pypi version](https://img.shields.io/pypi/pyversions/cluster-experiments.svg)](https://pypi.python.org/pypi/cluster-experiments)
 
-**`cluster experiments`** is a comprehensive Python library for end-to-end A/B testing workflows.
+**`cluster-experiments`** is a comprehensive Python library for **end-to-end A/B testing workflows**, from experiment design to statistical analysis.
+
+## 📖 What is cluster-experiments?
+
+`cluster-experiments` provides a complete toolkit for designing, running, and analyzing experiments, with particular strength in handling **clustered randomization** and complex experimental designs. Originally developed to address challenges in **switchback experiments** and scenarios with **network effects** where standard randomization isn't feasible, it has evolved into a general-purpose experimentation framework supporting both simple A/B tests and sophisticated designs.
+
+### Why "cluster"?
+
+The name reflects the library's origins in handling **cluster-randomized experiments**, where randomization happens at a group level (e.g., stores, cities, time periods) rather than at the individual level. This is critical when:
+
+- **Spillover/Network Effects**: Treatment of one unit affects others (e.g., testing driver incentives in ride-sharing)
+- **Operational Constraints**: You can't randomize individuals (e.g., testing restaurant menu changes)
+- **Switchback Designs**: Treatment alternates over time periods within the same unit
+
+While the library excels at these complex scenarios, it's equally capable of handling standard A/B tests with individual-level randomization.
 
 ---
 
 ## 🚀 Key Features
 
-### 📌 Experiment Design & Planning
-- **Power analysis** and **Minimal Detectable Effect (MDE)** estimation
-  - **Normal Approximation (CLT-based)**: Fast, analytical formulas assuming approximate normality
-    - Best for large sample sizes and standard A/B tests
-  - **Monte Carlo Simulation**: Empirically estimate power or MDE by simulating many experiments
-    - Ideal for complex or non-standard designs (e.g., clustering, non-normal outcomes)
+### 📊 **Comprehensive Experiment Design**
+- **Power Analysis & Sample Size Calculation**
+  - Simulation-based (Monte Carlo) for any design complexity
+  - Analytical (CLT-based) for standard designs
+  - Minimal Detectable Effect (MDE) estimation
+  
+- **Multiple Experimental Designs**
+  - Standard A/B tests with individual randomization
+  - Cluster-randomized experiments
+  - Switchback/crossover experiments
+  - Stratified randomization
+  - Observational studies with Synthetic Control
 
-- Supports complex **experimental designs**, including:
-  - 🏢 **Cluster randomization**
-  - 🔄 **Switchback experiments**
-  - 📊 **Observational studies**, including **synthetic control**
+### 🔬 **Advanced Statistical Methods**
+- **Multiple Analysis Methods**
+  - OLS and Clustered OLS regression
+  - T-tests and Paired T-tests
+  - GEE (Generalized Estimating Equations)
+  - Mixed Linear Models (MLM)
+  - Delta Method for ratio metrics
+  - Synthetic Control for observational data
 
-### 🧪 Statistical Methods for Analysis
-- 📌 **Ordinary Least Squares (OLS)** and **Clustered OLS**, with support for covariates
-- 🎯 **Variance Reduction Techniques**: **CUPED** and **CUPAC**
+- **Variance Reduction Techniques**
+  - CUPED (Controlled-experiment Using Pre-Experiment Data)
+  - CUPAC (CUPED with Pre-experiment Aggregations)
+  - Covariate adjustment
 
-### 📈 Scalable Experiment Analysis with Scorecards
-- Generate **Scorecards** to summarize experiment results, allowing analysis for multiple metrics
-- Include **confidence intervals, relative and absolute effect sizes, p-values**,
+### 📈 **Scalable Analysis Workflow**
+- **Scorecard Generation**: Analyze multiple metrics simultaneously
+- **Multi-dimensional Slicing**: Break down results by segments
+- **Multiple Treatment Arms**: Compare several treatments at once
+- **Ratio Metrics**: Built-in support for conversion rates, averages, etc.
 
-`cluster experiments` empowers analysts and data scientists with **scalable, reproducible, and statistically robust** A/B testing workflows.
+---
 
-🔗 **Get Started:** [Documentation Link]
+## 📦 Installation
 
-📦 **Installation:**
-```sh
+```bash
 pip install cluster-experiments
-=======
-# MDE calculation
-mde = npw.mde(df, power=0.8)
-
-# MDE line with length
-mde_timeline = npw.mde_time_line(
-    df,
-    powers=[0.8],
-    experiment_length=[7, 14, 21]
-)
-
-print(power, power_line_normal, power_normal, mde, mde_timeline)
 ```
-### Experiment Analysis Example
+
+---
+
+## ⚡ Quick Example
+
+Here's a simple example showing how to analyze an experiment with two metrics: a simple metric (conversions) and a ratio metric (conversion rate).
 
 ```python
-import numpy as np
 import pandas as pd
+import numpy as np
 from cluster_experiments import AnalysisPlan
 
-N = 1_000
-experiment_data = pd.DataFrame({
-    "order_value": np.random.normal(100, 10, size=N),
-    "delivery_time": np.random.normal(10, 1, size=N),
-    "experiment_group": np.random.choice(["control", "treatment"], size=N),
-    "city": np.random.choice(["NYC", "LA"], size=N),
-    "customer_id": np.random.randint(1, 100, size=N),
-    "customer_age": np.random.randint(20, 60, size=N),
+# Simulate experiment data
+np.random.seed(42)
+n_users = 1000
+
+data = pd.DataFrame({
+    'user_id': range(n_users),
+    'variant': np.random.choice(['control', 'treatment'], n_users),
+    'orders': np.random.poisson(2.5, n_users),  # Number of orders (simple metric)
+    'visits': np.random.poisson(10, n_users),   # Number of visits (for ratio)
 })
 
-# Create analysis plan
-plan = AnalysisPlan.from_metrics_dict({
-    "metrics": [
-        {"alias": "AOV", "name": "order_value"},
-        {"alias": "delivery_time", "name": "delivery_time"},
+# Add a small treatment effect to orders
+data.loc[data['variant'] == 'treatment', 'orders'] += np.random.poisson(0.5, (data['variant'] == 'treatment').sum())
+
+# Calculate conversions (users who ordered)
+data['converted'] = (data['orders'] > 0).astype(int)
+
+# Define analysis plan
+analysis_plan = AnalysisPlan.from_metrics_dict({
+    'metrics': [
+        # Simple metric: total conversions
+        {
+            'alias': 'conversions',
+            'name': 'converted',
+            'metric_type': 'simple'
+        },
+        # Ratio metric: conversion rate (conversions / visits)
+        {
+            'alias': 'conversion_rate', 
+            'metric_type': 'ratio',
+            'numerator': 'converted',
+            'denominator': 'visits'
+        },
     ],
-    "variants": [
-        {"name": "control", "is_control": True},
-        {"name": "treatment", "is_control": False},
+    'variants': [
+        {'name': 'control', 'is_control': True},
+        {'name': 'treatment', 'is_control': False},
     ],
-    "variant_col": "experiment_group",
-    "alpha": 0.05,
-    "dimensions": [
-        {"name": "city", "values": ["NYC", "LA"]},
-    ],
-    "analysis_type": "clustered_ols",
-    "analysis_config": {"cluster_cols": ["customer_id"]},
+    'variant_col': 'variant',
+    'analysis_type': 'ols',  # Use OLS for simple A/B test
 })
+
 # Run analysis
-print(plan.analyze(experiment_data).to_dataframe())
+results = analysis_plan.analyze(data)
+
+# View results as a dataframe
+print(results.to_dataframe())
 ```
 
-### Variance Reduction Example
+**Output**: A comprehensive scorecard with treatment effects, confidence intervals, and p-values for each metric:
+
+```
+        metric  control_mean  treatment_mean  ...  p_value  ci_lower  ci_upper
+0  conversions         0.485           0.532  ...    0.023     0.006     0.088
+1  conversion_rate     0.048           0.053  ...    0.031     0.0004    0.009
+```
+
+This simple example demonstrates:
+- ✅ Working with both **simple** and **ratio metrics**
+- ✅ Easy experiment setup with **dictionary-based configuration**
+- ✅ Statistical inference with **confidence intervals and p-values**
+- ✅ **Automatic scorecard generation** for multiple metrics
+
+---
+
+## 📚 Documentation
+
+For detailed guides, API references, and advanced examples, visit our [**documentation**](https://david26694.github.io/cluster-experiments/).
+
+### Key Resources
+- [**Quickstart Guide**](https://david26694.github.io/cluster-experiments/quickstart.html): Get up and running in minutes
+- [**API Reference**](https://david26694.github.io/cluster-experiments/api/experiment_analysis.html): Detailed class and method documentation
+- [**Example Gallery**](https://david26694.github.io/cluster-experiments/cupac_example.html): Real-world use cases and patterns
+
+---
+
+## 🎯 Core Concepts
+
+The library is built around three main components:
+
+### 1. **Splitter** - Define how to randomize
+Choose how to split your data into control and treatment groups:
+- `NonClusteredSplitter`: Standard individual-level randomization
+- `ClusteredSplitter`: Cluster-level randomization
+- `SwitchbackSplitter`: Time-based alternating treatments
+- `StratifiedClusteredSplitter`: Balance randomization across strata
+
+### 2. **Analysis** - Measure the impact
+Select the appropriate statistical method for your design:
+- `OLSAnalysis`: Standard regression for A/B tests
+- `ClusteredOLSAnalysis`: Clustered standard errors for cluster-randomized designs
+- `TTestClusteredAnalysis`: T-tests on cluster-aggregated data
+- `GeeExperimentAnalysis`: GEE for correlated observations
+- `SyntheticControlAnalysis`: Observational studies with synthetic controls
+
+### 3. **AnalysisPlan** - Orchestrate your analysis
+Define your complete analysis workflow:
+- Specify metrics (simple and ratio)
+- Define variants and dimensions
+- Configure hypothesis tests
+- Generate comprehensive scorecards
+
+For **power analysis**, combine these with:
+- **Perturbator**: Simulate treatment effects for power calculations
+- **PowerAnalysis**: Estimate statistical power and sample sizes
+
+---
+
+## 🔍 When to Use cluster-experiments
+
+✅ **Use cluster-experiments when you need to:**
+- Design and analyze **cluster-randomized experiments**
+- Handle **switchback/crossover designs**
+- Account for **network effects or spillover**
+- Perform **power analysis** for complex designs
+- Reduce variance with **CUPED/CUPAC**
+- Analyze **multiple metrics** with dimensional slicing
+- Work with **ratio metrics** (rates, averages, etc.)
+
+📊 **Perfect for:**
+- Marketplace/platform experiments (drivers, restaurants, stores)
+- Geographic experiments (cities, regions)
+- Time-based tests (switchbacks, dayparting)
+- Standard A/B tests with advanced analysis needs
+
+---
+
+## 🛠️ Advanced Features
+
+### Variance Reduction with CUPAC
+
+Reduce variance by leveraging pre-experiment data:
 
 ```python
-import numpy as np
-import pandas as pd
-from cluster_experiments import (
-    AnalysisPlan,
-    SimpleMetric,
-    Variant,
-    Dimension,
-    TargetAggregation,
-    HypothesisTest
-)
+from cluster_experiments import AnalysisPlan, TargetAggregation, HypothesisTest, SimpleMetric, Variant
 
-N = 1000
-
-experiment_data = pd.DataFrame({
-    "order_value": np.random.normal(100, 10, size=N),
-    "delivery_time": np.random.normal(10, 1, size=N),
-    "experiment_group": np.random.choice(["control", "treatment"], size=N),
-    "city": np.random.choice(["NYC", "LA"], size=N),
-    "customer_id": np.random.randint(1, 100, size=N),
-    "customer_age": np.random.randint(20, 60, size=N),
-})
-
-pre_experiment_data = pd.DataFrame({
-    "order_value": np.random.normal(100, 10, size=N),
-    "customer_id": np.random.randint(1, 100, size=N),
-})
-
-# Define test
+# Define CUPAC model
 cupac_model = TargetAggregation(
     agg_col="customer_id",
     target_col="order_value"
 )
 
-hypothesis_test = HypothesisTest(
-    metric=SimpleMetric(alias="AOV", name="order_value"),
+# Create hypothesis test with CUPAC
+test = HypothesisTest(
+    metric=SimpleMetric(alias="revenue", name="order_value"),
     analysis_type="clustered_ols",
     analysis_config={
         "cluster_cols": ["customer_id"],
@@ -145,81 +237,81 @@ hypothesis_test = HypothesisTest(
     },
 )
 
-# Create analysis plan
 plan = AnalysisPlan(
-    tests=[hypothesis_test],
-    variants=[
-        Variant("control", is_control=True),
-        Variant("treatment", is_control=False),
-    ],
-    variant_col="experiment_group",
+    tests=[test],
+    variants=[Variant("control", is_control=True), Variant("treatment")],
+    variant_col="variant",
 )
 
-# Run analysis
-results = plan.analyze(experiment_data, pre_experiment_data)
-print(results.to_dataframe())
+# Analyze with pre-experiment data
+results = plan.analyze(experiment_df, pre_experiment_df)
 ```
 
-## Installation
+### Power Analysis
 
-You can install this package via `pip`.
+Estimate the power of your experiment design:
 
-```bash
-pip install cluster-experiments
+```python
+from cluster_experiments import PowerAnalysis, NormalPowerAnalysis
+from cluster_experiments import ClusteredSplitter, ConstantPerturbator, ClusteredOLSAnalysis
+
+# Simulation-based power analysis
+power_sim = PowerAnalysis(
+    splitter=ClusteredSplitter(cluster_cols=['city']),
+    perturbator=ConstantPerturbator(average_effect=0.1),
+    analysis=ClusteredOLSAnalysis(cluster_cols=['city']),
+    n_simulations=1000
+)
+
+power = power_sim.power_analysis(historical_data, average_effect=0.1)
+print(f"Estimated power: {power:.2%}")
+
+# Analytical power analysis (faster for standard designs)
+power_analytical = NormalPowerAnalysis.from_dict({
+    'cluster_cols': ['city'],
+    'analysis': 'clustered_ols'
+})
+
+mde = power_analytical.mde(historical_data, power=0.8)
+print(f"Minimum Detectable Effect at 80% power: {mde:.4f}")
 ```
 
-For detailed documentation and examples, visit our [documentation site](https://david26694.github.io/cluster-experiments/).
+---
 
-## Features
+## 🤝 Contributing
 
-The library offers the following classes:
+We welcome contributions! See our [Contributing Guidelines](CONTRIBUTING.md) for details on how to:
+- Report bugs
+- Suggest features
+- Submit pull requests
+- Write documentation
 
-* Regarding power analysis:
-    * `PowerAnalysis`: to run power analysis on any experiment design, using simulation
-    * `PowerAnalysisWithPreExperimentData`: to run power analysis on a clustered/switchback design, but adding pre-experiment df during split and perturbation (especially useful for Synthetic Control)
-    * `NormalPowerAnalysis`: to run power analysis on any experiment design using the central limit theorem for the distribution of the estimator. It can be used to compute the minimum detectable effect (MDE) for a given power level.
-    * `ConstantPerturbator`: to artificially perturb treated group with constant perturbations
-    * `BinaryPerturbator`: to artificially perturb treated group for binary outcomes
-    * `RelativePositivePerturbator`: to artificially perturb treated group with relative positive perturbations
-    * `RelativeMixedPerturbator`: to artificially perturb treated group with relative perturbations for positive and negative targets
-    * `NormalPerturbator`: to artificially perturb treated group with normal distribution perturbations
-    * `BetaRelativePositivePerturbator`: to artificially perturb treated group with relative positive beta distribution perturbations
-    * `BetaRelativePerturbator`: to artificially perturb treated group with relative beta distribution perturbations in a specified support interval
-    * `SegmentedBetaRelativePerturbator`: to artificially perturb treated group with relative beta distribution perturbations in a specified support interval, but using clusters
-* Regarding splitting data:
-    * `ClusteredSplitter`: to split data based on clusters
-    * `FixedSizeClusteredSplitter`: to split data based on clusters with a fixed size (example: only 1 treatment cluster and the rest in control)
-    * `BalancedClusteredSplitter`: to split data based on clusters in a balanced way
-    * `NonClusteredSplitter`: Regular data splitting, no clusters
-    * `StratifiedClusteredSplitter`: to split based on clusters and strata, balancing the number of clusters in each stratus
-    * `RepeatedSampler`: for backtests where we have access to counterfactuals, does not split the data, just duplicates the data for all groups
-    * Switchback splitters (the same can be done with clustered splitters, but there is a convenient way to define switchback splitters using switch frequency):
-        * `SwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments
-        * `BalancedSwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments, balancing treatment and control among all clusters
-        * `StratifiedSwitchbackSplitter`: to split data based on clusters and dates, for switchback experiments, balancing the number of clusters in each stratus
-        * Washover for switchback experiments:
-            * `EmptyWashover`: no washover done at all.
-            * `ConstantWashover`: accepts a timedelta parameter and removes the data when we switch from A to B for the timedelta interval.
-* Regarding analysis methods:
-    * `GeeExperimentAnalysis`: to run GEE analysis on the results of a clustered design
-    * `MLMExperimentAnalysis`: to run Mixed Linear Model analysis on the results of a clustered design
-    * `TTestClusteredAnalysis`: to run a t-test on aggregated data for clusters
-    * `PairedTTestClusteredAnalysis`: to run a paired t-test on aggregated data for clusters
-    * `ClusteredOLSAnalysis`: to run OLS analysis on the results of a clustered design
-    * `OLSAnalysis`: to run OLS analysis for non-clustered data
-    * `DeltaMethodAnalysis`: to run Delta Method Analysis for clustered designs
-    * `TargetAggregation`: to add pre-experimental data of the outcome to reduce variance
-    * `SyntheticControlAnalysis`: to run synthetic control analysis
-* Regarding experiment analysis workflow:
-    * `Metric`: abstract class to define a metric to be used in the analysis
-    * `SimpleMetric`: to create a metric defined at the same level of the data used for the analysis
-    * `RatioMetric`: to create a metric defined at a lower level than the data used for the analysis
-    * `Variant`: to define a variant of the experiment
-    * `Dimension`: to define a dimension to slice the results of the experiment
-    * `HypothesisTest`: to define a Hypothesis Test with a metric, analysis method, optional analysis configuration, and optional dimensions
-    * `AnalysisPlan`: to define a plan of analysis with a list of Hypothesis Tests for a dataset and the experiment variants. The `analyze()` method runs the analysis and returns the results
-    * `AnalysisResults`: to store the results of an analysis
-* Other:
-    * `PowerConfig`: to conveniently configure `PowerAnalysis` class
-    * `ConfidenceInterval`: to store the data representation of a confidence interval
-    * `InferenceResults`: to store the structure of complete statistical analysis results
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🌟 Support
+
+- ⭐ Star us on [GitHub](https://github.com/david26694/cluster-experiments)
+- 📝 Read the [documentation](https://david26694.github.io/cluster-experiments/)
+- 🐛 Report issues on our [issue tracker](https://github.com/david26694/cluster-experiments/issues)
+- 💬 Join discussions in [GitHub Discussions](https://github.com/david26694/cluster-experiments/discussions)
+
+---
+
+## 📚 Citation
+
+If you use cluster-experiments in your research, please cite:
+
+```bibtex
+@software{cluster_experiments,
+  author = {David Masip and contributors},
+  title = {cluster-experiments: A Python library for designing and analyzing experiments},
+  url = {https://github.com/david26694/cluster-experiments},
+  year = {2022}
+}
+```

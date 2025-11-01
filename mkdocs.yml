@@ -9,45 +9,58 @@ docs_dir: docs
 site_dir: site
 
 nav:
-  - Home: ../README.md
+  - Home: index.md
   - Quickstart: quickstart.md
-  - Core Documentation:
-      - API:
-        - Experiment analysis methods: api/experiment_analysis.md
-        - Perturbators: api/perturbator.md
-        - Splitter: api/random_splitter.md
-        - Pre experiment outcome model: api/cupac_model.md
-        - Power config: api/power_config.md
-        - Power analysis: api/power_analysis.md
-        - Washover: api/washover.md
-        - Metric: api/metric.md
-        - Variant: api/variant.md
-        - Dimension: api/dimension.md
-        - Hypothesis Test: api/hypothesis_test.md
-        - Analysis Plan: api/analysis_plan.md
-  - Usage Examples:
+  - Power Analysis Guide: power_analysis_guide.md
+  
+  - API Reference:
+      - Experiment Analysis:
+          - Analysis Plan: api/analysis_plan.md
+          - Analysis Results: api/analysis_results.md
+          - Experiment Analysis Methods: api/experiment_analysis.md
+          - Hypothesis Test: api/hypothesis_test.md
+      - Metrics & Variants:
+          - Metric: api/metric.md
+          - Variant: api/variant.md
+          - Dimension: api/dimension.md
+      - Power Analysis:
+          - Power Analysis: api/power_analysis.md
+          - Power Config: api/power_config.md
+      - Randomization:
+          - Splitters: api/random_splitter.md
       - Variance Reduction:
-          - CUPAC: cupac_example.ipynb
+          - CUPAC Model: api/cupac_model.md
       - Switchback:
-          - Stratified switchback: switchback.ipynb
-          - Switchback calendar visualization: plot_calendars.ipynb
-          - Visualization - 4-hour switches: plot_calendars_hours.ipynb
-      - Multiple treatments: multivariate.ipynb
-      - AA test clustered: aa_test.ipynb
-      - Paired T test: paired_ttest.ipynb
-      - Different hypotheses tests: analysis_with_different_hypotheses.ipynb
-      - Washover: washover_example.ipynb
-      - Normal Power:
-          - Compare with simulation: normal_power.ipynb
-          - Time-lines: normal_power_lines.ipynb
-      - Synthetic control: synthetic_control.ipynb
-      - Delta Method Analysis: delta_method.ipynb
-      - Experiment analysis workflow: experiment_analysis.ipynb
-  - Contribute:
-      - Contributing Guidelines: development/contributing.md
-      - Code Structure: development/code_structure.md
-      - Testing: development/testing.md
-      - Building Documentation: development/building_docs.md
+          - Washover: api/washover.md
+      - Perturbators: api/perturbator.md
+  
+  - Examples:
+      - Basic Usage:
+          - Simple A/B Test: examples/simple_ab_test.ipynb
+          - Experiment Analysis Workflow: experiment_analysis.ipynb
+          - AA Test (Clustered): aa_test.ipynb
+      - Analysis Methods:
+          - Different Hypothesis Tests: analysis_with_different_hypotheses.ipynb
+          - Paired T-Test: paired_ttest.ipynb
+          - Delta Method Analysis: delta_method.ipynb
+      - Variance Reduction:
+          - CUPAC Example: cupac_example.ipynb
+      - Cluster Experiments:
+          - Cluster Randomization: examples/cluster_randomization.ipynb
+      - Switchback Experiments:
+          - Stratified Switchback: switchback.ipynb
+          - Calendar Visualization: plot_calendars.ipynb
+          - 4-Hour Switches: plot_calendars_hours.ipynb
+          - Washover Example: washover_example.ipynb
+      - Power Analysis:
+          - Normal Power Comparison: normal_power.ipynb
+          - Power Time-Lines: normal_power_lines.ipynb
+      - Advanced Topics:
+          - Multiple Treatments: multivariate.ipynb
+          - Synthetic Control: synthetic_control.ipynb
+          - Custom Classes: create_custom_classes.ipynb
+  
+  - Contributing: CONTRIBUTING.md
 
 extra:
   social:

@@ -1,134 +1,298 @@
 # Quickstart
 
+Get started with `cluster-experiments` in minutes! This guide will walk you through installation and your first experiment analysis.
+
+---
+
 ## Installation
 
-You can install **Cluster Experiments** via pip:
+Install via pip:
 
 ```bash
 pip install cluster-experiments
 ```
 
-!!! info "Python Version Support"
-    **Cluster Experiments** requires **Python 3.9 or higher**. Make sure your environment meets this requirement before proceeding with the installation.
+!!! info "Requirements"
+    - **Python 3.9 or higher**
+    - Main dependencies: `pandas`, `numpy`, `scipy`, `statsmodels`
 
 ---
 
-## Usage
+## Your First Analysis (5 minutes)
 
-Designing and analyzing experiments can feel overwhelming at times. After formulating a testable hypothesis,
-you're faced with a series of routine tasks. From collecting and transforming raw data to measuring the statistical significance of your experiment results and constructing confidence intervals,
-it can quickly become a repetitive and error-prone process.
-*Cluster Experiments* is here to change that. Built on top of well-known packages like `pandas`, `numpy`, `scipy` and `statsmodels`,  it automates the core steps of an experiment, streamlining your workflow, saving you time and effort, while maintaining statistical rigor.
-## Key Features
-- **Modular Design**: Each component—`Splitter`, `Perturbator`, and `Analysis`—is independent, reusable, and can be combined in any way you need.
-- **Flexibility**: Whether you're conducting a simple A/B test or a complex clustered experiment, Cluster Experiments adapts to your needs.
-- **Statistical Rigor**: Built-in support for advanced statistical methods ensures that your experiments maintain high standards, including clustered standard errors and variance reduction techniques like CUPED and CUPAC.
-
-The core functionality of *Cluster Experiments* revolves around several intuitive, self-contained classes and methods:
-
-- **Splitter**: Define how your control and treatment groups are split.
-- **Perturbator**: Specify the type of effect you want to test.
-- **Analysis**: Perform statistical inference to measure the impact of your experiment.
-
-
----
-
-### `Splitter`: Defining Control and Treatment Groups
-
-The `Splitter` classes are responsible for dividing your data into control and treatment groups. The way you split your data depends on the **metric** (e.g., simple, ratio) you want to observe and the unit of observation (e.g., users, sessions, time periods).
-
-#### Features:
-
-- **Randomized Splits**: Simple random assignment of units to control and treatment groups.
-- **Stratified Splits**: Ensure balanced representation of key segments (e.g., geographic regions, user cohorts).
-- **Time-Based Splits**: Useful for switchback experiments or time-series data.
+Let's analyze a simple A/B test with multiple metrics. This is the most common use case.
 
 ```python
-from cluster_experiments import RandomSplitter
+import pandas as pd
+import numpy as np
+from cluster_experiments import AnalysisPlan
 
-splitter = RandomSplitter(
-    cluster_cols=["cluster_id"],  # Split by clusters
-    treatment_col="treatment",    # Name of the treatment column
-)
+# Simulate experiment data
+np.random.seed(42)
+n_users = 1000
+
+data = pd.DataFrame({
+    'user_id': range(n_users),
+    'variant': np.random.choice(['control', 'treatment'], n_users),
+    'orders': np.random.poisson(2.5, n_users),
+    'visits': np.random.poisson(10, n_users),
+})
+
+# Add treatment effect
+data.loc[data['variant'] == 'treatment', 'orders'] += np.random.poisson(0.5, (data['variant'] == 'treatment').sum())
+data['converted'] = (data['orders'] > 0).astype(int)
+
+# Define analysis plan
+analysis_plan = AnalysisPlan.from_metrics_dict({
+    'metrics': [
+        # Simple metric
+        {'alias': 'conversions', 'name': 'converted', 'metric_type': 'simple'},
+        # Ratio metric
+        {'alias': 'conversion_rate', 'metric_type': 'ratio', 
+         'numerator': 'converted', 'denominator': 'visits'},
+    ],
+    'variants': [
+        {'name': 'control', 'is_control': True},
+        {'name': 'treatment', 'is_control': False},
+    ],
+    'variant_col': 'variant',
+    'analysis_type': 'ols',
+})
+
+# Run analysis
+results = analysis_plan.analyze(data)
+print(results.to_dataframe())
+```
+
+**Output:** A comprehensive scorecard with treatment effects, confidence intervals, and p-values!
+
+---
+
+## Understanding Your Results
+
+The results dataframe includes:
+
+| Column | Description |
+|--------|-------------|
+| `metric` | Name of the metric being analyzed |
+| `control_mean` | Average value in control group |
+| `treatment_mean` | Average value in treatment group |
+| `ate` | Average Treatment Effect (absolute difference) |
+| `ate_ci_lower/upper` | 95% confidence interval for ATE |
+| `p_value` | Statistical significance (< 0.05 = significant) |
+| `relative_effect` | Percentage change (lift) |
+
+!!! tip "Interpreting Results"
+    - **p_value < 0.05**: Result is statistically significant
+    - **relative_effect**: Shows % change (e.g., 0.10 = 10% increase)
+    - **Confidence interval**: If it doesn't include 0, effect is significant
+
+---
+
+## Common Use Cases
+
+### 1. Analyzing an Experiment
+
+**When:** You've already run your experiment and have the data.
+
+**Example:** See [Simple A/B Test](examples/simple_ab_test.html) for a complete walkthrough.
+
+```python
+# Use AnalysisPlan with your experiment data
+results = analysis_plan.analyze(experiment_data)
 ```
 
 ---
 
-### `Perturbator`: Simulating the Treatment Effect
+### 2. Power Analysis (Sample Size Planning)
 
-The `Perturbator` classes define the type of effect you want to test. It simulates the treatment effect on your data, allowing you to evaluate the impact of your experiment.
+**When:** You're designing an experiment and need to know how many users/time you need.
 
-#### Features:
-
-- **Absolute Effects**: Add a fixed uplift to the treatment group.
-- **Relative Effects**: Apply a percentage-based uplift to the treatment group.
-- **Custom Effects**: Define your own effect size or distribution.
+**Example:** Calculate power or Minimum Detectable Effect (MDE).
 
 ```python
-from cluster_experiments import ConstantPerturbator
+from cluster_experiments import NormalPowerAnalysis
 
-perturbator = ConstantPerturbator(
-    average_effect=5.0  # Simulate a nominal 5% uplift
-)
+# Define your analysis setup
+power_analysis = NormalPowerAnalysis.from_dict({
+    'analysis': 'ols',
+    'splitter': 'non_clustered',
+})
+
+# Calculate MDE for 80% power
+mde = power_analysis.mde(historical_data, power=0.8)
+print(f"Need {mde:.2%} effect size for 80% power")
+
+# Or calculate power for a given effect size
+power = power_analysis.power_analysis(historical_data, average_effect=0.05)
+print(f"Power: {power:.1%}")
 ```
+
+**Learn more:** See [Power Analysis Guide](power_analysis_guide.html) for detailed explanation.
 
 ---
 
-### `Analysis`: Measuring the Impact
+### 3. Cluster Randomization
 
-Once your data is split and the treatment effect is applied, the `Analysis` component helps you measure the statistical significance of the experiment results. It provides tools for calculating effects, confidence intervals, and p-values.
+**When:** Randomization happens at group level (stores, cities) rather than individual level.
 
-You can use it for both **experiment design** (pre-experiment phase) and **analysis** (post-experiment phase).
+**Why:** Required when there are spillover effects or operational constraints.
 
-#### Features:
-
-- **Statistical Tests**: Perform t-tests, OLS regression, and other hypothesis tests.
-- **Effect Size**: Calculate both absolute and relative effects.
-- **Confidence Intervals**: Construct confidence intervals for your results.
-
-Example:
+**Example:**
 
 ```python
-from cluster_experiments import TTestClusteredAnalysis
-
-analysis = TTestClusteredAnalysis(
-    cluster_cols=["cluster_id"],  # Cluster-level analysis
-    treatment_col="treatment",    # Name of the treatment column
-    target_col="outcome"          # Metric to analyze
-)
+# Use clustered_ols for cluster-randomized experiments
+analysis_plan = AnalysisPlan.from_metrics_dict({
+    'metrics': [{'alias': 'revenue', 'name': 'purchase_amount'}],
+    'variants': [
+        {'name': 'control', 'is_control': True},
+        {'name': 'treatment', 'is_control': False},
+    ],
+    'variant_col': 'variant',
+    'analysis_type': 'clustered_ols',  # ← Key difference!
+    'analysis_config': {
+        'cluster_cols': ['store_id']  # ← Specify clustering variable
+    }
+})
 ```
+
+**Learn more:** See [Cluster Randomization Example](examples/cluster_randomization.html).
 
 ---
 
-### Putting It All Together for Experiment Design
+### 4. Variance Reduction (CUPAC/CUPED)
 
-You can combine all classes as inputs in the `PowerAnalysis` class, where you can analyze different experiment settings, power lines, and Minimal Detectable Effects (MDEs).
+**When:** You have pre-experiment data and want to reduce variance for more sensitive tests.
+
+**Benefits:** Detect smaller effects with same sample size.
+
+**Example:**
 
 ```python
-from cluster_experiments import PowerAnalysis
-from cluster_experiments import RandomSplitter, ConstantPerturbator, TTestClusteredAnalysis
+from cluster_experiments import TargetAggregation, HypothesisTest, SimpleMetric, Variant
 
-# Define the components
-splitter = RandomSplitter(cluster_cols=["cluster_id"], treatment_col="treatment")
-perturbator = ConstantPerturbator(average_effect=0.1)
-analysis = TTestClusteredAnalysis(cluster_cols=["cluster_id"], treatment_col="treatment", target_col="outcome")
-
-# Create the experiment
-experiment = PowerAnalysis(
-    perturbator=perturbator,
-    splitter=splitter,
-    analysis=analysis,
-    target_col="outcome",
-    treatment_col="treatment"
+# Define CUPAC model using pre-experiment data
+cupac_model = TargetAggregation(
+    agg_col="customer_id",
+    target_col="order_value"
 )
 
-# Run the experiment
-results = experiment.power_analysis()
+# Create hypothesis test with CUPAC
+test = HypothesisTest(
+    metric=SimpleMetric(alias="revenue", name="order_value"),
+    analysis_type="clustered_ols",
+    analysis_config={
+        "cluster_cols": ["customer_id"],
+        "covariates": ["customer_age", "estimate_order_value"],
+    },
+    cupac_config={
+        "cupac_model": cupac_model,
+        "target_col": "order_value",
+    },
+)
+
+plan = AnalysisPlan(
+    tests=[test],
+    variants=[Variant("control", is_control=True), Variant("treatment")],
+    variant_col="variant",
+)
+
+# Analyze with both experiment and pre-experiment data
+results = plan.analyze(experiment_data, pre_experiment_data)
+```
+
+**Learn more:** See [CUPAC Example](cupac_example.html).
+
+---
+
+## Ratio Metrics
+
+`cluster-experiments` has built-in support for ratio metrics (e.g., conversion rate, average order value).
+
+```python
+# Ratio metric: conversions / visits
+{
+    'alias': 'conversion_rate',
+    'metric_type': 'ratio',
+    'numerator': 'converted',      # Numerator column
+    'denominator': 'visits'         # Denominator column
+}
+```
+
+The library automatically handles the statistical complexities of ratio metrics using the Delta Method.
+
+---
+
+## Multi-Dimensional Analysis
+
+Slice your results by dimensions (e.g., city, device type):
+
+```python
+analysis_plan = AnalysisPlan.from_metrics_dict({
+    'metrics': [...],
+    'variants': [...],
+    'variant_col': 'variant',
+    'dimensions': [
+        {'name': 'city', 'values': ['NYC', 'LA', 'Chicago']},
+        {'name': 'device', 'values': ['mobile', 'desktop']},
+    ],
+    'analysis_type': 'ols',
+})
+```
+
+Results will include treatment effects for each dimension slice!
+
+---
+
+## Quick Reference
+
+### Analysis Types
+
+Choose the appropriate analysis method:
+
+| Analysis Type | When to Use |
+|--------------|-------------|
+| `ols` | Standard A/B test, individual randomization |
+| `clustered_ols` | Cluster randomization (stores, cities, etc.) |
+| `gee` | Repeated measures, correlated observations |
+| `mlm` | Multi-level/hierarchical data |
+| `synthetic_control` | Observational studies, no randomization |
+
+### Dictionary vs Class-Based API
+
+Two ways to define analysis plans:
+
+**Dictionary (simpler):**
+```python
+plan = AnalysisPlan.from_metrics_dict({...})
+```
+
+**Class-based (more control):**
+```python
+from cluster_experiments import HypothesisTest, SimpleMetric, Variant
+
+plan = AnalysisPlan(
+    tests=[HypothesisTest(metric=SimpleMetric(...), ...)],
+    variants=[Variant(...)],
+    variant_col='variant'
+)
 ```
 
 ---
 
 ## Next Steps
 
-- Explore the **Core Documentation** for detailed explanations of each component.
-- Check out the **Usage Examples** for practical applications of the package.
+Now that you've completed your first analysis, explore:
+
+- 📖 **[API Reference](api/experiment_analysis.html)** - Detailed documentation for all classes
+- **[Example Gallery](cupac_example.html)** - Real-world use cases and patterns
+- **[Power Analysis Guide](power_analysis_guide.html)** - Design experiments with confidence
+- 🤝 **[Contributing](../CONTRIBUTING.md)** - Help improve the library
+
+---
+
+## Getting Help
+
+- 📝 [Documentation](https://david26694.github.io/cluster-experiments/)
+- 🐛 [Report Issues](https://github.com/david26694/cluster-experiments/issues)
+- 💬 [Discussions](https://github.com/david26694/cluster-experiments/discussions)
