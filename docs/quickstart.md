@@ -18,102 +18,66 @@ pip install cluster-experiments
 
 ---
 
-## Your First Analysis (5 minutes)
+## 1. Your First Analysis
 
-Let's analyze a simple A/B test with multiple metrics. This is the most common use case.
+Let's analyze a simple A/B test with multiple metrics. This is the most common use case. *See [Simple A/B Test](examples/simple_ab_test.html) for a complete walkthrough.*
+
 
 ```python
 import pandas as pd
 import numpy as np
-from cluster_experiments import (
-    AnalysisPlan, SimpleMetric, RatioMetric, 
-    Variant, HypothesisTest
-)
+from cluster_experiments import AnalysisPlan, Variant
 
-# Simulate experiment data
+# 1. Set seed for reproducibility
 np.random.seed(42)
-n_users = 5000
 
-data = pd.DataFrame({
-    'user_id': range(n_users),
-    'variant': np.random.choice(['control', 'treatment'], n_users),
-    'orders': np.random.poisson(2.5, n_users),
-    'visits': np.random.poisson(10, n_users),
+# 2. Create simulated data
+N = 1_000
+df = pd.DataFrame({
+    "variant": np.random.choice(["control", "treatment"], N),
+    "orders": np.random.poisson(10, N),
+    "visits": np.random.poisson(100, N),
+})
+# Add some treatment effect to orders
+df.loc[df["variant"] == "treatment", "orders"] += np.random.poisson(1, df[df["variant"] == "treatment"].shape[0])
+
+df["converted"] = (df["orders"] > 0).astype(int)
+df["cost"] = np.random.normal(50, 10, N) # New metric: cost
+df["clicks"] = np.random.poisson(200, N) # New metric: clicks
+
+# 3. Define your analysis plan
+plan = AnalysisPlan.from_metrics_dict({
+    "metrics": [
+        {"name": "orders", "alias": "revenue", "metric_type": "simple"},
+        {"name": "converted", "alias": "conversion", "metric_type": "ratio", "numerator": "converted", "denominator": "visits"},
+        {"name": "cost", "alias": "avg_cost", "metric_type": "simple"},
+        {"name": "clicks", "alias": "ctr", "metric_type": "ratio", "numerator": "clicks", "denominator": "visits"}
+    ],
+    "variants": [
+        {"name": "control", "is_control": True},
+        {"name": "treatment", "is_control": False}
+    ],
+    "variant_col": "variant",
+    "analysis_type": "ols"
 })
 
-# Add treatment effect
-data.loc[data['variant'] == 'treatment', 'orders'] += np.random.poisson(0.5, (data['variant'] == 'treatment').sum())
-data['converted'] = (data['orders'] > 0).astype(int)
-
-# Define metrics by type and category
-absolute_metrics = {
-    "orders": "revenue"  # metric_name: category
-}
-
-ratio_metrics = {
-    "conversion_rate": {
-        "category": "conversion",
-        "components": ["converted", "visits"]  # [numerator, denominator]
-    }
-}
-
-# Define variants
-variants = [
-    Variant("control", is_control=True),
-    Variant("treatment", is_control=False)
-]
-
-# Build hypothesis tests from metric definitions
-hypothesis_tests = []
-
-# 1. Ratio metrics: use delta method for proper ratio analysis
-for metric_name, config in ratio_metrics.items():
-    metric = RatioMetric(
-        alias=f"{config['category']}__{metric_name}",
-        numerator_name=config['components'][0],
-        denominator_name=config['components'][1]
-    )
-    hypothesis_tests.append(
-        HypothesisTest(
-            metric=metric,
-            analysis_type="delta",
-            analysis_config={
-                "scale_col": metric.denominator_name,
-                "cluster_cols": ["user_id"]
-            }
-        )
-    )
-
-# 2. Absolute metrics: use standard OLS
-for metric_name, category in absolute_metrics.items():
-    metric = SimpleMetric(
-        alias=f"{category}__{metric_name}",
-        name=metric_name
-    )
-    hypothesis_tests.append(
-        HypothesisTest(
-            metric=metric,
-            analysis_type="ols"
-        )
-    )
-
-# Create and run analysis plan
-analysis_plan = AnalysisPlan(
-    tests=hypothesis_tests,
-    variants=variants,
-    variant_col='variant'
-)
-
-# Run analysis
-results = analysis_plan.analyze(data)
-print(results.to_dataframe())
+# 4. Run analysis on your dataframe
+results = plan.analyze(df)
+print(results.to_dataframe().head())
 ```
 
-**Output:** A comprehensive scorecard with treatment effects, confidence intervals, and p-values!
+**Output:**
+```
+  metric_alias control_variant_name treatment_variant_name  control_variant_mean  treatment_variant_mean analysis_type           ate  ate_ci_lower  ate_ci_upper   p_value     std_error     dimension_name dimension_value  alpha
+0      revenue              control              treatment              9.973469               10.994118           ols  1.020648e+00  6.140829e-01  1.427214e+00  8.640027e-07  2.074351e-01  __total_dimension           total   0.05
+1   conversion              control              treatment              1.000000                1.000000           ols -4.163336e-16 -5.971983e-16 -2.354689e-16  6.432406e-06  9.227960e-17  __total_dimension           total   0.05
+2     avg_cost              control              treatment             49.463206               49.547386           ols  8.417999e-02 -1.222365e+00  1.390725e+00  8.995107e-01  6.666166e-01  __total_dimension           total   0.05
+3          ctr              control              treatment            199.795918              199.692157           ols -1.037615e-01 -1.767938e+00  1.560415e+00  9.027376e-01  8.490855e-01  __total_dimension           total   0.05
+```
 
 ---
 
-## Understanding Your Results
+## 1.1. Understanding Your Results
 
 The results dataframe includes:
 
@@ -127,189 +91,13 @@ The results dataframe includes:
 | `p_value` | Statistical significance (< 0.05 = significant) |
 
 !!! tip "Interpreting Results"
-    - **p_value < 0.05**: Result is statistically significant
-    - **Confidence interval**: If it doesn't include 0, effect is significant
+    - **p_value < 0.05**: Result is statistically significant (95% confidence)
+    - **Confidence interval**: If it doesn't include 0, effect is significant (95% confidence)
+
 
 ---
 
-## Common Use Cases
-
-### 1. Analyzing an Experiment
-
-**When:** You've already run your experiment and have the data.
-
-**Example:** See [Simple A/B Test](examples/simple_ab_test.html) for a complete walkthrough.
-
-```python
-# Use AnalysisPlan with your experiment data
-results = analysis_plan.analyze(experiment_data)
-```
-
----
-
-### 2. Power Analysis (Sample Size Planning)
-
-**When:** You're designing an experiment and need to know how many users/time you need.
-
-**Example:** Calculate power or Minimum Detectable Effect (MDE).
-
-```python
-import numpy as np
-import pandas as pd
-from cluster_experiments import NormalPowerAnalysis
-
-# Create historical data
-np.random.seed(42)
-historical_data = pd.DataFrame({
-    'user_id': range(500),
-    'metric': np.random.normal(100, 20, 500),
-    'date': pd.to_datetime('2025-10-01') + pd.to_timedelta(np.random.randint(0, 30, 500), unit='d')
-})
-
-# Define your analysis setup
-power_analysis = NormalPowerAnalysis.from_dict({
-    'analysis': 'ols',
-    'splitter': 'non_clustered',
-    'target_col': 'metric',
-    'time_col': 'date'
-})
-
-# Calculate MDE for 80% power
-mde = power_analysis.mde(historical_data, power=0.8)
-print(f"Need {mde:.2f} effect size for 80% power")
-
-# Or calculate power for a given effect size
-power = power_analysis.power_analysis(historical_data, average_effect=5.0)
-print(f"Power: {power:.1%}")
-```
-
-**Learn more:** See [Power Analysis Guide](power_analysis_guide.html) for detailed explanation.
-
----
-
-### 3. Cluster Randomization
-
-**When:** Randomization happens at group level (stores, cities) rather than individual level.
-
-**Why:** Required when there are spillover effects or operational constraints.
-
-**Example:**
-
-```python
-import pandas as pd
-import numpy as np
-from cluster_experiments import AnalysisPlan
-
-# Simulate store-level experiment data
-np.random.seed(42)
-n_stores = 50
-transactions_per_store = 100
-
-data = []
-for store_id in range(n_stores):
-    variant = np.random.choice(['control', 'treatment'])
-    n_trans = np.random.poisson(transactions_per_store)
-    
-    store_data = pd.DataFrame({
-        'store_id': store_id,
-        'variant': variant,
-        'purchase_amount': np.random.normal(50, 20, n_trans)
-    })
-    data.append(store_data)
-
-experiment_data = pd.concat(data, ignore_index=True)
-
-# Use clustered_ols for cluster-randomized experiments
-analysis_plan = AnalysisPlan.from_metrics_dict({
-    'metrics': [{'alias': 'revenue', 'name': 'purchase_amount', 'metric_type': 'simple'}],
-    'variants': [
-        {'name': 'control', 'is_control': True},
-        {'name': 'treatment', 'is_control': False},
-    ],
-    'variant_col': 'variant',
-    'analysis_type': 'clustered_ols',  # ← Key difference!
-    'analysis_config': {
-        'cluster_cols': ['store_id']  # ← Specify clustering variable
-    }
-})
-
-results = analysis_plan.analyze(experiment_data)
-print(results.to_dataframe())
-```
-
-**Learn more:** See [Cluster Randomization Example](examples/cluster_randomization.html).
-
----
-
-### 4. Variance Reduction (CUPAC/CUPED)
-
-**When:** You have pre-experiment data and want to reduce variance for more sensitive tests.
-
-**Benefits:** Detect smaller effects with same sample size.
-
-**Example:**
-
-```python
-import pandas as pd
-import numpy as np
-from cluster_experiments import (
-    AnalysisPlan, TargetAggregation, HypothesisTest, 
-    SimpleMetric, Variant
-)
-
-# Simulate experiment data
-np.random.seed(42)
-n_customers = 1000
-
-experiment_data = pd.DataFrame({
-    'customer_id': range(n_customers),
-    'variant': np.random.choice(['control', 'treatment'], n_customers),
-    'order_value': np.random.normal(100, 20, n_customers),
-    'customer_age': np.random.randint(20, 60, n_customers),
-})
-
-# Simulate pre-experiment data (historical)
-pre_experiment_data = pd.DataFrame({
-    'customer_id': range(n_customers),
-    'order_value': np.random.normal(95, 25, n_customers),  # Historical order values
-})
-
-# Define CUPAC model using pre-experiment data
-cupac_model = TargetAggregation(
-    agg_col="customer_id",
-    target_col="order_value"
-)
-
-# Create hypothesis test with CUPAC
-test = HypothesisTest(
-    metric=SimpleMetric(alias="revenue", name="order_value"),
-    analysis_type="clustered_ols",
-    analysis_config={
-        "cluster_cols": ["customer_id"],
-        "covariates": ["customer_age", "estimate_order_value"],
-    },
-    cupac_config={
-        "cupac_model": cupac_model,
-        "target_col": "order_value",
-    },
-)
-
-plan = AnalysisPlan(
-    tests=[test],
-    variants=[Variant("control", is_control=True), Variant("treatment", is_control=False)],
-    variant_col="variant",
-)
-
-# Analyze with both experiment and pre-experiment data
-results = plan.analyze(experiment_data, pre_experiment_data)
-print(results.to_dataframe())
-```
-
-**Learn more:** See [CUPAC Example](cupac_example.html).
-
----
-
-## Ratio Metrics
+#### 1.2. Analysis Extensions: Ratio Metrics
 
 `cluster-experiments` has built-in support for ratio metrics (e.g., conversion rate, average order value), as seen in the first example:
 
@@ -325,9 +113,7 @@ print(results.to_dataframe())
 
 The library automatically handles the statistical complexities of ratio metrics using the Delta Method.
 
----
-
-## Multi-Dimensional Analysis
+#### 1.3. Analysis Extensions: Multi-dimensional Analysis
 
 Slice your results by dimensions (e.g., city, device type):
 
@@ -344,13 +130,87 @@ analysis_plan = AnalysisPlan.from_metrics_dict({
 })
 ```
 
-Results will include treatment effects for each dimension slice!
+Results will include treatment effects for each dimension slice.
 
 ---
 
-## Quick Reference
+## 2. Power Analysis
 
-### Analysis Types
+Before running an experiment, it's crucial to know how long it needs to run to detect a significant effect.
+See the [Power Analysis Guide](power_analysis_guide.html) for more complex designs (switchback, cluster randomization) and simulation methods.
+
+### 2.1. MDE
+
+Calculate the Minimum Detectable Effect (MDE) for a given sample size ($),  $/alpha$ and $\beta$. parameters.
+
+```python
+import pandas as pd
+import numpy as np
+from cluster_experiments import NormalPowerAnalysis
+
+# Create sample historical data
+np.random.seed(42)
+N = 500
+historical_data = pd.DataFrame({
+    'user_id': range(N),
+    'metric': np.random.normal(100, 20, N),
+    'date': pd.to_datetime('2025-10-01') + pd.to_timedelta(np.random.randint(0, 30, N), unit='d')
+})
+
+power_analysis = NormalPowerAnalysis.from_dict({
+    'analysis': 'ols',
+    'splitter': 'non_clustered',
+    'target_col': 'metric',
+    'time_col': 'date'
+})
+
+mde = power_analysis.mde(historical_data, power=0.8)
+print(f"Minimum Detectable Effect: {mde}")
+Minimum Detectable Effect: 4.935302024560818
+```
+
+### 2.2. Calculate Power
+
+Calculate the statistical power for a specific effect size you expect to see.
+
+```python
+power = power_analysis.power_analysis(historical_data, average_effect=3.5)
+print(f"Power: {power}")
+Power: 0.510914982752414
+```
+
+### 2.3. Visualize Power Curve
+
+It's helpful to visualize how power changes with effect size.
+
+```python
+import matplotlib.pyplot as plt
+
+# Calculate power for multiple effect sizes
+effect_sizes = [2.0, 4.0, 6.0, 8.0, 10.0]
+power_curve = power_analysis.power_line(
+    historical_data,
+    average_effects=effect_sizes
+)
+
+# Plotting
+plt.figure(figsize=(10, 6))
+plt.plot(power_curve['average_effect'], power_curve['power'], marker='o')
+plt.title('Power Analysis: Effect Size vs Power')
+plt.xlabel('Effect Size')
+plt.ylabel('Power')
+plt.grid(True)
+plt.show()
+```
+
+![Power Analysis Curve](quick_start_power_curve.png)
+
+
+
+---
+## 3. Quick Reference
+
+### 3.1. Analysis Types
 
 Choose the appropriate analysis method:
 
@@ -362,27 +222,52 @@ Choose the appropriate analysis method:
 | `mlm` | Multi-level/hierarchical data |
 | `synthetic_control` | Observational studies, no randomization |
 
-### Dictionary vs Class-Based API
 
-Two ways to define analysis plans:
+### 3.2. Dictionary vs Class-Based API
 
-**Dictionary (simpler):**
+`cluster-experiments` offers two ways to define analysis plans, catering to different needs:
+
+#### 3.2.1. Dictionary Configuration
+
+Best for storing configurations in YAML/JSON files and automated pipelines.
+
 ```python
-plan = AnalysisPlan.from_metrics_dict({...})
+config = {
+    "metrics": [
+        {"name": "orders", "alias": "revenue", "metric_type": "simple"},
+        {"name": "converted", "alias": "conversion", "metric_type": "ratio", "numerator": "converted", "denominator": "visits"}
+    ],
+    "variants": [
+        {"name": "control", "is_control": True},
+        {"name": "treatment", "is_control": False}
+    ],
+    "variant_col": "variant",
+    "analysis_type": "ols"
+}
+
+plan = AnalysisPlan.from_metrics_dict(config)
 ```
 
-**Class-based (more control):**
+#### 3.2.2 Class-Based API
+
+Best for exploration and custom extensions.
+
 ```python
 from cluster_experiments import HypothesisTest, SimpleMetric, Variant
 
+# Explicitly define objects
+revenue_metric = SimpleMetric(name="orders", alias="revenue")
+control = Variant("control", is_control=True)
+treatment = Variant("treatment", is_control=False)
+
 plan = AnalysisPlan(
-    tests=[HypothesisTest(metric=SimpleMetric(...), ...)],
-    variants=[Variant(...)],
+    tests=[HypothesisTest(metric=revenue_metric, analysis_type="ols")],
+    variants=[control, treatment],
     variant_col='variant'
 )
 ```
 
----
+
 
 ## Next Steps
 

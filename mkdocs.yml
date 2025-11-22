@@ -10,30 +10,10 @@ site_dir: site
 
 nav:
   - Home: index.md
-  - Quickstart: quickstart.md
-  - Power Analysis: normal_power_lines.ipynb
-  
-  - API Reference:
-      - Experiment Analysis:
-          - Analysis Plan: api/analysis_plan.md
-          - Analysis Results: api/analysis_results.md
-          - Experiment Analysis Methods: api/experiment_analysis.md
-          - Hypothesis Test: api/hypothesis_test.md
-      - Metrics & Variants:
-          - Metric: api/metric.md
-          - Variant: api/variant.md
-          - Dimension: api/dimension.md
-      - Power Analysis:
-          - Power Analysis: api/power_analysis.md
-          - Power Config: api/power_config.md
-      - Randomization:
-          - Splitters: api/random_splitter.md
-      - Variance Reduction:
-          - CUPAC Model: api/cupac_model.md
-      - Switchback:
-          - Washover: api/washover.md
-      - Perturbators: api/perturbator.md
-  
+  - Quickstart:
+      - Quickstart: quickstart.md
+      - Power Analysis Guide: normal_power_lines.ipynb
+
   - Examples:
       - Basic Usage:
           - Simple A/B Test: examples/simple_ab_test.ipynb
@@ -59,8 +39,30 @@ nav:
           - Multiple Treatments: multivariate.ipynb
           - Synthetic Control: synthetic_control.ipynb
           - Custom Classes: create_custom_classes.ipynb
-  
+
+  - API Reference:
+      - Experiment Analysis:
+          - Analysis Plan: api/analysis_plan.md
+          - Analysis Results: api/analysis_results.md
+          - Experiment Analysis Methods: api/experiment_analysis.md
+          - Hypothesis Test: api/hypothesis_test.md
+      - Metrics & Variants:
+          - Metric: api/metric.md
+          - Variant: api/variant.md
+          - Dimension: api/dimension.md
+      - Power Analysis:
+          - Power Analysis: api/power_analysis.md
+          - Power Config: api/power_config.md
+      - Randomization:
+          - Splitters: api/random_splitter.md
+      - Variance Reduction:
+          - CUPAC Model: api/cupac_model.md
+      - Switchback:
+          - Washover: api/washover.md
+      - Perturbators: api/perturbator.md
+
   - Contributing: CONTRIBUTING.md
+  - License: license.md
 
 extra:
   social:
@@ -88,9 +90,9 @@ theme:
   features:
     - content.tabs
     - content.code.annotate
+    - content.code.copy
     - navigation.instant
     - navigation.tracking
-    - navigation.sections
     - navigation.top
   palette:
     primary: indigo
