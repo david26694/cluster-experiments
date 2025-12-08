@@ -235,7 +235,8 @@ class SwitchbackSplitter(ClusteredSplitter):
 
 class BalancedClusteredSplitter(ClusteredSplitter):
     """Like ClusteredSplitter, but ensures that treatments are balanced among clusters. That is, if we have
-    25 clusters and 2 treatments, 13 clusters should have treatment A and 12 clusters should have treatment B."""
+    25 clusters and 2 treatments, 13 clusters should have treatment A and 12 clusters should have treatment B.
+    """
 
     def sample_treatment(
         self,

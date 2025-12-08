@@ -164,3 +164,21 @@ def test_raise_clustering_mismatch():
             analysis=analysis,
             n_simulations=3,
         )
+
+
+def test_raise_treatment_same_control():
+    sw = ClusteredSplitter(cluster_cols=["cluster", "date"])
+
+    perturbator = ConstantPerturbator(average_effect=0.1)
+
+    analysis = GeeExperimentAnalysis(cluster_cols=["cluster", "date"])
+
+    with pytest.raises(AssertionError):
+        PowerAnalysis(
+            perturbator=perturbator,
+            splitter=sw,
+            analysis=analysis,
+            treatment="A",
+            control="A",  # same as treatment
+            n_simulations=3,
+        )

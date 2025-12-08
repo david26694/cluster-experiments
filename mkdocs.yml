@@ -9,12 +9,14 @@ edit_uri: blob/main/docs/
 nav:
   - Home:
     - Index: index.md
+  - End-to-end example: e2e_mde.ipynb
   - Cupac example: cupac_example.ipynb
   - Custom classes: create_custom_classes.ipynb
   - Switchback:
       - Stratified switchback: switchback.ipynb
       - Switchback calendar visualization: plot_calendars.ipynb
       - Visualization - 4-hour switches: plot_calendars_hours.ipynb
+      - E2E switchback design example: e2e_mde_switchback.ipynb
   - Multiple treatments: multivariate.ipynb
   - AA test clustered: aa_test.ipynb
   - Paired T test: paired_ttest.ipynb
@@ -25,7 +27,9 @@ nav:
       - Time-lines: normal_power_lines.ipynb
   - Synthetic control: synthetic_control.ipynb
   - Experiment analysis workflow: experiment_analysis.ipynb
-  - Delta Method Analysis: delta_method.ipynb
+  - Delta method:
+      - Delta Method Analysis: delta_method.ipynb
+      - End-to-end delta method example: e2e_mde_delta.ipynb
   - API:
       - Experiment analysis methods: api/experiment_analysis.md
       - Perturbators: api/perturbator.md

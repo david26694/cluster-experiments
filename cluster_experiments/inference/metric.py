@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import pandas as pd
 
@@ -48,6 +49,18 @@ class Metric(ABC):
         """
         pass
 
+    @property
+    def scale_column(self) -> Optional[str]:
+        """
+        Abstract property to return the scale column to feed the experiment analysis class, from the metric definition.
+
+        Returns
+        -------
+        str
+            The scale column name
+        """
+        return None
+
     @abstractmethod
     def get_mean(self, df: pd.DataFrame) -> float:
         """
@@ -59,6 +72,25 @@ class Metric(ABC):
             The mean value of the metric
         """
         pass
+
+    @classmethod
+    def from_metrics_config(cls, config: dict) -> "Metric":
+        """
+        Class method to create a Metric instance from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration of the metric
+
+        Returns
+        -------
+        Metric
+            A Metric instance
+        """
+        if "numerator_name" in config:
+            return RatioMetric.from_metrics_config(config)
+        return SimpleMetric.from_metrics_config(config)
 
 
 class SimpleMetric(Metric):
@@ -128,6 +160,23 @@ class SimpleMetric(Metric):
         """
         return df[self.name].mean()
 
+    @classmethod
+    def from_metrics_config(cls, config: dict) -> "Metric":
+        """
+        Class method to create a SimpleMetric instance from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration of the metric
+
+        Returns
+        -------
+        SimpleMetric
+            A SimpleMetric instance
+        """
+        return cls(alias=config["alias"], name=config["name"])
+
 
 class RatioMetric(Metric):
     """
@@ -193,6 +242,18 @@ class RatioMetric(Metric):
         """
         return self.numerator_name
 
+    @property
+    def scale_column(self) -> str:
+        """
+        Returns the scale column for the RatioMetric.
+
+        Returns
+        -------
+        str
+            The denominator name of the metric
+        """
+        return self.denominator_name
+
     def get_mean(self, df: pd.DataFrame) -> float:
         """
         Returns the mean value of the metric, given a dataframe.
@@ -203,3 +264,24 @@ class RatioMetric(Metric):
             The mean value of the metric
         """
         return df[self.numerator_name].mean() / df[self.denominator_name].mean()
+
+    @classmethod
+    def from_metrics_config(cls, config: dict) -> "Metric":
+        """
+        Class method to create a RatioMetric instance from a configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration of the metric
+
+        Returns
+        -------
+        RatioMetric
+            A RatioMetric instance
+        """
+        return cls(
+            alias=config["alias"],
+            numerator_name=config["numerator_name"],
+            denominator_name=config["denominator_name"],
+        )

@@ -117,15 +117,29 @@ class CupacHandler:
         self,
         cupac_model: Optional[BaseEstimator] = None,
         target_col: str = "target",
+        scale_col: Optional[str] = None,
         features_cupac_model: Optional[List[str]] = None,
         cache_fit: bool = True,
     ):
         self.cupac_model: BaseEstimator = cupac_model or EmptyRegressor()
         self.target_col = target_col
+        # TODO: implement CUPAC with both target_col and scale_col,
+        # right now it only supports target_col for delta method
+        self.scale_col = scale_col
         self.cupac_outcome_name = f"estimate_{target_col}"
         self.features_cupac_model: List[str] = features_cupac_model or []
         self.is_cupac = not isinstance(self.cupac_model, EmptyRegressor)
         self.cache_fit = cache_fit
+
+        self.check_cupac_config()
+
+    def get_pre_experiment_y(self, pre_experiment_df: pd.DataFrame) -> pd.Series:
+        """Returns the pre-experiment target variable, scaled if scale_col is provided."""
+        if self.scale_col is not None:
+            return (
+                pre_experiment_df[self.target_col] / pre_experiment_df[self.scale_col]
+            )
+        return pre_experiment_df[self.target_col]
 
     def _prep_data_cupac(
         self, df: pd.DataFrame, pre_experiment_df: pd.DataFrame
@@ -136,7 +150,7 @@ class CupacHandler:
         df_predict = df.drop(columns=[self.target_col])
         # Split data into X and y
         pre_experiment_x = pre_experiment_df.drop(columns=[self.target_col])
-        pre_experiment_y = pre_experiment_df[self.target_col]
+        pre_experiment_y = self.get_pre_experiment_y(pre_experiment_df)
 
         # Keep only cupac features
         if self.features_cupac_model:
@@ -211,6 +225,15 @@ class CupacHandler:
 
         if not self.is_cupac and pre_experiment_df is not None:
             raise ValueError(
-                "If cupac is not used, pre_experiment_df should not be provided - "
-                "remove pre_experiment_df argument or set cupac_model to not None."
+                "If cupac is not used, pre_experiment_df should not be provided - remove pre_experiment_df argument or set cupac_model to not None."
+            )
+
+    def check_cupac_config(self):
+        if self.is_cupac and self.target_col in self.features_cupac_model:
+            raise ValueError(
+                "If cupac is used, target_col should not be in features_cupac_model."
+            )
+        if self.is_cupac and self.scale_col in self.features_cupac_model:
+            raise ValueError(
+                "If cupac is used, scale_col should not be in features_cupac_model."
             )
