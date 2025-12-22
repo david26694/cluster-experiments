@@ -222,6 +222,12 @@ class PowerConfig:
             if self.scale_col is not None:
                 self._raise_error_if_missing("scale_col", "analysis")
 
+        if self.relative_effect:
+            if "ols" not in self.analysis:
+                raise ValueError(
+                    "relative_effect only works for OLSAnalysis, ClusteredOLSAnalysis"
+                )
+
     def _are_different(self, arg1, arg2) -> bool:
         return arg1 != arg2
 

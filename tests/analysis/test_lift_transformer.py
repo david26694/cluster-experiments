@@ -177,6 +177,20 @@ def test_config_power_relative():
     assert pw.analysis.relative_effect
 
 
+def test_config_power_incorrect():
+    # given
+    config = {
+        "analysis": "delta",
+        "perturbator": "constant",
+        "splitter": "non_clustered",
+        "relative_effect": True,
+    }
+
+    # then
+    with pytest.raises(ValueError, match="OLSAnalysis"):
+        PowerAnalysis.from_dict(config)
+
+
 @all_covariates_parametrize
 def test_plan_config_relative(user_df, formula, covariates):
     # given

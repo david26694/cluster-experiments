@@ -443,4 +443,4 @@ def test_mde_rolling_time_line(df):
     mde_df = pd.DataFrame(mde_rolling_time_line)
 
     # then
-    assert mde_df.query("experiment_length == 1")["relative_mde"].squeeze() > 0
+    assert mde_df.query("experiment_length == 1")["mde"].squeeze() > 0

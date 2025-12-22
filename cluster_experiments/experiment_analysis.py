@@ -901,6 +901,7 @@ class ClusteredOLSAnalysis(OLSAnalysis):
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
         add_covariate_interaction: bool = False,
+        relative_effect: bool = False,
     ):
         super().__init__(
             target_col=target_col,
@@ -910,6 +911,7 @@ class ClusteredOLSAnalysis(OLSAnalysis):
             hypothesis=hypothesis,
             cov_type="cluster",
             add_covariate_interaction=add_covariate_interaction,
+            relative_effect=relative_effect,
         )
         self.cluster_cols = cluster_cols
 
@@ -917,13 +919,25 @@ class ClusteredOLSAnalysis(OLSAnalysis):
         """Returns the fitted OLS model"""
         if self.add_covariate_interaction:
             df = self._add_interaction_covariates(df)
-        return sm.OLS.from_formula(
+        ols_fit = sm.OLS.from_formula(
             self.formula,
             data=df,
         ).fit(
             cov_type=self.cov_type,
             cov_kwds={"groups": self._get_cluster_column(df)},
         )
+
+        # create point estimate, pvalue and std error transformation in case of relative effects
+        if self.relative_effect:
+            relative_ols_fit = LiftRegressionTransformer(
+                treatment_col=self.treatment_col
+            )
+            relative_ols_fit.fit(
+                ols=ols_fit, df=df, covariate_cols=self.covariates_list
+            )
+            return relative_ols_fit
+
+        return ols_fit
 
     @classmethod
     def from_config(cls, config):
@@ -936,6 +950,7 @@ class ClusteredOLSAnalysis(OLSAnalysis):
             hypothesis=config.hypothesis,
             cluster_cols=config.cluster_cols,
             add_covariate_interaction=config.add_covariate_interaction,
+            relative_effect=config.relative_effect,
         )
 
 

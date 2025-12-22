@@ -1112,8 +1112,7 @@ class NormalPowerAnalysis:
 
         if agg_func not in self.VALID_AGG_FUNCS:
             raise ValueError(
-                f"Invalid aggregation function `{agg_func}`. "
-                f"Choose one of: {', '.join(self.VALID_AGG_FUNCS)}."
+                f"Invalid aggregation function `{agg_func}`. Choose one of: {', '.join(self.VALID_AGG_FUNCS)}."
             )
 
         alpha = self.alpha if alpha is None else alpha
@@ -1148,14 +1147,11 @@ class NormalPowerAnalysis:
                     alpha=alpha, std_error=std_error_mean, power=power
                 )
 
-                relative_mde = mde_value / abs(df_grouped[self.target_col].mean())
-
                 results.append(
                     {
                         "power": power,
                         "mde": mde_value,
                         "experiment_length": n_days,
-                        "relative_mde": relative_mde,
                     }
                 )
 
