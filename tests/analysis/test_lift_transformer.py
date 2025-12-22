@@ -68,6 +68,7 @@ def test_relative_lift_point_estimate(user_df, formula, covariates):
     assert transformer.params["treatment"] == pytest.approx(
         ols.params["treatment"] / control_mean, rel=1e-4
     )
+    assert transformer.summary()["percent_lift"] == transformer.params["treatment"]
 
 
 @all_covariates_parametrize

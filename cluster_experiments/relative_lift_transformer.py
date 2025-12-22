@@ -150,5 +150,5 @@ class LiftRegressionTransformer:
             "percent_lift": self._relative_lift_value,
             "_se_relative_lift": self._se_relative_lift,
             "pvalue": self.pvalues[self.treatment_col],
-            "conf_int": self.conf_int(0.05)[self.treatment_col],
+            "conf_int": self.conf_int(0.05).loc[self.treatment_col],
         }
