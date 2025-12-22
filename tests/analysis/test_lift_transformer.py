@@ -55,7 +55,7 @@ all_covariates_parametrize = pytest.mark.parametrize(
 
 @all_covariates_parametrize
 def test_relative_lift_point_estimate(user_df, formula, covariates):
-    # point estimates don't vary from naive to coavariates
+    # point estimates don't vary from naive to covariates
     # given
     ols = sm.OLS.from_formula(formula, data=user_df).fit()
     control_mean = user_df.query("treatment == 0")["orders"].mean()
@@ -133,7 +133,7 @@ def test_ci_and_pvalue(user_df, formula, covariates):
 
 @all_covariates_parametrize
 def test_mean_one(user_df, formula, covariates):
-    # given control outcome has mean 1, it should be the same as vainilla effect
+    # given control outcome has mean 1, it should be the same as vanilla effect
     user_df = user_df.copy()
     mean_control = user_df.query("treatment == 0")["orders"].mean()
     user_df["orders"] = user_df["orders"] / mean_control

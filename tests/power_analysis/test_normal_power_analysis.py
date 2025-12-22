@@ -7,7 +7,7 @@ from cluster_experiments.power_analysis import NormalPowerAnalysis, PowerAnalysi
 from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
 
 
-def test_aa_power_analysis(df, analysis_gee_vainilla):
+def test_aa_power_analysis(df, analysis_gee_vanilla):
     # given
     sw = ClusteredSplitter(
         cluster_cols=["cluster", "date"],
@@ -15,7 +15,7 @@ def test_aa_power_analysis(df, analysis_gee_vainilla):
 
     pw = NormalPowerAnalysis(
         splitter=sw,
-        analysis=analysis_gee_vainilla,
+        analysis=analysis_gee_vanilla,
         n_simulations=3,
         seed=20240922,
     )

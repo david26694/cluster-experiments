@@ -3,7 +3,7 @@ from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import ClusteredSplitter
 
 
-def test_power_analysis(df, perturbator, analysis_gee_vainilla):
+def test_power_analysis(df, perturbator, analysis_gee_vanilla):
     sw = ClusteredSplitter(
         cluster_cols=["cluster", "date"],
     )
@@ -11,7 +11,7 @@ def test_power_analysis(df, perturbator, analysis_gee_vainilla):
     pw = PowerAnalysis(
         perturbator=perturbator,
         splitter=sw,
-        analysis=analysis_gee_vainilla,
+        analysis=analysis_gee_vanilla,
         n_simulations=3,
     )
 

@@ -81,7 +81,7 @@ def perturbator():
 
 
 @pytest.fixture
-def analysis_gee_vainilla():
+def analysis_gee_vanilla():
     return GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
     )
@@ -129,7 +129,7 @@ def cupac_power_analysis(perturbator, analysis_gee):
 
 
 @pytest.fixture
-def switchback_power_analysis(perturbator, analysis_gee_vainilla):
+def switchback_power_analysis(perturbator, analysis_gee_vanilla):
     sw = StratifiedSwitchbackSplitter(
         time_col="date",
         switch_frequency="1D",
@@ -140,14 +140,14 @@ def switchback_power_analysis(perturbator, analysis_gee_vainilla):
     return PowerAnalysis(
         perturbator=perturbator,
         splitter=sw,
-        analysis=analysis_gee_vainilla,
+        analysis=analysis_gee_vanilla,
         n_simulations=3,
         seed=123,
     )
 
 
 @pytest.fixture
-def switchback_power_analysis_hourly(perturbator, analysis_gee_vainilla):
+def switchback_power_analysis_hourly(perturbator, analysis_gee_vanilla):
     sw = StratifiedSwitchbackSplitter(
         time_col="date",
         switch_frequency="1H",
@@ -158,7 +158,7 @@ def switchback_power_analysis_hourly(perturbator, analysis_gee_vainilla):
     return PowerAnalysis(
         perturbator=perturbator,
         splitter=sw,
-        analysis=analysis_gee_vainilla,
+        analysis=analysis_gee_vanilla,
         n_simulations=3,
     )
 
@@ -182,7 +182,6 @@ def switchback_washover():
 
 @pytest.fixture
 def delta_df(experiment_dates):
-
     user_sample_mean = 0.3
     user_standard_error = 0.15
     users = 2000
