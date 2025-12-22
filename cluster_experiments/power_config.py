@@ -152,6 +152,7 @@ class PowerConfig:
         ]
     ] = None
     add_covariate_interaction: bool = False
+    relative_effect: bool = False
 
     # Power analysis
     n_simulations: int = 100
@@ -226,24 +227,20 @@ class PowerConfig:
 
     def _set_and_log(self, attr, value, other_attr):
         logging.warning(
-            f"{attr} = {getattr(self, attr)} has no effect with "
-            f"{other_attr} = {getattr(self, other_attr)}. "
-            f"Overriding {attr} to {value}."
+            f"{attr} = {getattr(self, attr)} has no effect with {other_attr} = {getattr(self, other_attr)}. Overriding {attr} to {value}."
         )
         setattr(self, attr, value)
 
     def _raise_error_if_missing(self, attr, other_attr):
         if getattr(self, attr) is None:
             raise MissingArgumentError(
-                f"{attr} is required when using "
-                f"{other_attr} = {getattr(self, other_attr)}."
+                f"{attr} is required when using {other_attr} = {getattr(self, other_attr)}."
             )
 
     def _raise_error_if_present(self, attr, other_attr):
         if getattr(self, attr) is None:
             raise UnexpectedArgumentError(
-                f"{attr} is not expected when using "
-                f"{other_attr} = {getattr(self, other_attr)}."
+                f"{attr} is not expected when using {other_attr} = {getattr(self, other_attr)}."
             )
 
 
