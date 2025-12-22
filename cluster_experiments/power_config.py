@@ -223,7 +223,10 @@ class PowerConfig:
                 self._raise_error_if_missing("scale_col", "analysis")
 
         if self.relative_effect:
-            if "ols" not in self.analysis:
+            if analysis_mapping[self.analysis] not in {
+                OLSAnalysis,
+                ClusteredOLSAnalysis,
+            }:
                 raise ValueError(
                     "relative_effect only works for OLSAnalysis, ClusteredOLSAnalysis"
                 )
