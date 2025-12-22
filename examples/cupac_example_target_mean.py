@@ -67,14 +67,14 @@ if __name__ == "__main__":
     analysis = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
     )
-    pw_vainilla = PowerAnalysis(
+    pw_vanilla = PowerAnalysis(
         perturbator=perturbator,
         splitter=sw,
         analysis=analysis,
         n_simulations=50,
     )
 
-    power = pw_vainilla.power_analysis(df_analysis)
+    power = pw_vanilla.power_analysis(df_analysis)
     print(f"Not using cupac: {power = }")
 
     # Cupac GEE
