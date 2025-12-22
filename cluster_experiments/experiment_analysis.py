@@ -915,7 +915,7 @@ class ClusteredOLSAnalysis(OLSAnalysis):
         )
         self.cluster_cols = cluster_cols
 
-    def fit_ols(self, df: pd.DataFrame):
+    def fit_ols(self, df: pd.DataFrame) -> RegressionResultsProtocol:
         """Returns the fitted OLS model"""
         if self.add_covariate_interaction:
             df = self._add_interaction_covariates(df)

@@ -7,10 +7,6 @@ from statsmodels.regression.linear_model import RegressionResultsWrapper
 
 
 class RegressionResultsProtocol(Protocol):
-    treatment_col: str
-    _relative_lift_value: float
-    _se_relative_lift: float
-
     @property
     def params(self) -> Dict[str, float]: ...
 
