@@ -22,6 +22,8 @@ nav:
   - Paired T test: paired_ttest.ipynb
   - Different hypotheses tests: analysis_with_different_hypotheses.ipynb
   - Washover: washover_example.ipynb
+  - Relative lift:
+      - Relative lift analysis: relative.ipynb
   - Normal Power:
       - Compare with simulation: normal_power.ipynb
       - Time-lines: normal_power_lines.ipynb
