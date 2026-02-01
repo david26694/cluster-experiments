@@ -31,6 +31,7 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 ## Key Features
 
 ### **Experiment Design**
+
 - **Power Analysis & Sample Size Calculation**
   - Simulation-based (Monte Carlo) for any design complexity
   - Analytical, (CLT-based) for standard designs
@@ -44,6 +45,7 @@ While the library is aimed at these scenarios, it's equally capable of handling 
   - Observational studies with Synthetic Control
 
 ### **Statistical Methods**
+
 - **Multiple Analysis Methods**
   - OLS and Clustered OLS regression
   - GEE (Generalized Estimating Equations)
@@ -53,10 +55,11 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 
 - **Variance Reduction Techniques**
   - CUPED (Controlled-experiment Using Pre-Experiment Data)
-  - CUPAC (CUPED with Pre-experiment Aggregations)
+  - CUPAC (Control Using Predictions As Covariates)
   - Covariate adjustment
 
 ### **Analysis Workflow**
+
 - **Scorecard Generation**: Analyze multiple metrics simultaneously
 - **Multi-dimensional Slicing**: Break down results by segments
 - **Multiple Treatment Arms**: Compare several treatments at once
@@ -162,8 +165,8 @@ power_curve = power_analysis.power_line(
     average_effects=[2.0, 4.0, 6.0, 8.0, 10.0]
 )
 print(power_curve)
-# Tip: You can plot this using matplotlib:
-# plt.plot(power_curve['average_effect'], power_curve['power'])
+# Tip: You can plot this using pandas built-in plotting:
+# power_curve.plot()
 
 # 4. MDE timeline: How MDE changes with experiment length
 mde_timeline = power_analysis.mde_time_line(
@@ -177,16 +180,17 @@ mde_timeline = power_analysis.mde_time_line(
 ```
 Power for detecting +5 unit effect: 72.7%
 Minimum detectable effect at 80% power: 5.46
-{2.0: 0.17658708766689768, 4.0: 0.5367343456559069, 6.0: 0.8682558423423066, 8.0: 0.983992856563122, 10.0: 0.9992385426477484}
+{2.0: 0.18, 4.0: 0.54, 6.0: 0.87, 8.0: 0.98, 10.0: 1.00}
 ```
 
 **Key methods:**
+
 - `power_analysis()`: Calculate power for a given effect
 - `mde()`: Calculate minimum detectable effect
 - `power_line()`: Generate power curves across effect sizes
 - `mde_time_line()`: Calculate MDE for different experiment lengths
 
-For simulation-based power analysis (for complex designs), see the [Power Analysis Guide](https://david26694.github.io/cluster-experiments/power_analysis_guide.html).
+For simulation-based power analysis (for complex designs), see the [Power Analysis Guide](https://david26694.github.io/cluster-experiments/normal_power_lines.html).
 
 ---
 

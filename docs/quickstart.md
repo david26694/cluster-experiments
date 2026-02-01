@@ -118,9 +118,17 @@ The library automatically handles the statistical complexities of ratio metrics 
 Slice your results by dimensions (e.g., city, device type):
 
 ```python
+from cluster_experiments import Dimension
+
+# Example with complete configuration
 analysis_plan = AnalysisPlan.from_metrics_dict({
-    'metrics': [...],
-    'variants': [...],
+    'metrics': [
+        {'name': 'orders', 'alias': 'revenue', 'metric_type': 'simple'}
+    ],
+    'variants': [
+        {'name': 'control', 'is_control': True},
+        {'name': 'treatment', 'is_control': False}
+    ],
     'variant_col': 'variant',
     'dimensions': [
         {'name': 'city', 'values': ['NYC', 'LA', 'Chicago']},
@@ -137,11 +145,11 @@ Results will include treatment effects for each dimension slice.
 ## 2. Power Analysis
 
 Before running an experiment, it's crucial to know how long it needs to run to detect a significant effect.
-See the [Power Analysis Guide](power_analysis_guide.html) for more complex designs (switchback, cluster randomization) and simulation methods.
+See the [Power Analysis Guide](normal_power_lines.ipynb) for more complex designs (switchback, cluster randomization) and simulation methods.
 
 ### 2.1. MDE
 
-Calculate the Minimum Detectable Effect (MDE) for a given sample size ($),  $/alpha$ and $\beta$. parameters.
+Calculate the Minimum Detectable Effect (MDE) for a given sample size, $\alpha$ and $\beta$ parameters.
 
 ```python
 import pandas as pd
@@ -165,8 +173,12 @@ power_analysis = NormalPowerAnalysis.from_dict({
 })
 
 mde = power_analysis.mde(historical_data, power=0.8)
-print(f"Minimum Detectable Effect: {mde}")
-Minimum Detectable Effect: 4.935302024560818
+print(f"Minimum Detectable Effect: {mde:.2f}")
+```
+
+**Output:**
+```
+Minimum Detectable Effect: 4.94
 ```
 
 ### 2.2. Calculate Power
@@ -175,8 +187,12 @@ Calculate the statistical power for a specific effect size you expect to see.
 
 ```python
 power = power_analysis.power_analysis(historical_data, average_effect=3.5)
-print(f"Power: {power}")
-Power: 0.510914982752414
+print(f"Power: {power:.1%}")
+```
+
+**Output:**
+```
+Power: 51.1%
 ```
 
 ### 2.3. Visualize Power Curve
