@@ -35,7 +35,7 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 - **Power Analysis & Sample Size Calculation**
   - Simulation-based (Monte Carlo) for any design complexity
   - Analytical, (CLT-based) for standard designs
-  - Minimal Detectable Effect (MDE) estimation
+  - Minimum Detectable Effect (MDE) estimation
 
 - **Multiple Experimental Designs**
   - Standard A/B tests with individual randomization
