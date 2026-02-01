@@ -10,6 +10,10 @@ import statsmodels.api as sm
 from pandas.api.types import is_numeric_dtype
 from scipy.stats import norm, ttest_ind, ttest_rel
 
+from cluster_experiments.relative_lift_transformer import (
+    LiftRegressionTransformer,
+    RegressionResultsProtocol,
+)
 from cluster_experiments.synthetic_control_utils import get_w
 from cluster_experiments.utils import HypothesisEntries, ModelResults
 
@@ -107,6 +111,21 @@ class ExperimentAnalysis(ABC):
                 df[covariate] - df[covariate].mean()
             ) * df[self.treatment_col]
         return df
+
+    @property
+    def covariates_list(self) -> List[str]:
+        if len(self.covariates) == 0:
+            # simple case, no covariates
+            return []
+
+        if not self.add_covariate_interaction:
+            # second case: covariates but not interaction
+            return self.covariates
+
+        # third case: covariates and interaction
+        return self.covariates + [
+            f"__{covariate}__interaction" for covariate in self.covariates
+        ]
 
     @property
     def formula(self):
@@ -266,7 +285,7 @@ class ExperimentAnalysis(ABC):
         return self.analysis_inference_results(df, alpha)
 
     def pvalue_based_on_hypothesis(
-        self, model_result
+        self, model_result: RegressionResultsProtocol
     ) -> float:  # todo add typehint statsmodels result
         """Returns the p-value of the analysis
         Arguments:
@@ -700,6 +719,7 @@ class OLSAnalysis(ExperimentAnalysis):
             ]
         ] = None,
         add_covariate_interaction: bool = False,
+        relative_effect: bool = False,
     ):
         self.target_col = target_col
         self.treatment = treatment
@@ -721,12 +741,26 @@ class OLSAnalysis(ExperimentAnalysis):
             "HC3" if cov_type is None else cov_type
         )
         self.add_covariate_interaction = add_covariate_interaction
+        self.relative_effect = relative_effect
 
-    def fit_ols(self, df: pd.DataFrame):
+    def fit_ols(self, df: pd.DataFrame) -> RegressionResultsProtocol:
         """Returns the fitted OLS model"""
         if self.add_covariate_interaction:
             df = self._add_interaction_covariates(df)
-        return sm.OLS.from_formula(self.formula, data=df).fit(cov_type=self.cov_type)
+
+        ols_fit = sm.OLS.from_formula(self.formula, data=df).fit(cov_type=self.cov_type)
+
+        # create point estimate, pvalue and std error transformation in case of relative effects
+        if self.relative_effect:
+            relative_ols_fit = LiftRegressionTransformer(
+                treatment_col=self.treatment_col
+            )
+            relative_ols_fit.fit(
+                ols=ols_fit, df=df, covariate_cols=self.covariates_list
+            )
+            return relative_ols_fit
+
+        return ols_fit
 
     def analysis_pvalue(self, df: pd.DataFrame, verbose: bool = False) -> float:
         """Returns the p-value of the analysis
@@ -822,6 +856,7 @@ class OLSAnalysis(ExperimentAnalysis):
             hypothesis=config.hypothesis,
             cov_type=config.cov_type,
             add_covariate_interaction=config.add_covariate_interaction,
+            relative_effect=config.relative_effect,
         )
 
 
@@ -866,6 +901,7 @@ class ClusteredOLSAnalysis(OLSAnalysis):
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
         add_covariate_interaction: bool = False,
+        relative_effect: bool = False,
     ):
         super().__init__(
             target_col=target_col,
@@ -875,20 +911,33 @@ class ClusteredOLSAnalysis(OLSAnalysis):
             hypothesis=hypothesis,
             cov_type="cluster",
             add_covariate_interaction=add_covariate_interaction,
+            relative_effect=relative_effect,
         )
         self.cluster_cols = cluster_cols
 
-    def fit_ols(self, df: pd.DataFrame):
+    def fit_ols(self, df: pd.DataFrame) -> RegressionResultsProtocol:
         """Returns the fitted OLS model"""
         if self.add_covariate_interaction:
             df = self._add_interaction_covariates(df)
-        return sm.OLS.from_formula(
+        ols_fit = sm.OLS.from_formula(
             self.formula,
             data=df,
         ).fit(
             cov_type=self.cov_type,
             cov_kwds={"groups": self._get_cluster_column(df)},
         )
+
+        # create point estimate, pvalue and std error transformation in case of relative effects
+        if self.relative_effect:
+            relative_ols_fit = LiftRegressionTransformer(
+                treatment_col=self.treatment_col
+            )
+            relative_ols_fit.fit(
+                ols=ols_fit, df=df, covariate_cols=self.covariates_list
+            )
+            return relative_ols_fit
+
+        return ols_fit
 
     @classmethod
     def from_config(cls, config):
@@ -901,6 +950,7 @@ class ClusteredOLSAnalysis(OLSAnalysis):
             hypothesis=config.hypothesis,
             cluster_cols=config.cluster_cols,
             add_covariate_interaction=config.add_covariate_interaction,
+            relative_effect=config.relative_effect,
         )
 
 

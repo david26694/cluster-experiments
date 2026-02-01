@@ -1,6 +1,6 @@
 [project]
 authors = []
-requires-python = "<3.13,>=3.9"
+requires-python = "<3.13,>=3.10"
 dependencies = [
     "pip>=22.2.2",
     "statsmodels>=0.13.2",
@@ -10,17 +10,17 @@ dependencies = [
     "numpy>=1.20.0",
 ]
 name = "cluster-experiments"
-version = "0.28.0"
+version = "0.29.0"
 description = ""
 readme = "README.md"
 classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: 3 :: Only",
         "Operating System :: OS Independent",
         "License :: OSI Approved :: MIT License",

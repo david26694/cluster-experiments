@@ -11,7 +11,6 @@ from cluster_experiments.random_splitter import ClusteredSplitter
 
 
 def generate_random_data(clusters, dates, N):
-
     # Every cluster has a mean
     df_clusters = pd.DataFrame(
         {
@@ -68,14 +67,14 @@ if __name__ == "__main__":
     analysis = GeeExperimentAnalysis(
         cluster_cols=["cluster", "date"],
     )
-    pw_vainilla = PowerAnalysis(
+    pw_vanilla = PowerAnalysis(
         perturbator=perturbator,
         splitter=sw,
         analysis=analysis,
         n_simulations=50,
     )
 
-    power = pw_vainilla.power_analysis(df_analysis)
+    power = pw_vanilla.power_analysis(df_analysis)
     print(f"Not using cupac: {power = }")
 
     # Cupac GEE
