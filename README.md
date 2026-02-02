@@ -167,8 +167,6 @@ power_curve = power_analysis.power_line(
     average_effects=[2.0, 4.0, 6.0, 8.0, 10.0]
 )
 print(power_curve)
-# Tip: You can plot this using pandas built-in plotting:
-# power_curve.plot()
 
 # 4. MDE timeline: How MDE changes with experiment length
 mde_timeline = power_analysis.mde_time_line(
