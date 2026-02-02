@@ -116,6 +116,9 @@ def test_function_docstrings(func):
     "fpath",
     [
         "README.md",
+        "docs/quickstart.md",
+        "docs/license.md",
+        "docs/delta.md",
     ],
 )
 def test_quickstart_docs_file(fpath):

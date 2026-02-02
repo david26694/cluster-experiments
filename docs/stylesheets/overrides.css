@@ -1,0 +1,13 @@
+/* Custom admonition styling */
+.md-typeset .admonition {
+  border-radius: 8px;
+  border-left: 4px solid var(--md-primary-fg-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Code block styling */
+.md-typeset pre {
+  border-radius: 8px;
+  background-color: var(--md-code-bg-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
