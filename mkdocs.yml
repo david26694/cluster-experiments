@@ -19,11 +19,11 @@ nav:
           - Simple A/B Test: examples/simple_ab_test.ipynb
           - Experiment Analysis Workflow: experiment_analysis.ipynb
           - AA Test (Clustered): aa_test.ipynb
-      - End-to-End Examples:
-          - E2E Power Analysis: e2e_mde.ipynb
-          - E2E Switchback Design: e2e_mde_switchback.ipynb
-          - E2E Delta Method: e2e_mde_delta.ipynb
           - Relative Lift Analysis: relative.ipynb
+      - End-to-End Examples:
+          - Power Analysis: e2e_mde.ipynb
+          - Switchback Design: e2e_mde_switchback.ipynb
+          - Delta Method: e2e_mde_delta.ipynb
       - Analysis Methods:
           - Different Hypothesis Tests: analysis_with_different_hypotheses.ipynb
           - Paired T-Test: paired_ttest.ipynb
