@@ -195,13 +195,11 @@ print(f"Power: {power:.1%}")
 Power: 51.1%
 ```
 
-### 2.3. Visualize Power Curve
+### 2.3. Power Curve
 
-It's helpful to visualize how power changes with effect size.
+Generate a power curve to see how power changes with effect size.
 
 ```python
-import matplotlib.pyplot as plt
-
 # Calculate power for multiple effect sizes
 effect_sizes = [2.0, 4.0, 6.0, 8.0, 10.0]
 power_curve = power_analysis.power_line(
@@ -209,14 +207,23 @@ power_curve = power_analysis.power_line(
     average_effects=effect_sizes
 )
 
-# Plotting
-plt.figure(figsize=(10, 6))
-plt.plot(power_curve['average_effect'], power_curve['power'], marker='o')
-plt.title('Power Analysis: Effect Size vs Power')
-plt.xlabel('Effect Size')
-plt.ylabel('Power')
-plt.grid(True)
-plt.show()
+# View power curve as a DataFrame
+import pandas as pd
+power_df = pd.DataFrame([
+    {"effect_size": k, "power": round(v, 2)}
+    for k, v in power_curve.items()
+])
+print(power_df.to_string(index=False))
+```
+
+**Output:**
+```
+ effect_size  power
+         2.0   0.18
+         4.0   0.54
+         6.0   0.87
+         8.0   0.98
+        10.0   1.00
 ```
 
 ![Power Analysis Curve](quick_start_power_curve.png)

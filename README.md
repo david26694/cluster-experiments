@@ -30,40 +30,42 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 
 ## Key Features
 
-### **Experiment Design**
+### Experiment Design
 
-- **Power Analysis & Sample Size Calculation**
-  - Simulation-based (Monte Carlo) for any design complexity
-  - Analytical, (CLT-based) for standard designs
-  - Minimum Detectable Effect (MDE) estimation
+??? info "Power Analysis & Sample Size Calculation"
+    - Simulation-based (Monte Carlo) for any design complexity
+    - Analytical (CLT-based) for standard designs
+    - Minimum Detectable Effect (MDE) estimation
 
-- **Multiple Experimental Designs**
-  - Standard A/B tests with individual randomization
-  - Cluster-randomized experiments
-  - Switchback/crossover experiments
-  - Stratified randomization
-  - Observational studies with Synthetic Control
+??? info "Multiple Experimental Designs"
+    - Standard A/B tests with individual randomization
+    - Cluster-randomized experiments
+    - Switchback/crossover experiments
+    - Stratified randomization
+    - Observational studies with Synthetic Control
 
-### **Statistical Methods**
+### Statistical Methods
 
-- **Multiple Analysis Methods**
-  - OLS and Clustered OLS regression
-  - GEE (Generalized Estimating Equations)
-  - Mixed Linear Models (MLM)
-  - Delta Method for ratio metrics
-  - Synthetic Control for observational data
+??? info "Multiple Analysis Methods"
+    - OLS and Clustered OLS regression
+    - GEE (Generalized Estimating Equations)
+    - Mixed Linear Models (MLM)
+    - Delta Method for ratio metrics
+    - Synthetic Control for observational data
 
-- **Variance Reduction Techniques**
-  - CUPED (Controlled-experiment Using Pre-Experiment Data)
-  - CUPAC (Control Using Predictions As Covariates)
-  - Covariate adjustment
+??? info "Variance Reduction Techniques"
+    - CUPED (Controlled-experiment Using Pre-Experiment Data)
+    - CUPAC (Control Using Predictions As Covariates)
+    - Covariate adjustment
 
-### **Analysis Workflow**
+### Analysis Workflow
 
-- **Scorecard Generation**: Analyze multiple metrics simultaneously
-- **Multi-dimensional Slicing**: Break down results by segments
-- **Multiple Treatment Arms**: Compare several treatments at once
-- **Ratio Metrics**: Built-in support for conversion rates, averages, etc.
+??? info "Scorecard & Multi-dimensional Analysis"
+    - **Scorecard Generation**: Analyze multiple metrics simultaneously
+    - **Multi-dimensional Slicing**: Break down results by segments
+    - **Multiple Treatment Arms**: Compare several treatments at once
+    - **Ratio Metrics**: Built-in support for conversion rates, averages, etc.
+    - **Relative Lift**: Analyze effects as percentage changes rather than absolute differences
 
 ---
 

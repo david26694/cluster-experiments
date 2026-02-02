@@ -14,6 +14,7 @@ jobs:
         with:
           python-version: 3.12
       - run: cp README.md docs/index.md
+      - run: cp CONTRIBUTING.md docs/CONTRIBUTING.md
       - run: cp -r theme docs/theme
       - run: |
           make install-dev-gh-action

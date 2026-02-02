@@ -43,6 +43,7 @@ docs-deploy:
 
 docs-serve:
 	cp README.md docs/index.md
+	cp CONTRIBUTING.md docs/CONTRIBUTING.md
 	rm -rf docs/theme
 	cp -r theme docs/theme/
 	mkdocs serve
