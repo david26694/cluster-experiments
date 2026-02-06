@@ -9,7 +9,6 @@
 ![License](https://img.shields.io/github/license/david26694/cluster-experiments)
 [![Pypi version](https://img.shields.io/pypi/pyversions/cluster-experiments.svg)](https://pypi.python.org/pypi/cluster-experiments)
 
-
 **`cluster-experiments`** is a comprehensive Python library for **end-to-end A/B testing workflows**, from experiment design to statistical analysis.
 
 ## 📖 What is cluster-experiments?
@@ -32,7 +31,7 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 
 ### Experiment Design
 
-<details>
+<details markdown="1">
 <summary>Power Analysis & Sample Size Calculation</summary>
 
 - Simulation-based (Monte Carlo) for any design complexity
@@ -40,7 +39,7 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 - Minimum Detectable Effect (MDE) estimation
 </details>
 
-<details>
+<details markdown="1">
 <summary>Multiple Experimental Designs</summary>
 
 - Standard A/B tests with individual randomization
@@ -52,7 +51,7 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 
 ### Statistical Methods
 
-<details>
+<details markdown="1">
 <summary>Multiple Analysis Methods</summary>
 
 - OLS and Clustered OLS regression
@@ -62,7 +61,7 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 - Synthetic Control for observational data
 </details>
 
-<details>
+<details markdown="1">
 <summary>Variance Reduction Techniques</summary>
 
 - CUPED (Controlled-experiment Using Pre-Experiment Data)
@@ -72,7 +71,7 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 
 ### Analysis Workflow
 
-<details>
+<details markdown="1">
 <summary>Scorecard & Multi-dimensional Analysis</summary>
 
 - **Scorecard Generation**: Analyze multiple metrics simultaneously
@@ -133,6 +132,7 @@ print(results.to_dataframe().head())
 ```
 
 **Output Example**:
+
 ```
   metric_alias control_variant_name treatment_variant_name  control_variant_mean  treatment_variant_mean analysis_type           ate  ate_ci_lower  ate_ci_upper   p_value     std_error     dimension_name dimension_value  alpha
 0      revenue              control              treatment              10.08554                9.941061           ols -1.444788e-01 -5.446603e-01  2.557026e-01  0.479186  2.041780e-01  __total_dimension           total   0.05
@@ -192,6 +192,7 @@ mde_timeline = power_analysis.mde_time_line(
 ```
 
 **Output:**
+
 ```
 Power for detecting +5 unit effect: 72.7%
 Minimum detectable effect at 80% power: 5.46
