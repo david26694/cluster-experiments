@@ -32,40 +32,55 @@ While the library is aimed at these scenarios, it's equally capable of handling 
 
 ### Experiment Design
 
-??? info "Power Analysis & Sample Size Calculation"
-    - Simulation-based (Monte Carlo) for any design complexity
-    - Analytical (CLT-based) for standard designs
-    - Minimum Detectable Effect (MDE) estimation
+<details>
+<summary>Power Analysis & Sample Size Calculation</summary>
 
-??? info "Multiple Experimental Designs"
-    - Standard A/B tests with individual randomization
-    - Cluster-randomized experiments
-    - Switchback/crossover experiments
-    - Stratified randomization
-    - Observational studies with Synthetic Control
+- Simulation-based (Monte Carlo) for any design complexity
+- Analytical (CLT-based) for standard designs
+- Minimum Detectable Effect (MDE) estimation
+</details>
+
+<details>
+<summary>Multiple Experimental Designs</summary>
+
+- Standard A/B tests with individual randomization
+- Cluster-randomized experiments
+- Switchback/crossover experiments
+- Stratified randomization
+- Observational studies with Synthetic Control
+</details>
 
 ### Statistical Methods
 
-??? info "Multiple Analysis Methods"
-    - OLS and Clustered OLS regression
-    - GEE (Generalized Estimating Equations)
-    - Mixed Linear Models (MLM)
-    - Delta Method for ratio metrics
-    - Synthetic Control for observational data
+<details>
+<summary>Multiple Analysis Methods</summary>
 
-??? info "Variance Reduction Techniques"
-    - CUPED (Controlled-experiment Using Pre-Experiment Data)
-    - CUPAC (Control Using Predictions As Covariates)
-    - Covariate adjustment
+- OLS and Clustered OLS regression
+- GEE (Generalized Estimating Equations)
+- Mixed Linear Models (MLM)
+- Delta Method for ratio metrics
+- Synthetic Control for observational data
+</details>
+
+<details>
+<summary>Variance Reduction Techniques</summary>
+
+- CUPED (Controlled-experiment Using Pre-Experiment Data)
+- CUPAC (Control Using Predictions As Covariates)
+- Covariate adjustment
+</details>
 
 ### Analysis Workflow
 
-??? info "Scorecard & Multi-dimensional Analysis"
-    - **Scorecard Generation**: Analyze multiple metrics simultaneously
-    - **Multi-dimensional Slicing**: Break down results by segments
-    - **Multiple Treatment Arms**: Compare several treatments at once
-    - **Ratio Metrics**: Built-in support for conversion rates, averages, etc.
-    - **Relative Lift**: Analyze effects as percentage changes rather than absolute differences
+<details>
+<summary>Scorecard & Multi-dimensional Analysis</summary>
+
+- **Scorecard Generation**: Analyze multiple metrics simultaneously
+- **Multi-dimensional Slicing**: Break down results by segments
+- **Multiple Treatment Arms**: Compare several treatments at once
+- **Ratio Metrics**: Built-in support for conversion rates, averages, etc.
+- **Relative Lift**: Analyze effects as percentage changes rather than absolute differences
+</details>
 
 ---
 
