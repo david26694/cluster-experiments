@@ -94,6 +94,35 @@ The results dataframe includes:
     - **p_value < 0.05**: Result is statistically significant (95% confidence)
     - **Confidence interval**: If it doesn't include 0, effect is significant (95% confidence)
 
+#### 1.1.1. Single-run inference and model summary
+
+When you run an analysis, you can get full inference results plus the underlying model fit (e.g. statsmodels regression table) using `get_inference_results`. This is separate from **power analysis**, which runs many simulations and only uses p-values and point estimates.
+
+```python
+from cluster_experiments.experiment_analysis import GeeExperimentAnalysis, InferenceResults
+
+analysis = GeeExperimentAnalysis(
+    cluster_cols=["cluster"],
+    target_col="target",
+    treatment_col="treatment",
+)
+
+# Single run: get ATE, p-value, CI and optional model fit
+results = analysis.get_inference_results(df, alpha=0.05)
+
+# High-level summary (ATE, std error, p-value, CI)
+print(results.summary())
+
+# Full model fit table (e.g. GEE/OLS coefficient table) when available
+if results.model_summary():
+    print(results.model_summary())
+
+# Or use the fitted model directly (e.g. statsmodels API)
+if results.fitted_model is not None:
+    print(results.fitted_model.summary())
+```
+
+`InferenceResults` is used for single-run inference. When you use `AnalysisPlan.analyze(df)`, each test produces one `InferenceResults` internally; only the scalar fields (ATE, p-value, etc.) are stored in the results table. Power analysis does not use `InferenceResults` at all (it uses `get_pvalue` and `get_point_estimate` over many simulations).
 
 ---
 
