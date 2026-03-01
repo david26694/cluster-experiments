@@ -1146,6 +1146,59 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         results_mlm = self.fit_mlm(df)
         return results_mlm.bse[self.treatment_col]
 
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_mlm = self.fit_mlm(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_mlm.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_mlm.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
+    def analysis_inference_results(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> InferenceResults:
+        """Returns the inference results of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_mlm = self.fit_mlm(df)
+
+        std_error = results_mlm.bse[self.treatment_col]
+        ate = results_mlm.params[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_mlm)
+
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_mlm.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_mlm.summary())
+
+        # Return the confidence interval
+        return InferenceResults(
+            ate=ate,
+            p_value=p_value,
+            std_error=std_error,
+            conf_int=ConfidenceInterval(
+                lower=lower_bound, upper=upper_bound, alpha=alpha
+            ),
+            fitted_model=results_mlm,
+        )
+
 
 class SyntheticControlAnalysis(ExperimentAnalysis):
     """
