@@ -178,17 +178,30 @@ def test_config_power_relative():
     assert pw.analysis.relative_effect
 
 
-def test_config_power_incorrect():
-    # given
+def test_config_power_delta_relative():
+    # delta + relative_effect is now supported
     config = {
         "analysis": "delta",
         "perturbator": "constant",
-        "splitter": "non_clustered",
+        "splitter": "clustered",
+        "cluster_cols": ["cluster"],
+        "scale_col": "scale",
         "relative_effect": True,
     }
+    pw = PowerAnalysis.from_dict(config)
+    assert pw.analysis.relative_effect
 
-    # then
-    with pytest.raises(ValueError, match="OLSAnalysis"):
+
+def test_config_power_incorrect():
+    # relative_effect with an unsupported analysis type still raises
+    config = {
+        "analysis": "gee",
+        "perturbator": "constant",
+        "splitter": "clustered",
+        "cluster_cols": ["cluster"],
+        "relative_effect": True,
+    }
+    with pytest.raises(ValueError, match="relative_effect only works"):
         PowerAnalysis.from_dict(config)
 
 
