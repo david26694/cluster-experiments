@@ -1,15 +1,6 @@
 import logging
 import random
-from typing import (
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-)
+from typing import Callable, Dict, Generator, Iterable, List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -148,13 +139,13 @@ class PowerAnalysis:
         return (
             f"{type(self).__name__}(perturbator={type(self.perturbator).__name__}, "
             f"splitter={type(self.splitter).__name__}, analysis={type(self.analysis).__name__}, "
-            f"n_simulations={self.n_simulations}, alpha={self.alpha})"
+            f"n_simulations={self.n_simulations}, alpha={self.alpha}, hypothesis={self.hypothesis})"
         )
 
     def __str__(self) -> str:
         return (
             f"{type(self).__name__}: n_simulations={self.n_simulations}, alpha={self.alpha}, "
-            f"target={self.target_col}, treatment={self.treatment}"
+            f"target={self.target_col}, treatment={self.treatment}, hypothesis={self.hypothesis}"
         )
 
     def summary(self) -> str:
@@ -747,6 +738,19 @@ class NormalPowerAnalysis:
             # may need to seed other stochasticity sources if added
 
         self.check_inputs()
+
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__}(splitter={type(self.splitter).__name__}, "
+            f"analysis={type(self.analysis).__name__}, "
+            f"n_simulations={self.n_simulations}, alpha={self.alpha}, hypothesis={self.hypothesis})"
+        )
+
+    def __str__(self) -> str:
+        return (
+            f"{type(self).__name__}: n_simulations={self.n_simulations}, alpha={self.alpha}, "
+            f"target={self.target_col}, treatment={self.treatment}, hypothesis={self.hypothesis}"
+        )
 
     def _split(self, df: pd.DataFrame) -> pd.DataFrame:
         """
