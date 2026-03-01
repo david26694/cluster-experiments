@@ -68,6 +68,33 @@ class AnalysisPlan:
 
         self._validate_inputs()
 
+    def __repr__(self) -> str:
+        return (
+            f"AnalysisPlan(tests={len(self.tests)}, variants={len(self.variants)}, "
+            f"variant_col={self.variant_col!r}, alpha={self.alpha})"
+        )
+
+    def __str__(self) -> str:
+        return (
+            f"AnalysisPlan: {len(self.tests)} test(s), {len(self.variants)} variant(s), "
+            f"variant_col={self.variant_col}, alpha={self.alpha}"
+        )
+
+    def summary(self) -> str:
+        """Return a summary of the analysis plan."""
+        lines = [
+            "Analysis plan",
+            f"  Variant column: {self.variant_col}",
+            f"  Alpha: {self.alpha}",
+            f"  Variants: {[v.name for v in self.variants]}",
+            f"  Number of tests: {len(self.tests)}",
+        ]
+        for i, test in enumerate(self.tests):
+            lines.append(
+                f"  Test {i + 1}: metric={test.metric.alias}, analysis={test.analysis_type}"
+            )
+        return "\n".join(lines)
+
     def _validate_inputs(self):
         """
         Validates the inputs for the AnalysisPlan class.

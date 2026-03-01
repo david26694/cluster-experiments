@@ -24,6 +24,9 @@ class Dimension:
         """
         self._validate_inputs()
 
+    def __str__(self) -> str:
+        return f"Dimension(name={self.name!r}, values={self.values})"
+
     def _validate_inputs(self):
         """
         Validates the inputs for the Dimension class.
@@ -81,3 +84,6 @@ class DefaultDimension(Dimension):
 
     def __init__(self):
         super().__init__(name="__total_dimension", values=["total"])
+
+    def __str__(self) -> str:
+        return "DefaultDimension(total)"

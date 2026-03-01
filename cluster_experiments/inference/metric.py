@@ -24,6 +24,16 @@ class Metric(ABC):
         self.alias = alias
         self._validate_alias()
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(alias={self.alias!r})"
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}(alias={self.alias})"
+
+    def summary(self) -> str:
+        """Return a short description of the metric."""
+        return f"Metric: alias={self.alias}, target_column={self.target_column}"
+
     def _validate_alias(self):
         """
         Validates the alias input for the Metric class.
@@ -125,6 +135,16 @@ class SimpleMetric(Metric):
         self.name = name
         self._validate_name()
 
+    def __repr__(self) -> str:
+        return f"SimpleMetric(alias={self.alias!r}, name={self.name!r})"
+
+    def __str__(self) -> str:
+        return f"SimpleMetric(alias={self.alias}, name={self.name})"
+
+    def summary(self) -> str:
+        """Return a short description of the simple metric."""
+        return f"Simple metric: alias={self.alias}, column={self.name}"
+
     def _validate_name(self):
         """
         Validates the name input for the SimpleMetric class.
@@ -215,6 +235,22 @@ class RatioMetric(Metric):
         self.numerator_name = numerator_name
         self.denominator_name = denominator_name
         self._validate_names()
+
+    def __repr__(self) -> str:
+        return (
+            f"RatioMetric(alias={self.alias!r}, numerator_name={self.numerator_name!r}, "
+            f"denominator_name={self.denominator_name!r})"
+        )
+
+    def __str__(self) -> str:
+        return f"RatioMetric(alias={self.alias}, {self.numerator_name}/{self.denominator_name})"
+
+    def summary(self) -> str:
+        """Return a short description of the ratio metric."""
+        return (
+            f"Ratio metric: alias={self.alias}, "
+            f"numerator={self.numerator_name}, denominator={self.denominator_name}"
+        )
 
     def _validate_names(self):
         """

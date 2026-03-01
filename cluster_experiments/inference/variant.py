@@ -23,6 +23,10 @@ class Variant:
         """
         self._validate_inputs()
 
+    def __str__(self) -> str:
+        role = "control" if self.is_control else "treatment"
+        return f"Variant(name={self.name!r}, {role})"
+
     def _validate_inputs(self):
         """
         Validates the inputs for the Variant class.

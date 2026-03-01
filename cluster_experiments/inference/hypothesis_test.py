@@ -85,6 +85,29 @@ class HypothesisTest:
         self.new_analysis_config = None
         self.experiment_analysis = None
 
+    def __repr__(self) -> str:
+        return (
+            f"HypothesisTest(metric={self.metric.alias!r}, analysis_type={self.analysis_type!r}, "
+            f"dimensions={len(self.dimensions)}, cupac={self.is_cupac})"
+        )
+
+    def __str__(self) -> str:
+        return f"HypothesisTest(metric={self.metric.alias}, analysis_type={self.analysis_type})"
+
+    def summary(self) -> str:
+        """Return a summary of the hypothesis test configuration."""
+        dim_info = ", ".join(d.name for d in self.dimensions)
+        lines = [
+            "Hypothesis test",
+            f"  Metric: {self.metric.alias}",
+            f"  Analysis type: {self.analysis_type}",
+            f"  Dimensions: {dim_info}",
+            f"  CUPAC: {self.is_cupac}",
+        ]
+        if self.analysis_config:
+            lines.append(f"  Analysis config: {self.analysis_config}")
+        return "\n".join(lines)
+
     @staticmethod
     def _validate_inputs(
         metric: Metric,

@@ -144,6 +144,34 @@ class PowerAnalysis:
 
         self.check_inputs()
 
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__}(perturbator={type(self.perturbator).__name__}, "
+            f"splitter={type(self.splitter).__name__}, analysis={type(self.analysis).__name__}, "
+            f"n_simulations={self.n_simulations}, alpha={self.alpha})"
+        )
+
+    def __str__(self) -> str:
+        return (
+            f"{type(self).__name__}: n_simulations={self.n_simulations}, alpha={self.alpha}, "
+            f"target={self.target_col}, treatment={self.treatment}"
+        )
+
+    def summary(self) -> str:
+        """Return a summary of the power analysis configuration."""
+        lines = [
+            f"{type(self).__name__} configuration",
+            f"  Perturbator: {type(self.perturbator).__name__}",
+            f"  Splitter: {type(self.splitter).__name__}",
+            f"  Analysis: {type(self.analysis).__name__}",
+            f"  n_simulations: {self.n_simulations}",
+            f"  alpha: {self.alpha}",
+            f"  target_col: {self.target_col}",
+            f"  treatment_col: {self.treatment_col}",
+            f"  treatment: {self.treatment}, control: {self.control}",
+        ]
+        return "\n".join(lines)
+
     def _simulate_perturbed_df(
         self,
         df: pd.DataFrame,
