@@ -1,4 +1,5 @@
 import random
+import warnings
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
@@ -114,6 +115,19 @@ class ClusteredSplitter(RandomSplitter):
         clusters_df = df.loc[:, self.cluster_cols].drop_duplicates()
         clusters_df[self.treatment_col] = self.sample_treatment(clusters_df)
         df = df.merge(clusters_df, on=self.cluster_cols, how="left")
+
+        # If input already had treatment_col, merge produced treatment_x (from df) and treatment_y (from clusters_df).
+        # Keep the new assignment (treatment_y), rename to treatment_col, and drop the duplicate columns.
+        if (
+            f"{self.treatment_col}_x" in df.columns
+            and f"{self.treatment_col}_y" in df.columns
+        ):
+            df[self.treatment_col] = df[f"{self.treatment_col}_y"]
+            df = df.drop(columns=[f"{self.treatment_col}_x", f"{self.treatment_col}_y"])
+            warnings.warn(
+                f"Input dataframe already had a '{self.treatment_col}' column. "
+                f"It was replaced with the new assignment from the splitter (kept merge column '{self.treatment_col}_y' as '{self.treatment_col}')."
+            )
         return df
 
     def sample_treatment(
