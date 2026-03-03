@@ -110,8 +110,7 @@ class UniformPerturbator(Perturbator):
     ):
         super().__init__(average_effect, target_col, treatment_col, treatment)
         logging.warning(
-            "UniformPerturbator is deprecated and will be removed in future versions. "
-            "Use ConstantPerturbator instead."
+            "UniformPerturbator is deprecated and will be removed in future versions. Use ConstantPerturbator instead."
         )
 
     def perturbate(
@@ -173,7 +172,8 @@ class NormalPerturbator(ConstantPerturbator):
     def perturbate(
         self, df: pd.DataFrame, average_effect: Optional[float] = None
     ) -> pd.DataFrame:
-        """Perturbate with a normal effect with mean average_effect and
+        """
+        Perturbate with a normal effect with mean average_effect and
         std abs(average_effect).
 
         Arguments:
@@ -280,15 +280,13 @@ class RelativePositivePerturbator(Perturbator):
         ).mean()
         if 1.0 == treatment_zeros:
             raise ValueError(
-                f"All treatment samples have {self.target_col} = 0, relative effect "
-                f"{average_effect} will have no effect"
+                f"All treatment samples have {self.target_col} = 0, relative effect {average_effect} will have no effect"
             )
 
     def check_target_is_not_negative(self, df: pd.DataFrame) -> Optional[NoReturn]:
         if any(df[self.target_col] < 0):
             raise ValueError(
-                f"All {self.target_col} values need to be positive or 0, "
-                f"got {df[self.target_col].min()}"
+                f"All {self.target_col} values need to be positive or 0, got {df[self.target_col].min()}"
             )
 
     def check_average_effect_greater_than(
@@ -296,8 +294,7 @@ class RelativePositivePerturbator(Perturbator):
     ) -> Optional[NoReturn]:
         if average_effect <= x:
             raise ValueError(
-                f"Simulated effect needs to be greater than {x*100:.0f}%, got "
-                f"{average_effect*100:.1f}%"
+                f"Simulated effect needs to be greater than {x * 100:.0f}%, got {average_effect * 100:.1f}%"
             )
 
     def apply_multiplicative_effect(
@@ -383,8 +380,7 @@ class BetaRelativePositivePerturbator(NormalPerturbator, RelativePositivePerturb
     ) -> Optional[NoReturn]:
         if average_effect >= x:
             raise ValueError(
-                f"Simulated effect needs to be less than {x*100:.0f}%, got "
-                f"{average_effect*100:.1f}%"
+                f"Simulated effect needs to be less than {x * 100:.0f}%, got {average_effect * 100:.1f}%"
             )
 
     def _sample_beta_effect(
@@ -502,8 +498,7 @@ class BetaRelativePerturbator(NormalPerturbator, RelativePositivePerturbator):
             raise ValueError(f"range_min needs to be greater than -1, got {range_min}")
         if range_min >= range_max:
             raise ValueError(
-                f"range_min needs to be smaller than range_max, got "
-                f"{range_min = } and {range_max = }"
+                f"range_min needs to be smaller than range_max, got {range_min = } and {range_max = }"
             )
 
     def check_relative_effect_bounds(self, average_effect: float) -> None:
@@ -628,8 +623,7 @@ class SegmentedBetaRelativePerturbator(BetaRelativePositivePerturbator):
     def _set_segment_col_values(self, df: pd.DataFrame):
         if self.segment_col in df.columns:
             raise ValueError(
-                f"Cannot use {self.segment_col=} as perturbator clustering "
-                f"column, as it already exists in the input dataframe!"
+                f"Cannot use {self.segment_col=} as perturbator clustering column, as it already exists in the input dataframe!"
             )
         return df.copy().assign(
             **{self.segment_col: df[self._segment_cols].astype(str).sum(axis=1)}
