@@ -24,6 +24,13 @@ class Variant:
         self._validate_inputs()
 
     def __str__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import Variant
+        v = Variant(name="control", is_control=True)
+        print(v)
+        ```
+        """
         role = "control" if self.is_control else "treatment"
         return f"Variant(name={self.name!r}, {role})"
 

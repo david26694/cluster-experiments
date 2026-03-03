@@ -29,10 +29,25 @@ class ConfidenceInterval:
     alpha: float
 
     def __str__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import ConfidenceInterval
+        ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+        print(ci)
+        ```
+        """
         return f"[{self.lower:.4f}, {self.upper:.4f}] (alpha={self.alpha})"
 
     def summary(self) -> str:
-        """Return a short summary of the confidence interval."""
+        """Return a short summary of the confidence interval.
+
+        Usage:
+        ```python
+        from cluster_experiments import ConfidenceInterval
+        ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+        print(ci.summary())
+        ```
+        """
         return (
             f"Confidence interval (1 - alpha = {1 - self.alpha:.2%})\n"
             f"  Lower: {self.lower:.6g}\n"
@@ -72,6 +87,14 @@ class InferenceResults:
     fitted_model: Optional[Any] = None
 
     def __str__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import ConfidenceInterval, InferenceResults
+        ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+        results = InferenceResults(ate=0.2, p_value=0.03, std_error=0.1, conf_int=ci)
+        print(results)
+        ```
+        """
         return (
             f"ATE={self.ate:.4f}, p_value={self.p_value:.4f}, "
             f"std_error={self.std_error:.4f}, CI={self.conf_int}"
@@ -96,7 +119,16 @@ class InferenceResults:
         return None
 
     def summary(self) -> str:
-        """Return a summary of the inference results."""
+        """Return a summary of the inference results.
+
+        Usage:
+        ```python
+        from cluster_experiments import ConfidenceInterval, InferenceResults
+        ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+        results = InferenceResults(ate=0.2, p_value=0.03, std_error=0.1, conf_int=ci)
+        print(results.summary())
+        ```
+        """
         lines = [
             "Inference results",
             f"  ATE:        {self.ate:.6g}",
@@ -150,6 +182,13 @@ class ExperimentAnalysis(ABC):
         self.add_covariate_interaction = add_covariate_interaction
 
     def __repr__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import GeeExperimentAnalysis
+        a = GeeExperimentAnalysis(cluster_cols=["cluster"])
+        print(repr(a))
+        ```
+        """
         return (
             f"{type(self).__name__}(cluster_cols={self.cluster_cols!r}, "
             f"target_col={self.target_col!r}, treatment_col={self.treatment_col!r}, "
@@ -157,6 +196,13 @@ class ExperimentAnalysis(ABC):
         )
 
     def __str__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import GeeExperimentAnalysis
+        a = GeeExperimentAnalysis(cluster_cols=["cluster"])
+        print(a)
+        ```
+        """
         return (
             f"{type(self).__name__}: cluster_cols={self.cluster_cols}, "
             f"target={self.target_col}, treatment={self.treatment}"

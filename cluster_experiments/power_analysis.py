@@ -136,6 +136,19 @@ class PowerAnalysis:
         self.check_inputs()
 
     def __repr__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import PowerAnalysis
+        from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+        from cluster_experiments.perturbator import ConstantPerturbator
+        from cluster_experiments.random_splitter import ClusteredSplitter
+        sw = ClusteredSplitter(cluster_cols=["cluster"])
+        perturbator = ConstantPerturbator()
+        analysis = GeeExperimentAnalysis(cluster_cols=["cluster"])
+        pw = PowerAnalysis(perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50)
+        print(repr(pw))
+        ```
+        """
         return (
             f"{type(self).__name__}(perturbator={type(self.perturbator).__name__}, "
             f"splitter={type(self.splitter).__name__}, analysis={type(self.analysis).__name__}, "
@@ -149,7 +162,21 @@ class PowerAnalysis:
         )
 
     def summary(self) -> str:
-        """Return a summary of the power analysis configuration."""
+        """Return a summary of the power analysis configuration.
+
+        Usage:
+        ```python
+        from cluster_experiments import PowerAnalysis
+        from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+        from cluster_experiments.perturbator import ConstantPerturbator
+        from cluster_experiments.random_splitter import ClusteredSplitter
+        sw = ClusteredSplitter(cluster_cols=["cluster"])
+        perturbator = ConstantPerturbator()
+        analysis = GeeExperimentAnalysis(cluster_cols=["cluster"])
+        pw = PowerAnalysis(perturbator=perturbator, splitter=sw, analysis=analysis, n_simulations=50)
+        print(pw.summary())
+        ```
+        """
         lines = [
             f"{type(self).__name__} configuration",
             f"  Perturbator: {type(self.perturbator).__name__}",
@@ -740,6 +767,17 @@ class NormalPowerAnalysis:
         self.check_inputs()
 
     def __repr__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import NormalPowerAnalysis
+        from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+        from cluster_experiments.random_splitter import ClusteredSplitter
+        sw = ClusteredSplitter(cluster_cols=["cluster"])
+        analysis = GeeExperimentAnalysis(cluster_cols=["cluster"])
+        pw = NormalPowerAnalysis(splitter=sw, analysis=analysis, n_simulations=50)
+        print(repr(pw))
+        ```
+        """
         return (
             f"{type(self).__name__}(splitter={type(self.splitter).__name__}, "
             f"analysis={type(self.analysis).__name__}, "
@@ -747,6 +785,17 @@ class NormalPowerAnalysis:
         )
 
     def __str__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import NormalPowerAnalysis
+        from cluster_experiments.experiment_analysis import GeeExperimentAnalysis
+        from cluster_experiments.random_splitter import ClusteredSplitter
+        sw = ClusteredSplitter(cluster_cols=["cluster"])
+        analysis = GeeExperimentAnalysis(cluster_cols=["cluster"])
+        pw = NormalPowerAnalysis(splitter=sw, analysis=analysis, n_simulations=50)
+        print(pw)
+        ```
+        """
         return (
             f"{type(self).__name__}: n_simulations={self.n_simulations}, alpha={self.alpha}, "
             f"target={self.target_col}, treatment={self.treatment}, hypothesis={self.hypothesis}"

@@ -86,16 +86,41 @@ class HypothesisTest:
         self.experiment_analysis = None
 
     def __repr__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import HypothesisTest, SimpleMetric
+        m = SimpleMetric(alias="avg_salary", name="salary")
+        ht = HypothesisTest(metric=m, analysis_type="ols")
+        print(repr(ht))
+        ```
+        """
         return (
             f"HypothesisTest(metric={self.metric.alias!r}, analysis_type={self.analysis_type!r}, "
             f"dimensions={len(self.dimensions)}, cupac={self.is_cupac})"
         )
 
     def __str__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import HypothesisTest, SimpleMetric
+        m = SimpleMetric(alias="avg_salary", name="salary")
+        ht = HypothesisTest(metric=m, analysis_type="ols")
+        print(ht)
+        ```
+        """
         return f"HypothesisTest(metric={self.metric.alias}, analysis_type={self.analysis_type})"
 
     def summary(self) -> str:
-        """Return a summary of the hypothesis test configuration."""
+        """Return a summary of the hypothesis test configuration.
+
+        Usage:
+        ```python
+        from cluster_experiments import HypothesisTest, SimpleMetric
+        m = SimpleMetric(alias="avg_salary", name="salary")
+        ht = HypothesisTest(metric=m, analysis_type="ols")
+        print(ht.summary())
+        ```
+        """
         dim_info = ", ".join(d.name for d in self.dimensions)
         lines = [
             "Hypothesis test",

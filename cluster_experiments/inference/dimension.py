@@ -25,6 +25,13 @@ class Dimension:
         self._validate_inputs()
 
     def __str__(self) -> str:
+        """Usage:
+        ```python
+        from cluster_experiments import Dimension
+        d = Dimension(name="country", values=["US", "UK"])
+        print(d)
+        ```
+        """
         return f"Dimension(name={self.name!r}, values={self.values})"
 
     def _validate_inputs(self):
