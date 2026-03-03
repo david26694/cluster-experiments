@@ -83,6 +83,7 @@ class EmptyWashover(Washover):
         ```python
         import pandas as pd
         import numpy as np
+        import random
         from cluster_experiments import SwitchbackSplitter
         from cluster_experiments import EmptyWashover
 
