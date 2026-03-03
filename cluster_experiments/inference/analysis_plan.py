@@ -69,7 +69,9 @@ class AnalysisPlan:
         self._validate_inputs()
 
     def __repr__(self) -> str:
-        """Usage:
+        """
+        Usage:
+
         ```python
         from cluster_experiments import AnalysisPlan, HypothesisTest, SimpleMetric, Variant
         m = SimpleMetric(alias="avg_salary", name="salary")
@@ -86,7 +88,9 @@ class AnalysisPlan:
         )
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
+
         ```python
         from cluster_experiments import AnalysisPlan, HypothesisTest, SimpleMetric, Variant
         m = SimpleMetric(alias="avg_salary", name="salary")
@@ -103,9 +107,11 @@ class AnalysisPlan:
         )
 
     def summary(self) -> str:
-        """Return a summary of the analysis plan.
+        """
+        Return a summary of the analysis plan.
 
         Usage:
+
         ```python
         from cluster_experiments import AnalysisPlan, HypothesisTest, SimpleMetric, Variant
         m = SimpleMetric(alias="avg_salary", name="salary")

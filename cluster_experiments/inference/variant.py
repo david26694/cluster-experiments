@@ -24,9 +24,10 @@ class Variant:
         self._validate_inputs()
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
-        from cluster_experiments import Variant
+        from cluster_experiments.inference.variant import Variant
         v = Variant(name="control", is_control=True)
         print(v)
         ```

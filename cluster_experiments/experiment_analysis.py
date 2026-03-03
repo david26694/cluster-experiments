@@ -29,7 +29,8 @@ class ConfidenceInterval:
     alpha: float
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import ConfidenceInterval
         ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
@@ -87,7 +88,8 @@ class InferenceResults:
     fitted_model: Optional[Any] = None
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import ConfidenceInterval, InferenceResults
         ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
@@ -182,7 +184,8 @@ class ExperimentAnalysis(ABC):
         self.add_covariate_interaction = add_covariate_interaction
 
     def __repr__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import GeeExperimentAnalysis
         a = GeeExperimentAnalysis(cluster_cols=["cluster"])
@@ -196,7 +199,8 @@ class ExperimentAnalysis(ABC):
         )
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import GeeExperimentAnalysis
         a = GeeExperimentAnalysis(cluster_cols=["cluster"])

@@ -25,7 +25,8 @@ class Metric(ABC):
         self._validate_alias()
 
     def __repr__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import SimpleMetric
         m = SimpleMetric(alias="avg_salary", name="salary")
@@ -35,7 +36,8 @@ class Metric(ABC):
         return f"{type(self).__name__}(alias={self.alias!r})"
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import SimpleMetric
         m = SimpleMetric(alias="avg_salary", name="salary")
@@ -158,7 +160,8 @@ class SimpleMetric(Metric):
         self._validate_name()
 
     def __repr__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import SimpleMetric
         m = SimpleMetric(alias="avg_salary", name="salary")
@@ -168,7 +171,8 @@ class SimpleMetric(Metric):
         return f"SimpleMetric(alias={self.alias!r}, name={self.name!r})"
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import SimpleMetric
         m = SimpleMetric(alias="avg_salary", name="salary")
@@ -281,7 +285,8 @@ class RatioMetric(Metric):
         self._validate_names()
 
     def __repr__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import RatioMetric
         m = RatioMetric(alias="avg_salary", numerator_name="total_salary", denominator_name="n_employees")
@@ -294,7 +299,8 @@ class RatioMetric(Metric):
         )
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import RatioMetric
         m = RatioMetric(alias="avg_salary", numerator_name="total_salary", denominator_name="n_employees")

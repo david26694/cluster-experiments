@@ -25,7 +25,8 @@ class Dimension:
         self._validate_inputs()
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import Dimension
         d = Dimension(name="country", values=["US", "UK"])
@@ -93,4 +94,12 @@ class DefaultDimension(Dimension):
         super().__init__(name="__total_dimension", values=["total"])
 
     def __str__(self) -> str:
+        """
+        Usage:
+        ```python
+        from cluster_experiments.inference.dimension import DefaultDimension
+        d = DefaultDimension()
+        print(d)
+        ```
+        """
         return "DefaultDimension(total)"

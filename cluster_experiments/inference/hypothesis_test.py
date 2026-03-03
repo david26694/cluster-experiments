@@ -86,7 +86,8 @@ class HypothesisTest:
         self.experiment_analysis = None
 
     def __repr__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import HypothesisTest, SimpleMetric
         m = SimpleMetric(alias="avg_salary", name="salary")
@@ -100,7 +101,8 @@ class HypothesisTest:
         )
 
     def __str__(self) -> str:
-        """Usage:
+        """
+        Usage:
         ```python
         from cluster_experiments import HypothesisTest, SimpleMetric
         m = SimpleMetric(alias="avg_salary", name="salary")
