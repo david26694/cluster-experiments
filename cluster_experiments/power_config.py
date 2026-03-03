@@ -166,6 +166,29 @@ class PowerConfig:
 
     seed: Optional[int] = None
 
+    def __str__(self) -> str:
+        return (
+            f"PowerConfig(splitter={self.splitter!r}, analysis={self.analysis!r}, "
+            f"perturbator={self.perturbator!r}, n_simulations={self.n_simulations}, alpha={self.alpha})"
+        )
+
+    def summary(self) -> str:
+        """Return a summary of the power configuration."""
+        lines = [
+            "Power configuration",
+            f"  Splitter: {self.splitter}",
+            f"  Analysis: {self.analysis}",
+            f"  Perturbator: {self.perturbator or '(none)'}",
+            f"  Washover: {self.washover or '(none)'}",
+            f"  Cluster columns: {self.cluster_cols}",
+            f"  n_simulations: {self.n_simulations}",
+            f"  alpha: {self.alpha}",
+            f"  treatment: {self.treatment}, control: {self.control}",
+        ]
+        if self.perturbator and self.average_effect is not None:
+            lines.append(f"  average_effect: {self.average_effect}")
+        return "\n".join(lines)
+
     def __post_init__(self):
         if "switchback" not in self.splitter:
             if self._are_different(self.switch_frequency, None):
