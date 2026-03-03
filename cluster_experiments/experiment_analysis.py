@@ -1295,27 +1295,27 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             covariates: list of columns to use as covariates. Have to be previously aggregated at the cluster level.
             hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis.
 
-            Usage:
-            ```python
-            import pandas as pd
+        Usage:
+        ```python
+        import pandas as pd
 
-            from cluster_experiments.experiment_analysis import DeltaMethodAnalysis
+        from cluster_experiments.experiment_analysis import DeltaMethodAnalysis
 
-            df = pd.DataFrame({
-                'x': [1, 2, 3, 0, 0, 1] * 2,
-                'y': [2, 2, 5, 1, 1, 1] * 2,
-                'treatment': ["A"] * 6 + ["B"] * 6,
-                'cluster': [1, 2, 3, 1, 2, 3] * 2,
-                'z': [1, 2, 3, 4, 5, 6] * 2,
-            })
+        df = pd.DataFrame({
+            'x': [1, 2, 3, 0, 0, 1] * 2,
+            'y': [2, 2, 5, 1, 1, 1] * 2,
+            'treatment': ["A"] * 6 + ["B"] * 6,
+            'cluster': [1, 2, 3, 1, 2, 3] * 2,
+            'z': [1, 2, 3, 4, 5, 6] * 2,
+        })
 
-            DeltaMethodAnalysis(
-                cluster_cols=['cluster'],
-                target_col='x',
-                scale_col='y',
-                covariates=['z']
-            ).get_pvalue(df)
-            ```
+        DeltaMethodAnalysis(
+            cluster_cols=['cluster'],
+            target_col='x',
+            scale_col='y',
+            covariates=['z']
+        ).get_pvalue(df)
+        ```
         """
 
         super().__init__(
