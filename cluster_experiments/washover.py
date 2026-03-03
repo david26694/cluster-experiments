@@ -80,6 +80,7 @@ class EmptyWashover(Washover):
 
         Usage:
         ```python
+        import pandas as pd
         from cluster_experiments import SwitchbackSplitter
         from cluster_experiments import EmptyWashover
 
