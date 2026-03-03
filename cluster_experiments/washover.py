@@ -109,7 +109,7 @@ class EmptyWashover(Washover):
             switch_frequency="30T",
         )
 
-        out_df = splitter.assign_treatment_df(df=washover_split_df)
+        out_df = splitter.assign_treatment_df(df=df)
         ```
         """
         return df

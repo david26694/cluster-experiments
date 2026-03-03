@@ -1313,7 +1313,6 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             cluster_cols=['cluster'],
             target_col='x',
             scale_col='y',
-            covariates=['z']
         ).get_pvalue(df)
         ```
         """
