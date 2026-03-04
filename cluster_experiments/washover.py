@@ -163,7 +163,7 @@ class ConstantWashover(Washover):
 
         def generate_data(start_time, end_time, treatment):
             data = {
-                'order_id': np.random.randint(10**9, 10**10, size=num_rows),
+                'order_id': np.random.randint(10**3, 10**4, size=num_rows),
                 'city_code': 'VAL',
                 'activation_time_local': [random_timestamp(start_time, end_time) for _ in range(num_rows)],
                 'bin_start_time_local': start_time,
