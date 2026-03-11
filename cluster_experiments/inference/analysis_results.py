@@ -9,6 +9,15 @@ class AnalysisPlanResults:
     """
     A dataclass used to represent the results of the experiment analysis.
 
+    Returned by :meth:`AnalysisPlan.analyze <cluster_experiments.inference.analysis_plan.AnalysisPlan.analyze>`.
+    Each row corresponds to one hypothesis test (metric × variant × dimension slice).
+    Only aggregate fields are stored (ATE, p-value, etc.); for the full underlying
+    model fit (e.g. statsmodels regression table) for a single run, use
+    :meth:`ExperimentAnalysis.get_inference_results
+    <cluster_experiments.experiment_analysis.ExperimentAnalysis.get_inference_results>`
+    and then :meth:`InferenceResults.model_summary
+    <cluster_experiments.experiment_analysis.InferenceResults.model_summary>`.
+
     Attributes
     ----------
     metric_alias : List[str]
@@ -81,3 +90,23 @@ class AnalysisPlanResults:
 
     def to_dataframe(self):
         return pd.DataFrame(asdict(self))
+
+    def __str__(self) -> str:
+        n = len(self.ate)
+        if n == 0:
+            return "AnalysisPlanResults(0 tests)"
+        ate_range = f"[{min(self.ate):.4g}, {max(self.ate):.4g}]"
+        return f"AnalysisPlanResults({n} test(s): metrics={self.metric_alias}, ATE in {ate_range})"
+
+    def summary(self) -> str:
+        """Return a summary of the analysis plan results."""
+        df = self.to_dataframe()
+        if df.empty:
+            return "Analysis plan results: no tests."
+        lines = [
+            "Analysis plan results",
+            f"  Number of tests: {len(df)}",
+            "",
+            df.to_string(index=False),
+        ]
+        return "\n".join(lines)
