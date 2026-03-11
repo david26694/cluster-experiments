@@ -897,6 +897,37 @@ class NormalPowerAnalysis:
 
         return float(z_alpha + z_beta) * std_error
 
+    def _relative_ratio_mde_calculation(
+        self,
+        alpha: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+        treat_var: float,
+        power: float,
+    ) -> float:
+        """
+        Solves the quadratic power equation for relative MDE of ratio metrics (Double Delta Method).
+        A*m^2 + B*m + C_term = 0  =>  m = (-B + sqrt(B^2 - 4*A*C_term)) / (2*A).
+        Two-sided hypothesis only for now.
+        """
+        R_c = ctrl_mean
+        SE2_c = ctrl_var / (R_c**2)
+        SE2_t = treat_var / (R_c**2)
+
+        z_alpha = norm.ppf(1 - alpha / 2)
+        z_beta = norm.ppf(power)
+
+        v0 = SE2_t + SE2_c
+        c = z_alpha * np.sqrt(v0)
+
+        A = 1 - (z_beta**2) * SE2_c
+        B = -2 * (c + (z_beta**2) * SE2_c)
+        C_term = c**2 - (z_beta**2) * v0
+
+        discriminant = B**2 - 4 * A * C_term
+        m = (-B + np.sqrt(discriminant)) / (2 * A)
+        return float(m)
+
     def _get_time_col(self) -> str:
         if self.time_col is None:
             raise ValueError(
@@ -925,6 +956,27 @@ class NormalPowerAnalysis:
             alpha: Significance level.
         """
         alpha = self.alpha if alpha is None else alpha
+
+        is_relative_delta = getattr(
+            self.analysis, "relative_effect", False
+        ) and isinstance(self.analysis, DeltaMethodAnalysis)
+        if is_relative_delta:
+            ctrl_mean, ctrl_var, treat_var = self._get_average_ratio_mde_stats(
+                df=df,
+                pre_experiment_df=pre_experiment_df,
+                verbose=verbose,
+                n_simulations=n_simulations,
+            )
+            return {
+                power: self._relative_ratio_mde_calculation(
+                    alpha=alpha,
+                    ctrl_mean=ctrl_mean,
+                    ctrl_var=ctrl_var,
+                    treat_var=treat_var,
+                    power=power,
+                )
+                for power in powers
+            }
         std_error = self._get_average_standard_error(
             df=df,
             pre_experiment_df=pre_experiment_df,
@@ -994,6 +1046,40 @@ class NormalPowerAnalysis:
         std_error_mean = float(np.mean(std_errors))
 
         return std_error_mean
+
+    def _get_ratio_mde_stats_generator(
+        self,
+        df: pd.DataFrame,
+        n_simulations: int,
+        verbose: bool,
+    ) -> Generator[Tuple[float, float, float], None, None]:
+        """Yields (ctrl_mean, ctrl_var, treat_var) for each simulation."""
+        for _ in tqdm(range(n_simulations), disable=not verbose):
+            split_df = self._split(df)
+            yield self.analysis.get_ratio_mde_stats(split_df)
+
+    def _get_average_ratio_mde_stats(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        n_simulations: Optional[int] = None,
+    ) -> Tuple[float, float, float]:
+        """Returns averaged (ctrl_mean, ctrl_var, treat_var) across simulations."""
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+
+        df = df.copy()
+        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+
+        stats_list = list(
+            self._get_ratio_mde_stats_generator(df, n_simulations, verbose)
+        )
+        ctrl_means, ctrl_vars, treat_vars = zip(*stats_list)
+        return (
+            float(np.mean(ctrl_means)),
+            float(np.mean(ctrl_vars)),
+            float(np.mean(treat_vars)),
+        )
 
     def run_average_standard_error(
         self,

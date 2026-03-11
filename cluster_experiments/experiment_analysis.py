@@ -1480,6 +1480,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
+        relative_effect: bool = False,
     ):
         """
         Class to run the Delta Method approximation for estimating the treatment effect on a ratio metric (target/scale) under a clustered design.
@@ -1527,6 +1528,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self.scale_col = scale_col
         self.cluster_cols = cluster_cols or []
         self.covariates = covariates or []
+        self.relative_effect = relative_effect
 
     def _compute_thetas(self, df: pd.DataFrame) -> Dict[str, np.ndarray]:
         """
@@ -1752,12 +1754,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         # Return the mean and variance of the ratio metric
         return group_mean, group_variance
 
-    def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
+    def _get_group_stats(self, df: pd.DataFrame) -> tuple[float, float, float, float]:
         """
-        Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
-        Variance reduction is used if covariates are given.
+        Returns (ctrl_mean, ctrl_var, treat_mean, treat_var) for the ratio metric per group.
+        Used by _get_mean_standard_error and _get_ratio_mde_components (no-covariates path).
         """
-
         if (self._get_num_clusters(df) < self.n_clusters_warning_limit).any():
             self.__warn_small_group_size()
 
@@ -1781,10 +1782,61 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df[~is_treatment], thetas_dict, covariates_means
         )
 
-        mean_diff = treat_mean - ctrl_mean
-        standard_error = np.sqrt(treat_var + ctrl_var)
+        return ctrl_mean, ctrl_var, treat_mean, treat_var
 
-        return mean_diff, standard_error
+    def _get_ratio_mde_components(self, df: pd.DataFrame) -> tuple[float, float, float]:
+        """
+        Returns (ctrl_mean, ctrl_var, treat_var) for relative MDE calculation.
+        Only supported without covariates.
+        """
+        if self.covariates:
+            raise ValueError(
+                "get_ratio_mde_stats / relative MDE is only supported without covariates for now."
+            )
+        ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_stats(df)
+        return ctrl_mean, ctrl_var, treat_var
+
+    def get_ratio_mde_stats(self, df: pd.DataFrame) -> tuple[float, float, float]:
+        """
+        Returns (ctrl_mean, ctrl_var, treat_var) for use in relative MDE power calculations.
+        Applies the same preprocessing as get_standard_error (binary treatment, data checks).
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self._get_ratio_mde_components(df)
+
+    def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
+        """
+        Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
+        Variance reduction is used if covariates are given.
+        When relative_effect=True (without covariates), returns (relative_lift, SE_relative) using the outer delta method.
+        """
+        ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_stats(df)
+
+        mean_diff = treat_mean - ctrl_mean
+        var_abs = treat_var + ctrl_var
+        standard_error_abs = np.sqrt(var_abs)
+
+        if self.relative_effect:
+            if self.covariates:
+                raise ValueError(
+                    "relative_effect for DeltaMethodAnalysis is only supported without covariates for now."
+                )
+            # Outer delta method: relative_lift = ATE / ctrl_mean
+            # Var(relative_lift) = (1/ctrl_mean^2)*Var(ATE) + (ATE^2/ctrl_mean^4)*Var(ctrl_mean)
+            #                   + 2*(ATE/ctrl_mean^3)*Cov(ATE, ctrl_mean)
+            # with Cov(ATE, ctrl_mean) = -Var(ctrl_mean) = -ctrl_var
+            relative_lift = mean_diff / ctrl_mean
+            var_relative = (
+                var_abs / (ctrl_mean**2)
+                + (mean_diff**2) * ctrl_var / (ctrl_mean**4)
+                + 2 * mean_diff * ctrl_var / (ctrl_mean**3)
+            )
+            standard_error_rel = np.sqrt(var_relative)
+            return relative_lift, standard_error_rel
+
+        return mean_diff, standard_error_abs
 
     def analysis_pvalue(self, df: pd.DataFrame) -> float:
         """
@@ -1900,6 +1952,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             treatment=config.treatment,
             hypothesis=config.hypothesis,
             covariates=config.covariates,
+            relative_effect=config.relative_effect,
         )
 
     def __check_data_is_aggregated(self, df):
