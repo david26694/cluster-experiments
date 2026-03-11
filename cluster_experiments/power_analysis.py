@@ -858,10 +858,9 @@ class NormalPowerAnalysis:
         """
         alpha = self.alpha if alpha is None else alpha
 
-        is_relative_delta = (
-            getattr(self.analysis, "relative_effect", False)
-            and isinstance(self.analysis, DeltaMethodAnalysis)
-        )
+        is_relative_delta = getattr(
+            self.analysis, "relative_effect", False
+        ) and isinstance(self.analysis, DeltaMethodAnalysis)
         if is_relative_delta:
             ctrl_mean, ctrl_var, treat_var = self._get_average_ratio_mde_stats(
                 df=df,
