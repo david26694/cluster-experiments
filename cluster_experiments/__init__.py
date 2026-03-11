@@ -1,9 +1,11 @@
 from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
 from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
+    ConfidenceInterval,
     DeltaMethodAnalysis,
     ExperimentAnalysis,
     GeeExperimentAnalysis,
+    InferenceResults,
     MLMExperimentAnalysis,
     OLSAnalysis,
     PairedTTestClusteredAnalysis,
@@ -90,4 +92,6 @@ __all__ = [
     "HypothesisTest",
     "RelativeMixedPerturbator",
     "LiftRegressionTransformer",
+    "ConfidenceInterval",
+    "InferenceResults",
 ]

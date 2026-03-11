@@ -66,7 +66,8 @@ class EmptyWashover(Washover):
         cluster_cols: List[str],
         original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
-        """No washover - returns the same dataframe as input.
+        """
+        No washover - returns the same dataframe as input.
 
         Args:
             df (pd.DataFrame): Input dataframe.
@@ -80,6 +81,9 @@ class EmptyWashover(Washover):
 
         Usage:
         ```python
+        import pandas as pd
+        import numpy as np
+        import random
         from cluster_experiments import SwitchbackSplitter
         from cluster_experiments import EmptyWashover
 
@@ -105,7 +109,7 @@ class EmptyWashover(Washover):
             switch_frequency="30T",
         )
 
-        out_df = splitter.assign_treatment_df(df=washover_split_df)
+        out_df = splitter.assign_treatment_df(df=df)
         ```
         """
         return df
@@ -126,7 +130,8 @@ class ConstantWashover(Washover):
         cluster_cols: List[str],
         original_time_col: Optional[str] = None,
     ) -> pd.DataFrame:
-        """Constant washover - we drop all rows in the washover period when
+        """
+        Constant washover - we drop all rows in the washover period when
         there is a switch where the treatment is different.
 
         Args:
@@ -158,7 +163,7 @@ class ConstantWashover(Washover):
 
         def generate_data(start_time, end_time, treatment):
             data = {
-                'order_id': np.random.randint(10**9, 10**10, size=num_rows),
+                'order_id': np.random.randint(10**3, 10**4, size=num_rows),
                 'city_code': 'VAL',
                 'activation_time_local': [random_timestamp(start_time, end_time) for _ in range(num_rows)],
                 'bin_start_time_local': start_time,
