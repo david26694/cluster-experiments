@@ -12,6 +12,8 @@ from cluster_experiments.experiment_analysis import (
     OLSAnalysis,
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
+    DiDAnalysis,
+    ClusteredDiDAnalysis,
 )
 from cluster_experiments.perturbator import (
     BetaRelativePerturbator,
@@ -316,6 +318,9 @@ analysis_mapping = {
     "paired_ttest_clustered": PairedTTestClusteredAnalysis,
     "mlm": MLMExperimentAnalysis,
     "delta": DeltaMethodAnalysis,
+    "did": DiDAnalysis,
+    "clustered_did": ClusteredDiDAnalysis,
+    "did_clustered": ClusteredDiDAnalysis,
 }
 
 cupac_model_mapping = {"": EmptyRegressor, "mean_cupac_model": TargetAggregation}
