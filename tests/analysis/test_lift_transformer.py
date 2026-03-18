@@ -179,16 +179,16 @@ def test_config_power_relative():
 
 
 def test_config_power_incorrect():
-    # given
+    # relative_effect is not allowed for GEE analysis
     config = {
-        "analysis": "delta",
+        "analysis": "gee",
         "perturbator": "constant",
         "splitter": "non_clustered",
         "relative_effect": True,
     }
 
     # then
-    with pytest.raises(ValueError, match="OLSAnalysis"):
+    with pytest.raises(ValueError, match="relative_effect"):
         PowerAnalysis.from_dict(config)
 
 

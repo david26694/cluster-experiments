@@ -11,6 +11,7 @@ from pandas.api.types import is_numeric_dtype
 from scipy.stats import norm, ttest_ind, ttest_rel
 
 from cluster_experiments.relative_lift_transformer import (
+    DeltaMethodLiftTransformer,
     LiftRegressionTransformer,
     RegressionResultsProtocol,
 )
@@ -1480,6 +1481,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
+        relative_effect: bool = False,
     ):
         """
         Class to run the Delta Method approximation for estimating the treatment effect on a ratio metric (target/scale) under a clustered design.
@@ -1527,6 +1529,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self.scale_col = scale_col
         self.cluster_cols = cluster_cols or []
         self.covariates = covariates or []
+        self.relative_effect = relative_effect
 
     def _compute_thetas(self, df: pd.DataFrame) -> Dict[str, np.ndarray]:
         """
@@ -1784,6 +1787,19 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         mean_diff = treat_mean - ctrl_mean
         standard_error = np.sqrt(treat_var + ctrl_var)
 
+        if self.relative_effect:
+            transformer = DeltaMethodLiftTransformer(self.treatment_col)
+            transformer.fit(
+                mean_diff=mean_diff,
+                var_abs=treat_var + ctrl_var,
+                ctrl_mean=ctrl_mean,
+                ctrl_var=ctrl_var,
+            )
+            return (
+                transformer.params[self.treatment_col],
+                transformer.bse[self.treatment_col],
+            )
+
         return mean_diff, standard_error
 
     def analysis_pvalue(self, df: pd.DataFrame) -> float:
@@ -1900,6 +1916,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             treatment=config.treatment,
             hypothesis=config.hypothesis,
             covariates=config.covariates,
+            relative_effect=config.relative_effect,
         )
 
     def __check_data_is_aggregated(self, df):
