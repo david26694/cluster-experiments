@@ -10,7 +10,6 @@ from cluster_experiments import (
     BinaryPerturbator,
     ClusteredOLSAnalysis,
     ClusteredSplitter,
-    ConfidenceInterval,
     ConstantPerturbator,
     ConstantWashover,
     DeltaMethodAnalysis,
@@ -21,7 +20,6 @@ from cluster_experiments import (
     FixedSizeClusteredSplitter,
     GeeExperimentAnalysis,
     HypothesisTest,
-    InferenceResults,
     Metric,
     MLMExperimentAnalysis,
     NonClusteredSplitter,
@@ -95,8 +93,6 @@ all_objects = [
     Variant,
     HypothesisTest,
     RelativeMixedPerturbator,
-    ConfidenceInterval,
-    InferenceResults,
 ]
 
 

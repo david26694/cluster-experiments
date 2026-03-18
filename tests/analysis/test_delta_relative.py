@@ -5,6 +5,7 @@ Modeled after tests/analysis/test_lift_transformer.py.
 from copy import deepcopy
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from cluster_experiments import (
@@ -121,21 +122,13 @@ def test_relative_delta_power_lower_than_naive(analysis_ratio_df, experiment_dat
 
 def test_relative_ratio_mde_calculation_formula():
     """Quadratic MDE solver returns positive m for valid inputs (A, B, C_term formula)."""
-    from cluster_experiments.random_splitter import ClusteredSplitter
-
-    splitter = ClusteredSplitter(cluster_cols=["user"])
-    analysis = DeltaMethodAnalysis(
-        cluster_cols=["user"], scale_col="scale", relative_effect=True
-    )
-    pw = NormalPowerAnalysis(splitter=splitter, analysis=analysis)
-
     ctrl_mean, ctrl_var, treat_var = 1.0, 0.01, 0.01
-    m = pw._relative_ratio_mde_calculation(
-        alpha=0.05,
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-        treat_var=treat_var,
-        power=0.8,
+    m = DeltaMethodAnalysis.relative_ratio_mde(
+        0.05,
+        0.8,
+        ctrl_mean,
+        ctrl_var,
+        treat_var,
     )
     assert m > 0
     assert np.isfinite(m)
@@ -243,3 +236,94 @@ def test_get_ratio_mde_stats_raises_with_covariates(
 
     with pytest.raises(ValueError, match="without covariates"):
         analyser.get_ratio_mde_stats(df_agg)
+
+
+def test_mde_time_line_delta_relative_matches_scalar_mde(
+    analysis_ratio_df, experiment_dates
+):
+    """mde_time_line (relative delta) should match mde() on the same window."""
+    experiment_start = min(experiment_dates)
+    df = analysis_ratio_df.query(f"date >= '{experiment_start}'").copy()
+    df["date"] = pd.to_datetime(df["date"])
+
+    splitter = ClusteredSplitter(cluster_cols=["user"])
+    analysis = DeltaMethodAnalysis(
+        cluster_cols=["user"], scale_col="scale", relative_effect=True
+    )
+    pw = NormalPowerAnalysis(
+        splitter=splitter,
+        analysis=analysis,
+        n_simulations=40,
+        time_col="date",
+        seed=20250101,
+    )
+    np.random.seed(20250101)
+    mde_scalar = pw.mde(df, power=0.8)
+    np.random.seed(20250101)
+    line = pw.mde_time_line(
+        df,
+        experiment_length=[365],
+        powers=[0.8],
+        n_simulations=40,
+    )
+    assert line[0]["mde"] == pytest.approx(mde_scalar, rel=0.2)
+
+
+def test_mde_rolling_delta_relative_matches_quadratic_on_window(
+    analysis_ratio_df, experiment_dates
+):
+    experiment_start = min(experiment_dates)
+    df = analysis_ratio_df.query(f"date >= '{experiment_start}'").copy()
+    df["date"] = pd.to_datetime(df["date"])
+
+    splitter = ClusteredSplitter(cluster_cols=["user"])
+    analysis = DeltaMethodAnalysis(
+        cluster_cols=["user"], scale_col="scale", relative_effect=True
+    )
+    pw = NormalPowerAnalysis(
+        splitter=splitter,
+        analysis=analysis,
+        n_simulations=35,
+        time_col="date",
+        seed=99,
+    )
+    n_days = 7
+    t0 = df["date"].min()
+    df_w = df[df["date"] <= t0 + pd.Timedelta(days=n_days)]
+    df_g = df_w.groupby("user", as_index=False).agg({"target": "sum", "scale": "sum"})
+    np.random.seed(99)
+    cm, cv, tv = pw._get_average_ratio_mde_stats(df_g, n_simulations=35)
+    expected = DeltaMethodAnalysis.relative_ratio_mde(0.05, 0.8, cm, cv, tv)
+
+    np.random.seed(99)
+    rolling = pw.mde_rolling_time_line(
+        df,
+        experiment_length=[n_days],
+        powers=[0.8],
+        n_simulations=35,
+        agg_func="sum",
+    )
+    assert rolling[0]["mde"] == pytest.approx(expected, rel=0.25)
+    assert rolling[0]["relative_mde"] == pytest.approx(rolling[0]["mde"])
+
+
+def test_mde_rolling_delta_relative_requires_sum_agg(
+    analysis_ratio_df, experiment_dates
+):
+    experiment_start = min(experiment_dates)
+    df = analysis_ratio_df.query(f"date >= '{experiment_start}'").copy()
+    df["date"] = pd.to_datetime(df["date"])
+    splitter = ClusteredSplitter(cluster_cols=["user"])
+    analysis = DeltaMethodAnalysis(
+        cluster_cols=["user"], scale_col="scale", relative_effect=True
+    )
+    pw = NormalPowerAnalysis(
+        splitter=splitter, analysis=analysis, time_col="date", n_simulations=5
+    )
+    with pytest.raises(ValueError, match="agg_func='sum'"):
+        pw.mde_rolling_time_line(
+            df,
+            experiment_length=[3],
+            powers=[0.8],
+            agg_func="mean",
+        )

@@ -1,9 +1,101 @@
+"""
+Relative (percent) lift for OLS-style models via `LiftRegressionTransformer`, and
+pure delta-method helpers for ratio metrics (target/scale): relative lift / SE and
+quadratic relative MDE (double delta).
+"""
+
 from typing import Dict, List, Optional, Protocol, Tuple
 
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
+from scipy.stats import norm
 from statsmodels.regression.linear_model import RegressionResultsWrapper
+
+
+def ratio_relative_lift_and_se(
+    mean_diff: float,
+    var_abs: float,
+    ctrl_mean: float,
+    ctrl_var: float,
+) -> Tuple[float, float]:
+    """
+    Relative lift ATE / control mean and its SE for ratio-style absolute effects.
+
+    Outer delta method: relative_lift = (treat_mean - ctrl_mean) / ctrl_mean,
+    with variance accounting for uncertainty in both the ATE and ctrl_mean
+    (Cov(ATE, ctrl_mean) = -Var(ctrl_mean) under independent arms).
+
+    Parameters
+    ----------
+    mean_diff
+        Absolute treatment effect (difference in ratio metric between arms).
+    var_abs
+        Var(mean_diff) = treat_var + ctrl_var (independent-cluster delta variances).
+    ctrl_mean
+        Control arm ratio mean (target/scale).
+    ctrl_var
+        Estimated variance of the control arm ratio mean.
+    """
+    if ctrl_mean == 0:
+        raise ValueError("ctrl_mean must be non-zero for relative lift.")
+    relative_lift = mean_diff / ctrl_mean
+    var_relative = (
+        var_abs / (ctrl_mean**2)
+        + (mean_diff**2) * ctrl_var / (ctrl_mean**4)
+        + 2 * mean_diff * ctrl_var / (ctrl_mean**3)
+    )
+    return relative_lift, float(np.sqrt(var_relative))
+
+
+def relative_ratio_mde(
+    alpha: float,
+    power: float,
+    ctrl_mean: float,
+    ctrl_var: float,
+    treat_var: float,
+) -> float:
+    """
+    Minimum detectable *relative* lift for ratio metrics (two-sided test).
+
+    Solves the quadratic power equation from the double-delta formulation:
+    A*m^2 + B*m + C = 0  =>  m = (-B + sqrt(B^2 - 4*A*C)) / (2*A).
+
+    Parameters
+    ----------
+    alpha
+        Significance level (two-sided).
+    power
+        Desired statistical power.
+    ctrl_mean
+        Control arm ratio mean.
+    ctrl_var, treat_var
+        Variances of control / treatment ratio means (cluster-level delta method).
+    """
+    if ctrl_mean == 0:
+        raise ValueError("ctrl_mean must be non-zero for relative MDE.")
+    r_c = ctrl_mean
+    se2_c = ctrl_var / (r_c**2)
+    se2_t = treat_var / (r_c**2)
+
+    z_alpha = norm.ppf(1 - alpha / 2)
+    z_beta = norm.ppf(power)
+
+    v0 = se2_t + se2_c
+    c = z_alpha * np.sqrt(v0)
+
+    a = 1 - (z_beta**2) * se2_c
+    b = -2 * (c + (z_beta**2) * se2_c)
+    c_term = c**2 - (z_beta**2) * v0
+
+    discriminant = b**2 - 4 * a * c_term
+    if discriminant < 0 or a == 0:
+        raise ValueError(
+            "relative_ratio_mde: invalid power equation (discriminant or A); "
+            "check inputs or use more clusters."
+        )
+    m = (-b + np.sqrt(discriminant)) / (2 * a)
+    return float(m)
 
 
 class RegressionResultsProtocol(Protocol):

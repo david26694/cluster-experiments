@@ -13,6 +13,10 @@ from scipy.stats import norm, ttest_ind, ttest_rel
 from cluster_experiments.relative_lift_transformer import (
     LiftRegressionTransformer,
     RegressionResultsProtocol,
+    ratio_relative_lift_and_se,
+)
+from cluster_experiments.relative_lift_transformer import (
+    relative_ratio_mde as _relative_ratio_mde_impl,
 )
 from cluster_experiments.synthetic_control_utils import get_w
 from cluster_experiments.utils import HypothesisEntries, ModelResults
@@ -1806,6 +1810,22 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         self._data_checks(df=df)
         return self._get_ratio_mde_components(df)
 
+    @staticmethod
+    def relative_ratio_mde(
+        alpha: float,
+        power: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+        treat_var: float,
+    ) -> float:
+        """
+        Minimum detectable relative lift for ratio metrics (two-sided test, double delta).
+
+        Delegates to :func:`~cluster_experiments.relative_lift_transformer.relative_ratio_mde`.
+        Use this entry point from power code; keep transformer imports in ``experiment_analysis`` only.
+        """
+        return _relative_ratio_mde_impl(alpha, power, ctrl_mean, ctrl_var, treat_var)
+
     def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
         """
         Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
@@ -1823,17 +1843,9 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
                 raise ValueError(
                     "relative_effect for DeltaMethodAnalysis is only supported without covariates for now."
                 )
-            # Outer delta method: relative_lift = ATE / ctrl_mean
-            # Var(relative_lift) = (1/ctrl_mean^2)*Var(ATE) + (ATE^2/ctrl_mean^4)*Var(ctrl_mean)
-            #                   + 2*(ATE/ctrl_mean^3)*Cov(ATE, ctrl_mean)
-            # with Cov(ATE, ctrl_mean) = -Var(ctrl_mean) = -ctrl_var
-            relative_lift = mean_diff / ctrl_mean
-            var_relative = (
-                var_abs / (ctrl_mean**2)
-                + (mean_diff**2) * ctrl_var / (ctrl_mean**4)
-                + 2 * mean_diff * ctrl_var / (ctrl_mean**3)
+            relative_lift, standard_error_rel = ratio_relative_lift_and_se(
+                mean_diff, var_abs, ctrl_mean, ctrl_var
             )
-            standard_error_rel = np.sqrt(var_relative)
             return relative_lift, standard_error_rel
 
         return mean_diff, standard_error_abs
