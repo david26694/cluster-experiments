@@ -1,9 +1,115 @@
+"""
+Relative (percent) lift: OLS path via `LiftRegressionTransformer`; ratio metrics
+(target/scale) via `DeltaMethodLiftTransformer` (outer delta + quadratic relative MDE).
+"""
+
 from typing import Dict, List, Optional, Protocol, Tuple
 
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
+from scipy.stats import norm
 from statsmodels.regression.linear_model import RegressionResultsWrapper
+
+
+class DeltaMethodLiftTransformer:
+    """
+    Delta-method relative lift and MDE for ratio metrics (cluster-level target/scale).
+
+    Static API only; no regression object required.
+    """
+
+    @staticmethod
+    def lift_and_se(
+        mean_diff: float,
+        var_abs: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+    ) -> Tuple[float, float]:
+        """
+        Relative lift (ATE / control ratio mean) and SE (outer delta method).
+
+        Parameters
+        ----------
+        mean_diff
+            Absolute treatment effect on the ratio metric.
+        var_abs
+            Var(mean_diff) = treat_var + ctrl_var.
+        ctrl_mean
+            Control arm ratio mean.
+        ctrl_var
+            Variance of control arm ratio mean.
+        """
+        if ctrl_mean == 0:
+            raise ValueError("ctrl_mean must be non-zero for relative lift.")
+        relative_lift = mean_diff / ctrl_mean
+        var_relative = (
+            var_abs / (ctrl_mean**2)
+            + (mean_diff**2) * ctrl_var / (ctrl_mean**4)
+            + 2 * mean_diff * ctrl_var / (ctrl_mean**3)
+        )
+        return relative_lift, float(np.sqrt(var_relative))
+
+    @staticmethod
+    def relative_mde(
+        alpha: float,
+        power: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+        treat_var: float,
+    ) -> float:
+        """
+        Minimum detectable relative lift (two-sided, double-delta quadratic).
+        """
+        if ctrl_mean == 0:
+            raise ValueError("ctrl_mean must be non-zero for relative MDE.")
+        r_c = ctrl_mean
+        se2_c = ctrl_var / (r_c**2)
+        se2_t = treat_var / (r_c**2)
+
+        z_alpha = norm.ppf(1 - alpha / 2)
+        z_beta = norm.ppf(power)
+
+        v0 = se2_t + se2_c
+        c = z_alpha * np.sqrt(v0)
+
+        a = 1 - (z_beta**2) * se2_c
+        b = -2 * (c + (z_beta**2) * se2_c)
+        c_term = c**2 - (z_beta**2) * v0
+
+        discriminant = b**2 - 4 * a * c_term
+        if discriminant < 0 or a == 0:
+            raise ValueError(
+                "DeltaMethodLiftTransformer.relative_mde: invalid power equation "
+                "(discriminant or A); check inputs or use more clusters."
+            )
+        m = (-b + np.sqrt(discriminant)) / (2 * a)
+        return float(m)
+
+
+def ratio_relative_lift_and_se(
+    mean_diff: float,
+    var_abs: float,
+    ctrl_mean: float,
+    ctrl_var: float,
+) -> Tuple[float, float]:
+    """Backward-compatible wrapper for :meth:`DeltaMethodLiftTransformer.lift_and_se`."""
+    return DeltaMethodLiftTransformer.lift_and_se(
+        mean_diff, var_abs, ctrl_mean, ctrl_var
+    )
+
+
+def relative_ratio_mde(
+    alpha: float,
+    power: float,
+    ctrl_mean: float,
+    ctrl_var: float,
+    treat_var: float,
+) -> float:
+    """Backward-compatible wrapper for :meth:`DeltaMethodLiftTransformer.relative_mde`."""
+    return DeltaMethodLiftTransformer.relative_mde(
+        alpha, power, ctrl_mean, ctrl_var, treat_var
+    )
 
 
 class RegressionResultsProtocol(Protocol):

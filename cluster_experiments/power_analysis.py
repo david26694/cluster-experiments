@@ -897,6 +897,11 @@ class NormalPowerAnalysis:
 
         return float(z_alpha + z_beta) * std_error
 
+    def _is_relative_delta(self) -> bool:
+        return getattr(self.analysis, "relative_effect", False) and isinstance(
+            self.analysis, DeltaMethodAnalysis
+        )
+
     def _get_time_col(self) -> str:
         if self.time_col is None:
             raise ValueError(
@@ -925,6 +930,20 @@ class NormalPowerAnalysis:
             alpha: Significance level.
         """
         alpha = self.alpha if alpha is None else alpha
+
+        if self._is_relative_delta():
+            ctrl_mean, ctrl_var, treat_var = self._get_average_ratio_mde_stats(
+                df=df,
+                pre_experiment_df=pre_experiment_df,
+                verbose=verbose,
+                n_simulations=n_simulations,
+            )
+            return {
+                power: DeltaMethodAnalysis.relative_ratio_mde(
+                    alpha, power, ctrl_mean, ctrl_var, treat_var
+                )
+                for power in powers
+            }
         std_error = self._get_average_standard_error(
             df=df,
             pre_experiment_df=pre_experiment_df,
@@ -994,6 +1013,40 @@ class NormalPowerAnalysis:
         std_error_mean = float(np.mean(std_errors))
 
         return std_error_mean
+
+    def _get_ratio_mde_stats_generator(
+        self,
+        df: pd.DataFrame,
+        n_simulations: int,
+        verbose: bool,
+    ) -> Generator[Tuple[float, float, float], None, None]:
+        """Yields (ctrl_mean, ctrl_var, treat_var) for each simulation."""
+        for _ in tqdm(range(n_simulations), disable=not verbose):
+            split_df = self._split(df)
+            yield self.analysis.get_ratio_mde_stats(split_df)
+
+    def _get_average_ratio_mde_stats(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        n_simulations: Optional[int] = None,
+    ) -> Tuple[float, float, float]:
+        """Returns averaged (ctrl_mean, ctrl_var, treat_var) across simulations."""
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
+
+        df = df.copy()
+        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+
+        stats_list = list(
+            self._get_ratio_mde_stats_generator(df, n_simulations, verbose)
+        )
+        ctrl_means, ctrl_vars, treat_vars = zip(*stats_list)
+        return (
+            float(np.mean(ctrl_means)),
+            float(np.mean(ctrl_vars)),
+            float(np.mean(treat_vars)),
+        )
 
     def run_average_standard_error(
         self,
@@ -1083,8 +1136,32 @@ class NormalPowerAnalysis:
         alpha: Optional[float] = None,
     ) -> List[Dict]:
         alpha = self.alpha if alpha is None else alpha
+        n_simulations = self.n_simulations if n_simulations is None else n_simulations
 
         results = []
+        if self._is_relative_delta():
+            time_col = self._get_time_col()
+            for n_days in experiment_length:
+                df_time = df.copy()
+                experiment_start = df_time[time_col].min()
+                df_time = df_time.loc[
+                    df_time[time_col] < experiment_start + pd.Timedelta(days=n_days)
+                ]
+                ctrl_mean, ctrl_var, treat_var = self._get_average_ratio_mde_stats(
+                    df=df_time,
+                    pre_experiment_df=pre_experiment_df,
+                    verbose=verbose,
+                    n_simulations=n_simulations,
+                )
+                for power in powers:
+                    mde = DeltaMethodAnalysis.relative_ratio_mde(
+                        alpha, power, ctrl_mean, ctrl_var, treat_var
+                    )
+                    results.append(
+                        {"power": power, "mde": mde, "experiment_length": n_days}
+                    )
+            return results
+
         for std_error_mean, n_days in self.run_average_standard_error(
             df=df,
             pre_experiment_df=pre_experiment_df,
@@ -1222,6 +1299,45 @@ class NormalPowerAnalysis:
 
         experiment_start = df[time_col].min()
 
+        if self._is_relative_delta():
+            if agg_func != "sum":
+                raise ValueError(
+                    "mde_rolling_time_line with DeltaMethodAnalysis and relative_effect=True "
+                    "requires agg_func='sum' (cluster-level numerator and denominator totals)."
+                )
+            if post_process_func is not None:
+                raise ValueError(
+                    "post_process_func is not supported for delta method relative MDE "
+                    "rolling timeline."
+                )
+            scale_col_name = self.analysis.scale_col
+            for n_days in experiment_length:
+                df_time_filter = df[
+                    df[time_col] <= experiment_start + pd.Timedelta(days=n_days)
+                ]
+                df_grouped = df_time_filter.groupby(cluster_cols, as_index=False).agg(
+                    {self.target_col: "sum", scale_col_name: "sum"}
+                )
+                ctrl_mean, ctrl_var, treat_var = self._get_average_ratio_mde_stats(
+                    df=df_grouped,
+                    pre_experiment_df=pre_experiment_df,
+                    verbose=False,
+                    n_simulations=n_simulations,
+                )
+                for power in powers:
+                    mde_rel = DeltaMethodAnalysis.relative_ratio_mde(
+                        alpha, power, ctrl_mean, ctrl_var, treat_var
+                    )
+                    results.append(
+                        {
+                            "power": power,
+                            "mde": mde_rel,
+                            "experiment_length": n_days,
+                            "relative_mde": mde_rel,
+                        }
+                    )
+            return results
+
         for n_days in experiment_length:
             df_time_filter = df[
                 df[time_col] <= experiment_start + pd.Timedelta(days=n_days)
@@ -1247,7 +1363,8 @@ class NormalPowerAnalysis:
                     alpha=alpha, std_error=std_error_mean, power=power
                 )
 
-                relative_mde = mde_value / abs(df_grouped[self.target_col].mean())
+                mean_denom = abs(df_grouped[self.target_col].mean())
+                relative_mde = mde_value / mean_denom if mean_denom else float("nan")
 
                 results.append(
                     {

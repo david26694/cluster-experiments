@@ -7,9 +7,12 @@ import statsmodels.api as sm
 
 from cluster_experiments import (
     AnalysisPlan,
+    DeltaMethodLiftTransformer,
     LiftRegressionTransformer,
     OLSAnalysis,
     PowerAnalysis,
+    ratio_relative_lift_and_se,
+    relative_ratio_mde,
 )
 
 
@@ -178,17 +181,30 @@ def test_config_power_relative():
     assert pw.analysis.relative_effect
 
 
-def test_config_power_incorrect():
-    # given
+def test_config_power_delta_relative():
+    # delta + relative_effect is now supported
     config = {
         "analysis": "delta",
         "perturbator": "constant",
-        "splitter": "non_clustered",
+        "splitter": "clustered",
+        "cluster_cols": ["cluster"],
+        "scale_col": "scale",
         "relative_effect": True,
     }
+    pw = PowerAnalysis.from_dict(config)
+    assert pw.analysis.relative_effect
 
-    # then
-    with pytest.raises(ValueError, match="OLSAnalysis"):
+
+def test_config_power_incorrect():
+    # relative_effect with an unsupported analysis type still raises
+    config = {
+        "analysis": "gee",
+        "perturbator": "constant",
+        "splitter": "clustered",
+        "cluster_cols": ["cluster"],
+        "relative_effect": True,
+    }
+    with pytest.raises(ValueError, match="relative_effect only works"):
         PowerAnalysis.from_dict(config)
 
 
@@ -222,3 +238,40 @@ def test_plan_config_relative(user_df, formula, covariates):
     # then
     assert plan.tests[0].experiment_analysis.relative_effect
     assert results.ate[0] == pytest.approx(results_abs.ate[0] / control_mean, rel=1e-4)
+
+
+def test_ratio_relative_lift_and_se():
+    lift, se = ratio_relative_lift_and_se(
+        mean_diff=0.05, var_abs=0.01, ctrl_mean=2.0, ctrl_var=0.001
+    )
+    lift_c, se_c = DeltaMethodLiftTransformer.lift_and_se(
+        mean_diff=0.05, var_abs=0.01, ctrl_mean=2.0, ctrl_var=0.001
+    )
+    assert lift == pytest.approx(0.025)
+    assert lift == pytest.approx(lift_c)
+    assert se == pytest.approx(se_c)
+    assert se > 0
+    assert np.isfinite(se)
+
+
+def test_relative_ratio_mde_two_sided():
+    m = relative_ratio_mde(
+        alpha=0.05, power=0.8, ctrl_mean=1.0, ctrl_var=0.02, treat_var=0.02
+    )
+    m_c = DeltaMethodLiftTransformer.relative_mde(
+        alpha=0.05, power=0.8, ctrl_mean=1.0, ctrl_var=0.02, treat_var=0.02
+    )
+    assert m == pytest.approx(m_c)
+    assert m > 0
+    assert np.isfinite(m)
+
+
+def test_ratio_relative_se_exceeds_naive_se_over_ctrl_mean():
+    """Relative SE (delta) should be at least naive SE_abs / ctrl_mean."""
+    mean_diff = 0.1
+    var_abs = 0.04
+    ctrl_mean = 0.8
+    ctrl_var = 0.01
+    _lift, se_rel = ratio_relative_lift_and_se(mean_diff, var_abs, ctrl_mean, ctrl_var)
+    naive = np.sqrt(var_abs) / ctrl_mean
+    assert se_rel >= naive - 1e-9

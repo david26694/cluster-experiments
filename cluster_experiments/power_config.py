@@ -249,9 +249,10 @@ class PowerConfig:
             if analysis_mapping[self.analysis] not in {
                 OLSAnalysis,
                 ClusteredOLSAnalysis,
+                DeltaMethodAnalysis,
             }:
                 raise ValueError(
-                    "relative_effect only works for OLSAnalysis, ClusteredOLSAnalysis"
+                    "relative_effect only works for OLSAnalysis, ClusteredOLSAnalysis, DeltaMethodAnalysis"
                 )
 
     def _are_different(self, arg1, arg2) -> bool:

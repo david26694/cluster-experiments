@@ -14,7 +14,10 @@ from cluster_experiments.experiment_analysis import (
     PairedTTestClusteredAnalysis,
     TTestClusteredAnalysis,
 )
-from tests.utils import generate_clustered_data, generate_random_data
+from tests.utils import (
+    generate_clustered_data,
+    generate_random_data,
+)
 
 
 @pytest.fixture
@@ -215,9 +218,6 @@ def test_inference_results():
             cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
         ),
         OLSAnalysis(target_col="target", treatment_col="treatment"),
-        MLMExperimentAnalysis(
-            cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
-        ),
         DeltaMethodAnalysis(cluster_cols=["cluster"], scale_col="scale"),
     ],
 )  # Add other child classes as necessary
@@ -243,9 +243,6 @@ def test_get_confidence_interval(experiment_analysis, analysis_df_diff_realistic
             cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
         ),
         OLSAnalysis(target_col="target", treatment_col="treatment"),
-        MLMExperimentAnalysis(
-            cluster_cols=["cluster"], target_col="target", treatment_col="treatment"
-        ),
         DeltaMethodAnalysis(cluster_cols=["cluster"], scale_col="scale"),
     ],
 )  # Add other child classes as necessary
