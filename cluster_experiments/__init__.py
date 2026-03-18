@@ -44,6 +44,7 @@ from cluster_experiments.random_splitter import (
     SwitchbackSplitter,
 )
 from cluster_experiments.relative_lift_transformer import (
+    DeltaMethodLiftTransformer,
     LiftRegressionTransformer,
     ratio_relative_lift_and_se,
     relative_ratio_mde,
@@ -96,6 +97,7 @@ __all__ = [
     "HypothesisTest",
     "RelativeMixedPerturbator",
     "LiftRegressionTransformer",
+    "DeltaMethodLiftTransformer",
     "ratio_relative_lift_and_se",
     "relative_ratio_mde",
     "ConfidenceInterval",

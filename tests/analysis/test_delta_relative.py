@@ -16,6 +16,11 @@ from cluster_experiments import (
 from cluster_experiments.random_splitter import ClusteredSplitter
 
 
+def _df_for_power(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop pre-filled treatment so ClusteredSplitter.assign_treatment_df does not create treatment_x/y."""
+    return df.drop(columns=["treatment"], errors="ignore")
+
+
 def test_relative_delta_point_estimate(analysis_ratio_df, experiment_dates):
     """Relative point estimate should match naive (absolute_effect / ctrl_mean)."""
     experiment_start = min(experiment_dates)
@@ -110,11 +115,12 @@ def test_relative_delta_power_lower_than_naive(analysis_ratio_df, experiment_dat
         splitter=splitter, analysis=analysis_rel, n_simulations=30
     )
 
+    df_pw = _df_for_power(df)
     # Use a small effect so power is not 1
     np.random.seed(42)
-    power_abs = pw_abs.power_analysis(df, average_effect=0.01)
+    power_abs = pw_abs.power_analysis(df_pw, average_effect=0.01)
     np.random.seed(42)
-    power_rel = pw_rel.power_analysis(df, average_effect=0.01)
+    power_rel = pw_rel.power_analysis(df_pw, average_effect=0.01)
 
     # Relative SE is larger, so power should be <= absolute power
     assert power_rel <= power_abs + 0.05  # allow small Monte Carlo noise
@@ -145,7 +151,7 @@ def test_relative_delta_mde_returns_positive(analysis_ratio_df, experiment_dates
     )
     pw = NormalPowerAnalysis(splitter=splitter, analysis=analysis, n_simulations=20)
 
-    mde_rel = pw.mde(df, power=0.8)
+    mde_rel = pw.mde(_df_for_power(df), power=0.8)
     assert mde_rel > 0
     assert np.isfinite(mde_rel)
 
@@ -257,11 +263,12 @@ def test_mde_time_line_delta_relative_matches_scalar_mde(
         time_col="date",
         seed=20250101,
     )
+    df_pw = _df_for_power(df)
     np.random.seed(20250101)
-    mde_scalar = pw.mde(df, power=0.8)
+    mde_scalar = pw.mde(df_pw, power=0.8)
     np.random.seed(20250101)
     line = pw.mde_time_line(
-        df,
+        df_pw,
         experiment_length=[365],
         powers=[0.8],
         n_simulations=40,
@@ -297,7 +304,7 @@ def test_mde_rolling_delta_relative_matches_quadratic_on_window(
 
     np.random.seed(99)
     rolling = pw.mde_rolling_time_line(
-        df,
+        _df_for_power(df),
         experiment_length=[n_days],
         powers=[0.8],
         n_simulations=35,
@@ -322,7 +329,7 @@ def test_mde_rolling_delta_relative_requires_sum_agg(
     )
     with pytest.raises(ValueError, match="agg_func='sum'"):
         pw.mde_rolling_time_line(
-            df,
+            _df_for_power(df),
             experiment_length=[3],
             powers=[0.8],
             agg_func="mean",

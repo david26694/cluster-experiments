@@ -11,12 +11,9 @@ from pandas.api.types import is_numeric_dtype
 from scipy.stats import norm, ttest_ind, ttest_rel
 
 from cluster_experiments.relative_lift_transformer import (
+    DeltaMethodLiftTransformer,
     LiftRegressionTransformer,
     RegressionResultsProtocol,
-    ratio_relative_lift_and_se,
-)
-from cluster_experiments.relative_lift_transformer import (
-    relative_ratio_mde as _relative_ratio_mde_impl,
 )
 from cluster_experiments.synthetic_control_utils import get_w
 from cluster_experiments.utils import HypothesisEntries, ModelResults
@@ -1821,10 +1818,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         """
         Minimum detectable relative lift for ratio metrics (two-sided test, double delta).
 
-        Delegates to :func:`~cluster_experiments.relative_lift_transformer.relative_ratio_mde`.
-        Use this entry point from power code; keep transformer imports in ``experiment_analysis`` only.
+        Delegates to :meth:`DeltaMethodLiftTransformer.relative_mde`.
         """
-        return _relative_ratio_mde_impl(alpha, power, ctrl_mean, ctrl_var, treat_var)
+        return DeltaMethodLiftTransformer.relative_mde(
+            alpha, power, ctrl_mean, ctrl_var, treat_var
+        )
 
     def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
         """
@@ -1843,7 +1841,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
                 raise ValueError(
                     "relative_effect for DeltaMethodAnalysis is only supported without covariates for now."
                 )
-            relative_lift, standard_error_rel = ratio_relative_lift_and_se(
+            relative_lift, standard_error_rel = DeltaMethodLiftTransformer.lift_and_se(
                 mean_diff, var_abs, ctrl_mean, ctrl_var
             )
             return relative_lift, standard_error_rel

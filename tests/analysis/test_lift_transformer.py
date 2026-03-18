@@ -7,6 +7,7 @@ import statsmodels.api as sm
 
 from cluster_experiments import (
     AnalysisPlan,
+    DeltaMethodLiftTransformer,
     LiftRegressionTransformer,
     OLSAnalysis,
     PowerAnalysis,
@@ -243,7 +244,12 @@ def test_ratio_relative_lift_and_se():
     lift, se = ratio_relative_lift_and_se(
         mean_diff=0.05, var_abs=0.01, ctrl_mean=2.0, ctrl_var=0.001
     )
+    lift_c, se_c = DeltaMethodLiftTransformer.lift_and_se(
+        mean_diff=0.05, var_abs=0.01, ctrl_mean=2.0, ctrl_var=0.001
+    )
     assert lift == pytest.approx(0.025)
+    assert lift == pytest.approx(lift_c)
+    assert se == pytest.approx(se_c)
     assert se > 0
     assert np.isfinite(se)
 
@@ -252,6 +258,10 @@ def test_relative_ratio_mde_two_sided():
     m = relative_ratio_mde(
         alpha=0.05, power=0.8, ctrl_mean=1.0, ctrl_var=0.02, treat_var=0.02
     )
+    m_c = DeltaMethodLiftTransformer.relative_mde(
+        alpha=0.05, power=0.8, ctrl_mean=1.0, ctrl_var=0.02, treat_var=0.02
+    )
+    assert m == pytest.approx(m_c)
     assert m > 0
     assert np.isfinite(m)
 
