@@ -152,3 +152,149 @@ class LiftRegressionTransformer:
             "pvalue": self.pvalues[self.treatment_col],
             "conf_int": self.conf_int(0.05).loc[self.treatment_col],
         }
+
+
+class DeltaMethodLiftTransformer:
+    """
+    Delta-method relative lift and MDE for ratio metrics (cluster-level target/scale).
+
+    Mirrors the ``LiftRegressionTransformer`` instance API: call :meth:`fit` with
+    the statistics produced by ``DeltaMethodAnalysis._get_mean_standard_error``,
+    then read `params`, `bse`, `pvalues`, and `conf_int` just like any
+    ``RegressionResultsProtocol``-compatible object.
+
+    The static helpers :meth:`lift_and_se` and :meth:`relative_mde` remain
+    available for direct use.
+    """
+
+    def __init__(self, treatment_col: str):
+        self.treatment_col = treatment_col
+        self._relative_lift_value: Optional[float] = None
+        self._se_relative_lift: Optional[float] = None
+
+    def fit(
+        self,
+        mean_diff: float,
+        var_abs: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+    ) -> None:
+        """
+        Compute and store the relative lift and its SE via the outer delta method.
+
+        Parameters
+        ----------
+        mean_diff
+            Absolute treatment effect on the ratio metric (treat_mean - ctrl_mean).
+        var_abs
+            Var(mean_diff) = treat_var + ctrl_var.
+        ctrl_mean
+            Control arm ratio mean.
+        ctrl_var
+            Variance of the control arm ratio mean.
+        """
+        relative_lift, se = self.lift_and_se(mean_diff, var_abs, ctrl_mean, ctrl_var)
+        self._relative_lift_value = relative_lift
+        self._se_relative_lift = se
+
+    @property
+    def params(self):
+        return {self.treatment_col: self._relative_lift_value}
+
+    @property
+    def bse(self):
+        return {self.treatment_col: self._se_relative_lift}
+
+    @property
+    def pvalues(self):
+        z_score = self._relative_lift_value / self._se_relative_lift
+        p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))
+        return {self.treatment_col: p_value}
+
+    def conf_int(self, alpha: float):
+        z_crit = stats.norm.ppf(1 - alpha / 2)
+        lower_bound = self._relative_lift_value - z_crit * self._se_relative_lift
+        upper_bound = self._relative_lift_value + z_crit * self._se_relative_lift
+        return pd.DataFrame(
+            [[lower_bound, upper_bound]],
+            index=[self.treatment_col],
+            columns=[0, 1],
+        )
+
+    def summary(self):
+        return {
+            "percent_lift": self._relative_lift_value,
+            "_se_relative_lift": self._se_relative_lift,
+            "pvalue": self.pvalues[self.treatment_col],
+            "conf_int": self.conf_int(0.05).loc[self.treatment_col],
+        }
+
+    @staticmethod
+    def lift_and_se(
+        mean_diff: float,
+        var_abs: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+    ) -> Tuple[float, float]:
+        """
+        Relative lift (mean_diff / ctrl_mean) and SE via the outer delta method.
+
+        Parameters
+        ----------
+        mean_diff
+            Absolute treatment effect on the ratio metric.
+        var_abs
+            Var(mean_diff) = treat_var + ctrl_var.
+        ctrl_mean
+            Control arm ratio mean.
+        ctrl_var
+            Variance of control arm ratio mean.
+        """
+        if ctrl_mean == 0:
+            raise ValueError("ctrl_mean must be non-zero for relative lift.")
+        relative_lift = mean_diff / ctrl_mean
+        var_relative = (
+            var_abs / (ctrl_mean**2)
+            + (mean_diff**2) * ctrl_var / (ctrl_mean**4)
+            + 2 * mean_diff * ctrl_var / (ctrl_mean**3)
+        )
+        return relative_lift, float(np.sqrt(var_relative))
+
+    @staticmethod
+    def relative_mde(
+        alpha: float,
+        power: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+        treat_var: float,
+    ) -> float:
+        """
+        Minimum detectable relative lift (two-sided, double-delta quadratic).
+
+        Solves A*m^2 + B*m + C = 0 for the smallest positive m satisfying
+        the power constraint at significance level alpha.
+        """
+        if ctrl_mean == 0:
+            raise ValueError("ctrl_mean must be non-zero for relative MDE.")
+        r_c = ctrl_mean
+        se2_c = ctrl_var / (r_c**2)
+        se2_t = treat_var / (r_c**2)
+
+        z_alpha = stats.norm.ppf(1 - alpha / 2)
+        z_beta = stats.norm.ppf(power)
+
+        v0 = se2_t + se2_c
+        c = z_alpha * np.sqrt(v0)
+
+        a = 1 - (z_beta**2) * se2_c
+        b = -2 * (c + (z_beta**2) * se2_c)
+        c_term = c**2 - (z_beta**2) * v0
+
+        discriminant = b**2 - 4 * a * c_term
+        if discriminant < 0 or a == 0:
+            raise ValueError(
+                "DeltaMethodLiftTransformer.relative_mde: invalid power equation "
+                "(discriminant or A); check inputs or use more clusters."
+            )
+        m = (-b + np.sqrt(discriminant)) / (2 * a)
+        return float(m)
