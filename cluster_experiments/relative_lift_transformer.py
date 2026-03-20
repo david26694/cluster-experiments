@@ -298,28 +298,3 @@ class DeltaMethodLiftTransformer:
             )
         m = (-b + np.sqrt(discriminant)) / (2 * a)
         return float(m)
-
-
-def ratio_relative_lift_and_se(
-    mean_diff: float,
-    var_abs: float,
-    ctrl_mean: float,
-    ctrl_var: float,
-) -> Tuple[float, float]:
-    """Backward-compatible wrapper for :meth:`DeltaMethodLiftTransformer.lift_and_se`."""
-    return DeltaMethodLiftTransformer.lift_and_se(
-        mean_diff, var_abs, ctrl_mean, ctrl_var
-    )
-
-
-def relative_ratio_mde(
-    alpha: float,
-    power: float,
-    ctrl_mean: float,
-    ctrl_var: float,
-    treat_var: float,
-) -> float:
-    """Backward-compatible wrapper for :meth:`DeltaMethodLiftTransformer.relative_mde`."""
-    return DeltaMethodLiftTransformer.relative_mde(
-        alpha, power, ctrl_mean, ctrl_var, treat_var
-    )
