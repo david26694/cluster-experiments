@@ -7,6 +7,7 @@ from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.experiment_analysis import ExperimentAnalysis, InferenceResults
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
+from cluster_experiments.inference.split import DefaultSplit, Split
 from cluster_experiments.inference.metric import Metric, RatioMetric
 from cluster_experiments.inference.variant import Variant
 from cluster_experiments.power_config import analysis_mapping
@@ -25,7 +26,9 @@ class HypothesisTest:
     analysis_config : Optional[dict]
         An optional dictionary representing the configuration for the analysis
     dimensions : Optional[List[Dimension]]
-        An optional list of Dimension instances
+        An optional list of Dimension instances. Dimensions describe stable unit attributes.
+    splits : Optional[List[Split]]
+        An optional list of Split instances. Splits describe attributes that can change during the experiment.
     cupac_config : Optional[dict]
         An optional dictionary representing the configuration for the cupac model
     custom_analysis_type_mapper : Optional[Dict[str, ExperimentAnalysis]]
@@ -38,6 +41,7 @@ class HypothesisTest:
         analysis_type: str,
         analysis_config: Optional[dict] = None,
         dimensions: Optional[List[Dimension]] = None,
+        splits: Optional[List[Split]] = None,
         cupac_config: Optional[dict] = None,
         custom_analysis_type_mapper: Optional[Dict[str, ExperimentAnalysis]] = None,
     ):
@@ -52,6 +56,8 @@ class HypothesisTest:
             An optional dictionary representing the configuration for the analysis
         dimensions : Optional[List[Dimension]]
             An optional list of Dimension instances
+        splits : Optional[List[Split]]
+            An optional list of Split instances
         cupac_config : Optional[dict]
             An optional dictionary representing the configuration for the cupac model
         custom_analysis_type_mapper : Optional[Dict[str, ExperimentAnalysis]]
@@ -62,6 +68,7 @@ class HypothesisTest:
             analysis_type,
             analysis_config,
             dimensions,
+            splits,
             cupac_config,
             custom_analysis_type_mapper,
         )
@@ -69,6 +76,7 @@ class HypothesisTest:
         self.analysis_type = analysis_type
         self.analysis_config = analysis_config or {}
         self.dimensions = [DefaultDimension()] + (dimensions or [])
+        self.splits = [DefaultSplit()] + splits if splits else []
         self.cupac_config = cupac_config or {}
         self.custom_analysis_type_mapper = custom_analysis_type_mapper or {}
 
@@ -141,6 +149,7 @@ class HypothesisTest:
         analysis_type: str,
         analysis_config: Optional[dict],
         dimensions: Optional[List[Dimension]],
+        splits: Optional[List[Split]] = None,
         cupac_config: Optional[dict] = None,
         custom_analysis_type_mapper: Optional[Dict[str, ExperimentAnalysis]] = None,
     ):
@@ -157,6 +166,8 @@ class HypothesisTest:
             An optional dictionary representing the configuration for the analysis
         dimensions : Optional[List[Dimension]]
             An optional list of Dimension instances
+        splits : Optional[List[Split]]
+            An optional list of Split instances
         cupac_config : Optional[dict]
             An optional dictionary representing the configuration for the cupac model
         custom_analysis_type_mapper : Optional[dict[str, ExperimentAnalysis]]
@@ -185,6 +196,14 @@ class HypothesisTest:
         ):
             raise TypeError(
                 f"Dimensions must be a list of Dimension instances if provided, got {dimensions}"
+            )
+
+        # Check if splits is a list of Split instances when provided
+        if splits is not None and (
+            not isinstance(splits, list) or not all(isinstance(split, Split) for split in splits)
+        ):
+            raise TypeError(
+                f"Splits must be a list of Split instances if provided, got {splits}"
             )
 
         # Validate custom_analysis_type_mapper if provided
@@ -278,6 +297,34 @@ class HypothesisTest:
         self.new_analysis_config = new_analysis_config
 
     @staticmethod
+    def _aggregate_by_cluster(
+        df: pd.DataFrame,
+        cluster_cols: List[str],
+        treatment_col: str,
+        metric: Metric,
+        covariates: Optional[List[str]] = None,
+    ) -> pd.DataFrame:
+        """
+        Aggregate metric values by cluster.
+        """
+        agg_cols = {}
+        if isinstance(metric, RatioMetric):
+            agg_cols[metric.target_column] = "sum"
+            agg_cols[metric.scale_column] = "sum"
+        else:
+            agg_cols[metric.target_column] = "sum"
+
+        if covariates:
+            for covariate in covariates:
+                if covariate not in df.columns:
+                    raise ValueError(
+                        f"Covariate '{covariate}' is not present in the data for cluster aggregation"
+                    )
+                agg_cols[covariate] = "mean"
+
+        return df.groupby(cluster_cols + [treatment_col], as_index=False).agg(agg_cols)
+
+    @staticmethod
     def prepare_data(
         data: pd.DataFrame,
         variant_col: str,
@@ -285,17 +332,36 @@ class HypothesisTest:
         control_variant: Variant,
         dimension_name: str,
         dimension_value: str,
+        split_name: Optional[str] = None,
+        split_value: Optional[str] = None,
+        cluster_cols: Optional[List[str]] = None,
+        metric: Optional[Metric] = None,
+        covariates: Optional[List[str]] = None,
     ) -> pd.DataFrame:
-        """
-        Prepares the data for the experiment analysis pipeline
-        """
         prepared_df = data.copy()
 
         prepared_df = prepared_df.assign(__total_dimension="total")
-
         prepared_df = prepared_df.query(
             f"{variant_col}.isin(['{treatment_variant.name}','{control_variant.name}'])"
         ).query(f"{dimension_name} == '{dimension_value}'")
+
+        if split_name is not None:
+            prepared_df = prepared_df.assign(__total_split="total")
+            if split_value is None:
+                raise ValueError("split_value must be provided when split_name is used")
+            
+            prepared_df = prepared_df.query(f"{split_name} == '{split_value}'")
+
+            if not cluster_cols:
+                raise ValueError(f"Split '{split_name}' requires 'cluster_cols' for aggregation.")
+            
+            prepared_df = HypothesisTest._aggregate_by_cluster(
+                df=prepared_df,
+                cluster_cols=cluster_cols,
+                treatment_col=variant_col,
+                metric=metric,
+                covariates=covariates,
+            )
 
         return prepared_df
 
@@ -321,6 +387,8 @@ class HypothesisTest:
         dimension: Dimension,
         dimension_value: str,
         alpha: float,
+        split: Optional[Split] = None,
+        split_value: Optional[str] = None,
     ) -> AnalysisPlanResults:
         """
         Performs the hypothesis test on the provided data, for the given dimension value.
@@ -359,6 +427,11 @@ class HypothesisTest:
             control_variant=control_variant,
             dimension_name=dimension.name,
             dimension_value=dimension_value,
+            split_name=split.name if split else None,
+            split_value=split_value,
+            cluster_cols=self.analysis_config.get("cluster_cols"),
+            metric=self.metric,
+            covariates=self.analysis_config.get("covariates", []),
         )
 
         inference_results = self.get_inference_results(df=prepared_df, alpha=alpha)
@@ -369,6 +442,9 @@ class HypothesisTest:
         treatment_variant_mean = self.metric.get_mean(
             prepared_df.query(f"{variant_col}=='{treatment_variant.name}'")
         )
+
+        has_real_dimensions = any(not isinstance(d, DefaultDimension) for d in self.dimensions)
+        has_real_splits = any(not isinstance(s, DefaultSplit) for s in self.splits)
 
         test_results = AnalysisPlanResults(
             metric_alias=[self.metric.alias],
@@ -382,9 +458,11 @@ class HypothesisTest:
             ate_ci_upper=[inference_results.conf_int.upper],
             p_value=[inference_results.p_value],
             std_error=[inference_results.std_error],
-            dimension_name=[dimension.name],
-            dimension_value=[dimension_value],
             alpha=[alpha],
+            dimension_name=[dimension.name] if has_real_dimensions else [""],
+            dimension_value=[dimension_value] if has_real_dimensions else [""],
+            split_name=[split.name if split else "total"] if has_real_splits else [""],
+            split_value=[split_value if split_value else "total"] if has_real_splits else [""],
         )
 
         return test_results
@@ -409,11 +487,16 @@ class HypothesisTest:
             Dimension.from_metrics_config(dimension_config)
             for dimension_config in config.get("dimensions", [])
         ]
+        splits = [
+            Split.from_metrics_config(split_config)
+            for split_config in config.get("splits", [])
+        ]
         return cls(
             metric=metric,
             analysis_type=config["analysis_type"],
             analysis_config=config.get("analysis_config"),
             dimensions=dimensions,
+            splits=splits,
             cupac_config=config.get("cupac_config"),
             custom_analysis_type_mapper=config.get("custom_analysis_type_mapper"),
         )

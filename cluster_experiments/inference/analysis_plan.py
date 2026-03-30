@@ -10,6 +10,7 @@ from cluster_experiments.inference.analysis_plan_config import (
 )
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import Dimension
+from cluster_experiments.inference.split import DefaultSplit
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
 from cluster_experiments.inference.metric import Metric
 from cluster_experiments.inference.variant import Variant
@@ -171,7 +172,6 @@ class AnalysisPlan:
         Method to run the experiment analysis.
         """
 
-        # Validate input data at the beginning
         self._validate_data(exp_data, pre_exp_data)
 
         analysis_results = AnalysisPlanResults()
@@ -179,29 +179,37 @@ class AnalysisPlan:
         for test in self.tests:
             exp_data = test.add_covariates(exp_data, pre_exp_data)
 
+            splits_to_iterate = test.splits if test.splits else [DefaultSplit()]
+
             for treatment_variant in self.treatment_variants:
-                for dimension in test.dimensions:
-                    for dimension_value in dimension.iterate_dimension_values():
+                for split in splits_to_iterate:
+                    for split_value in split.iterate_dimension_values():
+                        for dimension in test.dimensions:
+                            for dimension_value in dimension.iterate_dimension_values():
 
-                        if verbose:
-                            logger.info(
-                                f"Metric: {test.metric.alias}, "
-                                f"Treatment: {treatment_variant.name}, "
-                                f"Dimension: {dimension.name}, "
-                                f"Value: {dimension_value}"
-                            )
+                                if verbose:
+                                    logger.info(
+                                        f"Metric: {test.metric.alias}, "
+                                        f"Treatment: {treatment_variant.name}, "
+                                        f"Split: {split.name}, "
+                                        f"Value: {split_value}, "
+                                        f"Dimension: {dimension.name}, "
+                                        f"Value: {dimension_value}"
+                                    )
 
-                        test_results = test.get_test_results(
-                            exp_data=exp_data,
-                            control_variant=self.control_variant,
-                            treatment_variant=treatment_variant,
-                            variant_col=self.variant_col,
-                            dimension=dimension,
-                            dimension_value=dimension_value,
-                            alpha=self.alpha,
-                        )
+                                test_results = test.get_test_results(
+                                    exp_data=exp_data,
+                                    control_variant=self.control_variant,
+                                    treatment_variant=treatment_variant,
+                                    variant_col=self.variant_col,
+                                    dimension=dimension,
+                                    dimension_value=dimension_value,
+                                    alpha=self.alpha,
+                                    split=split,
+                                    split_value=split_value,
+                                )
 
-                        analysis_results = analysis_results + test_results
+                                analysis_results = analysis_results + test_results
 
         return analysis_results
 

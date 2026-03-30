@@ -63,6 +63,8 @@ class AnalysisPlanResults:
     std_error: List[float] = field(default_factory=lambda: [])
     dimension_name: List[str] = field(default_factory=lambda: [])
     dimension_value: List[str] = field(default_factory=lambda: [])
+    split_name: List[str] = field(default_factory=lambda: [])
+    split_value: List[str] = field(default_factory=lambda: [])
     alpha: List[float] = field(default_factory=lambda: [])
 
     def __add__(self, other):
@@ -85,11 +87,19 @@ class AnalysisPlanResults:
             std_error=self.std_error + other.std_error,
             dimension_name=self.dimension_name + other.dimension_name,
             dimension_value=self.dimension_value + other.dimension_value,
+            split_name=self.split_name + other.split_name,
+            split_value=self.split_value + other.split_value,
             alpha=self.alpha + other.alpha,
         )
 
     def to_dataframe(self):
-        return pd.DataFrame(asdict(self))
+        df = pd.DataFrame(asdict(self))
+        
+        cols_to_hide = ["dimension_name", "dimension_value", "split_name", "split_value"]
+        for col in cols_to_hide:
+            if col in df.columns and (df[col] == "").all():
+                df = df.drop(columns=[col])
+        return df
 
     def __str__(self) -> str:
         n = len(self.ate)
