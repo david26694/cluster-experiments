@@ -92,13 +92,25 @@ class AnalysisPlanResults:
             alpha=self.alpha + other.alpha,
         )
 
-    def to_dataframe(self):
-        df = pd.DataFrame(asdict(self))
-        
-        cols_to_hide = ["dimension_name", "dimension_value", "split_name", "split_value"]
-        for col in cols_to_hide:
-            if col in df.columns and (df[col] == "").all():
-                df = df.drop(columns=[col])
+    def to_dataframe(self, drop_empty: bool = False):
+        data_dict = asdict(self)
+        max_len = max(len(v) for v in data_dict.values()) if data_dict else 0
+        for k, v in data_dict.items():
+            if len(v) < max_len:
+                data_dict[k] = v + [""] * (max_len - len(v))
+
+        df = pd.DataFrame(data_dict)
+
+        if drop_empty:
+            defaults = {
+                "dimension_name": "__total_dimension",
+                "dimension_value": "total",
+                "split_name": "__total_split",
+                "split_value": "total"
+            }
+            for col, val in defaults.items():
+                if col in df.columns and (df[col] == val).all():
+                    df = df.drop(columns=[col])
         return df
 
     def __str__(self) -> str:

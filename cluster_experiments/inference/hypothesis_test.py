@@ -463,11 +463,11 @@ class HypothesisTest:
             ate_ci_upper=[inference_results.conf_int.upper],
             p_value=[inference_results.p_value],
             std_error=[inference_results.std_error],
+            dimension_name=[dimension.name] if has_real_dimensions else ["__total_dimension"],
+            dimension_value=[dimension_value] if has_real_dimensions else ["total"],
+            split_name=[split.name if split else "total"] if has_real_splits else ["__total_split"],
+            split_value=[split_value if split_value else "total"] if has_real_splits else ["total"],
             alpha=[alpha],
-            dimension_name=[dimension.name] if has_real_dimensions else [""],
-            dimension_value=[dimension_value] if has_real_dimensions else [""],
-            split_name=[split.name if split else "total"] if has_real_splits else [""],
-            split_value=[split_value if split_value else "total"] if has_real_splits else [""],
         )
 
         return test_results

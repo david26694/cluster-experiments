@@ -22,6 +22,8 @@ def test_analysis_plan_results_initialization():
     assert results.std_error == []
     assert results.dimension_name == []
     assert results.dimension_value == []
+    assert results.split_name == []
+    assert results.split_value == []
     assert results.alpha == []
 
 
@@ -75,6 +77,8 @@ def test_analysis_plan_results_addition():
         std_error=[0.02],
         dimension_name=["Country"],
         dimension_value=["US"],
+        split_name=["Status"],
+        split_value=["Prime"],
         alpha=[0.05],
     )
     results2 = AnalysisPlanResults(
@@ -91,6 +95,8 @@ def test_analysis_plan_results_addition():
         std_error=[0.01],
         dimension_name=["Country"],
         dimension_value=["CA"],
+        split_name=["Status"],
+        split_value=["Non-Prime"],
         alpha=[0.05],
     )
     combined_results = results1 + results2
@@ -108,6 +114,8 @@ def test_analysis_plan_results_addition():
     assert combined_results.std_error == [0.02, 0.01]
     assert combined_results.dimension_name == ["Country", "Country"]
     assert combined_results.dimension_value == ["US", "CA"]
+    assert combined_results.split_name == ["Status", "Status"]
+    assert combined_results.split_value == ["Prime", "Non-Prime"]
     assert combined_results.alpha == [0.05, 0.05]
 
 
@@ -154,3 +162,26 @@ def test_analysis_plan_results_to_dataframe():
     assert df["dimension_name"].iloc[0] == "Country"
     assert df["dimension_value"].iloc[0] == "US"
     assert df["alpha"].iloc[0] == 0.05
+
+def test_analysis_plan_results_to_dataframe_drop_empty():
+    """Test that AnalysisPlanResults drops empty columns when drop_empty=True."""
+    results = AnalysisPlanResults(
+        metric_alias=["metric1"],
+        ate=[0.1],
+        # dimension_name/value and split_name/value are not provided, 
+        # so they will be empty lists []
+    )
+    
+    # Case 1: drop_empty=False (default behavior, all columns present)
+    df_full = results.to_dataframe(drop_empty=False)
+    assert "split_name" in df_full.columns
+    assert "dimension_name" in df_full.columns
+    assert df_full.shape[1] == len(asdict(results).keys())
+
+    # Case 2: drop_empty=True (empty columns should be dropped)
+    df_clean = results.to_dataframe(drop_empty=True)
+    assert "split_name" not in df_clean.columns
+    assert "dimension_name" not in df_clean.columns
+    # Check that we still have core columns
+    assert "metric_alias" in df_clean.columns
+    assert "ate" in df_clean.columns
