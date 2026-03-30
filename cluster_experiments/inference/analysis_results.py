@@ -106,7 +106,7 @@ class AnalysisPlanResults:
                 "dimension_name": "__total_dimension",
                 "dimension_value": "total",
                 "split_name": "__total_split",
-                "split_value": "total"
+                "split_value": "total",
             }
             for col, val in defaults.items():
                 if col in df.columns and (df[col] == val).all():

@@ -7,8 +7,8 @@ from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.experiment_analysis import ExperimentAnalysis, InferenceResults
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
-from cluster_experiments.inference.split import DefaultSplit, Split
 from cluster_experiments.inference.metric import Metric, RatioMetric
+from cluster_experiments.inference.split import DefaultSplit, Split
 from cluster_experiments.inference.variant import Variant
 from cluster_experiments.power_config import analysis_mapping
 
@@ -200,7 +200,8 @@ class HypothesisTest:
 
         # Check if splits is a list of Split instances when provided
         if splits is not None and (
-            not isinstance(splits, list) or not all(isinstance(split, Split) for split in splits)
+            not isinstance(splits, list)
+            or not all(isinstance(split, Split) for split in splits)
         ):
             raise TypeError(
                 f"Splits must be a list of Split instances if provided, got {splits}"
@@ -349,12 +350,14 @@ class HypothesisTest:
             prepared_df = prepared_df.assign(__total_split="total")
             if split_value is None:
                 raise ValueError("split_value must be provided when split_name is used")
-            
+
             prepared_df = prepared_df.query(f"{split_name} == '{split_value}'")
 
             if not cluster_cols:
-                raise ValueError(f"Split '{split_name}' requires 'cluster_cols' for aggregation.")
-            
+                raise ValueError(
+                    f"Split '{split_name}' requires 'cluster_cols' for aggregation."
+                )
+
             prepared_df = HypothesisTest._aggregate_by_cluster(
                 df=prepared_df,
                 cluster_cols=cluster_cols,
@@ -410,7 +413,7 @@ class HypothesisTest:
         alpha : float
             The significance level to be used in the inference analysis.
         split : Optional[Split], optional
-            The split instance to use for segmented analysis and cluster aggregation, 
+            The split instance to use for segmented analysis and cluster aggregation,
             by default None
         split_value : Optional[str], optional
             The specific value of the split to filter on, by default None
@@ -448,7 +451,9 @@ class HypothesisTest:
             prepared_df.query(f"{variant_col}=='{treatment_variant.name}'")
         )
 
-        has_real_dimensions = any(not isinstance(d, DefaultDimension) for d in self.dimensions)
+        has_real_dimensions = any(
+            not isinstance(d, DefaultDimension) for d in self.dimensions
+        )
         has_real_splits = any(not isinstance(s, DefaultSplit) for s in self.splits)
 
         test_results = AnalysisPlanResults(
@@ -463,10 +468,20 @@ class HypothesisTest:
             ate_ci_upper=[inference_results.conf_int.upper],
             p_value=[inference_results.p_value],
             std_error=[inference_results.std_error],
-            dimension_name=[dimension.name] if has_real_dimensions else ["__total_dimension"],
+            dimension_name=(
+                [dimension.name] if has_real_dimensions else ["__total_dimension"]
+            ),
             dimension_value=[dimension_value] if has_real_dimensions else ["total"],
-            split_name=[split.name if split else "total"] if has_real_splits else ["__total_split"],
-            split_value=[split_value if split_value else "total"] if has_real_splits else ["total"],
+            split_name=(
+                [split.name if split else "total"]
+                if has_real_splits
+                else ["__total_split"]
+            ),
+            split_value=(
+                [split_value if split_value else "total"]
+                if has_real_splits
+                else ["total"]
+            ),
             alpha=[alpha],
         )
 

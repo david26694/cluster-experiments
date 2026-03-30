@@ -10,9 +10,9 @@ from cluster_experiments.inference.analysis_plan_config import (
 )
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import Dimension
-from cluster_experiments.inference.split import DefaultSplit
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
 from cluster_experiments.inference.metric import Metric
+from cluster_experiments.inference.split import DefaultSplit
 from cluster_experiments.inference.variant import Variant
 
 logger = logging.getLogger(__name__)

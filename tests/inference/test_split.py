@@ -1,5 +1,7 @@
 import pytest
-from cluster_experiments.inference.split import Split, DefaultSplit
+
+from cluster_experiments.inference.split import DefaultSplit, Split
+
 
 def test_split_initialization():
     """Test Split initialization with valid inputs."""

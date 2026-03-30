@@ -163,6 +163,7 @@ def test_analysis_plan_results_to_dataframe():
     assert df["dimension_value"].iloc[0] == "US"
     assert df["alpha"].iloc[0] == 0.05
 
+
 def test_analysis_plan_results_to_dataframe_drop_empty():
     """Test that AnalysisPlanResults drops default columns when drop_empty=True."""
     results = AnalysisPlanResults(
@@ -172,9 +173,9 @@ def test_analysis_plan_results_to_dataframe_drop_empty():
         dimension_name=["__total_dimension"],
         dimension_value=["total"],
         split_name=["__total_split"],
-        split_value=["total"]
+        split_value=["total"],
     )
-    
+
     # Case 1: drop_empty=False (default behavior, all columns should be present)
     df_full = results.to_dataframe(drop_empty=False)
     assert "split_name" in df_full.columns
@@ -188,7 +189,7 @@ def test_analysis_plan_results_to_dataframe_drop_empty():
     assert "dimension_name" not in df_clean.columns
     assert "split_value" not in df_clean.columns
     assert "dimension_value" not in df_clean.columns
-    
+
     # Core columns should still be there
     assert "metric_alias" in df_clean.columns
     assert "ate" in df_clean.columns

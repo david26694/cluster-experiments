@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 from cluster_experiments.inference.dimension import Dimension
 
