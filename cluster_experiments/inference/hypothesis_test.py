@@ -409,6 +409,11 @@ class HypothesisTest:
             The value of the dimension
         alpha : float
             The significance level to be used in the inference analysis.
+        split : Optional[Split], optional
+            The split instance to use for segmented analysis and cluster aggregation, 
+            by default None
+        split_value : Optional[str], optional
+            The specific value of the split to filter on, by default None
 
         Returns
         -------
