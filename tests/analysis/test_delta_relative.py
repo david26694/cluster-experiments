@@ -132,7 +132,10 @@ def test_transformer_point_estimate_matches_manual(ratio_df):
     transformer = DeltaMethodLiftTransformer("treatment")
     mean_diff = rel_lift_manual * ctrl_mean
     transformer.fit(
-        mean_diff=mean_diff, var_abs=var_abs, ctrl_mean=ctrl_mean, ctrl_var=ctrl_var
+        mean_diff=mean_diff,
+        std_error=np.sqrt(var_abs),
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
     )
 
     assert transformer.params["treatment"] == pytest.approx(rel_lift_manual, rel=1e-8)
@@ -149,7 +152,10 @@ def test_transformer_se_greater_than_naive(ratio_df):
 
     transformer = DeltaMethodLiftTransformer("treatment")
     transformer.fit(
-        mean_diff=mean_diff, var_abs=var_abs, ctrl_mean=ctrl_mean, ctrl_var=ctrl_var
+        mean_diff=mean_diff,
+        std_error=np.sqrt(var_abs),
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
     )
 
     assert transformer.bse["treatment"] >= se_naive
@@ -165,7 +171,10 @@ def test_transformer_se_via_summary(ratio_df):
 
     transformer = DeltaMethodLiftTransformer("treatment")
     transformer.fit(
-        mean_diff=mean_diff, var_abs=var_abs, ctrl_mean=ctrl_mean, ctrl_var=ctrl_var
+        mean_diff=mean_diff,
+        std_error=np.sqrt(var_abs),
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
     )
 
     assert transformer.summary()["_se_relative_lift"] == transformer.bse["treatment"]
@@ -180,7 +189,10 @@ def test_transformer_conf_int_consistent_with_pvalue(ratio_df):
 
     transformer = DeltaMethodLiftTransformer("treatment")
     transformer.fit(
-        mean_diff=mean_diff, var_abs=var_abs, ctrl_mean=ctrl_mean, ctrl_var=ctrl_var
+        mean_diff=mean_diff,
+        std_error=np.sqrt(var_abs),
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
     )
 
     for alpha in [0.05, 0.01, 0.001]:
@@ -230,7 +242,10 @@ def test_static_lift_and_se_matches_fit():
 
     transformer = DeltaMethodLiftTransformer("treatment")
     transformer.fit(
-        mean_diff=mean_diff, var_abs=var_abs, ctrl_mean=ctrl_mean, ctrl_var=ctrl_var
+        mean_diff=mean_diff,
+        std_error=np.sqrt(var_abs),
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
     )
 
     assert transformer.params["treatment"] == pytest.approx(rl, rel=1e-10)
@@ -555,7 +570,7 @@ def test_power_relative_slightly_lower_than_naive(ratio_df):
     transformer = DeltaMethodLiftTransformer("treatment")
     transformer.fit(
         mean_diff=planted_rel_effect * ctrl_mean,
-        var_abs=var_abs,
+        std_error=np.sqrt(var_abs),
         ctrl_mean=ctrl_mean,
         ctrl_var=ctrl_var,
     )
@@ -567,3 +582,68 @@ def test_power_relative_slightly_lower_than_naive(ratio_df):
 
     # Proper SE is larger so power should be lower or equal
     assert power_proper <= power_naive + 1e-6
+
+
+# ---------------------------------------------------------------------------
+# Parity test – relative OLS vs relative DeltaMethodAnalysis
+# ---------------------------------------------------------------------------
+
+
+def test_relative_ols_vs_delta_parity():
+    """
+    At the cluster level, OLSAnalysis(relative_effect=True) on the precomputed
+    ratio column and DeltaMethodAnalysis(relative_effect=True) on the raw
+    numerator/denominator columns should give very similar results.
+
+    The two estimators are not numerically identical when cluster sizes (scale)
+    vary: OLS uses a simple unweighted mean of per-cluster ratios while the
+    delta method uses a weighted ratio estimator (weighted by scale).  With
+    constant scale they would be exactly equal; with variable scale they are
+    close but can differ by a few percent.
+
+    The two SEs also differ: OLS treats the precomputed ratio as a single
+    random variable while the delta method propagates variance from both
+    numerator and denominator.  Both should be in the same ballpark (~20%).
+    """
+    from cluster_experiments import OLSAnalysis
+
+    df = _make_ratio_df(n_users=5_000, treatment_effect=0.05, seed=99)
+
+    # Aggregate to one row per cluster (required for DeltaMethodAnalysis
+    # and for the apples-to-apples OLS comparison)
+    df_agg = df.groupby(["user", "treatment"], as_index=False).agg(
+        {"target": "sum", "scale": "sum"}
+    )
+    df_agg["ratio"] = df_agg["target"] / df_agg["scale"]
+
+    # Relative OLS on the precomputed per-cluster ratio
+    ols_rel = OLSAnalysis(
+        target_col="ratio",
+        treatment_col="treatment",
+        relative_effect=True,
+    )
+
+    # Relative delta method on the raw cluster-level numerator/denominator
+    delta_rel = DeltaMethodAnalysis(
+        cluster_cols=["user"],
+        scale_col="scale",
+        target_col="target",
+        relative_effect=True,
+    )
+
+    ols_point = ols_rel.get_point_estimate(df_agg)
+    delta_point = delta_rel.get_point_estimate(df_agg)
+
+    ols_se = ols_rel.get_standard_error(df_agg)
+    delta_se = delta_rel.get_standard_error(df_agg)
+
+    # Both should detect a positive effect in the same direction
+    assert ols_point > 0
+    assert delta_point > 0
+
+    # Point estimates come from different estimators (unweighted vs weighted by
+    # scale) so a 5% relative tolerance is appropriate
+    assert ols_point == pytest.approx(delta_point, rel=0.05)
+
+    # SEs are computed differently but must be in the same ballpark
+    assert ols_se == pytest.approx(delta_se, rel=0.20)

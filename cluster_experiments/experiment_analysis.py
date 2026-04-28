@@ -1791,7 +1791,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             transformer = DeltaMethodLiftTransformer(self.treatment_col)
             transformer.fit(
                 mean_diff=mean_diff,
-                var_abs=treat_var + ctrl_var,
+                std_error=standard_error,
                 ctrl_mean=ctrl_mean,
                 ctrl_var=ctrl_var,
             )

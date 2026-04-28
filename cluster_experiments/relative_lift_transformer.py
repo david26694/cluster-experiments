@@ -21,12 +21,62 @@ class RegressionResultsProtocol(Protocol):
     def summary(self): ...
 
 
-class LiftRegressionTransformer:
+class BaseLiftTransformer:
+    """
+    Base class for relative lift transformers.
+
+    Stores the relative lift point estimate and its standard error, and exposes
+    the shared ``RegressionResultsProtocol``-compatible interface (``params``,
+    ``bse``, ``pvalues``, ``conf_int``, ``summary``).  Subclasses must override
+    :meth:`fit` with their specific computation logic.
+    """
+
     def __init__(self, treatment_col: str):
         self.treatment_col = treatment_col
         self._relative_lift_value: Optional[float] = None
         self._se_relative_lift: Optional[float] = None
 
+    def fit(self, *args, **kwargs) -> None:
+        raise NotImplementedError
+
+    @property
+    def params(self):
+        return {self.treatment_col: self._relative_lift_value}
+
+    @property
+    def bse(self):
+        return {self.treatment_col: self._se_relative_lift}
+
+    @property
+    def pvalues(self):
+        z_score = self._relative_lift_value / self._se_relative_lift
+        p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))
+        return {self.treatment_col: p_value}
+
+    def conf_int(self, alpha: float):
+        # 1. Critical value
+        z_crit = stats.norm.ppf(1 - alpha / 2)
+
+        # 2. Confidence interval
+        lower_bound = self._relative_lift_value - z_crit * self._se_relative_lift
+        upper_bound = self._relative_lift_value + z_crit * self._se_relative_lift
+
+        return pd.DataFrame(
+            [[lower_bound, upper_bound]],
+            index=[self.treatment_col],
+            columns=[0, 1],
+        )
+
+    def summary(self):
+        return {
+            "percent_lift": self._relative_lift_value,
+            "_se_relative_lift": self._se_relative_lift,
+            "pvalue": self.pvalues[self.treatment_col],
+            "conf_int": self.conf_int(0.05).loc[self.treatment_col],
+        }
+
+
+class LiftRegressionTransformer(BaseLiftTransformer):
     def fit(
         self, ols: RegressionResultsWrapper, df: pd.DataFrame, covariate_cols: List[str]
     ) -> None:
@@ -117,44 +167,8 @@ class LiftRegressionTransformer:
         self._relative_lift_value = _relative_lift_value
         self._se_relative_lift = _se_relative_lift
 
-    @property
-    def params(self):
-        return {self.treatment_col: self._relative_lift_value}
 
-    @property
-    def bse(self):
-        return {self.treatment_col: self._se_relative_lift}
-
-    @property
-    def pvalues(self):
-        z_score = self._relative_lift_value / self._se_relative_lift
-        p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))
-        return {self.treatment_col: p_value}
-
-    def conf_int(self, alpha: float):
-        # 1. Critical value
-        z_crit = stats.norm.ppf(1 - alpha / 2)
-
-        # 2. Confidence interval
-        lower_bound = self._relative_lift_value - z_crit * self._se_relative_lift
-        upper_bound = self._relative_lift_value + z_crit * self._se_relative_lift
-
-        return pd.DataFrame(
-            [[lower_bound, upper_bound]],
-            index=[self.treatment_col],
-            columns=[0, 1],
-        )
-
-    def summary(self):
-        return {
-            "percent_lift": self._relative_lift_value,
-            "_se_relative_lift": self._se_relative_lift,
-            "pvalue": self.pvalues[self.treatment_col],
-            "conf_int": self.conf_int(0.05).loc[self.treatment_col],
-        }
-
-
-class DeltaMethodLiftTransformer:
+class DeltaMethodLiftTransformer(BaseLiftTransformer):
     """
     Delta-method relative lift and MDE for ratio metrics (cluster-level target/scale).
 
@@ -167,15 +181,10 @@ class DeltaMethodLiftTransformer:
     available for direct use.
     """
 
-    def __init__(self, treatment_col: str):
-        self.treatment_col = treatment_col
-        self._relative_lift_value: Optional[float] = None
-        self._se_relative_lift: Optional[float] = None
-
     def fit(
         self,
         mean_diff: float,
-        var_abs: float,
+        std_error: float,
         ctrl_mean: float,
         ctrl_var: float,
     ) -> None:
@@ -186,48 +195,18 @@ class DeltaMethodLiftTransformer:
         ----------
         mean_diff
             Absolute treatment effect on the ratio metric (treat_mean - ctrl_mean).
-        var_abs
-            Var(mean_diff) = treat_var + ctrl_var.
+        std_error
+            Standard error of mean_diff = sqrt(treat_var + ctrl_var).
         ctrl_mean
             Control arm ratio mean.
         ctrl_var
             Variance of the control arm ratio mean.
         """
-        relative_lift, se = self.lift_and_se(mean_diff, var_abs, ctrl_mean, ctrl_var)
+        relative_lift, se = self.lift_and_se(
+            mean_diff, std_error**2, ctrl_mean, ctrl_var
+        )
         self._relative_lift_value = relative_lift
         self._se_relative_lift = se
-
-    @property
-    def params(self):
-        return {self.treatment_col: self._relative_lift_value}
-
-    @property
-    def bse(self):
-        return {self.treatment_col: self._se_relative_lift}
-
-    @property
-    def pvalues(self):
-        z_score = self._relative_lift_value / self._se_relative_lift
-        p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))
-        return {self.treatment_col: p_value}
-
-    def conf_int(self, alpha: float):
-        z_crit = stats.norm.ppf(1 - alpha / 2)
-        lower_bound = self._relative_lift_value - z_crit * self._se_relative_lift
-        upper_bound = self._relative_lift_value + z_crit * self._se_relative_lift
-        return pd.DataFrame(
-            [[lower_bound, upper_bound]],
-            index=[self.treatment_col],
-            columns=[0, 1],
-        )
-
-    def summary(self):
-        return {
-            "percent_lift": self._relative_lift_value,
-            "_se_relative_lift": self._se_relative_lift,
-            "pvalue": self.pvalues[self.treatment_col],
-            "conf_int": self.conf_int(0.05).loc[self.treatment_col],
-        }
 
     @staticmethod
     def lift_and_se(
