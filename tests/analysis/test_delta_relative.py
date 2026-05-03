@@ -209,7 +209,7 @@ def test_transformer_zero_ctrl_mean_raises():
         DeltaMethodLiftTransformer.lift_and_se(0.1, 0.01, 0.0, 0.001)
 
     with pytest.raises(ValueError, match="ctrl_mean must be non-zero"):
-        DeltaMethodLiftTransformer.relative_mde(0.05, 0.8, 0.0, 0.001, 0.001)
+        DeltaMethodLiftTransformer._relative_mde(0.05, 0.8, 0.0, 0.001, 0.001)
 
 
 def test_relative_mde_invalid_power_equation_raises(monkeypatch):
@@ -223,8 +223,8 @@ def test_relative_mde_invalid_power_equation_raises(monkeypatch):
         "cluster_experiments.relative_lift_transformer.stats.norm.ppf", mock_ppf
     )
 
-    with pytest.raises(ValueError, match="invalid power equation"):
-        DeltaMethodLiftTransformer.relative_mde(
+    with pytest.raises(ValueError, match="degenerate quadratic"):
+        DeltaMethodLiftTransformer._relative_mde(
             alpha=0.05,
             power=0.8,
             ctrl_mean=1.0,
@@ -428,7 +428,7 @@ def test_relative_mde_lower_than_naive_mde():
     ctrl_var = 0.0001
     treat_var = 0.0001
 
-    mde = DeltaMethodLiftTransformer.relative_mde(
+    mde = DeltaMethodLiftTransformer._relative_mde(
         alpha=alpha,
         power=power,
         ctrl_mean=ctrl_mean,

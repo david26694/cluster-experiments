@@ -67,12 +67,12 @@ class BaseLiftTransformer:
             columns=[0, 1],
         )
 
-    def summary(self):
+    def summary(self, alpha: float = 0.05):
         return {
             "percent_lift": self._relative_lift_value,
             "_se_relative_lift": self._se_relative_lift,
             "pvalue": self.pvalues[self.treatment_col],
-            "conf_int": self.conf_int(0.05).loc[self.treatment_col],
+            "conf_int": self.conf_int(alpha).loc[self.treatment_col],
         }
 
 
@@ -177,7 +177,7 @@ class DeltaMethodLiftTransformer(BaseLiftTransformer):
     then read `params`, `bse`, `pvalues`, and `conf_int` just like any
     ``RegressionResultsProtocol``-compatible object.
 
-    The static helpers :meth:`lift_and_se` and :meth:`relative_mde` remain
+    The static helpers :meth:`lift_and_se` and :meth:`_relative_mde` remain
     available for direct use.
     """
 
@@ -240,7 +240,7 @@ class DeltaMethodLiftTransformer(BaseLiftTransformer):
         return relative_lift, float(np.sqrt(var_relative))
 
     @staticmethod
-    def relative_mde(
+    def _relative_mde(
         alpha: float,
         power: float,
         ctrl_mean: float,
@@ -250,8 +250,36 @@ class DeltaMethodLiftTransformer(BaseLiftTransformer):
         """
         Minimum detectable relative lift (two-sided, double-delta quadratic).
 
-        Solves A*m^2 + B*m + C = 0 for the smallest positive m satisfying
-        the power constraint at significance level alpha.
+        **Derivation**
+
+        Let m = δ / r_c be the true relative lift, where δ = treat_mean - ctrl_mean
+        and r_c = ctrl_mean.  Define the normalised variances::
+
+            se2_c = ctrl_var / r_c²,   se2_t = treat_var / r_c²
+
+        The outer delta method gives the SE of the relative lift estimate as a
+        function of m (see ``lift_and_se``):
+
+            SE_rel(m)² = se2_t + se2_c · (1 + m)²
+
+        For a two-sided Wald test at level α, the power condition
+        (SE evaluated at the true effect, not at zero) is:
+
+            m - z_α · SE_rel(0) = z_β · SE_rel(m)
+
+        where SE_rel(0) = sqrt(se2_t + se2_c).  Squaring both sides and
+        substituting SE_rel(m)² yields the quadratic A·m² + B·m + C = 0::
+
+            A      = 1 − z_β² · se2_c
+            B      = −2 · (z_α · sqrt(v0) + z_β² · se2_c)
+            C      = (z_α · sqrt(v0))² − z_β² · v0
+            v0     = se2_t + se2_c
+
+        The smallest positive root is the MDE.
+
+        Reference: Deng, A. & Shi, X. (2016). "Data-Driven Metric Development for
+        Online Controlled Experiments."  KDD 2016.  The outer-delta variance
+        formula follows standard delta-method theory (van der Vaart, 1998, §3).
         """
         if ctrl_mean == 0:
             raise ValueError("ctrl_mean must be non-zero for relative MDE.")
@@ -270,10 +298,19 @@ class DeltaMethodLiftTransformer(BaseLiftTransformer):
         c_term = c**2 - (z_beta**2) * v0
 
         discriminant = b**2 - 4 * a * c_term
-        if discriminant < 0 or a == 0:
+        if a == 0:
             raise ValueError(
-                "DeltaMethodLiftTransformer.relative_mde: invalid power equation "
-                "(discriminant or A); check inputs or use more clusters."
+                "_relative_mde: degenerate quadratic (A = 0). "
+                "This occurs when z_beta^2 * ctrl_var / ctrl_mean^2 = 1, "
+                "i.e. the control SE already equals 1/z_beta. "
+                "Reduce ctrl_var or use a smaller power target."
+            )
+        if discriminant < 0:
+            raise ValueError(
+                "_relative_mde: no finite MDE exists for the given inputs. "
+                "The power constraint cannot be satisfied — the noise is too large "
+                "relative to any detectable effect. Increase sample size or relax "
+                "the power / alpha requirements."
             )
         m = (-b + np.sqrt(discriminant)) / (2 * a)
         return float(m)
