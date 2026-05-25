@@ -4,7 +4,7 @@ import pytest
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor
 
-from cluster_experiments import OLSAnalysis, PowerAnalysis
+from cluster_experiments import NormalPowerAnalysis, OLSAnalysis, PowerAnalysis
 from cluster_experiments.cupac import MLHandler, MLRateHandler, NoOpHandler
 from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
 from cluster_experiments.perturbator import ConstantPerturbator
@@ -208,4 +208,43 @@ def test_power_analysis_backward_compat_alias():
         splitter=NonClusteredSplitter(),
         analysis=OLSAnalysis(),
     )
+    assert pw.cupac_handler is pw.handler
+
+
+# ---------------------------------------------------------------------------
+# Task 5: NormalPowerAnalysis
+# ---------------------------------------------------------------------------
+
+
+def test_normal_power_analysis_default_is_noophandler():
+    pw = NormalPowerAnalysis(splitter=NonClusteredSplitter(), analysis=OLSAnalysis())
+    assert isinstance(pw.handler, NoOpHandler)
+
+
+def test_normal_power_analysis_mlrate_builds_handler():
+    pw = NormalPowerAnalysis(
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(covariates=["estimate_target"]),
+        cupac_model=LinearRegression(),
+        ml_option="mlrate",
+        features_cupac_model=["x"],
+    )
+    assert isinstance(pw.handler, MLRateHandler)
+
+
+def test_normal_power_analysis_mlrate_runs(power_df):
+    pw = NormalPowerAnalysis(
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(covariates=["estimate_target"]),
+        cupac_model=LinearRegression(),
+        ml_option="mlrate",
+        features_cupac_model=["x"],
+        n_simulations=5,
+    )
+    se = pw._get_average_standard_error(power_df, n_simulations=5)
+    assert se > 0
+
+
+def test_normal_power_analysis_backward_compat_alias():
+    pw = NormalPowerAnalysis(splitter=NonClusteredSplitter(), analysis=OLSAnalysis())
     assert pw.cupac_handler is pw.handler
