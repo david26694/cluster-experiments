@@ -5,8 +5,16 @@ from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor
 
 from cluster_experiments import NormalPowerAnalysis, OLSAnalysis, PowerAnalysis
-from cluster_experiments.cupac import MLHandler, MLRateHandler, NoOpHandler
+from cluster_experiments.cupac import (
+    CupacHandler,
+    MLHandler,
+    MLRateHandler,
+    NoOpHandler,
+    TargetAggregation,
+)
 from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
+from cluster_experiments.inference.hypothesis_test import HypothesisTest
+from cluster_experiments.inference.metric import SimpleMetric
 from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
@@ -293,3 +301,103 @@ def test_power_analysis_from_dict_no_cupac():
         }
     )
     assert isinstance(pw.handler, NoOpHandler)
+
+
+# ---------------------------------------------------------------------------
+# Task 7: HypothesisTest + exports + integration
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def metric():
+    return SimpleMetric(alias="revenue", name="target")
+
+
+def test_hypothesis_test_no_cupac_config_is_noophandler(metric):
+    test = HypothesisTest(metric=metric, analysis_type="ols")
+    assert isinstance(test.handler, NoOpHandler)
+
+
+def test_hypothesis_test_mlrate(metric, power_df):
+    test = HypothesisTest(
+        metric=metric,
+        analysis_type="ols",
+        analysis_config={"covariates": ["estimate_target"]},
+        cupac_config={
+            "ml_model": LinearRegression(),
+            "features": ["x"],
+            "target_col": "target",
+            "random_state": 0,
+        },
+        ml_option="mlrate",
+    )
+    assert isinstance(test.handler, MLRateHandler)
+    assert test.handler.cupac_outcome_name == "estimate_target"
+
+
+def test_hypothesis_test_cupac_unchanged(metric):
+    test = HypothesisTest(
+        metric=metric,
+        analysis_type="ols",
+        cupac_config={"cupac_model": TargetAggregation("x"), "target_col": "target"},
+    )
+    assert isinstance(test.handler, CupacHandler)
+
+
+def test_hypothesis_test_backward_compat_alias(metric):
+    test = HypothesisTest(metric=metric, analysis_type="ols")
+    assert test.cupac_handler is test.handler
+
+
+def test_hypothesis_test_from_config_mlrate(metric):
+    config = {
+        "metric": {"alias": "revenue", "name": "target"},
+        "analysis_type": "ols",
+        "analysis_config": {"covariates": ["estimate_target"]},
+        "cupac_config": {
+            "ml_model": LinearRegression(),
+            "features": ["x"],
+            "target_col": "target",
+        },
+        "ml_option": "mlrate",
+    }
+    test = HypothesisTest.from_config(config)
+    assert isinstance(test.handler, MLRateHandler)
+
+
+def test_mlrate_reduces_variance():
+    rng = np.random.default_rng(99)
+    n = 2000
+    x = rng.normal(size=n)
+    df = pd.DataFrame(
+        {
+            "x": x,
+            "target": 2 * x + rng.normal(scale=0.2, size=n),
+        }
+    )
+    plain = NormalPowerAnalysis(
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(),
+        n_simulations=20,
+    )
+    mlrate = NormalPowerAnalysis(
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(covariates=["estimate_target"]),
+        cupac_model=LinearRegression(),
+        ml_option="mlrate",
+        features_cupac_model=["x"],
+        n_simulations=20,
+    )
+    se_plain = plain._get_average_standard_error(df, n_simulations=20)
+    se_mlrate = mlrate._get_average_standard_error(df, n_simulations=20)
+    assert (
+        se_mlrate < se_plain
+    ), f"Expected MLRATE SE {se_mlrate:.4f} < plain SE {se_plain:.4f}"
+
+
+def test_mlrate_exported():
+    from cluster_experiments import MLHandler, MLRateHandler, NoOpHandler
+
+    assert MLHandler is not None
+    assert MLRateHandler is not None
+    assert NoOpHandler is not None
