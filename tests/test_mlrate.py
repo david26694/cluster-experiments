@@ -1,6 +1,10 @@
+import numpy as np
 import pandas as pd
+import pytest
+from sklearn.linear_model import LinearRegression
+from sklearn.neighbors import KNeighborsRegressor
 
-from cluster_experiments.cupac import MLHandler, NoOpHandler
+from cluster_experiments.cupac import MLHandler, MLRateHandler, NoOpHandler
 
 
 def test_noophandler_satisfies_protocol():
@@ -22,3 +26,55 @@ def test_noophandler_ignores_pre_experiment_df():
     pre = pd.DataFrame({"target": [10, 20]})
     result = NoOpHandler().add_covariates(df, pre_experiment_df=pre)
     pd.testing.assert_frame_equal(result, df)
+
+
+@pytest.fixture
+def simple_df():
+    rng = np.random.default_rng(42)
+    n = 100
+    x = rng.normal(size=n)
+    return pd.DataFrame({"x": x, "target": 2 * x + rng.normal(scale=0.1, size=n)})
+
+
+def test_mlrate_satisfies_protocol():
+    assert isinstance(
+        MLRateHandler(ml_model=LinearRegression(), features=["x"]), MLHandler
+    )
+
+
+def test_mlrate_cupac_outcome_name():
+    handler = MLRateHandler(
+        ml_model=LinearRegression(), target_col="revenue", features=["x"]
+    )
+    assert handler.cupac_outcome_name == "estimate_revenue"
+
+
+def test_mlrate_adds_column(simple_df):
+    handler = MLRateHandler(ml_model=LinearRegression(), features=["x"], random_state=0)
+    result = handler.add_covariates(simple_df)
+    assert "estimate_target" in result.columns
+    assert len(result) == len(simple_df)
+
+
+def test_mlrate_no_data_leakage(simple_df):
+    handler = MLRateHandler(
+        ml_model=KNeighborsRegressor(n_neighbors=1),
+        features=["x"],
+        n_folds=5,
+        random_state=0,
+    )
+    result = handler.add_covariates(simple_df)
+    assert not np.allclose(result["estimate_target"].values, simple_df["target"].values)
+
+
+def test_mlrate_missing_features_raises(simple_df):
+    handler = MLRateHandler(ml_model=LinearRegression(), features=["nonexistent"])
+    with pytest.raises(ValueError, match="nonexistent"):
+        handler.add_covariates(simple_df)
+
+
+def test_mlrate_original_df_not_mutated(simple_df):
+    handler = MLRateHandler(ml_model=LinearRegression(), features=["x"], random_state=0)
+    original_cols = list(simple_df.columns)
+    handler.add_covariates(simple_df)
+    assert list(simple_df.columns) == original_cols
