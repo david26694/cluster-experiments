@@ -8,6 +8,7 @@ from cluster_experiments import NormalPowerAnalysis, OLSAnalysis, PowerAnalysis
 from cluster_experiments.cupac import MLHandler, MLRateHandler, NoOpHandler
 from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
 from cluster_experiments.perturbator import ConstantPerturbator
+from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
 
 
@@ -248,3 +249,47 @@ def test_normal_power_analysis_mlrate_runs(power_df):
 def test_normal_power_analysis_backward_compat_alias():
     pw = NormalPowerAnalysis(splitter=NonClusteredSplitter(), analysis=OLSAnalysis())
     assert pw.cupac_handler is pw.handler
+
+
+# ---------------------------------------------------------------------------
+# Task 6: PowerConfig + cupac_model_mapping + from_config
+# ---------------------------------------------------------------------------
+
+
+def test_power_config_ml_option_and_n_folds():
+    config = PowerConfig(
+        splitter="non_clustered",
+        analysis="ols",
+        perturbator="constant",
+        cupac_model="linear",
+        ml_option="mlrate",
+        n_folds=3,
+    )
+    assert config.ml_option == "mlrate"
+    assert config.n_folds == 3
+
+
+def test_power_analysis_from_dict_mlrate(power_df):
+    pw = PowerAnalysis.from_dict(
+        {
+            "splitter": "non_clustered",
+            "analysis": "ols",
+            "perturbator": "constant",
+            "cupac_model": "linear",
+            "ml_option": "mlrate",
+            "n_folds": 3,
+            "covariates": ["estimate_target"],
+        }
+    )
+    assert isinstance(pw.handler, MLRateHandler)
+
+
+def test_power_analysis_from_dict_no_cupac():
+    pw = PowerAnalysis.from_dict(
+        {
+            "splitter": "non_clustered",
+            "analysis": "ols",
+            "perturbator": "constant",
+        }
+    )
+    assert isinstance(pw.handler, NoOpHandler)

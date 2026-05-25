@@ -464,11 +464,21 @@ class PowerAnalysis:
         splitter_cls = _get_mapping_key(splitter_mapping, config.splitter)
         analysis_cls = _get_mapping_key(analysis_mapping, config.analysis)
         cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
+
+        if cupac_cls is None:
+            cupac_model = None
+        elif config.ml_option == "mlrate":
+            cupac_model = cupac_cls()
+        else:
+            cupac_model = cupac_cls.from_config(config)
+
         return cls(
             perturbator=perturbator_cls.from_config(config),
             splitter=splitter_cls.from_config(config),
             analysis=analysis_cls.from_config(config),
-            cupac_model=cupac_cls.from_config(config),
+            cupac_model=cupac_model,
+            ml_option=config.ml_option,
+            n_folds=config.n_folds,
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
@@ -1271,10 +1281,20 @@ class NormalPowerAnalysis:
         splitter_cls = _get_mapping_key(splitter_mapping, config.splitter)
         analysis_cls = _get_mapping_key(analysis_mapping, config.analysis)
         cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
+
+        if cupac_cls is None:
+            cupac_model = None
+        elif config.ml_option == "mlrate":
+            cupac_model = cupac_cls()
+        else:
+            cupac_model = cupac_cls.from_config(config)
+
         return cls(
             splitter=splitter_cls.from_config(config),
             analysis=analysis_cls.from_config(config),
-            cupac_model=cupac_cls.from_config(config),
+            cupac_model=cupac_model,
+            ml_option=config.ml_option,
+            n_folds=config.n_folds,
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
