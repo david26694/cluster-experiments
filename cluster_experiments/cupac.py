@@ -1,9 +1,34 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Protocol, Tuple, runtime_checkable
 
 import pandas as pd
 from numpy.typing import ArrayLike
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import NotFittedError, check_is_fitted
+
+
+@runtime_checkable
+class MLHandler(Protocol):
+    @property
+    def cupac_outcome_name(self) -> str: ...
+
+    def add_covariates(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+    ) -> pd.DataFrame: ...
+
+
+class NoOpHandler:
+    @property
+    def cupac_outcome_name(self) -> str:
+        return ""
+
+    def add_covariates(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+    ) -> pd.DataFrame:
+        return df
 
 
 class EmptyRegressor(BaseEstimator):
