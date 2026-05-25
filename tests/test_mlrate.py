@@ -4,7 +4,11 @@ import pytest
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor
 
+from cluster_experiments import OLSAnalysis, PowerAnalysis
 from cluster_experiments.cupac import MLHandler, MLRateHandler, NoOpHandler
+from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
+from cluster_experiments.perturbator import ConstantPerturbator
+from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
 
 
 def test_noophandler_satisfies_protocol():
@@ -130,3 +134,78 @@ def test_mlrate_cluster_adds_column(clustered_df):
     result = handler.add_covariates(clustered_df)
     assert "estimate_target" in result.columns
     assert len(result) == len(clustered_df)
+
+
+# ---------------------------------------------------------------------------
+# Task 4: PowerAnalysis
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def power_df():
+    rng = np.random.default_rng(1)
+    n = 200
+    x = rng.normal(size=n)
+    return pd.DataFrame(
+        {
+            "x": x,
+            "target": 2 * x + rng.normal(scale=0.5, size=n),
+            "treatment": rng.choice(["A", "B"], size=n),
+        }
+    )
+
+
+def test_power_analysis_default_handler_is_noophandler():
+    pw = PowerAnalysis(
+        perturbator=ConstantPerturbator(),
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(),
+    )
+    assert isinstance(pw.handler, NoOpHandler)
+
+
+def test_power_analysis_mlrate_builds_handler():
+    pw = PowerAnalysis(
+        perturbator=ConstantPerturbator(),
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(covariates=["estimate_target"]),
+        cupac_model=LinearRegression(),
+        ml_option="mlrate",
+    )
+    assert isinstance(pw.handler, MLRateHandler)
+
+
+def test_power_analysis_mlrate_runs(power_df):
+    pw = PowerAnalysis(
+        perturbator=ConstantPerturbator(),
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(covariates=["estimate_target"]),
+        cupac_model=LinearRegression(),
+        ml_option="mlrate",
+        n_folds=5,
+        features_cupac_model=["x"],
+    )
+    power = pw.power_analysis(power_df, average_effect=0.5, n_simulations=5)
+    assert 0.0 <= power <= 1.0
+
+
+def test_power_analysis_mlrate_auto_cluster_cols():
+    pw = PowerAnalysis(
+        perturbator=ConstantPerturbator(),
+        splitter=ClusteredSplitter(cluster_cols=["cluster"]),
+        analysis=ClusteredOLSAnalysis(
+            covariates=["estimate_target"], cluster_cols=["cluster"]
+        ),
+        cupac_model=LinearRegression(),
+        ml_option="mlrate",
+    )
+    assert pw.handler.cluster_cols == ["cluster"]
+
+
+def test_power_analysis_backward_compat_alias():
+    pw = PowerAnalysis(
+        perturbator=ConstantPerturbator(),
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(),
+    )
+    assert pw.cupac_handler is pw.handler
