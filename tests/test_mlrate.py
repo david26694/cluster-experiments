@@ -78,3 +78,55 @@ def test_mlrate_original_df_not_mutated(simple_df):
     original_cols = list(simple_df.columns)
     handler.add_covariates(simple_df)
     assert list(simple_df.columns) == original_cols
+
+
+@pytest.fixture
+def clustered_df():
+    rng = np.random.default_rng(0)
+    clusters = [f"C{i}" for i in range(20)]
+    rows = []
+    for c in clusters:
+        for _ in range(10):
+            x = rng.normal()
+            rows.append({"cluster": c, "x": x, "target": 2 * x + rng.normal(scale=0.1)})
+    return pd.DataFrame(rows)
+
+
+def test_mlrate_cluster_no_leakage(clustered_df):
+    from sklearn.model_selection import GroupKFold as _GKF
+
+    X = clustered_df[["x"]].values
+    y = clustered_df["target"].values
+    groups = clustered_df["cluster"].values
+    for train_idx, val_idx in _GKF(n_splits=5).split(X, y, groups=groups):
+        assert set(groups[train_idx]).isdisjoint(set(groups[val_idx]))
+
+
+def test_mlrate_too_few_clusters_raises():
+    df = pd.DataFrame(
+        {
+            "cluster": ["A", "B", "A", "B", "A", "B"],
+            "x": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "target": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+        }
+    )
+    handler = MLRateHandler(
+        ml_model=LinearRegression(),
+        features=["x"],
+        cluster_cols=["cluster"],
+        n_folds=5,
+    )
+    with pytest.raises(ValueError, match="n_folds=5 but only 2 unique clusters"):
+        handler.add_covariates(df)
+
+
+def test_mlrate_cluster_adds_column(clustered_df):
+    handler = MLRateHandler(
+        ml_model=LinearRegression(),
+        features=["x"],
+        cluster_cols=["cluster"],
+        n_folds=5,
+    )
+    result = handler.add_covariates(clustered_df)
+    assert "estimate_target" in result.columns
+    assert len(result) == len(clustered_df)
