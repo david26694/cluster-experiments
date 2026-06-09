@@ -1,0 +1,440 @@
+\documentclass[10pt]{beamer}
+
+\usetheme{metropolis}
+\usepackage{amsmath, amssymb, bm}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{Relative Standard Error in OLS for A/B Tests}
+\author{David Masip, DS Manager @ DH Pricing}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+% ============================================================
+\section{Motivation}
+% ============================================================
+
+\begin{frame}{Setup: from absolute to relative effect}
+We run an A/B test and fit an OLS regression:
+\[
+Y_i = \alpha + \tau \cdot T_i + \mathbf{X}_i^\top \bm{\beta} + \epsilon_i .
+\]
+\begin{itemize}
+  \item $\tau$ = \alert{absolute} average treatment effect (ATE).
+  \item Stakeholders usually want a \alert{relative} lift:
+  \[
+    L \;=\; \frac{\tau}{\bar{Y}_{\text{control}}}.
+  \]
+  \item We need a point estimate \emph{and} a standard error for $L$.
+  \item Without covariates ($\mathbf{X}_i$ omitted), this OLS is equivalent to the classical two-sample $t$-test for difference in means.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{``divide the SE by the control mean'' is a common shortcut}
+Tempting shortcut:
+\[
+\hat{L} = \frac{\hat{\tau}}{\bar{y}_{\text{control}}}, \qquad
+\widehat{\mathrm{SE}}(L) \stackrel{?}{=} \frac{\mathrm{SE}(\hat{\tau})}{\bar{y}_{\text{control}}}.
+\]
+Why this is \alert{wrong in general}:
+\begin{itemize}
+  \item The shortcut is the identity
+  \[
+  \mathrm{SE}\!\left(\frac{A}{B}\right) \;\stackrel{?}{=}\; \frac{\mathrm{SE}(A)}{B},
+  \]
+  which only holds when $B$ is a \alert{known constant}.
+  \item But $\bar y_{\text{control}}$ is an estimate: it has its own standard error.
+  \item Confidence intervals built this way are miscalibrated (too narrow, overly confident).
+\end{itemize}
+\end{frame}
+
+\begin{frame}{When does it accidentally work?}
+The naive formula is approximately correct only when:
+\begin{itemize}
+  \item $\mathrm{SE}(\bar{Y}_{\text{control}}) / \bar{Y}_{\text{control}} \ll \mathrm{SE}(\hat\tau)/|\hat\tau|$ (control mean is very precisely estimated relative to the effect), and
+  \item $\mathrm{Cov}(\hat\tau, \bar{Y}_{\text{control}}) \approx 0$.
+\end{itemize}
+In small samples, both assumptions fail. We need the \alert{delta method}.
+\end{frame}
+
+% ============================================================
+\section{Delta method}
+% ============================================================
+
+\begin{frame}{Delta method: the setup}
+Suppose we have an estimator $\hat{\bm\theta} \in \mathbb{R}^k$ that is close to its target $\bm\theta$, with a known (or estimated) covariance matrix:
+\[
+\mathrm{Var}(\hat{\bm\theta}) = \Sigma.
+\]
+We care about a smooth scalar transformation $g(\bm\theta)$ --- e.g.\ a ratio, a log, a relative lift.
+
+\medskip
+\textbf{Question.} What is $\mathrm{Var}(g(\hat{\bm\theta}))$?
+
+\medskip
+\textbf{Problem.} In general, $g$ is nonlinear, so $\mathrm{Var}(g(\hat{\bm\theta}))$ has no closed form. But if $\hat{\bm\theta}$ is concentrated around $\bm\theta$, we can \alert{linearize} $g$ and get an approximation.
+\end{frame}
+
+\begin{frame}{Step 1: linearize $g$ via Taylor}
+First-order Taylor expansion of $g$ around the true value $\bm\theta$:
+\[
+g(\hat{\bm\theta}) \;\approx\; g(\bm\theta) \;+\; \nabla g(\bm\theta)^\top (\hat{\bm\theta} - \bm\theta).
+\]
+Two important things to notice:
+\begin{itemize}
+  \item $g(\bm\theta)$ is a \alert{constant} (it's the truth, not random).
+  \item $\nabla g(\bm\theta)$ is also a \alert{constant vector} (gradient evaluated at the truth).
+  \item The only random object on the right-hand side is $\hat{\bm\theta} - \bm\theta$.
+\end{itemize}
+So we have reduced $g(\hat{\bm\theta})$ to (a constant) $+$ (a linear function of $\hat{\bm\theta}$).
+\end{frame}
+
+\begin{frame}{Step 2: variance of a linear function}
+For any constant vector $\mathbf{a}$ and random vector $\mathbf{Z}$ with $\mathrm{Var}(\mathbf{Z}) = \Sigma$:
+\[
+\mathrm{Var}(\mathbf{a}^\top \mathbf{Z}) = \mathbf{a}^\top \Sigma \,\mathbf{a}.
+\]
+\textit{Quick derivation:}
+\begin{align*}
+\mathrm{Var}(\mathbf{a}^\top \mathbf{Z})
+  &= \mathbb{E}\big[(\mathbf{a}^\top(\mathbf{Z}-\mu))^2\big] \\
+  &= \mathbb{E}\big[\mathbf{a}^\top(\mathbf{Z}-\mu)(\mathbf{Z}-\mu)^\top \mathbf{a}\big] \\
+  &= \mathbf{a}^\top \,\mathbb{E}[(\mathbf{Z}-\mu)(\mathbf{Z}-\mu)^\top]\, \mathbf{a}
+   \;=\; \mathbf{a}^\top \Sigma\, \mathbf{a}.
+\end{align*}
+We will apply this with $\mathbf{a} = \nabla g(\bm\theta)$ and $\mathbf{Z} = \hat{\bm\theta}$.
+\end{frame}
+
+\begin{frame}{Step 3: put the two pieces together}
+From Step 1:
+\[
+g(\hat{\bm\theta}) - g(\bm\theta) \;\approx\; \nabla g(\bm\theta)^\top (\hat{\bm\theta} - \bm\theta).
+\]
+Taking variance of both sides (the left-hand constant $g(\bm\theta)$ drops out):
+\[
+\mathrm{Var}\!\big(g(\hat{\bm\theta})\big)
+\;\approx\; \mathrm{Var}\!\big(\nabla g(\bm\theta)^\top \hat{\bm\theta}\big).
+\]
+Applying Step 2 with $\mathbf{a} = \nabla g(\bm\theta)$:
+\[
+\boxed{\;\mathrm{Var}\!\left(g(\hat{\bm\theta})\right) \;\approx\; \nabla g(\bm\theta)^\top \,\Sigma\, \nabla g(\bm\theta).\;}
+\]
+In practice we plug in the estimates $\hat{\bm\theta}$ and $\hat\Sigma$ since $\bm\theta$ and $\Sigma$ are unknown.
+\end{frame}
+
+\begin{frame}{Delta method for a ratio}
+Let $g(X, Y) = X / Y$. Then
+\[
+\nabla g = \begin{pmatrix} 1/Y \\ -X/Y^2 \end{pmatrix}.
+\]
+Plugging into $\nabla g^\top \Sigma \nabla g$:
+\[
+\mathrm{Var}\!\left(\frac{X}{Y}\right) \approx
+\frac{\mathrm{Var}(X)}{Y^2}
++ \frac{X^2}{Y^4}\mathrm{Var}(Y)
+- 2\,\frac{X}{Y^3}\mathrm{Cov}(X, Y).
+\]
+Here $X = \hat\tau$ (numerator) and $Y$ is the estimator of the control mean (denominator). What ``$Y$'' is concretely, and how we get $\mathrm{Var}(Y)$ and $\mathrm{Cov}(X, Y)$, depends on whether we have covariates.
+\end{frame}
+
+\begin{frame}{Recap}
+We wanted a standard error for the relative lift
+\[
+\hat L \;=\; \frac{\hat\tau}{\bar Y_{\text{control}}}.
+\]
+The delta-method ratio formula tells us
+\[
+\mathrm{Var}(\hat L) \;\approx\;
+\frac{\mathrm{Var}(\hat\tau)}{\bar Y_{\text{control}}^{\,2}}
++ \frac{\hat\tau^{\,2}}{\bar Y_{\text{control}}^{\,4}}\,\mathrm{Var}(\bar Y_{\text{control}})
+- 2\,\frac{\hat\tau}{\bar Y_{\text{control}}^{\,3}}\,\mathrm{Cov}(\hat\tau,\bar Y_{\text{control}}).
+\]
+So computing $\mathrm{SE}(\hat L) = \sqrt{\mathrm{Var}(\hat L)}$ has been reduced to finding \alert{three} ingredients:
+\begin{enumerate}
+  \item $\mathrm{Var}(\hat\tau)$ \hfill --- variance of the absolute effect,
+  \item $\mathrm{Var}(\bar Y_{\text{control}})$ \hfill --- variance of the control-mean estimator,
+  \item $\mathrm{Cov}(\hat\tau, \bar Y_{\text{control}})$ \hfill --- their covariance.
+\end{enumerate}
+The rest of the talk is just: \alert{where do these three numbers come from?}
+\end{frame}
+
+\begin{frame}{Warning}
+
+
+While simple to write, how can we easily calculate $\mathrm{Var}(\bar Y_{\text{control}})$ and $\mathrm{Cov}(\hat\tau, \bar Y_{\text{control}})$? We don't have a closed-form formula for any of them.
+
+\end{frame}
+
+% ============================================================
+\section{Reminder: covariance matrix in OLS}
+% ============================================================
+
+\begin{frame}{Reminder: OLS hands us the full covariance matrix}
+We are fitting OLS of the form $Y_i = \alpha + \tau T_i + \mathbf{X}_i^\top \bm\beta + \epsilon_i$.
+
+Model coefficients are $\hat{\bm\theta} = (\hat\alpha,\, \hat\tau,\, \hat{\bm\beta}^\top)^\top$. Fitting OLS on the design matrix $X$ with residual variance $\hat\sigma^2$ gives:
+\[
+\widehat{\mathrm{Var}}(\hat{\bm\theta}) \;=\; \hat\sigma^2 (X^\top X)^{-1} \;=\; \Sigma_{\hat\theta}.
+\]
+This is a single $(2+p)\times(2+p)$ matrix containing:
+\begin{itemize}
+  \item diagonal: $\mathrm{Var}(\hat\alpha)$, $\mathrm{Var}(\hat\tau)$, $\mathrm{Var}(\hat\beta_j)$;
+  \item off-diagonal: \emph{every} pairwise covariance, including
+  $\mathrm{Cov}(\hat\tau,\hat\alpha)$ and $\mathrm{Cov}(\hat\tau,\hat\beta_j)$.
+\end{itemize}
+In \texttt{statsmodels}: \texttt{results.cov\_params()} returns exactly this matrix.
+
+\medskip
+As we'll see, both the variance of the denominator and its covariance with $\hat\tau$ are going to come out of $\Sigma_{\hat\theta}$.
+\end{frame}
+
+% ============================================================
+\section{Two cases: no covariates vs. covariates}
+% ============================================================
+
+\begin{frame}{Case 1: no covariates}
+Model: $Y_i = \alpha + \tau T_i + \epsilon_i$.
+\begin{itemize}
+  \item The control-group mean estimator is simply $\hat\alpha$: under $T=0$, $\mathbb{E}[Y\mid T=0] = \alpha$, and OLS estimates it with $\hat\alpha$.
+  \item So in the ratio $\hat L = \hat\tau / \hat\alpha$, both $X = \hat\tau$ and $Y = \hat\alpha$ are \alert{OLS coefficients}.
+  \item OLS already returns the full $2\times 2$ covariance matrix of $(\hat\alpha, \hat\tau)$:
+  \[
+  \widehat{\mathrm{Var}}\begin{pmatrix}\hat\alpha\\\hat\tau\end{pmatrix}
+  = \hat\sigma^2 (X^\top X)^{-1}.
+  \]
+  \item So $\mathrm{Var}(\hat\tau)$, $\mathrm{Var}(\hat\alpha)$ and $\mathrm{Cov}(\hat\tau,\hat\alpha)$ are read off directly --- plug into the ratio formula and we are done.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Case 2: with covariates --- the denominator is no longer a coefficient}
+Model: $Y_i = \alpha + \tau T_i + \mathbf{X}_i^\top \bm\beta + \epsilon_i$.
+\begin{itemize}
+  \item Now $\hat\alpha$ alone is \alert{not} an estimate of the control mean. It is the predicted $Y$ when $\mathbf{X} = \mathbf{0}$ --- meaningless if covariates are not 0-centered.
+  \item The natural estimator of the control mean is
+  \[
+  \bar{Y}^{\text{adj}}_{\text{control}} = \hat\alpha + \bar{\mathbf{X}}_{\text{control}}^\top \hat{\bm\beta},
+  \]
+  i.e.\ the model's prediction averaged over control covariates.
+  \item This is a \alert{linear combination of several OLS coefficients}, not a single one.
+  \item Consequences:
+  \begin{itemize}
+    \item $\mathrm{Var}(\bar{Y}^{\text{adj}}_{\text{control}})$ is not a single diagonal entry --- it is a quadratic form in $\Sigma_{\hat\theta}$.
+    \item $\mathrm{Cov}(\hat\tau, \bar{Y}^{\text{adj}}_{\text{control}})$ is not a single off-diagonal entry --- it mixes $\mathrm{Cov}(\hat\tau,\hat\alpha)$ with all the $\mathrm{Cov}(\hat\tau, \hat\beta_j)$.
+  \end{itemize}
+  \item We need the machinery of variances of linear combinations.
+\end{itemize}
+\end{frame}
+
+% ============================================================
+\section{Linear model: variance of linear combinations}
+% ============================================================
+
+\begin{frame}{OLS gives us the full covariance matrix}
+Stack parameters $\bm{\theta} = (\alpha, \tau, \bm{\beta}^\top)^\top$. OLS returns:
+\[
+\widehat{\mathrm{Var}}(\hat{\bm{\theta}}) = \hat\sigma^2 (X^\top X)^{-1}.
+\]
+We get \alert{every} variance \emph{and} every pairwise covariance ``for free'':
+\[
+\Sigma_{\hat\theta} =
+\begin{pmatrix}
+\mathrm{Var}(\hat\alpha)        & \mathrm{Cov}(\hat\alpha,\hat\tau)   & \mathrm{Cov}(\hat\alpha,\hat{\bm\beta}^\top) \\
+\mathrm{Cov}(\hat\tau,\hat\alpha) & \mathrm{Var}(\hat\tau)            & \mathrm{Cov}(\hat\tau,\hat{\bm\beta}^\top)   \\
+\mathrm{Cov}(\hat{\bm\beta},\hat\alpha) & \mathrm{Cov}(\hat{\bm\beta},\hat\tau) & \mathrm{Var}(\hat{\bm\beta})
+\end{pmatrix}.
+\]
+This is the key object that makes a clean delta-method calculation possible.
+\end{frame}
+
+\begin{frame}{Variance of a linear combination of parameters}
+For any constant vector $\mathbf{c}$:
+\[
+\mathrm{Var}(\mathbf{c}^\top \hat{\bm\theta}) = \mathbf{c}^\top \Sigma_{\hat\theta} \mathbf{c}.
+\]
+Expanding component-wise for $\mathbf{c}^\top \hat{\bm\theta} = \sum_j c_j \hat\theta_j$:
+\[
+\mathrm{Var}\!\left(\sum_j c_j \hat\theta_j\right)
+= \sum_j c_j^2 \mathrm{Var}(\hat\theta_j) + 2\sum_{j<k} c_j c_k\,\mathrm{Cov}(\hat\theta_j, \hat\theta_k).
+\]
+And for the covariance with another linear combination $\mathbf{d}^\top \hat{\bm\theta}$:
+\[
+\mathrm{Cov}(\mathbf{c}^\top\hat{\bm\theta}, \mathbf{d}^\top\hat{\bm\theta}) = \mathbf{c}^\top \Sigma_{\hat\theta} \mathbf{d}.
+\]
+\end{frame}
+
+% ============================================================
+\section{Relative lift in OLS}
+% ============================================================
+
+\begin{frame}{The adjusted control mean}
+With covariates, the predicted outcome for a control unit with covariates $\mathbf{x}$ is
+\[
+\hat{\mathbb{E}}[Y \mid T=0, \mathbf{X}=\mathbf{x}] = \hat\alpha + \mathbf{x}^\top \hat{\bm\beta}.
+\]
+Averaging over the empirical covariate distribution of the control group:
+\[
+\boxed{\;\bar{Y}^{\text{adj}}_{\text{control}} = \hat\alpha + \bar{\mathbf{X}}_{\text{control}}^\top \hat{\bm\beta}.\;}
+\]
+This is a linear combination $\mathbf{c}^\top \hat{\bm\theta}$ with
+\[
+\mathbf{c} = (1,\; 0,\; \bar{\mathbf{X}}_{\text{control}}^\top)^\top
+\quad\text{(weight on } \hat\tau \text{ is } 0\text{).}
+\]
+\end{frame}
+
+\begin{frame}{Each piece of the delta-method formula}
+Same three ingredients we identified earlier, now written for the adjusted control mean $\bar{Y}^{\text{adj}}_{\text{control}}$ in the denominator:
+\[
+\mathrm{Var}(\hat L) \approx
+\underbrace{\frac{\mathrm{Var}(\hat\tau)}{(\bar{Y}^{\text{adj}}_{\text{control}})^2}}_{\text{(A) Var}(\hat\tau)}
++ \underbrace{\frac{\hat\tau^2}{(\bar{Y}^{\text{adj}}_{\text{control}})^4}\,\mathrm{Var}(\bar{Y}^{\text{adj}}_{\text{control}})}_{\text{(B) Var}(\bar Y^{\text{adj}})}
+- \underbrace{2\,\frac{\hat\tau}{(\bar{Y}^{\text{adj}}_{\text{control}})^3}\,\mathrm{Cov}(\hat\tau,\bar{Y}^{\text{adj}}_{\text{control}})}_{\text{(C) Cov}(\hat\tau,\bar Y^{\text{adj}})}.
+\]
+We now compute each of (A), (B), (C) as a function of entries of $\Sigma_{\hat\theta}$.
+\end{frame}
+
+\begin{frame}{(A) Variance of $\hat\tau$}
+Read it off the OLS covariance matrix.
+\[
+\mathrm{Var}(\hat\tau) = \big[\Sigma_{\hat\theta}\big]_{\tau,\tau}.
+\]
+This is what \texttt{statsmodels} returns as \texttt{bse[treatment]**2}.
+\end{frame}
+
+\begin{frame}{(B) Variance of $\bar{Y}^{\text{adj}}_{\text{control}}$}
+Quadratic form with $\mathbf{c} = (1, \bar{\mathbf{X}}_{\text{control}}^\top)^\top$ on the $(\alpha, \bm\beta)$ block:
+\[
+\mathrm{Var}(\bar{Y}^{\text{adj}}_{\text{control}}) =
+\begin{pmatrix} 1 & \bar{\mathbf{X}}_{\text{control}}^\top \end{pmatrix}
+\mathrm{Var}\!\begin{pmatrix} \hat\alpha \\ \hat{\bm\beta} \end{pmatrix}
+\begin{pmatrix} 1 \\ \bar{\mathbf{X}}_{\text{control}} \end{pmatrix}.
+\]
+Expanded:
+\[
+\mathrm{Var}(\hat\alpha)
++ \bar{\mathbf{X}}_{\text{control}}^\top \mathrm{Var}(\hat{\bm\beta})\,\bar{\mathbf{X}}_{\text{control}}
++ 2\,\mathrm{Cov}(\hat\alpha, \hat{\bm\beta})^\top \bar{\mathbf{X}}_{\text{control}}.
+\]
+Every term lives in $\Sigma_{\hat\theta}$.
+\end{frame}
+
+\begin{frame}{(C) Covariance of $\hat\tau$ with the adjusted control mean}
+$\hat\tau$ is linear in $\hat{\bm\theta}$ (with weight 1 on $\tau$, $0$ elsewhere); the control mean has weights $(1, \bar{\mathbf{X}}_{\text{control}})$ on $(\alpha, \bm\beta)$. So:
+\[
+\mathrm{Cov}(\hat\tau,\,\bar{Y}^{\text{adj}}_{\text{control}})
+= \mathrm{Cov}(\hat\tau, \hat\alpha) + \sum_{j} \bar{X}_{\text{control},j}\,\mathrm{Cov}(\hat\tau, \hat\beta_j).
+\]
+\end{frame}
+
+% ============================================================
+\section{MDE for relative lift}
+% ============================================================
+
+\begin{frame}{What about relative MDE}
+For an absolute effect, MDE at significance $\alpha$ and power $1-\beta$ is:
+\[
+\mathrm{MDE}_{\text{abs}} = (z_{1-\alpha/2} + z_{1-\beta}) \cdot \mathrm{SE}(\hat\tau).
+\]
+For relative lift one is tempted to write:
+\[
+\mathrm{MDE}_{\text{rel}} \stackrel{?}{=} (z_{1-\alpha/2} + z_{1-\beta}) \cdot \mathrm{SE}(\hat L).
+\]
+But $\mathrm{SE}(\hat L)$ \alert{itself depends on the true lift} --- this formula is circular. The correct way to solve for $\mathrm{MDE}_{\text{rel}}$ is to plug in the formula for $\mathrm{SE}(\hat L)$ and solve the resulting \alert{quadratic equation}. Luiz is working on this for the delta method, but looking for contributor for OLS.
+
+
+This means that \alert{relative MDE sometimes does not exist}.
+\end{frame}
+
+% ============================================================
+\section{In \texttt{cluster\_experiments}}
+% ============================================================
+
+\begin{frame}{All of this is wired up via \texttt{relative\_effect}}
+Everything we derived (delta-method SE, adjusted control mean) is implemented behind a single flag:
+\[
+\texttt{relative\_effect: True}
+\]
+\begin{itemize}
+  \item Available for \texttt{OLSAnalysis} and \texttt{ClusteredOLSAnalysis} (it needs the full $\Sigma_{\hat\theta}$).
+  \item Switches the analyser to report $\hat L = \hat\tau / \bar{Y}^{\text{adj}}_{\text{control}}$ with delta-method SE instead of the raw $\hat\tau$.
+  \item Carries through to \texttt{NormalPowerAnalysis}: \texttt{.mde(...)}\ returns the relative MDE, not the absolute one (not fully correct, does not solve the quadratic yet).
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Config example 1: vanilla OLS, no covariates}
+\small
+\begin{verbatim}
+config = {
+    "analysis": "ols",
+    "splitter": "non_clustered",
+    "target_col": "orders",
+    "relative_effect": True,
+}
+
+pw = NormalPowerAnalysis.from_dict(config)
+pw.mde(user_df, n_simulations=1)   # -> relative MDE
+\end{verbatim}
+Here $Y = \hat\alpha$: Case 1 from earlier. Internally we use the $2\times 2$ covariance block of $(\hat\alpha, \hat\tau)$.
+\end{frame}
+
+\begin{frame}[fragile]{Config example 2: OLS with covariates}
+\small
+\begin{verbatim}
+config = {
+    "analysis": "ols",
+    "splitter": "non_clustered",
+    "target_col": "orders",
+    "covariates": ["X1", "X2"],
+    "relative_effect": True,
+}
+
+pw = NormalPowerAnalysis.from_dict(config)
+pw.mde(user_df, n_simulations=1)
+\end{verbatim}
+Here $Y = \hat\alpha + \bar{\mathbf{X}}_{\text{control}}^\top \hat{\bm\beta}$: Case 2. The full covariance matrix of $(\hat\alpha, \hat\tau, \hat{\bm\beta})$ is used to build $\mathrm{Var}(Y)$ and $\mathrm{Cov}(\hat\tau, Y)$.
+\end{frame}
+
+\begin{frame}[fragile]{Config example 3: \texttt{AnalysisPlan} on real experiment data}
+\small
+Same flag, but on the inference side (analysing data from a finished test):
+\begin{verbatim}
+config = {
+    "metrics": [
+        {"alias": "Orders", "name": "orders"},
+    ],
+    "variants": [
+        {"name": "A", "is_control": True},
+        {"name": "B", "is_control": False},
+    ],
+    "analysis_type": "ols",
+    "variant_col": "treatment",
+    "analysis_config": {"relative_effect": True, "covariates": ["X1"]},
+}
+
+results = AnalysisPlan.from_metrics_dict(config).analyze(user_df)
+\end{verbatim}
+\texttt{results.ate} is the relative lift $\hat L$; \texttt{results.std\_error} is the delta-method SE; CIs and $p$-values follow.
+\end{frame}
+
+\begin{frame}{Live demo}
+End-to-end runnable example (data simulation, absolute vs.\ relative SE, absolute vs.\ relative MDE):
+\begin{center}
+\href{https://david26694.github.io/cluster-experiments/relative.html\#experiment-analysis-with-absolute-and-relative-effects}{\alert{\texttt{cluster\_experiments} docs --- relative effects notebook}}
+\end{center}
+\small
+\url{https://david26694.github.io/cluster-experiments/relative.html#experiment-analysis-with-absolute-and-relative-effects}
+\end{frame}
+
+\begin{frame}{Takeaways}
+\begin{itemize}
+  \item Relative lift is a \alert{ratio of estimators}; treat it as such.
+  \item Delta method + full OLS covariance matrix gives the correct SE in one clean formula.
+  \item For MDE estimation, solve the \alert{quadratic} --- linear scaling is only an approximation valid when the control mean is essentially noise-free.
+  \item In \texttt{cluster\_experiments}, flip \texttt{relative\_effect: True} on \texttt{OLSAnalysis}/\texttt{ClusteredOLSAnalysis} --- it works for both \texttt{NormalPowerAnalysis} (planning, relative MDE) and \texttt{AnalysisPlan} (inference, relative ATE + SE).
+\end{itemize}
+\end{frame}
+
+\end{document}
