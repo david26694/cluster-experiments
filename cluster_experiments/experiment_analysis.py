@@ -2,7 +2,7 @@ import logging
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -28,17 +28,122 @@ class ConfidenceInterval:
     upper: float
     alpha: float
 
+    def __str__(self) -> str:
+        """
+        Usage:
+        ```python
+        from cluster_experiments import ConfidenceInterval
+        ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+        print(ci)
+        ```
+        """
+        return f"[{self.lower:.4f}, {self.upper:.4f}] (alpha={self.alpha})"
+
+    def summary(self) -> str:
+        """Return a short summary of the confidence interval.
+
+        Usage:
+        ```python
+        from cluster_experiments import ConfidenceInterval
+        ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+        print(ci.summary())
+        ```
+        """
+        return (
+            f"Confidence interval (1 - alpha = {1 - self.alpha:.2%})\n"
+            f"  Lower: {self.lower:.6g}\n"
+            f"  Upper: {self.upper:.6g}"
+        )
+
 
 @dataclass
 class InferenceResults:
     """
     Class to define the structure of complete statistical analysis results.
+
+    When the analysis uses a fitted model (e.g. GEE, OLS, Clustered OLS),
+    that object is stored in ``fitted_model`` so you can call :meth:`model_summary`
+    or use ``fitted_model.summary()`` for the full statsmodels output.
+
+    Attributes:
+        ate: Average treatment effect point estimate.
+        p_value: P-value for the treatment effect.
+        std_error: Standard error of the ATE.
+        conf_int: Confidence interval for the ATE.
+        fitted_model: The underlying fitted model when available (e.g. statsmodels
+            GEE/OLS result). ``None`` for analyses that do not attach a model (e.g. Delta
+            method, which uses closed-form formulas rather than a regression fit).
+
+    Example:
+        >>> analysis = GeeExperimentAnalysis(cluster_cols=["cluster"], target_col="target")
+        >>> results = analysis.get_inference_results(df, alpha=0.05)
+        >>> print(results.summary())       # ATE, p-value, CI, and model table if available
+        >>> print(results.model_summary()) # Full statsmodels regression table
     """
 
     ate: float
     p_value: float
     std_error: float
     conf_int: ConfidenceInterval
+    fitted_model: Optional[Any] = None
+
+    def __str__(self) -> str:
+        """
+        Usage:
+        ```python
+        from cluster_experiments import ConfidenceInterval, InferenceResults
+        ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+        results = InferenceResults(ate=0.2, p_value=0.03, std_error=0.1, conf_int=ci)
+        print(results)
+        ```
+        """
+        return (
+            f"ATE={self.ate:.4f}, p_value={self.p_value:.4f}, "
+            f"std_error={self.std_error:.4f}, CI={self.conf_int}"
+        )
+
+    def model_summary(self) -> Optional[str]:
+        """
+        Return the full model fit summary when available (e.g. statsmodels
+        regression table). Returns None if no fitted model was attached.
+
+        Use this when you have run :meth:`get_inference_results` and want the
+        same output you would get from the underlying model's ``.summary()``
+        (e.g. coefficient table, standard errors, R-squared).
+        """
+        if self.fitted_model is None:
+            return None
+        if hasattr(self.fitted_model, "summary"):
+            s = self.fitted_model.summary()
+            if s is None:
+                return None
+            return str(s)
+        return None
+
+    def summary(self) -> str:
+        """Return a summary of the inference results.
+
+        Usage:
+        ```python
+        from cluster_experiments import ConfidenceInterval, InferenceResults
+        ci = ConfidenceInterval(lower=0.1, upper=0.5, alpha=0.05)
+        results = InferenceResults(ate=0.2, p_value=0.03, std_error=0.1, conf_int=ci)
+        print(results.summary())
+        ```
+        """
+        lines = [
+            "Inference results",
+            f"  ATE:        {self.ate:.6g}",
+            f"  Std error:  {self.std_error:.6g}",
+            f"  p-value:    {self.p_value:.6g}",
+            f"  {self.conf_int.summary()}",
+        ]
+        model_str = self.model_summary()
+        if model_str:
+            lines.append("")
+            lines.append("Model fit:")
+            lines.append(model_str)
+        return "\n".join(lines)
 
 
 class ExperimentAnalysis(ABC):
@@ -77,6 +182,35 @@ class ExperimentAnalysis(ABC):
         self.covariates = covariates or []
         self.hypothesis = hypothesis
         self.add_covariate_interaction = add_covariate_interaction
+
+    def __repr__(self) -> str:
+        """
+        Usage:
+        ```python
+        from cluster_experiments import GeeExperimentAnalysis
+        a = GeeExperimentAnalysis(cluster_cols=["cluster"])
+        print(repr(a))
+        ```
+        """
+        return (
+            f"{type(self).__name__}(cluster_cols={self.cluster_cols!r}, "
+            f"target_col={self.target_col!r}, treatment_col={self.treatment_col!r}, "
+            f"treatment={self.treatment!r}, hypothesis={self.hypothesis!r})"
+        )
+
+    def __str__(self) -> str:
+        """
+        Usage:
+        ```python
+        from cluster_experiments import GeeExperimentAnalysis
+        a = GeeExperimentAnalysis(cluster_cols=["cluster"])
+        print(a)
+        ```
+        """
+        return (
+            f"{type(self).__name__}: cluster_cols={self.cluster_cols}, "
+            f"target={self.target_col}, treatment={self.treatment}"
+        )
 
     def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
         """Paste all strings of cluster_cols in one single column"""
@@ -273,11 +407,21 @@ class ExperimentAnalysis(ABC):
         return self.analysis_confidence_interval(df, alpha)
 
     def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
-        """Returns the inference results of the analysis
+        """Returns the inference results of the analysis for a single dataset.
+
+        Use this when you want full results (ATE, p-value, standard error, CI)
+        and optionally the underlying model fit (e.g. statsmodels regression
+        table) via ``results.summary()`` or ``results.model_summary()``.
+        Power analysis does not use this method; it uses :meth:`get_pvalue` and
+        :meth:`get_point_estimate` over many simulations.
 
         Arguments:
             df: dataframe containing the data to analyze
             alpha: significance level
+
+        Returns:
+            InferenceResults with ate, p_value, std_error, conf_int, and
+            fitted_model when the analysis attaches one (GEE, OLS, Delta).
         """
         df = df.copy()
         df = self._create_binary_treatment(df)
@@ -469,6 +613,7 @@ class GeeExperimentAnalysis(ExperimentAnalysis):
             conf_int=ConfidenceInterval(
                 lower=lower_bound, upper=upper_bound, alpha=alpha
             ),
+            fitted_model=results_gee,
         )
 
 
@@ -843,6 +988,7 @@ class OLSAnalysis(ExperimentAnalysis):
             conf_int=ConfidenceInterval(
                 lower=lower_bound, upper=upper_bound, alpha=alpha
             ),
+            fitted_model=results_ols,
         )
 
     @classmethod
@@ -1049,6 +1195,59 @@ class MLMExperimentAnalysis(ExperimentAnalysis):
         """
         results_mlm = self.fit_mlm(df)
         return results_mlm.bse[self.treatment_col]
+
+    def analysis_confidence_interval(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> ConfidenceInterval:
+        """Returns the confidence interval of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_mlm = self.fit_mlm(df)
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_mlm.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_mlm.summary())
+
+        # Return the confidence interval
+        return ConfidenceInterval(lower=lower_bound, upper=upper_bound, alpha=alpha)
+
+    def analysis_inference_results(
+        self, df: pd.DataFrame, alpha: float, verbose: bool = False
+    ) -> InferenceResults:
+        """Returns the inference results of the analysis
+        Arguments:
+            df: dataframe containing the data to analyze
+            alpha: significance level
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        results_mlm = self.fit_mlm(df)
+
+        std_error = results_mlm.bse[self.treatment_col]
+        ate = results_mlm.params[self.treatment_col]
+        p_value = self.pvalue_based_on_hypothesis(results_mlm)
+
+        # Extract the confidence interval for the treatment column
+        conf_int_df = results_mlm.conf_int(alpha=alpha)
+        lower_bound, upper_bound = conf_int_df.loc[self.treatment_col]
+
+        if verbose:
+            print(results_mlm.summary())
+
+        # Return the confidence interval
+        return InferenceResults(
+            ate=ate,
+            p_value=p_value,
+            std_error=std_error,
+            conf_int=ConfidenceInterval(
+                lower=lower_bound, upper=upper_bound, alpha=alpha
+            ),
+            fitted_model=results_mlm,
+        )
 
 
 class SyntheticControlAnalysis(ExperimentAnalysis):

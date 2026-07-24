@@ -68,6 +68,73 @@ class AnalysisPlan:
 
         self._validate_inputs()
 
+    def __repr__(self) -> str:
+        """
+        Usage:
+
+        ```python
+        from cluster_experiments import AnalysisPlan, HypothesisTest, SimpleMetric, Variant
+        m = SimpleMetric(alias="avg_salary", name="salary")
+        ht = HypothesisTest(metric=m, analysis_type="ols")
+        v1 = Variant(name="control", is_control=True)
+        v2 = Variant(name="treatment", is_control=False)
+        plan = AnalysisPlan(tests=[ht], variants=[v1, v2])
+        print(repr(plan))
+        ```
+        """
+        return (
+            f"AnalysisPlan(tests={len(self.tests)}, variants={len(self.variants)}, "
+            f"variant_col={self.variant_col!r}, alpha={self.alpha})"
+        )
+
+    def __str__(self) -> str:
+        """
+        Usage:
+
+        ```python
+        from cluster_experiments import AnalysisPlan, HypothesisTest, SimpleMetric, Variant
+        m = SimpleMetric(alias="avg_salary", name="salary")
+        ht = HypothesisTest(metric=m, analysis_type="ols")
+        v1 = Variant(name="control", is_control=True)
+        v2 = Variant(name="treatment", is_control=False)
+        plan = AnalysisPlan(tests=[ht], variants=[v1, v2])
+        print(plan)
+        ```
+        """
+        return (
+            f"AnalysisPlan: {len(self.tests)} test(s), {len(self.variants)} variant(s), "
+            f"variant_col={self.variant_col}, alpha={self.alpha}"
+        )
+
+    def summary(self) -> str:
+        """
+        Return a summary of the analysis plan.
+
+        Usage:
+
+        ```python
+        from cluster_experiments import AnalysisPlan, HypothesisTest, SimpleMetric, Variant
+        m = SimpleMetric(alias="avg_salary", name="salary")
+        ht = HypothesisTest(metric=m, analysis_type="ols")
+        v1 = Variant(name="control", is_control=True)
+        v2 = Variant(name="treatment", is_control=False)
+        plan = AnalysisPlan(tests=[ht], variants=[v1, v2])
+        print(plan.summary())
+        ```
+        """
+        lines = [
+            "Analysis plan",
+            f"  Variant column: {self.variant_col}",
+            f"  Alpha: {self.alpha}",
+            f"  Variants: {[v.name for v in self.variants]}",
+            f"  Number of tests: {len(self.tests)}",
+        ]
+        for i, test in enumerate(self.tests):
+            lines.append(
+                f"  Test {i + 1}: metric={test.metric.alias}, analysis={test.analysis_type}"
+            )
+        return "\n".join(lines)
+
     def _validate_inputs(self):
         """
         Validates the inputs for the AnalysisPlan class.
