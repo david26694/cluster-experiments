@@ -1,0 +1,21 @@
+docs/variance_reduction_comparison.ipynb
+  s_43fd114c8cb263::t_8049e0e9ca771e 1-267
+mkdocs.yml
+  s_43fd114c8cb263::t_e0926584c91775 33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "25a4bd9dcf2a4180807498f77fe262ee71afc0a6",
+  "prompts": {},
+  "sessions": {
+    "s_43fd114c8cb263": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "58631f9d-581c-4da7-b08f-8b477ac4da47",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
