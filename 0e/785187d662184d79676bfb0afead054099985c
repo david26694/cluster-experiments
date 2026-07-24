@@ -1,0 +1,40 @@
+tests/test_mlrate.py
+  s_43fd114c8cb263::t_a37d7ee0e2e71a 59,62,66-69,75,81,86,88,92-94,96,130,137,141,147,177,188,215,224,234,245,263,300,311,326,342-343,352,357,373
+  s_43fd114c8cb263::t_2a4217e0722239 19
+  s_43fd114c8cb263::t_525fcd396c3dc6 284-288
+cluster_experiments/cupac.py
+  s_43fd114c8cb263::t_02bde5b37ad9c8 339
+  s_43fd114c8cb263::t_e8b1e469c7d923 346-373
+  s_43fd114c8cb263::t_a5700c3b123706 306-315,322,325-326,330-337,340,345
+  s_43fd114c8cb263::t_4fda10ae3d4003 324
+  s_43fd114c8cb263::t_2595709651f0d1 338
+cluster_experiments/inference/hypothesis_test.py
+  s_43fd114c8cb263::t_afa6b8efaf45ae 86,88-92
+  s_43fd114c8cb263::t_9e904dcd464d00 79-81,87
+  s_43fd114c8cb263::t_abd5e30f9396ee 314-316
+  s_43fd114c8cb263::t_e1dff011faed0a 93
+cluster_experiments/power_analysis.py
+  s_43fd114c8cb263::t_e2fefb617da77b 799
+  s_43fd114c8cb263::t_dc6bb3ea965783 136
+  s_43fd114c8cb263::t_1640b2b270013d 127-135
+  s_43fd114c8cb263::t_1024712606e766 594-598,1426-1430
+  s_43fd114c8cb263::t_268d7c54e2f695 225,346,1014
+  s_43fd114c8cb263::t_f22b417e26e612 11
+  s_43fd114c8cb263::t_48d513a522fec9 790-798
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "0e785187d662184d79676bfb0afead054099985c",
+  "prompts": {},
+  "sessions": {
+    "s_43fd114c8cb263": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "58631f9d-581c-4da7-b08f-8b477ac4da47",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
