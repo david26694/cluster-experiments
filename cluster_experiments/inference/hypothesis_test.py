@@ -78,7 +78,7 @@ class HypothesisTest:
         self.is_cupac = bool(cupac_config)
         self.ml_handler = self._build_ml_handler(cupac_config, ml_option)
         self.cupac_handler = self.ml_handler  # backward-compat alias
-        self.cupac_covariate_col = self.ml_handler.cupac_outcome_name or None
+        self.cupac_covariate_col = self.ml_handler.cupac_outcome_name
 
         self.new_analysis_config = None
         self.experiment_analysis = None
