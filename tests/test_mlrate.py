@@ -16,7 +16,7 @@ from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis
 from cluster_experiments.inference.hypothesis_test import HypothesisTest
 from cluster_experiments.inference.metric import SimpleMetric
 from cluster_experiments.perturbator import ConstantPerturbator
-from cluster_experiments.power_config import PowerConfig
+from cluster_experiments.power_config import PowerConfig, cupac_model_mapping
 from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
 
 
@@ -56,40 +56,44 @@ def test_mlrate_satisfies_protocol():
 
 
 def test_mlrate_cupac_outcome_name():
-    handler = MLRateHandler(
+    ml_handler = MLRateHandler(
         ml_model=LinearRegression(), target_col="revenue", features=["x"]
     )
-    assert handler.cupac_outcome_name == "estimate_revenue"
+    assert ml_handler.cupac_outcome_name == "estimate_revenue"
 
 
 def test_mlrate_adds_column(simple_df):
-    handler = MLRateHandler(ml_model=LinearRegression(), features=["x"], random_state=0)
-    result = handler.add_covariates(simple_df)
+    ml_handler = MLRateHandler(
+        ml_model=LinearRegression(), features=["x"], random_state=0
+    )
+    result = ml_handler.add_covariates(simple_df)
     assert "estimate_target" in result.columns
     assert len(result) == len(simple_df)
 
 
 def test_mlrate_no_data_leakage(simple_df):
-    handler = MLRateHandler(
+    ml_handler = MLRateHandler(
         ml_model=KNeighborsRegressor(n_neighbors=1),
         features=["x"],
         n_folds=5,
         random_state=0,
     )
-    result = handler.add_covariates(simple_df)
+    result = ml_handler.add_covariates(simple_df)
     assert not np.allclose(result["estimate_target"].values, simple_df["target"].values)
 
 
 def test_mlrate_missing_features_raises(simple_df):
-    handler = MLRateHandler(ml_model=LinearRegression(), features=["nonexistent"])
+    ml_handler = MLRateHandler(ml_model=LinearRegression(), features=["nonexistent"])
     with pytest.raises(ValueError, match="nonexistent"):
-        handler.add_covariates(simple_df)
+        ml_handler.add_covariates(simple_df)
 
 
 def test_mlrate_original_df_not_mutated(simple_df):
-    handler = MLRateHandler(ml_model=LinearRegression(), features=["x"], random_state=0)
+    ml_handler = MLRateHandler(
+        ml_model=LinearRegression(), features=["x"], random_state=0
+    )
     original_cols = list(simple_df.columns)
-    handler.add_covariates(simple_df)
+    ml_handler.add_covariates(simple_df)
     assert list(simple_df.columns) == original_cols
 
 
@@ -123,24 +127,24 @@ def test_mlrate_too_few_clusters_raises():
             "target": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
         }
     )
-    handler = MLRateHandler(
+    ml_handler = MLRateHandler(
         ml_model=LinearRegression(),
         features=["x"],
         cluster_cols=["cluster"],
         n_folds=5,
     )
     with pytest.raises(ValueError, match="n_folds=5 but only 2 unique clusters"):
-        handler.add_covariates(df)
+        ml_handler.add_covariates(df)
 
 
 def test_mlrate_cluster_adds_column(clustered_df):
-    handler = MLRateHandler(
+    ml_handler = MLRateHandler(
         ml_model=LinearRegression(),
         features=["x"],
         cluster_cols=["cluster"],
         n_folds=5,
     )
-    result = handler.add_covariates(clustered_df)
+    result = ml_handler.add_covariates(clustered_df)
     assert "estimate_target" in result.columns
     assert len(result) == len(clustered_df)
 
@@ -170,7 +174,7 @@ def test_power_analysis_default_handler_is_noophandler():
         splitter=NonClusteredSplitter(),
         analysis=OLSAnalysis(),
     )
-    assert isinstance(pw.handler, NoOpHandler)
+    assert isinstance(pw.ml_handler, NoOpHandler)
 
 
 def test_power_analysis_mlrate_builds_handler():
@@ -181,7 +185,7 @@ def test_power_analysis_mlrate_builds_handler():
         cupac_model=LinearRegression(),
         ml_option="mlrate",
     )
-    assert isinstance(pw.handler, MLRateHandler)
+    assert isinstance(pw.ml_handler, MLRateHandler)
 
 
 def test_power_analysis_mlrate_runs(power_df):
@@ -208,7 +212,7 @@ def test_power_analysis_mlrate_auto_cluster_cols():
         cupac_model=LinearRegression(),
         ml_option="mlrate",
     )
-    assert pw.handler.cluster_cols == ["cluster"]
+    assert pw.ml_handler.cluster_cols == ["cluster"]
 
 
 def test_power_analysis_backward_compat_alias():
@@ -217,7 +221,7 @@ def test_power_analysis_backward_compat_alias():
         splitter=NonClusteredSplitter(),
         analysis=OLSAnalysis(),
     )
-    assert pw.cupac_handler is pw.handler
+    assert pw.cupac_handler is pw.ml_handler
 
 
 # ---------------------------------------------------------------------------
@@ -227,7 +231,7 @@ def test_power_analysis_backward_compat_alias():
 
 def test_normal_power_analysis_default_is_noophandler():
     pw = NormalPowerAnalysis(splitter=NonClusteredSplitter(), analysis=OLSAnalysis())
-    assert isinstance(pw.handler, NoOpHandler)
+    assert isinstance(pw.ml_handler, NoOpHandler)
 
 
 def test_normal_power_analysis_mlrate_builds_handler():
@@ -238,7 +242,7 @@ def test_normal_power_analysis_mlrate_builds_handler():
         ml_option="mlrate",
         features_cupac_model=["x"],
     )
-    assert isinstance(pw.handler, MLRateHandler)
+    assert isinstance(pw.ml_handler, MLRateHandler)
 
 
 def test_normal_power_analysis_mlrate_runs(power_df):
@@ -256,7 +260,7 @@ def test_normal_power_analysis_mlrate_runs(power_df):
 
 def test_normal_power_analysis_backward_compat_alias():
     pw = NormalPowerAnalysis(splitter=NonClusteredSplitter(), analysis=OLSAnalysis())
-    assert pw.cupac_handler is pw.handler
+    assert pw.cupac_handler is pw.ml_handler
 
 
 # ---------------------------------------------------------------------------
@@ -277,7 +281,11 @@ def test_power_config_ml_option_and_n_folds():
     assert config.n_folds == 3
 
 
-def test_power_analysis_from_dict_mlrate(power_df):
+def test_power_analysis_from_dict_mlrate(power_df, monkeypatch):
+    # "linear" is not a registered production cupac_model_mapping entry (arbitrary
+    # sklearn models must be passed directly as cupac_model=...); register it here
+    # only to exercise the from_dict -> mlrate resolution path.
+    monkeypatch.setitem(cupac_model_mapping, "linear", LinearRegression)
     pw = PowerAnalysis.from_dict(
         {
             "splitter": "non_clustered",
@@ -289,7 +297,7 @@ def test_power_analysis_from_dict_mlrate(power_df):
             "covariates": ["estimate_target"],
         }
     )
-    assert isinstance(pw.handler, MLRateHandler)
+    assert isinstance(pw.ml_handler, MLRateHandler)
 
 
 def test_power_analysis_from_dict_no_cupac():
@@ -300,7 +308,7 @@ def test_power_analysis_from_dict_no_cupac():
             "perturbator": "constant",
         }
     )
-    assert isinstance(pw.handler, NoOpHandler)
+    assert isinstance(pw.ml_handler, NoOpHandler)
 
 
 # ---------------------------------------------------------------------------
@@ -315,7 +323,7 @@ def metric():
 
 def test_hypothesis_test_no_cupac_config_is_noophandler(metric):
     test = HypothesisTest(metric=metric, analysis_type="ols")
-    assert isinstance(test.handler, NoOpHandler)
+    assert isinstance(test.ml_handler, NoOpHandler)
 
 
 def test_hypothesis_test_mlrate(metric, power_df):
@@ -331,8 +339,8 @@ def test_hypothesis_test_mlrate(metric, power_df):
         },
         ml_option="mlrate",
     )
-    assert isinstance(test.handler, MLRateHandler)
-    assert test.handler.cupac_outcome_name == "estimate_target"
+    assert isinstance(test.ml_handler, MLRateHandler)
+    assert test.ml_handler.cupac_outcome_name == "estimate_target"
 
 
 def test_hypothesis_test_cupac_unchanged(metric):
@@ -341,12 +349,12 @@ def test_hypothesis_test_cupac_unchanged(metric):
         analysis_type="ols",
         cupac_config={"cupac_model": TargetAggregation("x"), "target_col": "target"},
     )
-    assert isinstance(test.handler, CupacHandler)
+    assert isinstance(test.ml_handler, CupacHandler)
 
 
 def test_hypothesis_test_backward_compat_alias(metric):
     test = HypothesisTest(metric=metric, analysis_type="ols")
-    assert test.cupac_handler is test.handler
+    assert test.cupac_handler is test.ml_handler
 
 
 def test_hypothesis_test_from_config_mlrate(metric):
@@ -362,7 +370,7 @@ def test_hypothesis_test_from_config_mlrate(metric):
         "ml_option": "mlrate",
     }
     test = HypothesisTest.from_config(config)
-    assert isinstance(test.handler, MLRateHandler)
+    assert isinstance(test.ml_handler, MLRateHandler)
 
 
 def test_mlrate_reduces_variance():

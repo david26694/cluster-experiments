@@ -76,17 +76,20 @@ class HypothesisTest:
         self.analysis_type_mapper = self.custom_analysis_type_mapper or analysis_mapping
         self.analysis_class = self.analysis_type_mapper[self.analysis_type]
         self.is_cupac = bool(cupac_config)
-        if cupac_config and ml_option == "mlrate":
-            self.handler = MLRateHandler(**cupac_config)
-        elif cupac_config:
-            self.handler = CupacHandler(**self.cupac_config)
-        else:
-            self.handler = NoOpHandler()
-        self.cupac_handler = self.handler  # backward-compat alias
-        self.cupac_covariate_col = self.handler.cupac_outcome_name or None
+        self.ml_handler = self._build_ml_handler(cupac_config, ml_option)
+        self.cupac_handler = self.ml_handler  # backward-compat alias
+        self.cupac_covariate_col = self.ml_handler.cupac_outcome_name or None
 
         self.new_analysis_config = None
         self.experiment_analysis = None
+
+    @staticmethod
+    def _build_ml_handler(cupac_config: Optional[dict], ml_option: str):
+        if not cupac_config:
+            return NoOpHandler()
+        if ml_option == "mlrate":
+            return MLRateHandler(**cupac_config)
+        return CupacHandler(**cupac_config)
 
     def __repr__(self) -> str:
         """
@@ -308,7 +311,9 @@ class HypothesisTest:
         """
         Adds covariates to the experimental data via the configured handler.
         """
-        return self.handler.add_covariates(df=exp_data, pre_experiment_df=pre_exp_data)
+        return self.ml_handler.add_covariates(
+            df=exp_data, pre_experiment_df=pre_exp_data
+        )
 
     def get_test_results(
         self,

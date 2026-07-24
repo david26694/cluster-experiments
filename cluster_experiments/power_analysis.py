@@ -8,7 +8,7 @@ from scipy.stats import norm
 from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
-from cluster_experiments.cupac import CupacHandler, MLRateHandler, NoOpHandler
+from cluster_experiments.cupac import build_ml_handler
 from cluster_experiments.experiment_analysis import (
     DeltaMethodAnalysis,
     ExperimentAnalysis,
@@ -124,24 +124,16 @@ class PowerAnalysis:
         self.hypothesis = hypothesis
         self.scale_col = scale_col
 
-        if cupac_model is None:
-            self.handler = NoOpHandler()
-        elif ml_option == "mlrate":
-            self.handler = MLRateHandler(
-                ml_model=cupac_model,
-                n_folds=n_folds,
-                target_col=target_col,
-                features=features_cupac_model or [],
-                cluster_cols=getattr(splitter, "cluster_cols", None),
-            )
-        else:
-            self.handler = CupacHandler(
-                cupac_model=cupac_model,
-                target_col=target_col,
-                scale_col=scale_col,
-                features_cupac_model=features_cupac_model,
-            )
-        self.cupac_handler = self.handler  # backward-compat alias
+        self.ml_handler = build_ml_handler(
+            cupac_model=cupac_model,
+            ml_option=ml_option,
+            n_folds=n_folds,
+            target_col=target_col,
+            features_cupac_model=features_cupac_model,
+            scale_col=scale_col,
+            cluster_cols=getattr(splitter, "cluster_cols", None),
+        )
+        self.cupac_handler = self.ml_handler  # backward-compat alias
 
         if seed is not None:
             random.seed(seed)  # seed for splitter
@@ -230,7 +222,7 @@ class PowerAnalysis:
     ) -> Generator[pd.DataFrame, None, None]:
         """Yields splitted + perturbated dataframe for each iteration of the simulation."""
         df = df.copy()
-        df = self.handler.add_covariates(df, pre_experiment_df)
+        df = self.ml_handler.add_covariates(df, pre_experiment_df)
 
         for _ in tqdm(range(n_simulations), disable=not verbose):
             yield self._split_and_perturbate(df, average_effect)
@@ -351,7 +343,7 @@ class PowerAnalysis:
         alpha = self.alpha if alpha is None else alpha
 
         df = df.copy()
-        df = self.handler.add_covariates(df, pre_experiment_df)
+        df = self.ml_handler.add_covariates(df, pre_experiment_df)
 
         if n_jobs == 1:
             return self._non_parallel_loop(
@@ -599,9 +591,11 @@ class PowerAnalysis:
 
     def check_covariates(self):
         if hasattr(self.analysis, "covariates"):
-            outcome_name = self.handler.cupac_outcome_name
-            is_handler_active = getattr(self.handler, "is_cupac", bool(outcome_name))
-            if outcome_name and is_handler_active:
+            outcome_name = self.ml_handler.cupac_outcome_name
+            is_ml_handler_active = getattr(
+                self.ml_handler, "is_cupac", bool(outcome_name)
+            )
+            if outcome_name and is_ml_handler_active:
                 assert outcome_name in self.analysis.covariates, (
                     f"covariates in analysis must contain '{outcome_name}' when a handler is set. "
                     f"Add covariates=['{outcome_name}'] to your analysis config."
@@ -793,24 +787,16 @@ class NormalPowerAnalysis:
         self.time_col = time_col
         self.scale_col = scale_col
 
-        if cupac_model is None:
-            self.handler = NoOpHandler()
-        elif ml_option == "mlrate":
-            self.handler = MLRateHandler(
-                ml_model=cupac_model,
-                n_folds=n_folds,
-                target_col=target_col,
-                features=features_cupac_model or [],
-                cluster_cols=getattr(splitter, "cluster_cols", None),
-            )
-        else:
-            self.handler = CupacHandler(
-                cupac_model=cupac_model,
-                target_col=target_col,
-                scale_col=scale_col,
-                features_cupac_model=features_cupac_model,
-            )
-        self.cupac_handler = self.handler  # backward-compat alias
+        self.ml_handler = build_ml_handler(
+            cupac_model=cupac_model,
+            ml_option=ml_option,
+            n_folds=n_folds,
+            target_col=target_col,
+            features_cupac_model=features_cupac_model,
+            scale_col=scale_col,
+            cluster_cols=getattr(splitter, "cluster_cols", None),
+        )
+        self.cupac_handler = self.ml_handler  # backward-compat alias
 
         if seed is not None:
             random.seed(seed)  # seed for splitter
@@ -1025,7 +1011,7 @@ class NormalPowerAnalysis:
         n_simulations = self.n_simulations if n_simulations is None else n_simulations
 
         df = df.copy()
-        df = self.handler.add_covariates(df, pre_experiment_df)
+        df = self.ml_handler.add_covariates(df, pre_experiment_df)
 
         std_errors = list(self._get_standard_error(df, n_simulations, verbose))
         std_error_mean = float(np.mean(std_errors))
@@ -1437,9 +1423,11 @@ class NormalPowerAnalysis:
 
     def check_covariates(self):
         if hasattr(self.analysis, "covariates"):
-            outcome_name = self.handler.cupac_outcome_name
-            is_handler_active = getattr(self.handler, "is_cupac", bool(outcome_name))
-            if outcome_name and is_handler_active:
+            outcome_name = self.ml_handler.cupac_outcome_name
+            is_ml_handler_active = getattr(
+                self.ml_handler, "is_cupac", bool(outcome_name)
+            )
+            if outcome_name and is_ml_handler_active:
                 assert outcome_name in self.analysis.covariates, (
                     f"covariates in analysis must contain '{outcome_name}' when a handler is set. "
                     f"Add covariates=['{outcome_name}'] to your analysis config."

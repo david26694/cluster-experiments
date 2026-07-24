@@ -3,8 +3,6 @@ import logging
 from dataclasses import dataclass
 from typing import List, Literal, Optional, Union
 
-from sklearn.linear_model import LinearRegression as _LinearRegression
-
 from cluster_experiments.cupac import TargetAggregation
 from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
@@ -325,5 +323,4 @@ analysis_mapping = {
 cupac_model_mapping = {
     "": None,
     "mean_cupac_model": TargetAggregation,
-    "linear": _LinearRegression,
 }
