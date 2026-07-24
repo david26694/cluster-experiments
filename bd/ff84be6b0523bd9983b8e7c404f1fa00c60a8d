@@ -1,0 +1,23 @@
+cluster_experiments/power_analysis.py
+  s_43fd114c8cb263::t_fd57eb6fe6489c 520
+  s_43fd114c8cb263::t_0e522d5c934245 1361
+  s_43fd114c8cb263::t_febdc9f2745f91 1474-1483
+tests/test_mlrate.py
+  s_43fd114c8cb263::t_8d0832ed729165 205-222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "bdff84be6b0523bd9983b8e7c404f1fa00c60a8d",
+  "prompts": {},
+  "sessions": {
+    "s_43fd114c8cb263": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "58631f9d-581c-4da7-b08f-8b477ac4da47",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
