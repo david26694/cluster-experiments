@@ -1,0 +1,19 @@
+cluster_experiments/inference/hypothesis_test.py
+  s_43fd114c8cb263::t_fd66ae7b141046 81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "66c8ba8d2e0717e2c5606b3910427695e138cd8a",
+  "prompts": {},
+  "sessions": {
+    "s_43fd114c8cb263": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "58631f9d-581c-4da7-b08f-8b477ac4da47",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
