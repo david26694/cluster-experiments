@@ -517,14 +517,7 @@ class PowerAnalysis:
         perturbator_cls = _get_mapping_key(perturbator_mapping, config.perturbator)
         splitter_cls = _get_mapping_key(splitter_mapping, config.splitter)
         analysis_cls = _get_mapping_key(analysis_mapping, config.analysis)
-        cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
-
-        if cupac_cls is None:
-            cupac_model = None
-        elif config.ml_option == "mlrate":
-            cupac_model = cupac_cls()
-        else:
-            cupac_model = cupac_cls.from_config(config)
+        cupac_model = _resolve_cupac_model(config)
 
         return cls(
             perturbator=perturbator_cls.from_config(config),
@@ -1365,14 +1358,7 @@ class NormalPowerAnalysis:
         """Constructs PowerAnalysis from PowerConfig"""
         splitter_cls = _get_mapping_key(splitter_mapping, config.splitter)
         analysis_cls = _get_mapping_key(analysis_mapping, config.analysis)
-        cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
-
-        if cupac_cls is None:
-            cupac_model = None
-        elif config.ml_option == "mlrate":
-            cupac_model = cupac_cls()
-        else:
-            cupac_model = cupac_cls.from_config(config)
+        cupac_model = _resolve_cupac_model(config)
 
         return cls(
             splitter=splitter_cls.from_config(config),
@@ -1485,3 +1471,13 @@ class NormalPowerAnalysis:
         self.check_treatment()
         self.check_clusters()
         self.check_scale_col()
+
+
+def _resolve_cupac_model(config: PowerConfig) -> Optional[BaseEstimator]:
+    """Builds the cupac_model instance a PowerConfig points to, or None if unconfigured."""
+    cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
+    if cupac_cls is None:
+        return None
+    if config.ml_option == "mlrate":
+        return cupac_cls()
+    return cupac_cls.from_config(config)

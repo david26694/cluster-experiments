@@ -202,6 +202,24 @@ def test_power_analysis_mlrate_runs(power_df):
     assert 0.0 <= power <= 1.0
 
 
+def test_power_analysis_mlrate_works_without_pre_experiment_df(power_df):
+    # Unlike CupacHandler, MLRateHandler cross-fits on the experiment data itself
+    # and never touches pre_experiment_df, so mlrate must run fine when it's
+    # never supplied.
+    pw = PowerAnalysis(
+        perturbator=ConstantPerturbator(),
+        splitter=NonClusteredSplitter(),
+        analysis=OLSAnalysis(covariates=["estimate_target"]),
+        cupac_model=LinearRegression(),
+        ml_option="mlrate",
+        features_cupac_model=["x"],
+    )
+    power = pw.power_analysis(
+        power_df, pre_experiment_df=None, average_effect=0.5, n_simulations=5
+    )
+    assert 0.0 <= power <= 1.0
+
+
 def test_power_analysis_mlrate_auto_cluster_cols():
     pw = PowerAnalysis(
         perturbator=ConstantPerturbator(),
