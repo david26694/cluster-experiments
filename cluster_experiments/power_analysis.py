@@ -12,6 +12,7 @@ from cluster_experiments.cupac import CupacHandler
 from cluster_experiments.experiment_analysis import (
     DeltaMethodAnalysis,
     ExperimentAnalysis,
+    StandardErrorResult,
 )
 from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.power_config import (
@@ -840,10 +841,10 @@ class NormalPowerAnalysis:
         df: pd.DataFrame,
         n_simulations: int,
         verbose: bool,
-    ) -> Generator[float, None, None]:
+    ) -> Generator[StandardErrorResult, None, None]:
         for _ in tqdm(range(n_simulations), disable=not verbose):
             split_df = self._split(df)
-            yield self.analysis.get_standard_error(split_df)
+            yield self.analysis.get_standard_error_with_stats(split_df)
 
     def _normal_power_calculation(
         self, alpha: float, std_error: float, average_effect: float
@@ -897,6 +898,157 @@ class NormalPowerAnalysis:
 
         return float(z_alpha + z_beta) * std_error
 
+    def _relative_mde_calculation(
+        self,
+        alpha: float,
+        power: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+        treat_var: float,
+    ) -> float:
+        """
+        Minimum detectable relative lift for a ratio metric, solving the
+        double-delta quadratic power equation.
+
+        **Derivation**
+
+        Let ``m = δ / r_c`` be the true relative lift, where ``δ = treat_mean -
+        ctrl_mean`` and ``r_c = ctrl_mean``. Define the normalised variances::
+
+            se2_c = ctrl_var / r_c**2,   se2_t = treat_var / r_c**2
+
+        The outer delta method gives the SE of the relative-lift estimate as a
+        function of ``m``::
+
+            SE_rel(m)**2 = se2_t + se2_c * (1 + m)**2
+
+        For a Wald test at level ``alpha``, the power condition (SE evaluated at
+        the true effect, not at zero) is::
+
+            m - z_alpha * SE_rel(0) = z_beta * SE_rel(m)
+
+        where ``SE_rel(0) = sqrt(se2_t + se2_c)``. Squaring both sides and
+        substituting ``SE_rel(m)**2`` yields the quadratic ``A*m**2 + B*m + C = 0``::
+
+            A  = 1 - z_beta**2 * se2_c
+            B  = -2 * (z_alpha * sqrt(v0) + z_beta**2 * se2_c)
+            C  = (z_alpha * sqrt(v0))**2 - z_beta**2 * v0
+            v0 = se2_t + se2_c
+
+        The smallest positive root is the relative MDE. Unlike the linear normal
+        approximation, this accounts for the SE growing with the effect size
+        because the denominator of the ratio is itself a random variable.
+
+        One- vs two-sided tests only change the critical value ``z_alpha``
+        (``ppf(1 - alpha)`` vs ``ppf(1 - alpha/2)``); a "less" alternative
+        returns the negative root.
+
+        Reference: Deng, A. & Shi, X. (2016). "Data-Driven Metric Development for
+        Online Controlled Experiments." KDD 2016. The outer-delta variance
+        formula follows standard delta-method theory (van der Vaart, 1998, §3).
+
+        Args:
+            alpha: Significance level.
+            power: Desired statistical power.
+            ctrl_mean: Control-arm ratio mean.
+            ctrl_var: Variance of the control-arm ratio mean.
+            treat_var: Variance of the treatment-arm ratio mean.
+        """
+        if ctrl_mean == 0:
+            raise ValueError("ctrl_mean must be non-zero for relative MDE.")
+
+        hypothesis = HypothesisEntries(self.analysis.hypothesis)
+        if hypothesis == HypothesisEntries.TWO_SIDED:
+            z_alpha = norm.ppf(1 - alpha / 2)
+            sign = 1.0
+        elif hypothesis == HypothesisEntries.GREATER:
+            z_alpha = norm.ppf(1 - alpha)
+            sign = 1.0
+        elif hypothesis == HypothesisEntries.LESS:
+            z_alpha = norm.ppf(1 - alpha)
+            sign = -1.0
+        else:
+            raise ValueError(
+                f"{self.analysis.hypothesis} is not a valid HypothesisEntries"
+            )
+        z_beta = norm.ppf(power)
+
+        r_c = ctrl_mean
+        se2_c = ctrl_var / (r_c**2)
+        se2_t = treat_var / (r_c**2)
+
+        v0 = se2_t + se2_c
+        c = z_alpha * np.sqrt(v0)
+
+        a = 1 - (z_beta**2) * se2_c
+        b = -2 * (c + (z_beta**2) * se2_c)
+        c_term = c**2 - (z_beta**2) * v0
+
+        if a == 0:
+            raise ValueError(
+                "_relative_mde_calculation: degenerate quadratic (A = 0). "
+                "This occurs when z_beta^2 * ctrl_var / ctrl_mean^2 = 1, "
+                "i.e. the control SE already equals 1/z_beta. "
+                "Reduce ctrl_var or use a smaller power target."
+            )
+        discriminant = b**2 - 4 * a * c_term
+        if discriminant < 0:
+            raise ValueError(
+                "_relative_mde_calculation: no finite MDE exists for the given "
+                "inputs. The power constraint cannot be satisfied — the noise is "
+                "too large relative to any detectable effect. Increase sample "
+                "size or relax the power / alpha requirements."
+            )
+        m = (-b + np.sqrt(discriminant)) / (2 * a)
+        return float(sign * m)
+
+    def _mde_from_standard_error(
+        self, se_result: StandardErrorResult, alpha: float, power: float
+    ) -> float:
+        """
+        Computes the MDE from an averaged :class:`StandardErrorResult`.
+
+        Uses the quadratic relative-MDE equation when the group statistics
+        needed for it are available (relative effects on ratio metrics via
+        :class:`DeltaMethodAnalysis`), and the linear normal approximation
+        otherwise (absolute effects and relative OLS).
+        """
+        if se_result.has_relative_mde_stats:
+            return self._relative_mde_calculation(
+                alpha=alpha,
+                power=power,
+                ctrl_mean=se_result.ctrl_mean,
+                ctrl_var=se_result.ctrl_var,
+                treat_var=se_result.treat_var,
+            )
+        return self._normal_mde_calculation(
+            alpha=alpha, std_error=se_result.std_error, power=power
+        )
+
+    @staticmethod
+    def _average_standard_error_results(
+        results: List[StandardErrorResult],
+    ) -> StandardErrorResult:
+        """
+        Averages a list of per-simulation :class:`StandardErrorResult` objects.
+
+        The standard error is always averaged. When every simulation also
+        provides the group statistics needed for a relative MDE (``ctrl_mean``,
+        ``ctrl_var``, ``treat_var``), those are averaged too so the quadratic
+        relative MDE can be computed downstream.
+        """
+        std_error_mean = float(np.mean([r.std_error for r in results]))
+
+        if results and all(r.has_relative_mde_stats for r in results):
+            return StandardErrorResult(
+                std_error=std_error_mean,
+                ctrl_mean=float(np.mean([r.ctrl_mean for r in results])),
+                ctrl_var=float(np.mean([r.ctrl_var for r in results])),
+                treat_var=float(np.mean([r.treat_var for r in results])),
+            )
+
+        return StandardErrorResult(std_error=std_error_mean)
+
     def _get_time_col(self) -> str:
         if self.time_col is None:
             raise ValueError(
@@ -925,16 +1077,14 @@ class NormalPowerAnalysis:
             alpha: Significance level.
         """
         alpha = self.alpha if alpha is None else alpha
-        std_error = self._get_average_standard_error(
+        se_result = self._get_average_standard_error(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
             n_simulations=n_simulations,
         )
         return {
-            power: self._normal_mde_calculation(
-                alpha=alpha, std_error=std_error, power=power
-            )
+            power: self._mde_from_standard_error(se_result, alpha, power)
             for power in powers
         }
 
@@ -973,9 +1123,10 @@ class NormalPowerAnalysis:
         pre_experiment_df: Optional[pd.DataFrame] = None,
         verbose: bool = False,
         n_simulations: Optional[int] = None,
-    ) -> float:
+    ) -> StandardErrorResult:
         """
-        Gets standard error to be used in normal power calculation.
+        Gets the average standard error (and, for relative ratio-metric effects,
+        the group statistics) to be used in normal power calculation.
 
         Args:
             df: Dataframe with outcome and treatment variables.
@@ -990,10 +1141,8 @@ class NormalPowerAnalysis:
         df = df.copy()
         df = self.cupac_handler.add_covariates(df, pre_experiment_df)
 
-        std_errors = list(self._get_standard_error(df, n_simulations, verbose))
-        std_error_mean = float(np.mean(std_errors))
-
-        return std_error_mean
+        results = list(self._get_standard_error(df, n_simulations, verbose))
+        return self._average_standard_error_results(results)
 
     def run_average_standard_error(
         self,
@@ -1002,7 +1151,7 @@ class NormalPowerAnalysis:
         verbose: bool = False,
         n_simulations: Optional[int] = None,
         experiment_length: Iterable[int] = (),
-    ) -> Generator[Tuple[float, int], None, None]:
+    ) -> Generator[Tuple[StandardErrorResult, int], None, None]:
         """
         Run power analysis by simulation, using standard errors from the analysis.
 
@@ -1022,13 +1171,13 @@ class NormalPowerAnalysis:
             df_time = df_time.loc[
                 df_time[time_col] < experiment_start + pd.Timedelta(days=n_days)
             ]
-            std_error_mean = self._get_average_standard_error(
+            se_result = self._get_average_standard_error(
                 df=df_time,
                 pre_experiment_df=pre_experiment_df,
                 verbose=verbose,
                 n_simulations=n_simulations,
             )
-            yield std_error_mean, n_days
+            yield se_result, n_days
 
     def power_time_line(
         self,
@@ -1055,7 +1204,7 @@ class NormalPowerAnalysis:
         alpha = self.alpha if alpha is None else alpha
 
         results = []
-        for std_error_mean, n_days in self.run_average_standard_error(
+        for se_result, n_days in self.run_average_standard_error(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
@@ -1064,7 +1213,9 @@ class NormalPowerAnalysis:
         ):
             for effect in average_effects:
                 power = self._normal_power_calculation(
-                    alpha=alpha, std_error=std_error_mean, average_effect=effect
+                    alpha=alpha,
+                    std_error=se_result.std_error,
+                    average_effect=effect,
                 )
                 results.append(
                     {"effect": effect, "power": power, "experiment_length": n_days}
@@ -1085,7 +1236,7 @@ class NormalPowerAnalysis:
         alpha = self.alpha if alpha is None else alpha
 
         results = []
-        for std_error_mean, n_days in self.run_average_standard_error(
+        for se_result, n_days in self.run_average_standard_error(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
@@ -1093,9 +1244,7 @@ class NormalPowerAnalysis:
             experiment_length=experiment_length,
         ):
             for power in powers:
-                mde = self._normal_mde_calculation(
-                    alpha=alpha, std_error=std_error_mean, power=power
-                )
+                mde = self._mde_from_standard_error(se_result, alpha, power)
                 results.append(
                     {"power": power, "mde": mde, "experiment_length": n_days}
                 )
@@ -1236,16 +1385,14 @@ class NormalPowerAnalysis:
                     post_process_func
                 )
 
-            std_error_mean = self._get_average_standard_error(
+            se_result = self._get_average_standard_error(
                 df=df_grouped,
                 pre_experiment_df=pre_experiment_df,
                 n_simulations=n_simulations,
             )
 
             for power in powers:
-                mde_value = self._normal_mde_calculation(
-                    alpha=alpha, std_error=std_error_mean, power=power
-                )
+                mde_value = self._mde_from_standard_error(se_result, alpha, power)
 
                 relative_mde = mde_value / abs(df_grouped[self.target_col].mean())
 
@@ -1281,7 +1428,7 @@ class NormalPowerAnalysis:
         """
         alpha = self.alpha if alpha is None else alpha
 
-        std_error_mean = self._get_average_standard_error(
+        se_result = self._get_average_standard_error(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
@@ -1290,7 +1437,7 @@ class NormalPowerAnalysis:
 
         return {
             effect: self._normal_power_calculation(
-                alpha=alpha, std_error=std_error_mean, average_effect=effect
+                alpha=alpha, std_error=se_result.std_error, average_effect=effect
             )
             for effect in average_effects
         }

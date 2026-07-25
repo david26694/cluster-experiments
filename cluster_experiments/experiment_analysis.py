@@ -147,6 +147,44 @@ class InferenceResults:
         return "\n".join(lines)
 
 
+@dataclass
+class StandardErrorResult:
+    """
+    Standard error of an analysis, optionally enriched with the group-level
+    statistics required to compute a relative minimum detectable effect (MDE).
+
+    For most analyses only ``std_error`` is populated. Analyses that support
+    relative effects on ratio metrics (e.g. :class:`DeltaMethodAnalysis` with
+    ``relative_effect=True``) also fill in ``ctrl_mean``, ``ctrl_var`` and
+    ``treat_var`` so that :class:`NormalPowerAnalysis` can solve the quadratic
+    relative-MDE equation instead of the linear approximation.
+
+    Attributes:
+        std_error: Standard error of the effect (relative SE when the analysis
+            reports relative effects, absolute SE otherwise).
+        ctrl_mean: Control-arm ratio mean. ``None`` when relative-MDE stats are
+            not available.
+        ctrl_var: Variance of the control-arm ratio mean. ``None`` when not
+            available.
+        treat_var: Variance of the treatment-arm ratio mean. ``None`` when not
+            available.
+    """
+
+    std_error: float
+    ctrl_mean: Optional[float] = None
+    ctrl_var: Optional[float] = None
+    treat_var: Optional[float] = None
+
+    @property
+    def has_relative_mde_stats(self) -> bool:
+        """True when the group statistics needed for a relative MDE are present."""
+        return (
+            self.ctrl_mean is not None
+            and self.ctrl_var is not None
+            and self.treat_var is not None
+        )
+
+
 class ExperimentAnalysis(ABC):
     """
     Abstract class to run the analysis of a given experiment
@@ -163,6 +201,10 @@ class ExperimentAnalysis(ABC):
         treatment: name of the treatment to use as the treated group
         covariates: list of columns to use as covariates
         hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
+        relative_effect: if True, the analysis reports the treatment effect in
+            relative (percent) terms instead of absolute terms. Only supported by
+            a subset of analyses (e.g. OLSAnalysis, ClusteredOLSAnalysis,
+            DeltaMethodAnalysis); other analyses keep the default of False.
 
     """
 
@@ -175,6 +217,7 @@ class ExperimentAnalysis(ABC):
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
         add_covariate_interaction: bool = False,
+        relative_effect: bool = False,
     ):
         self.target_col = target_col
         self.treatment = treatment
@@ -183,6 +226,7 @@ class ExperimentAnalysis(ABC):
         self.covariates = covariates or []
         self.hypothesis = hypothesis
         self.add_covariate_interaction = add_covariate_interaction
+        self.relative_effect = relative_effect
 
     def __repr__(self) -> str:
         """
@@ -314,6 +358,23 @@ class ExperimentAnalysis(ABC):
         """
         raise NotImplementedError("Standard error not implemented for this analysis")
 
+    def analysis_standard_error_with_stats(
+        self,
+        df: pd.DataFrame,
+        verbose: bool = False,
+    ) -> StandardErrorResult:
+        """
+        Returns the standard error of the analysis wrapped in a
+        :class:`StandardErrorResult`. Analyses that support relative effects on
+        ratio metrics override this to also populate ``ctrl_mean``, ``ctrl_var``
+        and ``treat_var``. Expects treatment to be a 0-1 variable.
+
+        Arguments:
+            df: dataframe containing the data to analyze
+            verbose (Optional): bool, prints the regression summary if True
+        """
+        return StandardErrorResult(std_error=self.analysis_standard_error(df))
+
     def analysis_confidence_interval(
         self,
         df: pd.DataFrame,
@@ -392,6 +453,23 @@ class ExperimentAnalysis(ABC):
         df = self._create_binary_treatment(df)
         self._data_checks(df=df)
         return self.analysis_standard_error(df)
+
+    def get_standard_error_with_stats(self, df: pd.DataFrame) -> StandardErrorResult:
+        """Returns the standard error of the analysis together with the optional
+        group-level statistics needed to compute a relative MDE.
+
+        The base implementation only reports the standard error. Analyses that
+        support relative effects on ratio metrics override
+        :meth:`analysis_standard_error_with_stats` to also return
+        ``ctrl_mean``, ``ctrl_var`` and ``treat_var``.
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return self.analysis_standard_error_with_stats(df)
 
     def get_confidence_interval(
         self, df: pd.DataFrame, alpha: float
@@ -1525,11 +1603,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             treatment=treatment,
             covariates=covariates,
             hypothesis=hypothesis,
+            relative_effect=relative_effect,
         )
         self.scale_col = scale_col
         self.cluster_cols = cluster_cols or []
         self.covariates = covariates or []
-        self.relative_effect = relative_effect
 
     def _compute_thetas(self, df: pd.DataFrame) -> Dict[str, np.ndarray]:
         """
@@ -1755,12 +1833,17 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         # Return the mean and variance of the ratio metric
         return group_mean, group_variance
 
-    def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
+    def _get_group_statistics(
+        self, df: pd.DataFrame
+    ) -> tuple[float, float, float, float]:
         """
-        Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
-        Variance reduction is used if covariates are given.
-        """
+        Returns the control and treatment ratio-metric means and variances
+        estimated with the Delta Method: ``(ctrl_mean, ctrl_var, treat_mean,
+        treat_var)``. Variance reduction is used if covariates are given.
 
+        Arguments:
+            df: dataframe containing the data to analyze.
+        """
         if (self._get_num_clusters(df) < self.n_clusters_warning_limit).any():
             self.__warn_small_group_size()
 
@@ -1784,6 +1867,15 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df[~is_treatment], thetas_dict, covariates_means
         )
 
+        return ctrl_mean, ctrl_var, treat_mean, treat_var
+
+    def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
+        """
+        Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
+        Variance reduction is used if covariates are given.
+        """
+        ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_statistics(df)
+
         mean_diff = treat_mean - ctrl_mean
         standard_error = np.sqrt(treat_var + ctrl_var)
 
@@ -1801,6 +1893,45 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             )
 
         return mean_diff, standard_error
+
+    def analysis_standard_error_with_stats(
+        self, df: pd.DataFrame, verbose: bool = False
+    ) -> StandardErrorResult:
+        """
+        Returns the standard error of the analysis together with the group-level
+        statistics needed to compute a relative MDE.
+
+        When ``relative_effect`` is True, ``std_error`` is the relative
+        (percent-lift) SE and the control/treatment ratio statistics are also
+        returned so that :class:`NormalPowerAnalysis` can solve the quadratic
+        relative-MDE equation. When False, only the absolute ``std_error`` is
+        populated.
+
+        Arguments:
+            df: dataframe containing the data to analyze.
+            verbose (Optional): unused, kept for signature compatibility.
+        """
+        ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_statistics(df)
+
+        mean_diff = treat_mean - ctrl_mean
+        standard_error = np.sqrt(treat_var + ctrl_var)
+
+        if self.relative_effect:
+            transformer = DeltaMethodLiftTransformer(self.treatment_col)
+            transformer.fit(
+                mean_diff=mean_diff,
+                std_error=standard_error,
+                ctrl_mean=ctrl_mean,
+                ctrl_var=ctrl_var,
+            )
+            return StandardErrorResult(
+                std_error=transformer.bse[self.treatment_col],
+                ctrl_mean=ctrl_mean,
+                ctrl_var=ctrl_var,
+                treat_var=treat_var,
+            )
+
+        return StandardErrorResult(std_error=standard_error)
 
     def analysis_pvalue(self, df: pd.DataFrame) -> float:
         """

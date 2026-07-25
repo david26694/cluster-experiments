@@ -204,27 +204,48 @@ def test_transformer_conf_int_consistent_with_pvalue(ratio_df):
 
 
 def test_transformer_zero_ctrl_mean_raises():
-    """lift_and_se and relative_mde raise when ctrl_mean == 0."""
+    """lift_and_se and the relative MDE raise when ctrl_mean == 0."""
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
     with pytest.raises(ValueError, match="ctrl_mean must be non-zero"):
         DeltaMethodLiftTransformer.lift_and_se(0.1, 0.01, 0.0, 0.001)
 
+    pw = NormalPowerAnalysis(
+        analysis=DeltaMethodAnalysis(
+            cluster_cols=["user"],
+            scale_col="scale",
+            target_col="target",
+            relative_effect=True,
+        ),
+        splitter=ClusteredSplitter(cluster_cols=["user"]),
+    )
     with pytest.raises(ValueError, match="ctrl_mean must be non-zero"):
-        DeltaMethodLiftTransformer._relative_mde(0.05, 0.8, 0.0, 0.001, 0.001)
+        pw._relative_mde_calculation(
+            alpha=0.05, power=0.8, ctrl_mean=0.0, ctrl_var=0.001, treat_var=0.001
+        )
 
 
 def test_relative_mde_invalid_power_equation_raises(monkeypatch):
-    """relative_mde raises when the quadratic power equation becomes degenerate (A == 0)."""
+    """relative MDE raises when the quadratic power equation becomes degenerate (A == 0)."""
+    from cluster_experiments.random_splitter import ClusteredSplitter
 
     def mock_ppf(q):
         # z_alpha for q=0.975 and z_beta for q=0.8
         return 1.96 if q > 0.9 else 2.0
 
-    monkeypatch.setattr(
-        "cluster_experiments.relative_lift_transformer.stats.norm.ppf", mock_ppf
-    )
+    monkeypatch.setattr("cluster_experiments.power_analysis.norm.ppf", mock_ppf)
 
+    pw = NormalPowerAnalysis(
+        analysis=DeltaMethodAnalysis(
+            cluster_cols=["user"],
+            scale_col="scale",
+            target_col="target",
+            relative_effect=True,
+        ),
+        splitter=ClusteredSplitter(cluster_cols=["user"]),
+    )
     with pytest.raises(ValueError, match="degenerate quadratic"):
-        DeltaMethodLiftTransformer._relative_mde(
+        pw._relative_mde_calculation(
             alpha=0.05,
             power=0.8,
             ctrl_mean=1.0,
@@ -410,8 +431,24 @@ def test_delta_relative_with_covariates_se_greater_than_naive(ratio_df_covariate
 
 
 # ---------------------------------------------------------------------------
-# Power / MDE – DeltaMethodLiftTransformer.relative_mde
+# Power / MDE – NormalPowerAnalysis._relative_mde_calculation
 # ---------------------------------------------------------------------------
+
+
+def _make_relative_delta_power(hypothesis: str = "two-sided") -> NormalPowerAnalysis:
+    """Build a NormalPowerAnalysis wrapping a relative DeltaMethodAnalysis."""
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
+    return NormalPowerAnalysis(
+        analysis=DeltaMethodAnalysis(
+            cluster_cols=["user"],
+            scale_col="scale",
+            target_col="target",
+            relative_effect=True,
+            hypothesis=hypothesis,
+        ),
+        splitter=ClusteredSplitter(cluster_cols=["user"]),
+    )
 
 
 def test_relative_mde_lower_than_naive_mde():
@@ -428,7 +465,8 @@ def test_relative_mde_lower_than_naive_mde():
     ctrl_var = 0.0001
     treat_var = 0.0001
 
-    mde = DeltaMethodLiftTransformer._relative_mde(
+    pw = _make_relative_delta_power()
+    mde = pw._relative_mde_calculation(
         alpha=alpha,
         power=power,
         ctrl_mean=ctrl_mean,
@@ -445,6 +483,49 @@ def test_relative_mde_lower_than_naive_mde():
     naive_mde = (z_alpha + z_beta) * np.sqrt(treat_var + ctrl_var) / ctrl_mean
     # Proper MDE should be close to naive when ctrl variance is small
     assert mde == pytest.approx(naive_mde, rel=0.10)
+
+
+def test_relative_mde_quadratic_geq_linear():
+    """The quadratic relative MDE is always >= the linear approximation, since
+    the SE grows with the effect size."""
+    from scipy.stats import norm
+
+    alpha = 0.05
+    power = 0.8
+    ctrl_mean = 0.30
+    # Non-negligible control variance so the two formulas diverge.
+    ctrl_var = 0.01
+    treat_var = 0.01
+
+    pw = _make_relative_delta_power()
+    quad_mde = pw._relative_mde_calculation(
+        alpha=alpha,
+        power=power,
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
+        treat_var=treat_var,
+    )
+
+    z_alpha = norm.ppf(1 - alpha / 2)
+    z_beta = norm.ppf(power)
+    linear_mde = (z_alpha + z_beta) * np.sqrt(treat_var + ctrl_var) / ctrl_mean
+
+    assert quad_mde >= linear_mde
+
+
+def test_relative_mde_one_sided():
+    """One-sided 'greater' returns a positive MDE, 'less' returns its negative."""
+    kwargs = dict(
+        alpha=0.05, power=0.8, ctrl_mean=0.30, ctrl_var=0.001, treat_var=0.001
+    )
+    mde_greater = _make_relative_delta_power("greater")._relative_mde_calculation(
+        **kwargs
+    )
+    mde_less = _make_relative_delta_power("less")._relative_mde_calculation(**kwargs)
+
+    assert mde_greater > 0
+    assert mde_less < 0
+    assert mde_greater == pytest.approx(-mde_less, rel=1e-9)
 
 
 # ---------------------------------------------------------------------------
