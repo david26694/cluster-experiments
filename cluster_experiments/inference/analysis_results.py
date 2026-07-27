@@ -63,6 +63,8 @@ class AnalysisPlanResults:
     std_error: List[float] = field(default_factory=lambda: [])
     dimension_name: List[str] = field(default_factory=lambda: [])
     dimension_value: List[str] = field(default_factory=lambda: [])
+    split_name: List[str] = field(default_factory=lambda: [])
+    split_value: List[str] = field(default_factory=lambda: [])
     alpha: List[float] = field(default_factory=lambda: [])
 
     def __add__(self, other):
@@ -85,11 +87,31 @@ class AnalysisPlanResults:
             std_error=self.std_error + other.std_error,
             dimension_name=self.dimension_name + other.dimension_name,
             dimension_value=self.dimension_value + other.dimension_value,
+            split_name=self.split_name + other.split_name,
+            split_value=self.split_value + other.split_value,
             alpha=self.alpha + other.alpha,
         )
 
-    def to_dataframe(self):
-        return pd.DataFrame(asdict(self))
+    def to_dataframe(self, drop_empty: bool = False):
+        data_dict = asdict(self)
+        max_len = max(len(v) for v in data_dict.values()) if data_dict else 0
+        for k, v in data_dict.items():
+            if len(v) < max_len:
+                data_dict[k] = v + [""] * (max_len - len(v))
+
+        df = pd.DataFrame(data_dict)
+
+        if drop_empty:
+            defaults = {
+                "dimension_name": "__total_dimension",
+                "dimension_value": "total",
+                "split_name": "__total_split",
+                "split_value": "total",
+            }
+            for col, val in defaults.items():
+                if col in df.columns and (df[col] == val).all():
+                    df = df.drop(columns=[col])
+        return df
 
     def __str__(self) -> str:
         n = len(self.ate)

@@ -7,6 +7,8 @@ class Dimension:
     """
     A class used to represent a Dimension with a name and values.
 
+    Dimensions describe stable attributes of units that do not change during the experiment.
+
     Attributes
     ----------
     name : str
