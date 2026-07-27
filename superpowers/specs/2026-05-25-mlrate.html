@@ -1,0 +1,2400 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Functions to design and run clustered experiments">
+      
+      
+        <meta name="author" content="David Masip">
+      
+      
+        <link rel="canonical" href="https://david26694.github.io/cluster-experiments/superpowers/specs/2026-05-25-mlrate.html">
+      
+      
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.5">
+    
+    
+      
+        <title>Spec: MLRATE — Machine Learning Regression-Adjusted Treatment Effect Estimator - Cluster Experiments Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8608ea7d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,700,700i%7CUbuntu+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Ubuntu";--md-code-font:"Ubuntu Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/overrides.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/style.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#spec-mlrate-machine-learning-regression-adjusted-treatment-effect-estimator" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../index.html" title="Cluster Experiments Docs" class="md-header__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cluster Experiments Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Spec: MLRATE — Machine Learning Regression-Adjusted Treatment Effect Estimator
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../index.html" title="Cluster Experiments Docs" class="md-nav__button md-logo" aria-label="Cluster Experiments Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Cluster Experiments Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/david26694/cluster-experiments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Quickstart
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../normal_power_lines.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Power Analysis Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Basic Usage
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1">
+            <span class="md-nav__icon md-icon"></span>
+            Basic Usage
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/simple_ab_test.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Simple A/B Test Example
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../experiment_analysis.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Experiment Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aa_test.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AA Test (Clustered)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../relative.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Relative Lift Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    End-to-End Examples
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            End-to-End Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../e2e_mde.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    End-to-end: Power Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../e2e_mde_switchback.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    End-to-end: Switchback Design
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../e2e_mde_delta.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    End-to-end: Delta Method
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Analysis Methods
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            Analysis Methods
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis_with_different_hypotheses.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Power comparison under different hypotheses
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../paired_ttest.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Paired T-Test
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../delta_method.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Delta Method Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Variance Reduction
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            Variance Reduction
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cupac_example.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CUPAC Example
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../variance_reduction_comparison.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Variance Reduction Comparison: No Covariates vs Raw Covariates vs CUPAC vs MLRATE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Cluster Experiments
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_5">
+            <span class="md-nav__icon md-icon"></span>
+            Cluster Experiments
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/cluster_randomization.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cluster Randomization Example
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Switchback Experiments
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            Switchback Experiments
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../switchback.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Stratified Switchback
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plot_calendars.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calendar Visualization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plot_calendars_hours.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    4-Hour Switches
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../washover_example.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Washover Example
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Power Analysis
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
+            <span class="md-nav__icon md-icon"></span>
+            Power Analysis
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../normal_power.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Normal Power Comparison
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../normal_power_lines.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Power Analysis Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_8">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../multivariate.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multiple Treatments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_control.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Control
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../create_custom_classes.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Classes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Experiment Analysis
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            Experiment Analysis
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/analysis_plan.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Analysis Plan
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/analysis_results.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Analysis Results
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/experiment_analysis.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Experiment Analysis Methods
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/hypothesis_test.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hypothesis Test
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Metrics & Variants
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            Metrics & Variants
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/metric.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metric
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/variant.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Variant
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dimension.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dimension
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Power Analysis
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            Power Analysis
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/power_analysis.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Power Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/power_config.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Power Config
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Randomization
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            Randomization
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/random_splitter.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Splitters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Variance Reduction
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
+            <span class="md-nav__icon md-icon"></span>
+            Variance Reduction
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/cupac_model.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CUPAC Model
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Switchback
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            Switchback
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/washover.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Washover
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/perturbator.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Perturbators
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    License
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      Goal
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      Background
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requirements
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r1-mlhandler-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      R1 — MLHandler Protocol
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r2-noophandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      R2 — NoOpHandler
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r3-mlratehandler-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      R3 — MLRateHandler class
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r4-ml_option-param-in-poweranalysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      R4 — ml_option param in PowerAnalysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r5-powerconfig-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      R5 — PowerConfig support
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r6-reproducibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      R6 — Reproducibility
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r7-inference-pipeline-hypothesistest-analysisplan" class="md-nav__link">
+    <span class="md-ellipsis">
+      R7 — Inference pipeline (HypothesisTest / AnalysisPlan)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r9-cluster-aware-cross-fitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      R9 — Cluster-aware cross-fitting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      Out of Scope
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Interfaces
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#files-to-modify-create" class="md-nav__link">
+    <span class="md-ellipsis">
+      Files to Modify / Create
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      Acceptance Criteria
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="spec-mlrate-machine-learning-regression-adjusted-treatment-effect-estimator">Spec: MLRATE — Machine Learning Regression-Adjusted Treatment Effect Estimator<a class="headerlink" href="#spec-mlrate-machine-learning-regression-adjusted-treatment-effect-estimator" title="Permanent link">&para;</a></h1>
+<p><strong>Reference:</strong> Guo et al., NeurIPS 2021 — <a href="https://arxiv.org/abs/2106.07263">arXiv:2106.07263</a></p>
+<hr />
+<h2 id="goal">Goal<a class="headerlink" href="#goal" title="Permanent link">&para;</a></h2>
+<p>Add an <code>MLRateHandler</code> that implements MLRATE variance reduction: use K-fold
+cross-fitting on the <strong>experiment data</strong> itself (no pre-experiment data required)
+to produce ML-predicted outcome covariates, then feed them into the existing
+OLS-based analysis exactly as CUPAC does.</p>
+<hr />
+<h2 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h2>
+<p>CUPAC trains a model on <strong>pre-experiment data</strong> and predicts on experiment data.
+MLRATE instead uses K-fold cross-fitting <strong>on the experiment data</strong>:</p>
+<ol>
+<li>Split experiment rows into K folds (by cluster if <code>cluster_cols</code> are provided).</li>
+<li>For each fold k: train the model on the other K-1 folds, predict on fold k.</li>
+<li>Stack all fold predictions → <code>ĝ(X_i)</code> for every row, with no overfitting bias.</li>
+<li>Include <code>ĝ(X_i)</code> as a covariate in OLS: <code>Y_i = α + τ·T_i + θ·ĝ(X_i) + ε_i</code>.</li>
+</ol>
+<p>Cross-fitting is what makes this safe to do on experiment data: each unit's
+prediction comes from a model that never saw that unit. If <code>ĝ</code> is uninformative,
+<code>θ → 0</code> and we recover the standard difference-in-means estimator — no harm done.</p>
+<p>In clustered experiments, rows from the same cluster are correlated. Standard
+row-level <code>KFold</code> would split a cluster across train and validation, leaking
+cluster-level signal into the predictions. The split must therefore happen at
+the <strong>cluster level</strong> using <code>GroupKFold</code>, so entire clusters land in one fold.</p>
+<hr />
+<h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
+<h3 id="r1-mlhandler-protocol">R1 — <code>MLHandler</code> Protocol<a class="headerlink" href="#r1-mlhandler-protocol" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Lives in <code>cluster_experiments/cupac.py</code> alongside <code>CupacHandler</code> and
+  <code>MLRateHandler</code>.</li>
+<li>Defines the shared interface for all covariate-injection handlers:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MLHandler</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cupac_outcome_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_covariates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<ul>
+<li><code>CupacHandler</code>, <code>MLRateHandler</code>, and <code>NoOpHandler</code> all satisfy this Protocol
+  (no explicit inheritance needed — structural subtyping).</li>
+<li><code>PowerAnalysis</code> and <code>NormalPowerAnalysis</code> type-hint their handler field as
+  <code>MLHandler</code>, replacing the current <code>CupacHandler</code>-only type.</li>
+</ul>
+<h3 id="r2-noophandler">R2 — <code>NoOpHandler</code><a class="headerlink" href="#r2-noophandler" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Lives in <code>cluster_experiments/cupac.py</code>.</li>
+<li>Returned by <code>PowerAnalysis</code> when <code>cupac_model=None</code>.</li>
+<li><code>add_covariates</code> returns <code>df</code> unchanged; <code>cupac_outcome_name</code> returns <code>""</code>.</li>
+</ul>
+<h3 id="r3-mlratehandler-class">R3 — <code>MLRateHandler</code> class<a class="headerlink" href="#r3-mlratehandler-class" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Lives in <code>cluster_experiments/cupac.py</code> alongside <code>CupacHandler</code>.</li>
+<li>Satisfies the <code>MLHandler</code> Protocol.</li>
+<li><code>__init__</code> params: <code>ml_model</code> (sklearn estimator), <code>n_folds: int = 5</code>,
+  <code>target_col: str = "target"</code>, <code>features: List[str] = []</code>,
+  <code>cluster_cols: Optional[List[str]] = None</code>,
+  <code>random_state: Optional[int] = None</code>.</li>
+<li><code>add_covariates(df, pre_experiment_df=None) -&gt; pd.DataFrame</code></li>
+<li>Ignores <code>pre_experiment_df</code> (accepted only to satisfy the Protocol).</li>
+<li>If <code>cluster_cols</code> is set: use <code>GroupKFold(n_splits=n_folds)</code> with groups
+    derived from the unique combination of <code>cluster_cols</code> values per row.</li>
+<li>If <code>cluster_cols</code> is <code>None</code>: use standard <code>KFold(n_splits=n_folds)</code>.</li>
+<li>Raises <code>ValueError</code> if the number of unique clusters &lt; <code>n_folds</code>.</li>
+<li>Adds column <code>estimate_{target_col}</code> (same name as CUPAC so downstream
+    analysis code is unchanged).</li>
+<li>Raises <code>ValueError</code> if any column in <code>features</code> is missing from <code>df</code>.</li>
+</ul>
+<h3 id="r4-ml_option-param-in-poweranalysis">R4 — <code>ml_option</code> param in <code>PowerAnalysis</code><a class="headerlink" href="#r4-ml_option-param-in-poweranalysis" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>PowerAnalysis</code> and <code>NormalPowerAnalysis</code> keep <code>cupac_model: Optional[BaseEstimator]</code>
+  (unchanged from today) and gain two new params:</li>
+<li><code>ml_option: str = "cupac"</code> — <code>"cupac"</code> or <code>"mlrate"</code>, selects which handler to build.</li>
+<li><code>n_folds: int = 5</code> — used only when <code>ml_option="mlrate"</code>.</li>
+<li>Internally both classes build and store <code>self.handler: MLHandler</code>:</li>
+<li><code>cupac_model=None</code> → <code>NoOpHandler()</code></li>
+<li><code>cupac_model=...</code> + <code>ml_option="cupac"</code> → <code>CupacHandler(cupac_model, ...)</code></li>
+<li><code>cupac_model=...</code> + <code>ml_option="mlrate"</code> → <code>MLRateHandler(cupac_model, ...)</code></li>
+<li><code>from_config</code> raises <code>ValueError</code> if both <code>cupac_model</code> and <code>mlrate_model</code>
+  are non-empty in the config (mutual exclusion enforced at the config layer).</li>
+<li>The covariate column name is still <code>estimate_{target_col}</code>, so
+  <code>check_covariates()</code> needs no change.</li>
+<li><code>PowerAnalysis</code> automatically passes <code>splitter.cluster_cols</code> (if present)
+  when constructing <code>MLRateHandler</code> so cluster-aware splitting is the default.</li>
+<li><strong>Backward compatibility:</strong> After setting <code>self.handler</code>, both classes must also
+  set <code>self.cupac_handler = self.handler</code> so that any existing code accessing the
+  old attribute name does not break.</li>
+</ul>
+<h3 id="r5-powerconfig-support">R5 — <code>PowerConfig</code> support<a class="headerlink" href="#r5-powerconfig-support" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Add <code>ml_option: str = "cupac"</code> and <code>n_folds: int = 5</code> fields to <code>PowerConfig</code>.</li>
+<li>Expand <code>cupac_model_mapping</code> to include standard sklearn models usable by
+  both strategies, e.g. <code>{"": None, "mean_cupac_model": TargetAggregation,
+  "linear": LinearRegression}</code>. No separate <code>mlrate_model_mapping</code> needed —
+  <code>ml_option</code> is the selector, <code>cupac_model</code> is the model for both strategies.</li>
+<li>No mutual-exclusion check needed: <code>ml_option</code> unambiguously selects the strategy.</li>
+<li><code>NormalPowerAnalysis.from_config</code> and <code>PowerAnalysis.from_config</code> pass
+  <code>cupac_model=</code>, <code>ml_option=config.ml_option</code>, and <code>n_folds=config.n_folds</code>.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> arbitrary sklearn models (e.g. GBM) cannot be expressed as a
+config string — the config round-trip only covers models registered in
+<code>cupac_model_mapping</code>. Pass them directly as <code>cupac_model=GBM()</code> with
+<code>ml_option="mlrate"</code>.</p>
+</blockquote>
+<h3 id="r6-reproducibility">R6 — Reproducibility<a class="headerlink" href="#r6-reproducibility" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Accept <code>random_state: Optional[int] = None</code> in <code>MLRateHandler.__init__</code>
+  and pass it to <code>sklearn.model_selection.KFold</code>.</li>
+<li>Note: <code>GroupKFold</code> is deterministic given group assignments and does not
+  accept <code>random_state</code>; only pass it when using standard <code>KFold</code>.</li>
+</ul>
+<h3 id="r7-inference-pipeline-hypothesistest-analysisplan">R7 — Inference pipeline (<code>HypothesisTest</code> / <code>AnalysisPlan</code>)<a class="headerlink" href="#r7-inference-pipeline-hypothesistest-analysisplan" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>HypothesisTest.__init__</code> gains <code>ml_option: str = "cupac"</code> (mirrors the
+  <code>ml_option</code> in <code>PowerAnalysis</code>).</li>
+<li>The existing <code>cupac_config: Optional[dict]</code> is reused as the handler-kwargs
+  dict for both strategies:</li>
+<li><code>ml_option="cupac"</code> (default): <code>CupacHandler(**cupac_config)</code> — unchanged behaviour.</li>
+<li><code>ml_option="mlrate"</code>: <code>MLRateHandler(**cupac_config)</code> — keys should be
+    <code>ml_model</code>, <code>features</code>, <code>n_folds</code>, etc.</li>
+<li>When <code>cupac_config</code> is <code>None</code>, use <code>NoOpHandler</code> regardless of <code>ml_option</code>.</li>
+<li><code>HypothesisTest._add_covariates</code> calls <code>self.handler.add_covariates(df)</code>
+  regardless of handler type (polymorphism via <code>MLHandler</code> Protocol).</li>
+<li><code>HypothesisTest.from_config</code> and <code>AnalysisPlan.from_dict</code> thread <code>ml_option</code>
+  through from the config dict.</li>
+<li><code>AnalysisPlan.from_metrics_dict</code> (the shortcut constructor) documents that
+  it does not support MLRATE, same as it currently does not support CUPAC.</li>
+<li><strong>Backward compatibility:</strong> After setting <code>self.handler</code>, <code>HypothesisTest</code> must
+  also set <code>self.cupac_handler = self.handler</code> so that any existing code accessing
+  the old attribute name does not break.</li>
+</ul>
+<h3 id="r9-cluster-aware-cross-fitting">R9 — Cluster-aware cross-fitting<a class="headerlink" href="#r9-cluster-aware-cross-fitting" title="Permanent link">&para;</a></h3>
+<ul>
+<li>When <code>cluster_cols</code> is set, group rows by their unique cluster combination
+  before splitting: all rows belonging to the same cluster must land in the
+  same fold.</li>
+<li>Use <code>sklearn.model_selection.GroupKFold</code> for this.</li>
+<li>Raise a clear <code>ValueError</code> if <code>n_unique_clusters &lt; n_folds</code>, e.g.:
+  <code>"MLRateHandler: n_folds=5 but only 3 unique clusters found. Reduce n_folds."</code>.</li>
+<li><code>cluster_cols</code> defaults to <code>None</code> (standard row-level KFold) so the
+  non-clustered use case is unaffected.</li>
+</ul>
+<hr />
+<h2 id="out-of-scope">Out of Scope<a class="headerlink" href="#out-of-scope" title="Permanent link">&para;</a></h2>
+<ul>
+<li>MLRATE for <code>DeltaMethodAnalysis</code> / ratio metrics.</li>
+<li>Combining MLRATE + CUPAC simultaneously.</li>
+<li>Hyperparameter tuning inside <code>MLRateHandler</code>.</li>
+<li>Docs notebook.</li>
+</ul>
+<hr />
+<h2 id="key-interfaces">Key Interfaces<a class="headerlink" href="#key-interfaces" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># cluster_experiments/cupac.py  (all new classes alongside CupacHandler)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MLHandler</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cupac_outcome_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_covariates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NoOpHandler</span><span class="p">:</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cupac_outcome_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_covariates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MLRateHandler</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ml_model</span><span class="p">:</span> <span class="n">BaseEstimator</span><span class="p">,</span>
+        <span class="n">n_folds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">cluster_cols</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span> <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cupac_outcome_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;estimate_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_col</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_covariates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">pre_experiment_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># ignored</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="c1"># GroupKFold if cluster_cols else KFold</span>
+        <span class="c1"># cross-fit ml_model, add cupac_outcome_name column</span>
+        <span class="o">...</span>
+
+
+<span class="c1"># PowerAnalysis and NormalPowerAnalysis: keep cupac_model, add ml_option</span>
+<span class="n">PowerAnalysis</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">cupac_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseEstimator</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># sklearn estimator (existing)</span>
+    <span class="n">ml_option</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cupac&quot;</span><span class="p">,</span>                      <span class="c1"># &quot;cupac&quot; or &quot;mlrate&quot;</span>
+    <span class="n">n_folds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>                              <span class="c1"># used when ml_option=&quot;mlrate&quot;</span>
+<span class="p">)</span>
+<span class="c1"># Internally: builds self.handler: MLHandler from (cupac_model, ml_option, n_folds)</span>
+
+<span class="c1"># HypothesisTest: keep cupac_config, add ml_option</span>
+<span class="n">HypothesisTest</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">cupac_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># handler kwargs (CUPAC or MLRATE)</span>
+    <span class="n">ml_option</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cupac&quot;</span><span class="p">,</span>             <span class="c1"># &quot;cupac&quot; or &quot;mlrate&quot;</span>
+<span class="p">)</span>
+<span class="c1"># When ml_option=&quot;mlrate&quot;: MLRateHandler(**cupac_config)</span>
+<span class="c1"># When ml_option=&quot;cupac&quot;: CupacHandler(**cupac_config)  [existing behaviour]</span>
+</code></pre></div>
+<hr />
+<h2 id="files-to-modify-create">Files to Modify / Create<a class="headerlink" href="#files-to-modify-create" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Action</th>
+<th>What changes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cluster_experiments/cupac.py</code></td>
+<td>Modify</td>
+<td>Add <code>MLHandler</code> Protocol, <code>NoOpHandler</code>, <code>MLRateHandler</code>; <code>CupacHandler</code> satisfies <code>MLHandler</code></td>
+</tr>
+<tr>
+<td><code>cluster_experiments/power_analysis.py</code></td>
+<td>Modify</td>
+<td>Replace <code>cupac_model</code> with <code>handler: MLHandler</code>; mutual-exclusion in <code>from_config</code>; auto-pass <code>cluster_cols</code></td>
+</tr>
+<tr>
+<td><code>cluster_experiments/power_config.py</code></td>
+<td>Modify</td>
+<td><code>mlrate_model</code>, <code>n_folds</code> fields; <code>mlrate_model_mapping</code></td>
+</tr>
+<tr>
+<td><code>cluster_experiments/inference/hypothesis_test.py</code></td>
+<td>Modify</td>
+<td><code>mlrate_config</code> param; <code>handler: MLHandler</code>; mutual-exclusion check</td>
+</tr>
+<tr>
+<td><code>cluster_experiments/__init__.py</code></td>
+<td>Modify</td>
+<td>Export <code>MLHandler</code>, <code>MLRateHandler</code>, <code>NoOpHandler</code> from <code>cupac</code></td>
+</tr>
+<tr>
+<td><code>tests/test_mlrate.py</code></td>
+<td><strong>Create</strong></td>
+<td>Unit + integration tests (see Acceptance Criteria)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="acceptance-criteria">Acceptance Criteria<a class="headerlink" href="#acceptance-criteria" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[ ] <strong>No data leakage</strong>: predictions on each fold come from a model not trained on that fold.</li>
+<li>[ ] <strong>Column added</strong>: <code>add_covariates</code> returns df with <code>estimate_target</code> column, same length as input.</li>
+<li>[ ] <strong>Protocol compliance</strong>: <code>CupacHandler</code>, <code>MLRateHandler</code>, and <code>NoOpHandler</code> all satisfy <code>MLHandler</code> (verified via <code>isinstance</code> with <code>runtime_checkable</code> or static type check).</li>
+<li>[ ] <strong>NoOpHandler</strong>: <code>PowerAnalysis()</code> with no <code>cupac_model</code> returns df unchanged and adds no covariate column.</li>
+<li>[ ] <strong>Missing features</strong>: <code>add_covariates</code> raises <code>ValueError</code> when <code>features</code> columns are absent from df.</li>
+<li>[ ] <strong>Cluster leakage</strong>: with <code>cluster_cols</code> set, no cluster appears in both train and validation of the same fold.</li>
+<li>[ ] <strong>Too few clusters</strong>: <code>add_covariates</code> raises <code>ValueError</code> when <code>n_unique_clusters &lt; n_folds</code>.</li>
+<li>[ ] <strong>Auto cluster passthrough</strong>: <code>PowerAnalysis</code> with a <code>ClusteredSplitter</code> and <code>ml_option="mlrate"</code> passes <code>cluster_cols</code> to <code>MLRateHandler</code> automatically.</li>
+<li>[ ] <strong>Variance reduction</strong>: on a synthetic dataset where features correlate strongly with target, MLRATE yields a smaller std error than plain <code>OLSAnalysis</code>.</li>
+<li>[ ] <strong>No harm</strong>: with random features, std error with MLRATE is no larger than without it (within sampling noise at n=5000).</li>
+<li>[ ] <strong>Config round-trip</strong>: <code>PowerAnalysis.from_dict({"cupac_model": "linear", "ml_option": "mlrate", ...})</code> constructs an <code>MLRateHandler</code> using a model registered in <code>cupac_model_mapping</code>. Arbitrary sklearn objects must be passed directly as <code>cupac_model=GBM()</code> with <code>ml_option="mlrate"</code>.</li>
+<li>[ ] <strong>Inference pipeline — ml_option</strong>: <code>HypothesisTest(cupac_config={...}, ml_option="mlrate")</code> builds <code>MLRateHandler</code> and runs <code>add_covariates</code>.</li>
+<li>[ ] <strong>Inference pipeline — from_dict</strong>: <code>AnalysisPlan.from_dict</code> threads <code>ml_option</code> through correctly.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2022 Maintained by David Masip.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/david26694/cluster-experiments" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs", "content.code.annotate", "content.code.copy", "navigation.instant", "navigation.tracking", "navigation.top"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.f1b6f286.min.js"></script>
+      
+    
+  </body>
+</html>
