@@ -30,6 +30,7 @@ nav:
           - Delta Method Analysis: delta_method.ipynb
       - Variance Reduction:
           - CUPAC Example: cupac_example.ipynb
+          - No Covariates vs Raw vs CUPAC vs MLRATE: variance_reduction_comparison.ipynb
       - Cluster Experiments:
           - Cluster Randomization: examples/cluster_randomization.ipynb
       - Switchback Experiments:

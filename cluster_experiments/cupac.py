@@ -1,9 +1,36 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Protocol, Tuple, runtime_checkable
 
+import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, clone
+from sklearn.model_selection import GroupKFold, KFold
 from sklearn.utils.validation import NotFittedError, check_is_fitted
+
+
+@runtime_checkable
+class MLHandler(Protocol):
+    @property
+    def cupac_outcome_name(self) -> str: ...
+
+    def add_covariates(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+    ) -> pd.DataFrame: ...
+
+
+class NoOpHandler:
+    @property
+    def cupac_outcome_name(self) -> str:
+        return ""
+
+    def add_covariates(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+    ) -> pd.DataFrame:
+        return df
 
 
 class EmptyRegressor(BaseEstimator):
@@ -237,3 +264,110 @@ class CupacHandler:
             raise ValueError(
                 "If cupac is used, scale_col should not be in features_cupac_model."
             )
+
+
+class MLRateHandler:
+    """
+    MLRATE variance reducer (Guo et al., NeurIPS 2021).
+
+    Uses K-fold cross-fitting on experiment data to generate ML-predicted
+    covariates without overfitting bias. Each unit's prediction comes from
+    a model that never saw that unit during training.
+
+    When cluster_cols is provided, splits by cluster (GroupKFold) so no
+    cluster appears in both train and validation of the same fold.
+    """
+
+    def __init__(
+        self,
+        ml_model: BaseEstimator,
+        n_folds: int = 5,
+        target_col: str = "target",
+        features: Optional[List[str]] = None,
+        cluster_cols: Optional[List[str]] = None,
+        random_state: Optional[int] = None,
+    ):
+        self.ml_model = ml_model
+        self.n_folds = n_folds
+        self.target_col = target_col
+        self.features = features or []
+        self.cluster_cols = cluster_cols
+        self.random_state = random_state
+
+    @property
+    def cupac_outcome_name(self) -> str:
+        return f"estimate_{self.target_col}"
+
+    def add_covariates(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+    ) -> pd.DataFrame:
+        feature_cols = self._resolve_feature_cols(df)
+        df = df.copy()
+        X = df[feature_cols].values
+        y = df[self.target_col].values
+
+        splits = self._make_splits(X, y, df)
+        df[self.cupac_outcome_name] = self._cross_fit_predict(X, y, splits)
+        return df
+
+    def _resolve_feature_cols(self, df: pd.DataFrame) -> List[str]:
+        feature_cols = self.features or [c for c in df.columns if c != self.target_col]
+        missing = [f for f in feature_cols if f not in df.columns]
+        if missing:
+            raise ValueError(
+                f"MLRateHandler: features {missing} not found in df columns."
+            )
+        return feature_cols
+
+    def _make_splits(self, X, y, df: pd.DataFrame):
+        if not self.cluster_cols:
+            return KFold(
+                n_splits=self.n_folds, shuffle=True, random_state=self.random_state
+            ).split(X, y)
+
+        groups = df[self.cluster_cols].astype(str).apply("_".join, axis=1).values
+        n_unique = len(np.unique(groups))
+        if n_unique < self.n_folds:
+            raise ValueError(
+                f"MLRateHandler: n_folds={self.n_folds} but only {n_unique} unique "
+                f"clusters found. Reduce n_folds."
+            )
+        return GroupKFold(n_splits=self.n_folds).split(X, y, groups=groups)
+
+    def _cross_fit_predict(self, X, y, splits) -> np.ndarray:
+        predictions = np.zeros(len(X))
+        for train_idx, val_idx in splits:
+            model = clone(self.ml_model)
+            model.fit(X[train_idx], y[train_idx])
+            predictions[val_idx] = model.predict(X[val_idx])
+        return predictions
+
+
+def build_ml_handler(
+    cupac_model: Optional[BaseEstimator],
+    ml_option: str = "cupac",
+    n_folds: int = 5,
+    target_col: str = "target",
+    features_cupac_model: Optional[List[str]] = None,
+    scale_col: Optional[str] = None,
+    cluster_cols: Optional[List[str]] = None,
+) -> MLHandler:
+    """Builds the covariate-injection handler shared by PowerAnalysis and NormalPowerAnalysis."""
+    if cupac_model is None:
+        return NoOpHandler()
+    if ml_option == "mlrate":
+        return MLRateHandler(
+            ml_model=cupac_model,
+            n_folds=n_folds,
+            target_col=target_col,
+            features=features_cupac_model or [],
+            cluster_cols=cluster_cols,
+        )
+    return CupacHandler(
+        cupac_model=cupac_model,
+        target_col=target_col,
+        scale_col=scale_col,
+        features_cupac_model=features_cupac_model,
+    )

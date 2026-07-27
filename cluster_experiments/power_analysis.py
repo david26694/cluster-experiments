@@ -9,7 +9,7 @@ from scipy.stats import norm
 from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
-from cluster_experiments.cupac import CupacHandler
+from cluster_experiments.cupac import build_ml_handler
 from cluster_experiments.experiment_analysis import (
     DeltaMethodAnalysis,
     ExperimentAnalysis,
@@ -101,6 +101,8 @@ class PowerAnalysis:
         splitter: RandomSplitter,
         analysis: ExperimentAnalysis,
         cupac_model: Optional[BaseEstimator] = None,
+        ml_option: str = "cupac",
+        n_folds: int = 5,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
@@ -124,16 +126,20 @@ class PowerAnalysis:
         self.hypothesis = hypothesis
         self.scale_col = scale_col
 
-        self.cupac_handler = CupacHandler(
+        self.ml_handler = build_ml_handler(
             cupac_model=cupac_model,
+            ml_option=ml_option,
+            n_folds=n_folds,
             target_col=target_col,
-            scale_col=scale_col,
             features_cupac_model=features_cupac_model,
+            scale_col=scale_col,
+            cluster_cols=getattr(splitter, "cluster_cols", None),
         )
+        self.cupac_handler = self.ml_handler  # backward-compat alias
+
         if seed is not None:
             random.seed(seed)  # seed for splitter
             np.random.seed(seed)  # seed for the binary perturbator
-            # may need to seed other stochasticity sources if added
 
         self.check_inputs()
 
@@ -218,7 +224,7 @@ class PowerAnalysis:
     ) -> Generator[pd.DataFrame, None, None]:
         """Yields splitted + perturbated dataframe for each iteration of the simulation."""
         df = df.copy()
-        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+        df = self.ml_handler.add_covariates(df, pre_experiment_df)
 
         for _ in tqdm(range(n_simulations), disable=not verbose):
             yield self._split_and_perturbate(df, average_effect)
@@ -339,7 +345,7 @@ class PowerAnalysis:
         alpha = self.alpha if alpha is None else alpha
 
         df = df.copy()
-        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+        df = self.ml_handler.add_covariates(df, pre_experiment_df)
 
         if n_jobs == 1:
             return self._non_parallel_loop(
@@ -513,12 +519,15 @@ class PowerAnalysis:
         perturbator_cls = _get_mapping_key(perturbator_mapping, config.perturbator)
         splitter_cls = _get_mapping_key(splitter_mapping, config.splitter)
         analysis_cls = _get_mapping_key(analysis_mapping, config.analysis)
-        cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
+        cupac_model = _resolve_cupac_model(config)
+
         return cls(
             perturbator=perturbator_cls.from_config(config),
             splitter=splitter_cls.from_config(config),
             analysis=analysis_cls.from_config(config),
-            cupac_model=cupac_cls.from_config(config),
+            cupac_model=cupac_model,
+            ml_option=config.ml_option,
+            n_folds=config.n_folds,
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
@@ -577,15 +586,15 @@ class PowerAnalysis:
 
     def check_covariates(self):
         if hasattr(self.analysis, "covariates"):
-            cupac_in_covariates = (
-                self.cupac_handler.cupac_outcome_name in self.analysis.covariates
+            outcome_name = self.ml_handler.cupac_outcome_name
+            is_ml_handler_active = getattr(
+                self.ml_handler, "is_cupac", bool(outcome_name)
             )
-            assert cupac_in_covariates or not self.cupac_handler.is_cupac, (
-                f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
-                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
-                f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
-            )
-
+            if outcome_name and is_ml_handler_active:
+                assert outcome_name in self.analysis.covariates, (
+                    f"covariates in analysis must contain '{outcome_name}' when a handler is set. "
+                    f"Add covariates=['{outcome_name}'] to your analysis config."
+                )
             if hasattr(self.splitter, "cluster_cols"):
                 if set(self.analysis.covariates).intersection(
                     set(self.splitter.cluster_cols)
@@ -747,6 +756,8 @@ class NormalPowerAnalysis:
         splitter: RandomSplitter,
         analysis: ExperimentAnalysis,
         cupac_model: Optional[BaseEstimator] = None,
+        ml_option: str = "cupac",
+        n_folds: int = 5,
         target_col: str = "target",
         treatment_col: str = "treatment",
         treatment: str = "B",
@@ -771,12 +782,17 @@ class NormalPowerAnalysis:
         self.time_col = time_col
         self.scale_col = scale_col
 
-        self.cupac_handler = CupacHandler(
+        self.ml_handler = build_ml_handler(
             cupac_model=cupac_model,
+            ml_option=ml_option,
+            n_folds=n_folds,
             target_col=target_col,
             features_cupac_model=features_cupac_model,
             scale_col=scale_col,
+            cluster_cols=getattr(splitter, "cluster_cols", None),
         )
+        self.cupac_handler = self.ml_handler  # backward-compat alias
+
         if seed is not None:
             random.seed(seed)  # seed for splitter
             np.random.seed(seed)  # numpy seed
@@ -1180,7 +1196,7 @@ class NormalPowerAnalysis:
         n_simulations = self.n_simulations if n_simulations is None else n_simulations
 
         df = df.copy()
-        df = self.cupac_handler.add_covariates(df, pre_experiment_df)
+        df = self.ml_handler.add_covariates(df, pre_experiment_df)
 
         results = list(self._get_standard_error(df, n_simulations, verbose))
         return self._average_standard_error_results(results)
@@ -1534,11 +1550,14 @@ class NormalPowerAnalysis:
         """Constructs PowerAnalysis from PowerConfig"""
         splitter_cls = _get_mapping_key(splitter_mapping, config.splitter)
         analysis_cls = _get_mapping_key(analysis_mapping, config.analysis)
-        cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
+        cupac_model = _resolve_cupac_model(config)
+
         return cls(
             splitter=splitter_cls.from_config(config),
             analysis=analysis_cls.from_config(config),
-            cupac_model=cupac_cls.from_config(config),
+            cupac_model=cupac_model,
+            ml_option=config.ml_option,
+            n_folds=config.n_folds,
             target_col=config.target_col,
             treatment_col=config.treatment_col,
             treatment=config.treatment,
@@ -1582,15 +1601,15 @@ class NormalPowerAnalysis:
 
     def check_covariates(self):
         if hasattr(self.analysis, "covariates"):
-            cupac_in_covariates = (
-                self.cupac_handler.cupac_outcome_name in self.analysis.covariates
+            outcome_name = self.ml_handler.cupac_outcome_name
+            is_ml_handler_active = getattr(
+                self.ml_handler, "is_cupac", bool(outcome_name)
             )
-
-            assert cupac_in_covariates or not self.cupac_handler.is_cupac, (
-                f"covariates in analysis must contain {self.cupac_handler.cupac_outcome_name} if cupac_model is not None. "
-                f"If you want to use cupac_model, you must add the cupac outcome to the covariates of the analysis "
-                f"You may want to do covariates=['{self.cupac_handler.cupac_outcome_name}'] in your analysis method or your config"
-            )
+            if outcome_name and is_ml_handler_active:
+                assert outcome_name in self.analysis.covariates, (
+                    f"covariates in analysis must contain '{outcome_name}' when a handler is set. "
+                    f"Add covariates=['{outcome_name}'] to your analysis config."
+                )
 
             if hasattr(self.splitter, "cluster_cols"):
                 if set(self.analysis.covariates).intersection(
@@ -1644,3 +1663,13 @@ class NormalPowerAnalysis:
         self.check_treatment()
         self.check_clusters()
         self.check_scale_col()
+
+
+def _resolve_cupac_model(config: PowerConfig) -> Optional[BaseEstimator]:
+    """Builds the cupac_model instance a PowerConfig points to, or None if unconfigured."""
+    cupac_cls = _get_mapping_key(cupac_model_mapping, config.cupac_model)
+    if cupac_cls is None:
+        return None
+    if config.ml_option == "mlrate":
+        return cupac_cls()
+    return cupac_cls.from_config(config)

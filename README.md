@@ -255,17 +255,17 @@ For **power analysis**, combine these with:
 
 ## 🛠️ Advanced Features
 
-### Variance Reduction (CUPED/CUPAC)
+### Variance Reduction (CUPED/CUPAC/MLRate)
 
 Reduce variance and detect smaller effects by leveraging pre-experiment data. Use historical metrics as covariates to control for pre-existing differences between groups.
 
 **Use cases:**
 
-- Have pre-experiment metrics for your users/clusters
+- Have pre-experiment metrics for your users/clusters (not needed for MLRate)
 - Want to detect smaller treatment effects
 - Need more sensitive tests with same sample size
 
-See the [CUPAC Example](https://david26694.github.io/cluster-experiments/cupac_example.html) for detailed implementation.
+See the [CUPAC Example](https://david26694.github.io/cluster-experiments/cupac_example.html) and [MLRate example](https://david26694.github.io/cluster-experiments/variance_reduction_comparison.html) for detailed implementation.
 
 ### Cluster Randomization
 

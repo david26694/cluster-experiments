@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass
 from typing import List, Literal, Optional, Union
 
-from cluster_experiments.cupac import EmptyRegressor, TargetAggregation
+from cluster_experiments.cupac import TargetAggregation
 from cluster_experiments.experiment_analysis import (
     ClusteredOLSAnalysis,
     DeltaMethodAnalysis,
@@ -110,6 +110,8 @@ class PowerConfig:
 
     # optional mappings
     cupac_model: str = ""
+    ml_option: str = "cupac"
+    n_folds: int = 5
     scale_col: Optional[str] = None
 
     # Shared
@@ -319,4 +321,7 @@ analysis_mapping = {
     "delta": DeltaMethodAnalysis,
 }
 
-cupac_model_mapping = {"": EmptyRegressor, "mean_cupac_model": TargetAggregation}
+cupac_model_mapping = {
+    "": None,
+    "mean_cupac_model": TargetAggregation,
+}
