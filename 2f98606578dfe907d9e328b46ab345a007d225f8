@@ -1,0 +1,51 @@
+tests/analysis/test_delta_relative.py
+  s_429d4ab4be5322::t_0ce5fd7606ff59 207-209,213-221,223-225,229-230,236,238-246,248,434,438-453,468-469,488-528
+  s_429d4ab4be5322::t_bda6e956b65cd0 529-530
+docs/relative_delta.ipynb
+  s_429d4ab4be5322::t_290aac1760cd3b 312-328
+  s_429d4ab4be5322::t_00f47583f0c131 429-431,435
+  s_429d4ab4be5322::t_207dbd31fe6492 555
+  s_429d4ab4be5322::t_19a448f5fc37f7 383-399,462
+  s_429d4ab4be5322::t_ff2fc57d0fb627 400-403,426-428,432-434,436-438,445-449,542-543,545,550
+  s_429d4ab4be5322::t_4c4efefcb78d7c 181,244,334,350-351,404-425,439-444
+  s_429d4ab4be5322::t_ee1d09356767e0 329
+  s_429d4ab4be5322::t_db5348d01a9737 541
+  s_429d4ab4be5322::t_c25401accefcd4 544
+  s_429d4ab4be5322::t_52a84966bcd9c2 546-549
+cluster_experiments/experiment_analysis.py
+  s_429d4ab4be5322::t_25703bc2e048ae 1836-1838,1840-1842,1844-1846,1870-1878,1897-1934
+  s_429d4ab4be5322::t_4e99562679eeab 376
+  s_429d4ab4be5322::t_e4bde3fca60c37 150-187
+  s_429d4ab4be5322::t_81be404e11a683 204-207,220,229,1606
+  s_429d4ab4be5322::t_50f84d439a3c5b 361-375,377
+  s_429d4ab4be5322::t_5f0e1908094c23 457-473
+  s_429d4ab4be5322::t_3603f2b19962a4 1935
+cluster_experiments/power_analysis.py
+  s_429d4ab4be5322::t_928b99d8f5bf83 15
+  s_429d4ab4be5322::t_a597c7a1fb8e0f 844,847
+  h_9ff7e6582d6f49 1080,1087,1126,1128-1129,1144-1145,1154,1174,1180,1207,1217-1218,1239,1247,1388,1395,1431,1440
+  s_429d4ab4be5322::t_1cef0ec690ac8b 901-1051
+cluster_experiments/relative_lift_transformer.py
+  s_429d4ab4be5322::t_48e7034edf19b3 173,180-182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "2f98606578dfe907d9e328b46ab345a007d225f8",
+  "prompts": {},
+  "humans": {
+    "h_9ff7e6582d6f49": {
+      "author": "luizhsuperti <luizhfcs@pm.me>"
+    }
+  },
+  "sessions": {
+    "s_429d4ab4be5322": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "3e9b7bda-e18f-4f73-8a8c-50a26c93a439",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "luizhsuperti <luizhfcs@pm.me>"
+    }
+  }
+}
