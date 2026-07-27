@@ -1,0 +1,33 @@
+tests/analysis/test_delta_relative.py
+  s_12039c55e20567::t_440adca674b164 228-230,242-244,249-250
+  s_12039c55e20567::t_4e9333709c3ad6 660-706
+  s_12039c55e20567::t_f027abeef00ad2 485-487,498,510-522,524-528,530-535,537-571,579-604
+  s_12039c55e20567::t_00460a53d7991d 659
+cluster_experiments/experiment_analysis.py
+  s_12039c55e20567::t_f9ac0e6cc77e3e 1872-1874,1876-1886,1901-1904,1906-1914,1933-1935,1939
+cluster_experiments/power_analysis.py
+  s_12039c55e20567::t_6f6bd340ef87cb 1415-1419
+  s_12039c55e20567::t_0a461793083f90 7
+  s_12039c55e20567::t_9a4a726cf0057c 912,926-927,929,931,935-942,944,963,966,969,980,982-985,987-1010,1013-1021
+  s_12039c55e20567::t_d69d0eff42d3c7 1011-1012
+docs/relative_delta.ipynb
+  s_12039c55e20567::t_143272d918b312 322
+  s_12039c55e20567::t_eeb3e325d7d240 316,327,334,351,388,390-391,409,431,435,444,446-447,462,543,548
+  s_12039c55e20567::t_50f8a5fa0d22eb 549
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "9d211ecf951970f0090b1653f77c0f0b2850e47b",
+  "prompts": {},
+  "sessions": {
+    "s_12039c55e20567": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "a7bf3788-73d8-42eb-bfe5-596f74886485",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "luizhsuperti <luizhfcs@pm.me>"
+    }
+  }
+}
