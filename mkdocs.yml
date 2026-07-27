@@ -20,6 +20,7 @@ nav:
           - Experiment Analysis Workflow: experiment_analysis.ipynb
           - AA Test (Clustered): aa_test.ipynb
           - Relative Lift Analysis: relative.ipynb
+          - Plotting Experiment Results: plotting.md
       - End-to-End Examples:
           - Power Analysis: e2e_mde.ipynb
           - Switchback Design: e2e_mde_switchback.ipynb
@@ -52,6 +53,7 @@ nav:
           - Analysis Results: api/analysis_results.md
           - Experiment Analysis Methods: api/experiment_analysis.md
           - Hypothesis Test: api/hypothesis_test.md
+          - Plotting: api/plotting.md
       - Metrics & Variants:
           - Metric: api/metric.md
           - Variant: api/variant.md

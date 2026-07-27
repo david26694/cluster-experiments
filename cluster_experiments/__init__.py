@@ -35,6 +35,7 @@ from cluster_experiments.perturbator import (
     SegmentedBetaRelativePerturbator,
     UniformPerturbator,
 )
+from cluster_experiments.plotting import plot_experiment_results
 from cluster_experiments.power_analysis import NormalPowerAnalysis, PowerAnalysis
 from cluster_experiments.power_config import PowerConfig
 from cluster_experiments.random_splitter import (
@@ -103,4 +104,5 @@ __all__ = [
     "LiftRegressionTransformer",
     "ConfidenceInterval",
     "InferenceResults",
+    "plot_experiment_results",
 ]
