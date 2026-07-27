@@ -679,7 +679,9 @@ def test_mde_rolling_time_line_relative_not_double_normalized(monkeypatch):
     se_result = StandardErrorResult(
         std_error=0.02, ctrl_mean=0.3, ctrl_var=0.001, treat_var=0.001
     )
-    monkeypatch.setattr(pw, "_get_average_standard_error", lambda **kwargs: se_result)
+    monkeypatch.setattr(
+        pw, "_get_average_standard_error_result", lambda **kwargs: se_result
+    )
 
     dates = pd.date_range("2024-01-01", periods=10)
     df = pd.DataFrame(

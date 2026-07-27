@@ -1095,7 +1095,7 @@ class NormalPowerAnalysis:
             alpha: Significance level.
         """
         alpha = self.alpha if alpha is None else alpha
-        se_result = self._get_average_standard_error(
+        se_result = self._get_average_standard_error_result(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
@@ -1141,18 +1141,41 @@ class NormalPowerAnalysis:
         pre_experiment_df: Optional[pd.DataFrame] = None,
         verbose: bool = False,
         n_simulations: Optional[int] = None,
-    ) -> StandardErrorResult:
+    ) -> float:
         """
-        Gets the average standard error (and, for relative ratio-metric effects,
-        the group statistics) to be used in normal power calculation.
+        Gets the average standard error (float) to be used in normal power
+        calculation.
 
         Args:
             df: Dataframe with outcome and treatment variables.
             pre_experiment_df: Dataframe with pre-experiment data.
             verbose: Whether to show progress bar.
-            average_effects: Average effects to test.
             n_simulations: Number of simulations to run.
-            alpha: Significance level.
+        """
+        return self._get_average_standard_error_result(
+            df=df,
+            pre_experiment_df=pre_experiment_df,
+            verbose=verbose,
+            n_simulations=n_simulations,
+        ).std_error
+
+    def _get_average_standard_error_result(
+        self,
+        df: pd.DataFrame,
+        pre_experiment_df: Optional[pd.DataFrame] = None,
+        verbose: bool = False,
+        n_simulations: Optional[int] = None,
+    ) -> StandardErrorResult:
+        """
+        Gets the average standard error together with the group statistics
+        needed for a relative MDE (for relative ratio-metric effects), to be
+        used in normal power calculation.
+
+        Args:
+            df: Dataframe with outcome and treatment variables.
+            pre_experiment_df: Dataframe with pre-experiment data.
+            verbose: Whether to show progress bar.
+            n_simulations: Number of simulations to run.
         """
         n_simulations = self.n_simulations if n_simulations is None else n_simulations
 
@@ -1189,7 +1212,7 @@ class NormalPowerAnalysis:
             df_time = df_time.loc[
                 df_time[time_col] < experiment_start + pd.Timedelta(days=n_days)
             ]
-            se_result = self._get_average_standard_error(
+            se_result = self._get_average_standard_error_result(
                 df=df_time,
                 pre_experiment_df=pre_experiment_df,
                 verbose=verbose,
@@ -1403,7 +1426,7 @@ class NormalPowerAnalysis:
                     post_process_func
                 )
 
-            se_result = self._get_average_standard_error(
+            se_result = self._get_average_standard_error_result(
                 df=df_grouped,
                 pre_experiment_df=pre_experiment_df,
                 n_simulations=n_simulations,
@@ -1450,7 +1473,7 @@ class NormalPowerAnalysis:
         """
         alpha = self.alpha if alpha is None else alpha
 
-        se_result = self._get_average_standard_error(
+        std_error = self._get_average_standard_error(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
@@ -1459,7 +1482,7 @@ class NormalPowerAnalysis:
 
         return {
             effect: self._normal_power_calculation(
-                alpha=alpha, std_error=se_result.std_error, average_effect=effect
+                alpha=alpha, std_error=std_error, average_effect=effect
             )
             for effect in average_effects
         }
