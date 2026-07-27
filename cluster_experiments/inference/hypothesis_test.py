@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from cluster_experiments.cupac import CupacHandler
+from cluster_experiments.cupac import CupacHandler, MLRateHandler, NoOpHandler
 from cluster_experiments.experiment_analysis import ExperimentAnalysis, InferenceResults
 from cluster_experiments.inference.analysis_results import AnalysisPlanResults
 from cluster_experiments.inference.dimension import DefaultDimension, Dimension
@@ -39,6 +39,7 @@ class HypothesisTest:
         analysis_config: Optional[dict] = None,
         dimensions: Optional[List[Dimension]] = None,
         cupac_config: Optional[dict] = None,
+        ml_option: str = "cupac",
         custom_analysis_type_mapper: Optional[Dict[str, ExperimentAnalysis]] = None,
     ):
         """
@@ -75,15 +76,20 @@ class HypothesisTest:
         self.analysis_type_mapper = self.custom_analysis_type_mapper or analysis_mapping
         self.analysis_class = self.analysis_type_mapper[self.analysis_type]
         self.is_cupac = bool(cupac_config)
-        self.cupac_handler = (
-            CupacHandler(**self.cupac_config) if self.is_cupac else None
-        )
-        self.cupac_covariate_col = (
-            self.cupac_handler.cupac_outcome_name if self.is_cupac else None
-        )
+        self.ml_handler = self._build_ml_handler(cupac_config, ml_option)
+        self.cupac_handler = self.ml_handler  # backward-compat alias
+        self.cupac_covariate_col = self.ml_handler.cupac_outcome_name
 
         self.new_analysis_config = None
         self.experiment_analysis = None
+
+    @staticmethod
+    def _build_ml_handler(cupac_config: Optional[dict], ml_option: str):
+        if not cupac_config:
+            return NoOpHandler()
+        if ml_option == "mlrate":
+            return MLRateHandler(**cupac_config)
+        return CupacHandler(**cupac_config)
 
     def __repr__(self) -> str:
         """
@@ -303,14 +309,11 @@ class HypothesisTest:
         self, exp_data: pd.DataFrame, pre_exp_data: pd.DataFrame
     ) -> pd.DataFrame:
         """
-        If the test is a cupac test, adds the covariates to the experimental data.
+        Adds covariates to the experimental data via the configured handler.
         """
-        if self.is_cupac:
-            exp_data = self.cupac_handler.add_covariates(
-                df=exp_data, pre_experiment_df=pre_exp_data
-            )
-
-        return exp_data
+        return self.ml_handler.add_covariates(
+            df=exp_data, pre_experiment_df=pre_exp_data
+        )
 
     def get_test_results(
         self,
@@ -415,5 +418,6 @@ class HypothesisTest:
             analysis_config=config.get("analysis_config"),
             dimensions=dimensions,
             cupac_config=config.get("cupac_config"),
+            ml_option=config.get("ml_option", "cupac"),
             custom_analysis_type_mapper=config.get("custom_analysis_type_mapper"),
         )
