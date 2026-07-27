@@ -1869,10 +1869,21 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         return ctrl_mean, ctrl_var, treat_mean, treat_var
 
-    def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
+    def _compute_delta_effect(
+        self, df: pd.DataFrame
+    ) -> tuple[float, float, float, float, float]:
         """
-        Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
-        Variance reduction is used if covariates are given.
+        Computes the delta-method point estimate and standard error of the ratio
+        metric together with the control/treatment group statistics.
+
+        When ``relative_effect`` is True the point estimate and standard error
+        are the relative (percent-lift) versions produced by
+        :class:`DeltaMethodLiftTransformer`; otherwise they are the absolute
+        mean difference and its standard error. The control/treatment ratio
+        statistics are always returned so callers can build a relative MDE.
+
+        Returns:
+            ``(point_estimate, standard_error, ctrl_mean, ctrl_var, treat_var)``.
         """
         ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_statistics(df)
 
@@ -1887,12 +1898,20 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
                 ctrl_mean=ctrl_mean,
                 ctrl_var=ctrl_var,
             )
-            return (
-                transformer.params[self.treatment_col],
-                transformer.bse[self.treatment_col],
-            )
+            point_estimate = transformer.params[self.treatment_col]
+            standard_error = transformer.bse[self.treatment_col]
+        else:
+            point_estimate = mean_diff
 
-        return mean_diff, standard_error
+        return point_estimate, standard_error, ctrl_mean, ctrl_var, treat_var
+
+    def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
+        """
+        Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
+        Variance reduction is used if covariates are given.
+        """
+        point_estimate, standard_error, _, _, _ = self._compute_delta_effect(df)
+        return point_estimate, standard_error
 
     def analysis_standard_error_with_stats(
         self, df: pd.DataFrame, verbose: bool = False
@@ -1911,21 +1930,13 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df: dataframe containing the data to analyze.
             verbose (Optional): unused, kept for signature compatibility.
         """
-        ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_statistics(df)
-
-        mean_diff = treat_mean - ctrl_mean
-        standard_error = np.sqrt(treat_var + ctrl_var)
+        _, standard_error, ctrl_mean, ctrl_var, treat_var = self._compute_delta_effect(
+            df
+        )
 
         if self.relative_effect:
-            transformer = DeltaMethodLiftTransformer(self.treatment_col)
-            transformer.fit(
-                mean_diff=mean_diff,
-                std_error=standard_error,
-                ctrl_mean=ctrl_mean,
-                ctrl_var=ctrl_var,
-            )
             return StandardErrorResult(
-                std_error=transformer.bse[self.treatment_col],
+                std_error=standard_error,
                 ctrl_mean=ctrl_mean,
                 ctrl_var=ctrl_var,
                 treat_var=treat_var,

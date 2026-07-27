@@ -4,6 +4,7 @@ from typing import Callable, Dict, Generator, Iterable, List, Literal, Optional,
 
 import numpy as np
 import pandas as pd
+from scipy.optimize import brentq
 from scipy.stats import norm
 from sklearn.base import BaseEstimator
 from tqdm import tqdm
@@ -908,7 +909,7 @@ class NormalPowerAnalysis:
     ) -> float:
         """
         Minimum detectable relative lift for a ratio metric, solving the
-        double-delta quadratic power equation.
+        double-delta power equation numerically.
 
         **Derivation**
 
@@ -922,26 +923,25 @@ class NormalPowerAnalysis:
 
             SE_rel(m)**2 = se2_t + se2_c * (1 + m)**2
 
-        For a Wald test at level ``alpha``, the power condition (SE evaluated at
-        the true effect, not at zero) is::
+        For a Wald test at level ``alpha``, the power condition (the alpha term
+        uses the SE at the null, the beta term the SE at the true effect) is::
 
-            m - z_alpha * SE_rel(0) = z_beta * SE_rel(m)
+            |m| - z_alpha * SE_rel(0) = z_beta * SE_rel(m)
 
-        where ``SE_rel(0) = sqrt(se2_t + se2_c)``. Squaring both sides and
-        substituting ``SE_rel(m)**2`` yields the quadratic ``A*m**2 + B*m + C = 0``::
-
-            A  = 1 - z_beta**2 * se2_c
-            B  = -2 * (z_alpha * sqrt(v0) + z_beta**2 * se2_c)
-            C  = (z_alpha * sqrt(v0))**2 - z_beta**2 * v0
-            v0 = se2_t + se2_c
-
-        The smallest positive root is the relative MDE. Unlike the linear normal
+        where ``SE_rel(0) = sqrt(se2_t + se2_c)``. Unlike the linear normal
         approximation, this accounts for the SE growing with the effect size
         because the denominator of the ratio is itself a random variable.
 
+        The equation is solved directly with a numerical root-finder on the
+        original (unsquared) form. This avoids the sign/root-selection pitfalls
+        of squaring to a quadratic: the ``SE_rel(m)`` term is *not* symmetric
+        under ``m -> -m`` (it depends on ``(1 + m)**2``), so the "less"
+        alternative is solved on its own bracket rather than by negating the
+        "greater" root. When no root exists (the noise is too large for any
+        effect to reach the target power) a ``ValueError`` is raised.
+
         One- vs two-sided tests only change the critical value ``z_alpha``
-        (``ppf(1 - alpha)`` vs ``ppf(1 - alpha/2)``); a "less" alternative
-        returns the negative root.
+        (``ppf(1 - alpha)`` vs ``ppf(1 - alpha/2)``).
 
         Reference: Deng, A. & Shi, X. (2016). "Data-Driven Metric Development for
         Online Controlled Experiments." KDD 2016. The outer-delta variance
@@ -960,13 +960,13 @@ class NormalPowerAnalysis:
         hypothesis = HypothesisEntries(self.analysis.hypothesis)
         if hypothesis == HypothesisEntries.TWO_SIDED:
             z_alpha = norm.ppf(1 - alpha / 2)
-            sign = 1.0
+            search_positive = True
         elif hypothesis == HypothesisEntries.GREATER:
             z_alpha = norm.ppf(1 - alpha)
-            sign = 1.0
+            search_positive = True
         elif hypothesis == HypothesisEntries.LESS:
             z_alpha = norm.ppf(1 - alpha)
-            sign = -1.0
+            search_positive = False
         else:
             raise ValueError(
                 f"{self.analysis.hypothesis} is not a valid HypothesisEntries"
@@ -977,30 +977,48 @@ class NormalPowerAnalysis:
         se2_c = ctrl_var / (r_c**2)
         se2_t = treat_var / (r_c**2)
 
-        v0 = se2_t + se2_c
-        c = z_alpha * np.sqrt(v0)
+        se_rel_0 = np.sqrt(se2_t + se2_c)
 
-        a = 1 - (z_beta**2) * se2_c
-        b = -2 * (c + (z_beta**2) * se2_c)
-        c_term = c**2 - (z_beta**2) * v0
+        def power_gap(m: float) -> float:
+            """Root at the MDE: positive once ``|m|`` is large enough to detect."""
+            se_rel_m = np.sqrt(se2_t + se2_c * (1 + m) ** 2)
+            return abs(m) - z_alpha * se_rel_0 - z_beta * se_rel_m
 
-        if a == 0:
-            raise ValueError(
-                "_relative_mde_calculation: degenerate quadratic (A = 0). "
-                "This occurs when z_beta^2 * ctrl_var / ctrl_mean^2 = 1, "
-                "i.e. the control SE already equals 1/z_beta. "
-                "Reduce ctrl_var or use a smaller power target."
-            )
-        discriminant = b**2 - 4 * a * c_term
-        if discriminant < 0:
-            raise ValueError(
-                "_relative_mde_calculation: no finite MDE exists for the given "
-                "inputs. The power constraint cannot be satisfied — the noise is "
-                "too large relative to any detectable effect. Increase sample "
-                "size or relax the power / alpha requirements."
-            )
-        m = (-b + np.sqrt(discriminant)) / (2 * a)
-        return float(sign * m)
+        return self._solve_power_gap(power_gap, search_positive=search_positive)
+
+    @staticmethod
+    def _solve_power_gap(
+        power_gap: Callable[[float], float], search_positive: bool
+    ) -> float:
+        """
+        Finds the smallest-magnitude root of ``power_gap`` on the requested side.
+
+        ``power_gap`` is negative at ``m = 0`` (no effect is undetectable) and
+        must cross zero at the MDE. The bracket is expanded geometrically until a
+        sign change is found; if the gap never turns positive within a wide range
+        the power constraint is unsatisfiable and a ``ValueError`` is raised.
+        """
+        direction = 1.0 if search_positive else -1.0
+        lo = 0.0
+        step = 1e-4
+        max_magnitude = 1e6
+
+        gap_lo = power_gap(lo)
+        hi = direction * step
+        while abs(hi) <= max_magnitude:
+            gap_hi = power_gap(hi)
+            if np.sign(gap_hi) != np.sign(gap_lo):
+                left, right = sorted((lo, hi))
+                root = brentq(power_gap, left, right)
+                return float(root)
+            lo, gap_lo = hi, gap_hi
+            hi = direction * abs(hi) * 2
+        raise ValueError(
+            "_relative_mde_calculation: no finite MDE exists for the given "
+            "inputs. The power constraint cannot be satisfied — the noise is "
+            "too large relative to any detectable effect. Increase sample "
+            "size or relax the power / alpha requirements."
+        )
 
     def _mde_from_standard_error(
         self, se_result: StandardErrorResult, alpha: float, power: float
@@ -1394,7 +1412,11 @@ class NormalPowerAnalysis:
             for power in powers:
                 mde_value = self._mde_from_standard_error(se_result, alpha, power)
 
-                relative_mde = mde_value / abs(df_grouped[self.target_col].mean())
+                if se_result.has_relative_mde_stats:
+                    # `mde_value` is already a relative lift; do not normalise again.
+                    relative_mde = mde_value
+                else:
+                    relative_mde = mde_value / abs(df_grouped[self.target_col].mean())
 
                 results.append(
                     {

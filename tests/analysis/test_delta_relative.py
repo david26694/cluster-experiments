@@ -225,15 +225,10 @@ def test_transformer_zero_ctrl_mean_raises():
         )
 
 
-def test_relative_mde_invalid_power_equation_raises(monkeypatch):
-    """relative MDE raises when the quadratic power equation becomes degenerate (A == 0)."""
+def test_relative_mde_invalid_power_equation_raises():
+    """relative MDE raises when the noise is too large for any effect to reach
+    the target power (the power gap never crosses zero)."""
     from cluster_experiments.random_splitter import ClusteredSplitter
-
-    def mock_ppf(q):
-        # z_alpha for q=0.975 and z_beta for q=0.8
-        return 1.96 if q > 0.9 else 2.0
-
-    monkeypatch.setattr("cluster_experiments.power_analysis.norm.ppf", mock_ppf)
 
     pw = NormalPowerAnalysis(
         analysis=DeltaMethodAnalysis(
@@ -244,13 +239,15 @@ def test_relative_mde_invalid_power_equation_raises(monkeypatch):
         ),
         splitter=ClusteredSplitter(cluster_cols=["user"]),
     )
-    with pytest.raises(ValueError, match="degenerate quadratic"):
+    # ctrl_var / ctrl_mean**2 = 2 > 1 / z_beta**2, so SE_rel grows faster than the
+    # effect and no finite MDE satisfies the power constraint.
+    with pytest.raises(ValueError, match="no finite MDE"):
         pw._relative_mde_calculation(
             alpha=0.05,
             power=0.8,
             ctrl_mean=1.0,
-            ctrl_var=0.25,
-            treat_var=0.25,
+            ctrl_var=2.0,
+            treat_var=2.0,
         )
 
 
@@ -485,9 +482,9 @@ def test_relative_mde_lower_than_naive_mde():
     assert mde == pytest.approx(naive_mde, rel=0.10)
 
 
-def test_relative_mde_quadratic_geq_linear():
-    """The quadratic relative MDE is always >= the linear approximation, since
-    the SE grows with the effect size."""
+def test_relative_mde_geq_linear():
+    """The relative MDE is always >= the linear approximation, since the SE
+    grows with the effect size."""
     from scipy.stats import norm
 
     alpha = 0.05
@@ -498,7 +495,7 @@ def test_relative_mde_quadratic_geq_linear():
     treat_var = 0.01
 
     pw = _make_relative_delta_power()
-    quad_mde = pw._relative_mde_calculation(
+    relative_mde = pw._relative_mde_calculation(
         alpha=alpha,
         power=power,
         ctrl_mean=ctrl_mean,
@@ -510,14 +507,68 @@ def test_relative_mde_quadratic_geq_linear():
     z_beta = norm.ppf(power)
     linear_mde = (z_alpha + z_beta) * np.sqrt(treat_var + ctrl_var) / ctrl_mean
 
-    assert quad_mde >= linear_mde
+    assert relative_mde >= linear_mde
 
 
-def test_relative_mde_one_sided():
-    """One-sided 'greater' returns a positive MDE, 'less' returns its negative."""
-    kwargs = dict(
-        alpha=0.05, power=0.8, ctrl_mean=0.30, ctrl_var=0.001, treat_var=0.001
+def _achieved_power(
+    m: float,
+    alpha: float,
+    ctrl_mean: float,
+    ctrl_var: float,
+    treat_var: float,
+    hypothesis: str,
+) -> float:
+    """
+    Independent reference: the power actually achieved at relative effect ``m``.
+
+    Derived directly from the Wald-test definition (not from the solver's
+    internals), so it catches wrong-root selection and wrong one-sided handling:
+    ``power = Phi((|m| - z_alpha * SE_rel(0)) / SE_rel(m))``.
+    """
+    from scipy.stats import norm
+
+    se2_c = ctrl_var / ctrl_mean**2
+    se2_t = treat_var / ctrl_mean**2
+    se_rel_0 = np.sqrt(se2_t + se2_c)
+    se_rel_m = np.sqrt(se2_t + se2_c * (1 + m) ** 2)
+    z_alpha = (
+        norm.ppf(1 - alpha / 2) if hypothesis == "two-sided" else norm.ppf(1 - alpha)
     )
+    return float(norm.cdf((abs(m) - z_alpha * se_rel_0) / se_rel_m))
+
+
+@pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
+def test_relative_mde_recovers_target_power(hypothesis):
+    """The returned MDE must reproduce the requested power under the independent
+    Wald-test definition, for every alternative."""
+    alpha = 0.05
+    power = 0.8
+    ctrl_mean = 1.0
+    # Non-trivial variance so the effect-dependent SE term matters.
+    ctrl_var = 0.05
+    treat_var = 0.05
+
+    mde = _make_relative_delta_power(hypothesis)._relative_mde_calculation(
+        alpha=alpha,
+        power=power,
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
+        treat_var=treat_var,
+    )
+
+    if hypothesis == "less":
+        assert mde < 0
+    else:
+        assert mde > 0
+
+    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, hypothesis)
+    assert achieved == pytest.approx(power, abs=1e-6)
+
+
+def test_relative_mde_one_sided_is_asymmetric():
+    """Because SE_rel(m) depends on (1 + m)**2, the 'less' MDE is NOT the
+    negative of the 'greater' MDE when the control variance is non-negligible."""
+    kwargs = dict(alpha=0.05, power=0.8, ctrl_mean=1.0, ctrl_var=0.05, treat_var=0.05)
     mde_greater = _make_relative_delta_power("greater")._relative_mde_calculation(
         **kwargs
     )
@@ -525,7 +576,32 @@ def test_relative_mde_one_sided():
 
     assert mde_greater > 0
     assert mde_less < 0
-    assert mde_greater == pytest.approx(-mde_less, rel=1e-9)
+    # The magnitudes genuinely differ (the naive `-mde_greater` shortcut is wrong).
+    assert abs(mde_greater) != pytest.approx(abs(mde_less), rel=1e-3)
+
+
+def test_relative_mde_high_cv_regime():
+    """In a high control-CV regime (where the old quadratic's leading coefficient
+    went negative) the solver still returns a valid, power-recovering MDE."""
+    alpha = 0.05
+    power = 0.8
+    ctrl_mean = 1.0
+    # ctrl_var / ctrl_mean**2 = 0.8: below the 1/z_beta**2 no-solution threshold
+    # but large enough that the naive quadratic picked the wrong root.
+    ctrl_var = 0.8
+    treat_var = 0.8
+
+    mde = _make_relative_delta_power()._relative_mde_calculation(
+        alpha=alpha,
+        power=power,
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
+        treat_var=treat_var,
+    )
+
+    assert mde > 0
+    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, "two-sided")
+    assert achieved == pytest.approx(power, abs=1e-6)
 
 
 # ---------------------------------------------------------------------------
@@ -578,6 +654,54 @@ def test_normal_power_analysis_delta_relative(ratio_df):
     mde = pw.mde(df_no_treatment, power=0.8, n_simulations=5)
     assert mde > 0
     assert np.isfinite(mde)
+
+
+def test_mde_rolling_time_line_relative_not_double_normalized(monkeypatch):
+    """Bug guard: when the analysis reports a relative effect, mde_rolling_time_line
+    must NOT divide the already-relative MDE by the target mean again."""
+    from cluster_experiments.experiment_analysis import StandardErrorResult
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
+    pw = NormalPowerAnalysis(
+        analysis=DeltaMethodAnalysis(
+            cluster_cols=["user"],
+            scale_col="scale",
+            target_col="target",
+            relative_effect=True,
+        ),
+        splitter=ClusteredSplitter(cluster_cols=["user"]),
+        time_col="date",
+    )
+
+    # Return group stats so has_relative_mde_stats is True and the relative
+    # branch runs; the mean of the aggregated target is far from 1 so a second
+    # normalisation would be clearly visible.
+    se_result = StandardErrorResult(
+        std_error=0.02, ctrl_mean=0.3, ctrl_var=0.001, treat_var=0.001
+    )
+    monkeypatch.setattr(pw, "_get_average_standard_error", lambda **kwargs: se_result)
+
+    dates = pd.date_range("2024-01-01", periods=10)
+    df = pd.DataFrame(
+        {
+            "user": np.repeat(np.arange(20), 10),
+            "date": np.tile(dates, 20),
+            "target": np.random.default_rng(0).normal(5, 1, size=200),
+        }
+    )
+
+    results = pw.mde_rolling_time_line(
+        df=df,
+        powers=[0.8],
+        experiment_length=[5, 10],
+        n_simulations=3,
+        agg_func="sum",
+    )
+
+    assert results
+    for row in results:
+        # relative_mde must equal the (already relative) mde, not mde / mean.
+        assert row["relative_mde"] == pytest.approx(row["mde"])
 
 
 # ---------------------------------------------------------------------------
