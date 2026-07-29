@@ -25,6 +25,7 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.stats import norm
 
 from cluster_experiments import (
     AnalysisPlan,
@@ -565,6 +566,90 @@ def test_relative_mde_recovers_target_power(hypothesis):
     assert achieved == pytest.approx(power, abs=1e-6)
 
 
+@pytest.mark.parametrize("hypothesis", ["greater", "less"])
+def test_relative_mde_recovers_low_target_power(hypothesis):
+    """A target power below 0.5 uses the opposite quadratic-root filter."""
+    alpha = 0.05
+    power = 0.3
+    ctrl_mean = 1.0
+    ctrl_var = 0.01
+    treat_var = 0.01
+
+    mde = _make_relative_delta_power(hypothesis)._relative_mde_calculation(
+        alpha=alpha,
+        power=power,
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
+        treat_var=treat_var,
+    )
+
+    if hypothesis == "less":
+        assert mde < 0
+    else:
+        assert mde > 0
+
+    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, hypothesis)
+    assert achieved == pytest.approx(power, abs=1e-6)
+
+
+@pytest.mark.parametrize("hypothesis", ["greater", "less"])
+def test_relative_mde_allows_zero_at_null_power(hypothesis):
+    """At one-sided null power, zero is the valid minimum effect."""
+    alpha = power = 0.05
+    ctrl_mean = 1.0
+    ctrl_var = 0.01
+    treat_var = 0.01
+
+    mde = _make_relative_delta_power(hypothesis)._relative_mde_calculation(
+        alpha=alpha,
+        power=power,
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
+        treat_var=treat_var,
+    )
+
+    assert mde == pytest.approx(0.0, abs=1e-12)
+    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, hypothesis)
+    assert achieved == pytest.approx(power, abs=1e-6)
+
+
+def test_relative_mde_power_half_returns_critical_boundary():
+    """At 50% power, the valid quadratic root is exactly c."""
+    from scipy.stats import norm
+
+    alpha = 0.05
+    power = 0.5
+    ctrl_mean = 1.0
+    ctrl_var = 0.01
+    treat_var = 0.01
+
+    mde = _make_relative_delta_power("greater")._relative_mde_calculation(
+        alpha=alpha,
+        power=power,
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
+        treat_var=treat_var,
+    )
+
+    expected_boundary = norm.ppf(1 - alpha) * np.sqrt(ctrl_var + treat_var)
+    assert mde == pytest.approx(expected_boundary)
+    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, "greater")
+    assert achieved == pytest.approx(power, abs=1e-6)
+
+
+def test_relative_mde_allows_zero_variance():
+    """A deterministic ratio metric has a zero MDE instead of no solution."""
+    mde = _make_relative_delta_power("greater")._relative_mde_calculation(
+        alpha=0.05,
+        power=0.8,
+        ctrl_mean=1.0,
+        ctrl_var=0.0,
+        treat_var=0.0,
+    )
+
+    assert mde == pytest.approx(0.0, abs=1e-12)
+
+
 def test_relative_mde_one_sided_is_asymmetric():
     """Because SE_rel(m) depends on (1 + m)**2, the 'less' MDE is NOT the
     negative of the 'greater' MDE when the control variance is non-negligible."""
@@ -581,8 +666,7 @@ def test_relative_mde_one_sided_is_asymmetric():
 
 
 def test_relative_mde_high_cv_regime():
-    """In a high control-CV regime (where the old quadratic's leading coefficient
-    went negative) the solver still returns a valid, power-recovering MDE."""
+    """A high control-CV regime still returns a power-recovering MDE."""
     alpha = 0.05
     power = 0.8
     ctrl_mean = 1.0
@@ -602,6 +686,62 @@ def test_relative_mde_high_cv_regime():
     assert mde > 0
     achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, "two-sided")
     assert achieved == pytest.approx(power, abs=1e-6)
+
+
+def test_relative_mde_negative_leading_coefficient_recovers_power():
+    """A valid 'less' MDE is retained even when the quadratic A coefficient is negative."""
+    alpha = 0.05
+    power = 0.3
+    ctrl_mean = 1.0
+    ctrl_var = 5.0
+    treat_var = 0.0
+
+    mde = _make_relative_delta_power("less")._relative_mde_calculation(
+        alpha=alpha,
+        power=power,
+        ctrl_mean=ctrl_mean,
+        ctrl_var=ctrl_var,
+        treat_var=treat_var,
+    )
+
+    assert 1 - norm.ppf(power) ** 2 * ctrl_var < 0
+    assert mde < 0
+    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, "less")
+    assert achieved == pytest.approx(power, abs=1e-6)
+
+
+def test_relative_mde_linear_quadratic_degeneracy(monkeypatch):
+    """An exact A == 0 quadratic reduces to its valid linear root."""
+    monkeypatch.setattr(
+        "cluster_experiments.power_analysis.norm.ppf",
+        lambda quantile: 1.0 if quantile > 0.9 else 2.0,
+    )
+
+    mde = _make_relative_delta_power("less")._relative_mde_calculation(
+        alpha=0.05,
+        power=0.8,
+        ctrl_mean=1.0,
+        ctrl_var=0.25,
+        treat_var=0.0,
+    )
+
+    assert mde == pytest.approx(-0.75)
+
+
+def test_relative_mde_identity_degeneracy_raises(monkeypatch):
+    """An identity quadratic has no unique MDE to report."""
+    monkeypatch.setattr(
+        "cluster_experiments.power_analysis.norm.ppf", lambda quantile: 2.0
+    )
+
+    with pytest.raises(ValueError, match="degenerate relative-MDE equation"):
+        _make_relative_delta_power("less")._relative_mde_calculation(
+            alpha=0.05,
+            power=0.8,
+            ctrl_mean=1.0,
+            ctrl_var=0.25,
+            treat_var=0.0,
+        )
 
 
 # ---------------------------------------------------------------------------

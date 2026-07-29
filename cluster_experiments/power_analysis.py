@@ -4,7 +4,6 @@ from typing import Callable, Dict, Generator, Iterable, List, Literal, Optional,
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import brentq
 from scipy.stats import norm
 from sklearn.base import BaseEstimator
 from tqdm import tqdm
@@ -925,7 +924,7 @@ class NormalPowerAnalysis:
     ) -> float:
         """
         Minimum detectable relative lift for a ratio metric, solving the
-        double-delta power equation numerically.
+        closed-form double-delta quadratic power equation.
 
         **Derivation**
 
@@ -948,13 +947,13 @@ class NormalPowerAnalysis:
         approximation, this accounts for the SE growing with the effect size
         because the denominator of the ratio is itself a random variable.
 
-        The equation is solved directly with a numerical root-finder on the
-        original (unsquared) form. This avoids the sign/root-selection pitfalls
-        of squaring to a quadratic: the ``SE_rel(m)`` term is *not* symmetric
-        under ``m -> -m`` (it depends on ``(1 + m)**2``), so the "less"
-        alternative is solved on its own bracket rather than by negating the
-        "greater" root. When no root exists (the noise is too large for any
-        effect to reach the target power) a ``ValueError`` is raised.
+        Squaring the equation gives a quadratic in the positive effect
+        magnitude. For ``greater`` and ``two-sided`` tests its linear
+        coefficient is ``-2 * (c + z_beta**2 * se2_c)``; for ``less`` it is
+        ``-2 * (c - z_beta**2 * se2_c)`` because ``SE_rel(-m)`` contains
+        ``(1 - m)**2``. Squaring also loses the sign condition of the original
+        equation, so candidate roots are kept only on the side of ``c``
+        implied by the sign of ``z_beta``.
 
         One- vs two-sided tests only change the critical value ``z_alpha``
         (``ppf(1 - alpha)`` vs ``ppf(1 - alpha/2)``).
@@ -976,13 +975,13 @@ class NormalPowerAnalysis:
         hypothesis = HypothesisEntries(self.analysis.hypothesis)
         if hypothesis == HypothesisEntries.TWO_SIDED:
             z_alpha = norm.ppf(1 - alpha / 2)
-            search_positive = True
+            want_negative = False
         elif hypothesis == HypothesisEntries.GREATER:
             z_alpha = norm.ppf(1 - alpha)
-            search_positive = True
+            want_negative = False
         elif hypothesis == HypothesisEntries.LESS:
             z_alpha = norm.ppf(1 - alpha)
-            search_positive = False
+            want_negative = True
         else:
             raise ValueError(
                 f"{self.analysis.hypothesis} is not a valid HypothesisEntries"
@@ -993,48 +992,69 @@ class NormalPowerAnalysis:
         se2_c = ctrl_var / (r_c**2)
         se2_t = treat_var / (r_c**2)
 
-        se_rel_0 = np.sqrt(se2_t + se2_c)
+        v0 = se2_t + se2_c
+        c = z_alpha * np.sqrt(v0)
+        a = 1 - (z_beta**2) * se2_c
+        b = -2 * (c - (z_beta**2) * se2_c if want_negative else c + (z_beta**2) * se2_c)
+        c_term = c**2 - (z_beta**2) * v0
 
-        def power_gap(m: float) -> float:
-            """Root at the MDE: positive once ``|m|`` is large enough to detect."""
-            se_rel_m = np.sqrt(se2_t + se2_c * (1 + m) ** 2)
-            return abs(m) - z_alpha * se_rel_0 - z_beta * se_rel_m
-
-        return self._solve_power_gap(power_gap, search_positive=search_positive)
-
-    @staticmethod
-    def _solve_power_gap(
-        power_gap: Callable[[float], float], search_positive: bool
-    ) -> float:
-        """
-        Finds the smallest-magnitude root of ``power_gap`` on the requested side.
-
-        ``power_gap`` is negative at ``m = 0`` (no effect is undetectable) and
-        must cross zero at the MDE. The bracket is expanded geometrically until a
-        sign change is found; if the gap never turns positive within a wide range
-        the power constraint is unsatisfiable and a ``ValueError`` is raised.
-        """
-        direction = 1.0 if search_positive else -1.0
-        lo = 0.0
-        step = 1e-4
-        max_magnitude = 1e6
-
-        gap_lo = power_gap(lo)
-        hi = direction * step
-        while abs(hi) <= max_magnitude:
-            gap_hi = power_gap(hi)
-            if np.sign(gap_hi) != np.sign(gap_lo):
-                left, right = sorted((lo, hi))
-                root = brentq(power_gap, left, right)
-                return float(root)
-            lo, gap_lo = hi, gap_hi
-            hi = direction * abs(hi) * 2
-        raise ValueError(
+        no_mde_message = (
             "_relative_mde_calculation: no finite MDE exists for the given "
             "inputs. The power constraint cannot be satisfied — the noise is "
             "too large relative to any detectable effect. Increase sample "
             "size or relax the power / alpha requirements."
         )
+        coefficient_scale = max(1.0, abs(a), abs(b), abs(c_term))
+        coefficient_tolerance = 16 * np.finfo(float).eps * coefficient_scale
+
+        if abs(a) <= coefficient_tolerance:
+            if abs(b) <= coefficient_tolerance:
+                if abs(c_term) <= coefficient_tolerance:
+                    raise ValueError(
+                        "_relative_mde_calculation: degenerate relative-MDE "
+                        "equation; MDE is undefined."
+                    )
+                raise ValueError(no_mde_message)
+            roots = [-c_term / b]
+        else:
+            discriminant = b**2 - 4 * a * c_term
+            discriminant_scale = max(1.0, b**2, abs(4 * a * c_term))
+            discriminant_tolerance = 16 * np.finfo(float).eps * discriminant_scale
+            if discriminant < -discriminant_tolerance:
+                raise ValueError(no_mde_message)
+
+            sqrt_discriminant = np.sqrt(max(discriminant, 0.0))
+            root_product = -0.5 * (b + np.copysign(sqrt_discriminant, b))
+            if root_product == 0:
+                roots = [-b / (2 * a)]
+            else:
+                roots = [root_product / a, c_term / root_product]
+
+        valid_roots = []
+        for root in roots:
+            if not np.isfinite(root):
+                continue
+
+            root_tolerance = 16 * np.finfo(float).eps * max(1.0, abs(root), abs(c))
+            if abs(root) <= root_tolerance:
+                root = 0.0
+            if abs(root - c) <= root_tolerance:
+                root = c
+            if root < 0:
+                continue
+            if z_beta > 0 and root < c:
+                continue
+            if z_beta < 0 and root > c:
+                continue
+            if z_beta == 0 and root != c:
+                continue
+            valid_roots.append(float(root))
+
+        if not valid_roots:
+            raise ValueError(no_mde_message)
+
+        magnitude = min(valid_roots)
+        return float(-magnitude if want_negative else magnitude)
 
     def _mde_from_standard_error(
         self, se_result: StandardErrorResult, alpha: float, power: float
