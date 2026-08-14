@@ -33,6 +33,7 @@ from cluster_experiments import (
     DeltaMethodLiftTransformer,
     NormalPowerAnalysis,
     PowerAnalysis,
+    StandardErrorCurve,
 )
 
 # ---------------------------------------------------------------------------
@@ -205,51 +206,42 @@ def test_transformer_conf_int_consistent_with_pvalue(ratio_df):
 
 
 def test_transformer_zero_ctrl_mean_raises():
-    """lift_and_se and the relative MDE raise when ctrl_mean == 0."""
-    from cluster_experiments.random_splitter import ClusteredSplitter
+    """A zero control mean is rejected where the lift is computed.
 
+    The guard lives in the transformer rather than in the MDE solver: with
+    ctrl_mean == 0 no standard error curve can be built in the first place, so
+    the solver never sees the degenerate input.
+    """
     with pytest.raises(ValueError, match="ctrl_mean must be non-zero"):
         DeltaMethodLiftTransformer.lift_and_se(0.1, 0.01, 0.0, 0.001)
 
-    pw = NormalPowerAnalysis(
-        analysis=DeltaMethodAnalysis(
-            cluster_cols=["user"],
-            scale_col="scale",
-            target_col="target",
-            relative_effect=True,
-        ),
-        splitter=ClusteredSplitter(cluster_cols=["user"]),
-    )
     with pytest.raises(ValueError, match="ctrl_mean must be non-zero"):
-        pw._relative_mde_calculation(
-            alpha=0.05, power=0.8, ctrl_mean=0.0, ctrl_var=0.001, treat_var=0.001
+        DeltaMethodLiftTransformer("treatment").fit(
+            mean_diff=0.1, std_error=0.1, ctrl_mean=0.0, ctrl_var=0.001
         )
 
 
-def test_relative_mde_invalid_power_equation_raises():
-    """relative MDE raises when the noise is too large for any effect to reach
-    the target power (the power gap never crosses zero)."""
-    from cluster_experiments.random_splitter import ClusteredSplitter
+def test_relative_mde_above_power_ceiling_raises():
+    """
+    No finite MDE exists once the baseline is too noisy.
 
-    pw = NormalPowerAnalysis(
-        analysis=DeltaMethodAnalysis(
-            cluster_cols=["user"],
-            scale_col="scale",
-            target_col="target",
-            relative_effect=True,
-        ),
-        splitter=ClusteredSplitter(cluster_cols=["user"]),
-    )
-    # ctrl_var / ctrl_mean**2 = 2 > 1 / z_beta**2, so SE_rel grows faster than the
-    # effect and no finite MDE satisfies the power constraint.
-    with pytest.raises(ValueError, match="no finite MDE"):
-        pw._relative_mde_calculation(
-            alpha=0.05,
-            power=0.8,
-            ctrl_mean=1.0,
-            ctrl_var=2.0,
-            treat_var=2.0,
-        )
+    SE(m) grows linearly in m, so the z-statistic saturates at
+    1 / sqrt(effect_var) and power can never exceed Phi(1 / sqrt(effect_var)) in
+    the correct direction, whatever the effect size.
+    """
+    pw = _make_relative_delta_power()
+
+    # effect_var = ctrl_var / ctrl_mean**2 = 2, so the ceiling is Phi(1/sqrt(2))
+    # = 0.760, below the requested 0.8.
+    ceiling = norm.cdf(1 / np.sqrt(2.0))
+    assert ceiling < 0.8
+
+    with pytest.raises(ValueError, match="No finite minimum detectable effect"):
+        pw._mde_from_curve(_delta_curve(1.0, 2.0, 2.0), 0.05, 0.8)
+
+    # Just below the ceiling a finite MDE does exist.
+    mde = pw._mde_from_curve(_delta_curve(1.0, 2.0, 2.0), 0.05, ceiling - 0.01)
+    assert np.isfinite(mde) and mde > 0
 
 
 def test_static_lift_and_se_matches_fit():
@@ -429,8 +421,27 @@ def test_delta_relative_with_covariates_se_greater_than_naive(ratio_df_covariate
 
 
 # ---------------------------------------------------------------------------
-# Power / MDE – NormalPowerAnalysis._relative_mde_calculation
+# Power / MDE – NormalPowerAnalysis._mde_from_curve
 # ---------------------------------------------------------------------------
+
+
+def _delta_curve(
+    ctrl_mean: float, ctrl_var: float, treat_var: float
+) -> StandardErrorCurve:
+    """
+    Standard error curve of the relative lift, built from delta-method group
+    statistics.
+
+    Spelled out here rather than taken from the production code so the MDE tests
+    below check the solver against an independently written curve. The arms are
+    independent, hence ``effect_cov == -effect_var``.
+    """
+    effect_var = ctrl_var / ctrl_mean**2
+    return StandardErrorCurve(
+        std_error=np.sqrt(treat_var + ctrl_var) / abs(ctrl_mean),
+        effect_var=effect_var,
+        effect_cov=-effect_var,
+    )
 
 
 def _make_relative_delta_power(hypothesis: str = "two-sided") -> NormalPowerAnalysis:
@@ -464,12 +475,10 @@ def test_relative_mde_lower_than_naive_mde():
     treat_var = 0.0001
 
     pw = _make_relative_delta_power()
-    mde = pw._relative_mde_calculation(
-        alpha=alpha,
-        power=power,
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-        treat_var=treat_var,
+    mde = pw._mde_from_curve(
+        _delta_curve(ctrl_mean, ctrl_var, treat_var),
+        alpha,
+        power,
     )
 
     assert mde > 0
@@ -496,12 +505,10 @@ def test_relative_mde_geq_linear():
     treat_var = 0.01
 
     pw = _make_relative_delta_power()
-    relative_mde = pw._relative_mde_calculation(
-        alpha=alpha,
-        power=power,
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-        treat_var=treat_var,
+    relative_mde = pw._mde_from_curve(
+        _delta_curve(ctrl_mean, ctrl_var, treat_var),
+        alpha,
+        power,
     )
 
     z_alpha = norm.ppf(1 - alpha / 2)
@@ -549,12 +556,10 @@ def test_relative_mde_recovers_target_power(hypothesis):
     ctrl_var = 0.05
     treat_var = 0.05
 
-    mde = _make_relative_delta_power(hypothesis)._relative_mde_calculation(
-        alpha=alpha,
-        power=power,
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-        treat_var=treat_var,
+    mde = _make_relative_delta_power(hypothesis)._mde_from_curve(
+        _delta_curve(ctrl_mean, ctrl_var, treat_var),
+        alpha,
+        power,
     )
 
     if hypothesis == "less":
@@ -575,12 +580,10 @@ def test_relative_mde_recovers_low_target_power(hypothesis):
     ctrl_var = 0.01
     treat_var = 0.01
 
-    mde = _make_relative_delta_power(hypothesis)._relative_mde_calculation(
-        alpha=alpha,
-        power=power,
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-        treat_var=treat_var,
+    mde = _make_relative_delta_power(hypothesis)._mde_from_curve(
+        _delta_curve(ctrl_mean, ctrl_var, treat_var),
+        alpha,
+        power,
     )
 
     if hypothesis == "less":
@@ -600,12 +603,10 @@ def test_relative_mde_allows_zero_at_null_power(hypothesis):
     ctrl_var = 0.01
     treat_var = 0.01
 
-    mde = _make_relative_delta_power(hypothesis)._relative_mde_calculation(
-        alpha=alpha,
-        power=power,
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-        treat_var=treat_var,
+    mde = _make_relative_delta_power(hypothesis)._mde_from_curve(
+        _delta_curve(ctrl_mean, ctrl_var, treat_var),
+        alpha,
+        power,
     )
 
     assert mde == pytest.approx(0.0, abs=1e-12)
@@ -623,12 +624,10 @@ def test_relative_mde_power_half_returns_critical_boundary():
     ctrl_var = 0.01
     treat_var = 0.01
 
-    mde = _make_relative_delta_power("greater")._relative_mde_calculation(
-        alpha=alpha,
-        power=power,
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-        treat_var=treat_var,
+    mde = _make_relative_delta_power("greater")._mde_from_curve(
+        _delta_curve(ctrl_mean, ctrl_var, treat_var),
+        alpha,
+        power,
     )
 
     expected_boundary = norm.ppf(1 - alpha) * np.sqrt(ctrl_var + treat_var)
@@ -639,12 +638,10 @@ def test_relative_mde_power_half_returns_critical_boundary():
 
 def test_relative_mde_allows_zero_variance():
     """A deterministic ratio metric has a zero MDE instead of no solution."""
-    mde = _make_relative_delta_power("greater")._relative_mde_calculation(
-        alpha=0.05,
-        power=0.8,
-        ctrl_mean=1.0,
-        ctrl_var=0.0,
-        treat_var=0.0,
+    mde = _make_relative_delta_power("greater")._mde_from_curve(
+        _delta_curve(1.0, 0.0, 0.0),
+        0.05,
+        0.8,
     )
 
     assert mde == pytest.approx(0.0, abs=1e-12)
@@ -653,11 +650,11 @@ def test_relative_mde_allows_zero_variance():
 def test_relative_mde_one_sided_is_asymmetric():
     """Because SE_rel(m) depends on (1 + m)**2, the 'less' MDE is NOT the
     negative of the 'greater' MDE when the control variance is non-negligible."""
-    kwargs = dict(alpha=0.05, power=0.8, ctrl_mean=1.0, ctrl_var=0.05, treat_var=0.05)
-    mde_greater = _make_relative_delta_power("greater")._relative_mde_calculation(
-        **kwargs
+    curve = _delta_curve(ctrl_mean=1.0, ctrl_var=0.05, treat_var=0.05)
+    mde_greater = _make_relative_delta_power("greater")._mde_from_curve(
+        curve, 0.05, 0.8
     )
-    mde_less = _make_relative_delta_power("less")._relative_mde_calculation(**kwargs)
+    mde_less = _make_relative_delta_power("less")._mde_from_curve(curve, 0.05, 0.8)
 
     assert mde_greater > 0
     assert mde_less < 0
@@ -675,12 +672,10 @@ def test_relative_mde_high_cv_regime():
     ctrl_var = 0.8
     treat_var = 0.8
 
-    mde = _make_relative_delta_power()._relative_mde_calculation(
-        alpha=alpha,
-        power=power,
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-        treat_var=treat_var,
+    mde = _make_relative_delta_power()._mde_from_curve(
+        _delta_curve(ctrl_mean, ctrl_var, treat_var),
+        alpha,
+        power,
     )
 
     assert mde > 0
@@ -696,12 +691,10 @@ def test_relative_mde_negative_leading_coefficient_recovers_power():
     ctrl_var = 5.0
     treat_var = 0.0
 
-    mde = _make_relative_delta_power("less")._relative_mde_calculation(
-        alpha=alpha,
-        power=power,
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-        treat_var=treat_var,
+    mde = _make_relative_delta_power("less")._mde_from_curve(
+        _delta_curve(ctrl_mean, ctrl_var, treat_var),
+        alpha,
+        power,
     )
 
     assert 1 - norm.ppf(power) ** 2 * ctrl_var < 0
@@ -710,38 +703,78 @@ def test_relative_mde_negative_leading_coefficient_recovers_power():
     assert achieved == pytest.approx(power, abs=1e-6)
 
 
-def test_relative_mde_linear_quadratic_degeneracy(monkeypatch):
-    """An exact A == 0 quadratic reduces to its valid linear root."""
-    monkeypatch.setattr(
-        "cluster_experiments.power_analysis.norm.ppf",
-        lambda quantile: 1.0 if quantile > 0.9 else 2.0,
+def _wrong_direction_tail(
+    curve: StandardErrorCurve, mde: float, alpha: float, hypothesis: str
+) -> float:
+    """
+    Probability of rejecting in the *wrong* direction at effect ``mde``.
+
+    A two-sided power calculation counts these rejections; the MDE formula does
+    not, since a sign-flipped rejection is not a detection (and a sum of two
+    normal CDFs has no analytic inverse anyway). Subtracting this term makes the
+    round-trip exact rather than approximate, and pins down precisely how the two
+    differ. One-sided tests have no such term.
+    """
+    if hypothesis != "two-sided":
+        return 0.0
+    threshold = -norm.ppf(1 - alpha / 2) * curve.std_error
+    return float(norm.cdf((threshold - mde) / curve.se_at(mde)))
+
+
+def test_flat_curve_mde_matches_linear_formula():
+    """
+    A curve with no effect dependence must reproduce the linear normal formula
+    exactly. This is what lets absolute analyses go through the same code path
+    without their numbers moving.
+    """
+    for hypothesis, z_alpha, z_beta in [
+        ("two-sided", norm.ppf(1 - 0.025), norm.ppf(0.8)),
+        ("greater", norm.ppf(1 - 0.05), norm.ppf(0.8)),
+        ("less", norm.ppf(0.05), norm.ppf(1 - 0.8)),
+    ]:
+        pw = _make_relative_delta_power(hypothesis)
+        curve = StandardErrorCurve(std_error=0.25)
+        assert pw._mde_from_curve(curve, 0.05, 0.8) == float(z_alpha + z_beta) * 0.25
+
+
+@pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
+@pytest.mark.parametrize("power", [0.6, 0.8, 0.95])
+def test_mde_and_power_are_inverses(hypothesis, power):
+    """
+    The MDE and the power calculation must invert each other.
+
+    This is the regression test for the two disagreeing: the MDE used the
+    effect-dependent standard error while power used a constant one, so
+    ``power_line(mde(p))`` did not return ``p``.
+    """
+    pw = _make_relative_delta_power(hypothesis)
+    curve = _delta_curve(ctrl_mean=1.0, ctrl_var=0.05, treat_var=0.05)
+
+    mde = pw._mde_from_curve(curve, 0.05, power)
+    achieved = pw._normal_power_calculation(
+        alpha=0.05, se_curve=curve, average_effect=mde
     )
 
-    mde = _make_relative_delta_power("less")._relative_mde_calculation(
-        alpha=0.05,
-        power=0.8,
-        ctrl_mean=1.0,
-        ctrl_var=0.25,
-        treat_var=0.0,
+    assert achieved - _wrong_direction_tail(curve, mde, 0.05, hypothesis) == (
+        pytest.approx(power, abs=1e-12)
     )
 
-    assert mde == pytest.approx(-0.75)
 
+@pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
+@pytest.mark.parametrize("power", [0.6, 0.8, 0.95])
+def test_mde_and_power_are_inverses_for_flat_curves(hypothesis, power):
+    """The same inversion must hold for absolute effects."""
+    pw = _make_relative_delta_power(hypothesis)
+    curve = StandardErrorCurve(std_error=0.25)
 
-def test_relative_mde_identity_degeneracy_raises(monkeypatch):
-    """An identity quadratic has no unique MDE to report."""
-    monkeypatch.setattr(
-        "cluster_experiments.power_analysis.norm.ppf", lambda quantile: 2.0
+    mde = pw._mde_from_curve(curve, 0.05, power)
+    achieved = pw._normal_power_calculation(
+        alpha=0.05, se_curve=curve, average_effect=mde
     )
 
-    with pytest.raises(ValueError, match="degenerate relative-MDE equation"):
-        _make_relative_delta_power("less")._relative_mde_calculation(
-            alpha=0.05,
-            power=0.8,
-            ctrl_mean=1.0,
-            ctrl_var=0.25,
-            treat_var=0.0,
-        )
+    assert achieved - _wrong_direction_tail(curve, mde, 0.05, hypothesis) == (
+        pytest.approx(power, abs=1e-12)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -796,10 +829,16 @@ def test_normal_power_analysis_delta_relative(ratio_df):
     assert np.isfinite(mde)
 
 
-def test_mde_rolling_time_line_relative_not_double_normalized(monkeypatch):
-    """Bug guard: when the analysis reports a relative effect, mde_rolling_time_line
-    must NOT divide the already-relative MDE by the target mean again."""
-    from cluster_experiments.experiment_analysis import StandardErrorResult
+def test_mde_rolling_time_line_reports_only_mde(monkeypatch):
+    """
+    mde_rolling_time_line reports the MDE and nothing else.
+
+    It used to also emit a `relative_mde` computed as `mde / mean(target)` — a
+    second, weaker notion of relative MDE that treats the baseline as a fixed
+    constant. For a relative analysis both were applied at once, producing a
+    doubly-normalised number. There is now one way to get a relative MDE:
+    `relative_effect=True`, which accounts for the baseline's own variance.
+    """
     from cluster_experiments.random_splitter import ClusteredSplitter
 
     pw = NormalPowerAnalysis(
@@ -813,15 +852,10 @@ def test_mde_rolling_time_line_relative_not_double_normalized(monkeypatch):
         time_col="date",
     )
 
-    # Return group stats so has_relative_mde_stats is True and the relative
-    # branch runs; the mean of the aggregated target is far from 1 so a second
-    # normalisation would be clearly visible.
-    se_result = StandardErrorResult(
-        std_error=0.02, ctrl_mean=0.3, ctrl_var=0.001, treat_var=0.001
-    )
-    monkeypatch.setattr(
-        pw, "_get_average_standard_error_result", lambda **kwargs: se_result
-    )
+    # The mean of the aggregated target is far from 1, so any stray
+    # normalisation by it would be obvious.
+    curve = _delta_curve(ctrl_mean=0.3, ctrl_var=0.001, treat_var=0.001)
+    monkeypatch.setattr(pw, "_get_average_standard_error_curve", lambda **kw: curve)
 
     dates = pd.date_range("2024-01-01", periods=10)
     df = pd.DataFrame(
@@ -840,10 +874,11 @@ def test_mde_rolling_time_line_relative_not_double_normalized(monkeypatch):
         agg_func="sum",
     )
 
+    expected = pw._mde_from_curve(curve, pw.alpha, 0.8)
     assert results
     for row in results:
-        # relative_mde must equal the (already relative) mde, not mde / mean.
-        assert row["relative_mde"] == pytest.approx(row["mde"])
+        assert set(row) == {"power", "mde", "experiment_length"}
+        assert row["mde"] == pytest.approx(expected)
 
 
 # ---------------------------------------------------------------------------

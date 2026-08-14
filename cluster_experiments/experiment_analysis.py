@@ -147,42 +147,73 @@ class InferenceResults:
         return "\n".join(lines)
 
 
-@dataclass
-class StandardErrorResult:
+@dataclass(frozen=True)
+class StandardErrorCurve:
     """
-    Standard error of an analysis, optionally enriched with the group-level
-    statistics required to compute a relative minimum detectable effect (MDE).
+    Standard error of an estimate as a function of the true effect ``m``::
 
-    For most analyses only ``std_error`` is populated. Analyses that support
-    relative effects on ratio metrics (e.g. :class:`DeltaMethodAnalysis` with
-    ``relative_effect=True``) also fill in ``ctrl_mean``, ``ctrl_var`` and
-    ``treat_var`` so that :class:`NormalPowerAnalysis` can solve the quadratic
-    relative-MDE equation instead of the linear approximation.
+        SE(m)**2 = std_error**2 + effect_var * m**2 - 2 * effect_cov * m
+
+    For an **absolute** effect the standard error does not depend on the effect
+    size, so ``effect_var = effect_cov = 0`` and ``se_at`` is constant.
+
+    For a **relative** effect it does depend on the effect size, because the
+    denominator of the lift is itself estimated. Writing the lift as a function
+    of the numerator and the (estimated) baseline and applying the delta method
+    gives the quadratic above, for both estimators that support relative effects:
+
+    ==========================  ==========================  ==================
+    quantity                    :class:`OLSAnalysis`        delta method
+    ==========================  ==========================  ==================
+    ``std_error**2``            ``Var(tau) / mu_c**2``      ``(treat_var + ctrl_var) / r_c**2``
+    ``effect_var``              ``Var(mu_c) / mu_c**2``     ``ctrl_var / r_c**2``
+    ``effect_cov``              ``Cov(tau, mu_c) / mu_c**2``  ``-ctrl_var / r_c**2``
+    ==========================  ==========================  ==================
+
+    where ``tau`` is the regression treatment coefficient, ``mu_c`` the
+    (covariate-adjusted) control mean, and ``r_c`` the control ratio mean. The
+    delta-method column is the special case ``effect_cov = -effect_var``, for
+    which the formula collapses to ``se2_t + se2_c * (1 + m)**2``.
+
+    :class:`~cluster_experiments.power_analysis.NormalPowerAnalysis` derives both
+    power and the MDE from this single object, which is what makes them exact
+    inverses of each other.
 
     Attributes:
-        std_error: Standard error of the effect (relative SE when the analysis
-            reports relative effects, absolute SE otherwise).
-        ctrl_mean: Control-arm ratio mean. ``None`` when relative-MDE stats are
-            not available.
-        ctrl_var: Variance of the control-arm ratio mean. ``None`` when not
-            available.
-        treat_var: Variance of the treatment-arm ratio mean. ``None`` when not
-            available.
+        std_error: Standard error under the null, i.e. ``SE(0)``. This is the
+            quantity power and MDE calculations need. Note that it is *not* the
+            standard error reported by inference methods for a relative effect,
+            which is evaluated at the observed effect instead.
+        effect_var: Variance of the baseline, normalised by the squared baseline.
+            Zero for absolute effects.
+        effect_cov: Covariance between the numerator and the baseline, normalised
+            by the squared baseline. Zero for absolute effects.
     """
 
     std_error: float
-    ctrl_mean: Optional[float] = None
-    ctrl_var: Optional[float] = None
-    treat_var: Optional[float] = None
+    effect_var: float = 0.0
+    effect_cov: float = 0.0
 
     @property
-    def has_relative_mde_stats(self) -> bool:
-        """True when the group statistics needed for a relative MDE are present."""
-        return (
-            self.ctrl_mean is not None
-            and self.ctrl_var is not None
-            and self.treat_var is not None
+    def is_effect_dependent(self) -> bool:
+        """True when the standard error varies with the effect size."""
+        return bool(self.effect_var) or bool(self.effect_cov)
+
+    def se_at(self, effect: float) -> float:
+        """
+        Standard error of the estimate when the true effect is ``effect``.
+
+        Arguments:
+            effect: the true effect size, on the same scale as the estimate.
+        """
+        if not self.is_effect_dependent:
+            return self.std_error
+        variance = (
+            self.std_error**2
+            + self.effect_var * effect**2
+            - 2 * self.effect_cov * effect
         )
+        return float(np.sqrt(max(variance, 0.0)))
 
 
 class ExperimentAnalysis(ABC):
@@ -358,22 +389,20 @@ class ExperimentAnalysis(ABC):
         """
         raise NotImplementedError("Standard error not implemented for this analysis")
 
-    def analysis_standard_error_with_stats(
-        self,
-        df: pd.DataFrame,
-        verbose: bool = False,
-    ) -> StandardErrorResult:
+    def analysis_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
         """
-        Returns the standard error of the analysis wrapped in a
-        :class:`StandardErrorResult`. Analyses that support relative effects on
-        ratio metrics override this to also populate ``ctrl_mean``, ``ctrl_var``
-        and ``treat_var``. Expects treatment to be a 0-1 variable.
+        Returns the standard error of the analysis as a
+        :class:`StandardErrorCurve`. Expects treatment to be a 0-1 variable.
+
+        The base implementation returns a flat curve, which is correct for any
+        analysis reporting an absolute effect: the standard error does not depend
+        on the effect size. Analyses reporting relative effects override this to
+        supply the effect-dependent coefficients.
 
         Arguments:
             df: dataframe containing the data to analyze
-            verbose (Optional): bool, prints the regression summary if True
         """
-        return StandardErrorResult(std_error=self.analysis_standard_error(df))
+        return StandardErrorCurve(std_error=self.analysis_standard_error(df))
 
     def analysis_confidence_interval(
         self,
@@ -421,16 +450,20 @@ class ExperimentAnalysis(ABC):
                 f"Outcome column {self.target_col} should be numeric and not {df[self.target_col].dtype}"
             )
 
+    def _prepare(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Copies the data, binarises the treatment column and validates it"""
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return df
+
     def get_pvalue(self, df: pd.DataFrame) -> float:
         """Returns the p-value of the analysis
 
         Arguments:
             df: dataframe containing the data to analyze
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_pvalue(df)
+        return self.analysis_pvalue(self._prepare(df))
 
     def get_point_estimate(self, df: pd.DataFrame) -> float:
         """Returns the point estimate of the analysis
@@ -438,10 +471,7 @@ class ExperimentAnalysis(ABC):
         Arguments:
             df: dataframe containing the data to analyze
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_point_estimate(df)
+        return self.analysis_point_estimate(self._prepare(df))
 
     def get_standard_error(self, df: pd.DataFrame) -> float:
         """Returns the standard error of the analysis
@@ -449,27 +479,20 @@ class ExperimentAnalysis(ABC):
         Arguments:
             df: dataframe containing the data to analyze
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_standard_error(df)
+        return self.analysis_standard_error(self._prepare(df))
 
-    def get_standard_error_with_stats(self, df: pd.DataFrame) -> StandardErrorResult:
-        """Returns the standard error of the analysis together with the optional
-        group-level statistics needed to compute a relative MDE.
+    def get_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
+        """Returns the standard error of the analysis as a function of the
+        effect size, as a :class:`StandardErrorCurve`.
 
-        The base implementation only reports the standard error. Analyses that
-        support relative effects on ratio metrics override
-        :meth:`analysis_standard_error_with_stats` to also return
-        ``ctrl_mean``, ``ctrl_var`` and ``treat_var``.
+        The curve is flat for analyses reporting absolute effects, and
+        effect-dependent for those reporting relative ones. Power analysis
+        derives both power and the MDE from it.
 
         Arguments:
             df: dataframe containing the data to analyze
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_standard_error_with_stats(df)
+        return self.analysis_standard_error_curve(self._prepare(df))
 
     def get_confidence_interval(
         self, df: pd.DataFrame, alpha: float
@@ -480,10 +503,7 @@ class ExperimentAnalysis(ABC):
             df: dataframe containing the data to analyze
             alpha: significance level
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_confidence_interval(df, alpha)
+        return self.analysis_confidence_interval(self._prepare(df), alpha)
 
     def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
         """Returns the inference results of the analysis for a single dataset.
@@ -502,10 +522,7 @@ class ExperimentAnalysis(ABC):
             InferenceResults with ate, p_value, std_error, conf_int, and
             fitted_model when the analysis attaches one (GEE, OLS, Delta).
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_inference_results(df, alpha)
+        return self.analysis_inference_results(self._prepare(df), alpha)
 
     def pvalue_based_on_hypothesis(
         self, model_result: RegressionResultsProtocol
@@ -1016,6 +1033,21 @@ class OLSAnalysis(ExperimentAnalysis):
         """
         results_ols = self.fit_ols(df=df)
         return results_ols.bse[self.treatment_col]
+
+    def analysis_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
+        """Returns the standard error of the analysis as a function of the effect size
+
+        For a relative effect the standard error grows with the effect, because
+        the control mean in the denominator of the lift is itself estimated. The
+        coefficients come straight from the delta-method expansion in
+        :class:`LiftRegressionTransformer`.
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        if not self.relative_effect:
+            return super().analysis_standard_error_curve(df)
+        return self.fit_ols(df=df).standard_error_curve()
 
     def analysis_confidence_interval(
         self, df: pd.DataFrame, alpha: float, verbose: bool = False
@@ -1869,80 +1901,54 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
 
         return ctrl_mean, ctrl_var, treat_mean, treat_var
 
-    def _compute_delta_effect(
-        self, df: pd.DataFrame
-    ) -> tuple[float, float, float, float, float]:
+    def _fit_relative_lift(self, df: pd.DataFrame) -> DeltaMethodLiftTransformer:
         """
-        Computes the delta-method point estimate and standard error of the ratio
-        metric together with the control/treatment group statistics.
+        Returns the delta-method relative lift results for the ratio metric.
 
-        When ``relative_effect`` is True the point estimate and standard error
-        are the relative (percent-lift) versions produced by
-        :class:`DeltaMethodLiftTransformer`; otherwise they are the absolute
-        mean difference and its standard error. The control/treatment ratio
-        statistics are always returned so callers can build a relative MDE.
-
-        Returns:
-            ``(point_estimate, standard_error, ctrl_mean, ctrl_var, treat_var)``.
+        Only meaningful when ``relative_effect`` is True.
         """
         ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_statistics(df)
-
-        mean_diff = treat_mean - ctrl_mean
-        standard_error = np.sqrt(treat_var + ctrl_var)
-
-        if self.relative_effect:
-            transformer = DeltaMethodLiftTransformer(self.treatment_col)
-            transformer.fit(
-                mean_diff=mean_diff,
-                std_error=standard_error,
-                ctrl_mean=ctrl_mean,
-                ctrl_var=ctrl_var,
-            )
-            point_estimate = transformer.params[self.treatment_col]
-            standard_error = transformer.bse[self.treatment_col]
-        else:
-            point_estimate = mean_diff
-
-        return point_estimate, standard_error, ctrl_mean, ctrl_var, treat_var
+        transformer = DeltaMethodLiftTransformer(self.treatment_col)
+        transformer.fit(
+            mean_diff=treat_mean - ctrl_mean,
+            std_error=np.sqrt(treat_var + ctrl_var),
+            ctrl_mean=ctrl_mean,
+            ctrl_var=ctrl_var,
+        )
+        return transformer
 
     def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
         """
-        Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
+        Returns the point estimate of the treatment effect on the ratio metric
+        (target/scale) and its standard error, computed using the Delta Method.
         Variance reduction is used if covariates are given.
-        """
-        point_estimate, standard_error, _, _, _ = self._compute_delta_effect(df)
-        return point_estimate, standard_error
 
-    def analysis_standard_error_with_stats(
-        self, df: pd.DataFrame, verbose: bool = False
-    ) -> StandardErrorResult:
+        When ``relative_effect`` is True both are on the relative (percent-lift)
+        scale; otherwise both are absolute.
         """
-        Returns the standard error of the analysis together with the group-level
-        statistics needed to compute a relative MDE.
+        if self.relative_effect:
+            transformer = self._fit_relative_lift(df)
+            return (
+                transformer.params[self.treatment_col],
+                transformer.bse[self.treatment_col],
+            )
 
-        When ``relative_effect`` is True, ``std_error`` is the relative
-        (percent-lift) SE and the control/treatment ratio statistics are also
-        returned so that :class:`NormalPowerAnalysis` can solve the quadratic
-        relative-MDE equation. When False, only the absolute ``std_error`` is
-        populated.
+        ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_statistics(df)
+        return treat_mean - ctrl_mean, np.sqrt(treat_var + ctrl_var)
+
+    def analysis_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
+        """
+        Returns the standard error of the analysis as a function of the effect size.
+
+        For a relative effect the standard error grows with the effect, because
+        the control ratio mean in the denominator of the lift is itself estimated.
 
         Arguments:
             df: dataframe containing the data to analyze.
-            verbose (Optional): unused, kept for signature compatibility.
         """
-        _, standard_error, ctrl_mean, ctrl_var, treat_var = self._compute_delta_effect(
-            df
-        )
-
-        if self.relative_effect:
-            return StandardErrorResult(
-                std_error=standard_error,
-                ctrl_mean=ctrl_mean,
-                ctrl_var=ctrl_var,
-                treat_var=treat_var,
-            )
-
-        return StandardErrorResult(std_error=standard_error)
+        if not self.relative_effect:
+            return super().analysis_standard_error_curve(df)
+        return self._fit_relative_lift(df).standard_error_curve()
 
     def analysis_pvalue(self, df: pd.DataFrame) -> float:
         """

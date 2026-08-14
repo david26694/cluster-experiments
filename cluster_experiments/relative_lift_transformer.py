@@ -25,19 +25,63 @@ class BaseLiftTransformer:
     """
     Base class for relative lift transformers.
 
-    Stores the relative lift point estimate and its standard error, and exposes
-    the shared ``RegressionResultsProtocol``-compatible interface (``params``,
-    ``bse``, ``pvalues``, ``conf_int``, ``summary``).  Subclasses must override
-    :meth:`fit` with their specific computation logic.
+    Holds the results of a relative-lift computation and exposes them through the
+    ``RegressionResultsProtocol``-compatible interface (``params``, ``bse``,
+    ``pvalues``, ``conf_int``, ``summary``), so a relative fit can be dropped into
+    code paths that expect a statsmodels results object.
+
+    Alongside the point estimate and its standard error, subclasses record the two
+    coefficients describing how that standard error varies with the effect size
+    (see :class:`~cluster_experiments.experiment_analysis.StandardErrorCurve`).
+    Power analysis reads them via :meth:`standard_error_curve`.
+
+    Note there is deliberately no ``fit`` on the base class: the subclasses take
+    entirely different inputs (a fitted OLS model versus delta-method group
+    statistics). What they share is the shape of the *results*, not the fitting.
     """
 
     def __init__(self, treatment_col: str):
         self.treatment_col = treatment_col
         self._relative_lift_value: Optional[float] = None
         self._se_relative_lift: Optional[float] = None
+        # Coefficients of SE(m)**2 = se_null**2 + effect_var*m**2 - 2*effect_cov*m
+        self._se_null: Optional[float] = None
+        self._effect_var: Optional[float] = None
+        self._effect_cov: Optional[float] = None
 
-    def fit(self, *args, **kwargs) -> None:
-        raise NotImplementedError
+    def _set_results(
+        self,
+        relative_lift: float,
+        se_relative_lift: float,
+        se_null: float,
+        effect_var: float,
+        effect_cov: float,
+    ) -> None:
+        """Records everything a subclass' ``fit`` computes."""
+        self._relative_lift_value = relative_lift
+        self._se_relative_lift = se_relative_lift
+        self._se_null = se_null
+        self._effect_var = effect_var
+        self._effect_cov = effect_cov
+
+    def standard_error_curve(self):
+        """
+        Returns the relative-lift standard error as a function of the true effect.
+
+        Note ``std_error`` on the returned curve is the standard error under the
+        null, which differs from ``bse`` — the latter is evaluated at the observed
+        lift, which is what inference needs.
+        """
+        # Imported here to avoid a circular import at module load time.
+        from cluster_experiments.experiment_analysis import StandardErrorCurve
+
+        if self._se_null is None:
+            raise ValueError("fit must be called before standard_error_curve")
+        return StandardErrorCurve(
+            std_error=self._se_null,
+            effect_var=self._effect_var,
+            effect_cov=self._effect_cov,
+        )
 
     @property
     def params(self):
@@ -149,23 +193,37 @@ class LiftRegressionTransformer(BaseLiftTransformer):
             cov_treatment_intercept + cov_treatment_covariates @ control_covariates_mean
         )
 
-        # 5. Delta-method variance for percent lift
-        var_percent_lift = (
+        # 5. Percent lift
+        _relative_lift_value = treatment_effect / adjusted_control_mean
+
+        # 6. Delta-method variance for percent lift.
+        #
+        # Written in terms of the lift m = tau / mu_c, this is the quadratic
+        #     Var(m) = se_null**2 + effect_var * m**2 - 2 * effect_cov * m
+        # which is what power analysis needs to know how the standard error grows
+        # with the effect size. Evaluating it at the observed lift gives the
+        # standard error used for inference.
+        se_null_squared = (
             covariance_matrix.loc[self.treatment_col, self.treatment_col]
             / adjusted_control_mean**2
-            + (treatment_effect**2 / adjusted_control_mean**4)
-            * var_adjusted_control_mean
-            - 2
-            * (treatment_effect / adjusted_control_mean**3)
-            * cov_treatment_control_mean
+        )
+        effect_var = var_adjusted_control_mean / adjusted_control_mean**2
+        effect_cov = cov_treatment_control_mean / adjusted_control_mean**2
+
+        var_percent_lift = (
+            se_null_squared
+            + effect_var * _relative_lift_value**2
+            - 2 * effect_cov * _relative_lift_value
         )
         _se_relative_lift = np.sqrt(var_percent_lift)
 
-        # 6. Percent lift
-        _relative_lift_value = treatment_effect / adjusted_control_mean
-
-        self._relative_lift_value = _relative_lift_value
-        self._se_relative_lift = _se_relative_lift
+        self._set_results(
+            relative_lift=_relative_lift_value,
+            se_relative_lift=_se_relative_lift,
+            se_null=float(np.sqrt(se_null_squared)),
+            effect_var=float(effect_var),
+            effect_cov=float(effect_cov),
+        )
 
 
 class DeltaMethodLiftTransformer(BaseLiftTransformer):
@@ -173,13 +231,12 @@ class DeltaMethodLiftTransformer(BaseLiftTransformer):
     Delta-method relative lift for ratio metrics (cluster-level target/scale).
 
     Mirrors the ``LiftRegressionTransformer`` instance API: call :meth:`fit` with
-    the statistics produced by ``DeltaMethodAnalysis._get_mean_standard_error``,
-    then read `params`, `bse`, `pvalues`, and `conf_int` just like any
-    ``RegressionResultsProtocol``-compatible object.
+    the statistics produced by ``DeltaMethodAnalysis._get_group_statistics``, then
+    read `params`, `bse`, `pvalues`, and `conf_int` just like any
+    ``RegressionResultsProtocol``-compatible object, or
+    :meth:`standard_error_curve` for power analysis.
 
-    The static helper :meth:`lift_and_se` remains available for direct use. The
-    relative minimum detectable effect (MDE) is computed by
-    ``NormalPowerAnalysis._relative_mde_calculation``.
+    The static helper :meth:`lift_and_se` remains available for direct use.
     """
 
     def fit(
@@ -206,8 +263,18 @@ class DeltaMethodLiftTransformer(BaseLiftTransformer):
         relative_lift, se = self.lift_and_se(
             mean_diff, std_error**2, ctrl_mean, ctrl_var
         )
-        self._relative_lift_value = relative_lift
-        self._se_relative_lift = se
+        # The arms are independent, so Cov(mean_diff, ctrl_mean) = -ctrl_var and
+        # the covariance coefficient is minus the variance coefficient. That is
+        # the special case for which SE(m)**2 collapses to
+        # se2_t + se2_c * (1 + m)**2.
+        effect_var = ctrl_var / ctrl_mean**2
+        self._set_results(
+            relative_lift=relative_lift,
+            se_relative_lift=se,
+            se_null=float(std_error / abs(ctrl_mean)),
+            effect_var=float(effect_var),
+            effect_cov=float(-effect_var),
+        )
 
     @staticmethod
     def lift_and_se(

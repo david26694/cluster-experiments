@@ -15,6 +15,7 @@ from cluster_experiments.experiment_analysis import (
     MLMExperimentAnalysis,
     OLSAnalysis,
     PairedTTestClusteredAnalysis,
+    StandardErrorCurve,
     SyntheticControlAnalysis,
     TTestClusteredAnalysis,
 )
@@ -107,4 +108,5 @@ __all__ = [
     "DeltaMethodLiftTransformer",
     "ConfidenceInterval",
     "InferenceResults",
+    "StandardErrorCurve",
 ]
