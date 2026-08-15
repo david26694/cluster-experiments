@@ -1029,3 +1029,109 @@ def test_relative_ols_vs_delta_parity():
 
     # SEs are computed differently but must be in the same ballpark
     assert ols_se == pytest.approx(delta_se, rel=0.20)
+
+
+def test_relative_ols_and_delta_mdes_agree():
+    """
+    Relative OLS and relative delta must produce comparable MDEs, not just
+    comparable point estimates and standard errors.
+
+    Before the standard error curve, only the delta method solved the quadratic
+    while relative OLS was left on the linear approximation, so the two diverged
+    on MDE by more than they did on the quantities above.
+    """
+    from cluster_experiments import ClusteredOLSAnalysis
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
+    df = _make_ratio_df(n_users=5_000, treatment_effect=0.05, seed=99)
+    df_agg = df.groupby(["user", "treatment"], as_index=False).agg(
+        {"target": "sum", "scale": "sum"}
+    )
+    df_agg["ratio"] = df_agg["target"] / df_agg["scale"]
+    # The splitter assigns its own treatment
+    df_agg = df_agg.drop(columns=["treatment"])
+
+    def mde_of(analysis, target_col):
+        return NormalPowerAnalysis(
+            analysis=analysis,
+            splitter=ClusteredSplitter(cluster_cols=["user"]),
+            target_col=target_col,
+            n_simulations=5,
+            seed=42,
+        ).mde(df_agg, power=0.8)
+
+    ols_mde = mde_of(
+        ClusteredOLSAnalysis(
+            cluster_cols=["user"],
+            target_col="ratio",
+            relative_effect=True,
+        ),
+        target_col="ratio",
+    )
+    delta_mde = mde_of(
+        DeltaMethodAnalysis(
+            cluster_cols=["user"],
+            scale_col="scale",
+            target_col="target",
+            relative_effect=True,
+        ),
+        target_col="target",
+    )
+
+    assert ols_mde > 0 and delta_mde > 0
+    # Same tolerance as the standard errors in test_relative_ols_vs_delta_parity:
+    # the estimators weight clusters differently, so they are close, not equal.
+    assert ols_mde == pytest.approx(delta_mde, rel=0.20)
+
+
+def test_relative_mde_exceeds_absolute_mde_over_baseline():
+    """
+    The relative MDE is larger than dividing the absolute MDE by the baseline.
+
+    These are two different quantities: dividing treats the baseline as a fixed
+    constant, while a relative estimand carries the baseline's own variance. The
+    second is therefore always the larger. `mde_rolling_time_line` used to report
+    the smaller one under the name `relative_mde`, and applied both at once for a
+    relative analysis - this ordering is what that violated.
+    """
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
+    df_agg = _make_ratio_df(n_users=2_000, treatment_effect=0.0, seed=7).drop(
+        columns=["treatment"]  # the splitter assigns its own
+    )
+
+    def mde_of(relative_effect):
+        return NormalPowerAnalysis(
+            analysis=DeltaMethodAnalysis(
+                cluster_cols=["user"],
+                scale_col="scale",
+                target_col="target",
+                relative_effect=relative_effect,
+            ),
+            splitter=ClusteredSplitter(cluster_cols=["user"]),
+            n_simulations=5,
+            seed=42,
+        ).mde(df_agg, power=0.8)
+
+    baseline = df_agg["target"].sum() / df_agg["scale"].sum()
+    shortcut = mde_of(relative_effect=False) / baseline
+    relative_mde = mde_of(relative_effect=True)
+
+    assert relative_mde > shortcut
+    # They agree to first order; the gap is the baseline's own variance.
+    assert relative_mde == pytest.approx(shortcut, rel=0.05)
+
+
+def test_standard_error_curve_is_flat_without_effect_dependence():
+    """A curve with zero coefficients returns the same standard error everywhere."""
+    flat = StandardErrorCurve(std_error=0.3)
+    assert not flat.is_effect_dependent
+    for effect in [-10.0, -0.1, 0.0, 0.1, 10.0]:
+        assert flat.se_at(effect) == 0.3
+
+    curved = StandardErrorCurve(std_error=0.3, effect_var=0.01, effect_cov=-0.01)
+    assert curved.is_effect_dependent
+    assert curved.se_at(0.0) == 0.3
+    # effect_cov == -effect_var collapses to se2_t + se2_c * (1 + m)**2, which is
+    # increasing in m on both sides of zero for m > -1.
+    assert curved.se_at(0.5) > curved.se_at(0.0) > curved.se_at(-0.5)
