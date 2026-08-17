@@ -1,0 +1,33 @@
+cluster_experiments/__init__.py
+  s_a9674489bc846c::t_1b82033d94fb88 56
+cluster_experiments/experiment_analysis.py
+  s_a9674489bc846c::t_502eb75e90f1c3 325
+  s_a9674489bc846c::t_1b82033d94fb88 18
+  s_a9674489bc846c::t_5dbf80c815f2ac 208-211
+cluster_experiments/relative_lift_transformer.py
+  s_a9674489bc846c::t_1b82033d94fb88 8,69
+  s_a9674489bc846c::t_502eb75e90f1c3 37,265-271,275-277
+  s_a9674489bc846c::t_917c16f214be41 9
+cluster_experiments/power_analysis.py
+  s_a9674489bc846c::t_1b82033d94fb88 25,593-595,1217-1225,1408,1587-1589
+cluster_experiments/standard_error_curve.py
+  s_a9674489bc846c::t_39c57f9507f789 1-123
+docs/relative_delta.ipynb
+  s_a9674489bc846c::t_feaf5618a37fd6 33-36,76-79,163-166,254-257,358-361,439-442,506-509,517,588-591,599
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "e11eb052ee00769a6f2b8019201929f1cbfcf045",
+  "prompts": {},
+  "sessions": {
+    "s_a9674489bc846c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd4f34e4-4826-4cfa-8afa-2877399ade13",
+        "model": "claude-opus-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
