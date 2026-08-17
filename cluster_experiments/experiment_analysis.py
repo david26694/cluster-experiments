@@ -11,7 +11,6 @@ from pandas.api.types import is_numeric_dtype
 from scipy.stats import norm, ttest_ind, ttest_rel
 
 from cluster_experiments.relative_lift_transformer import (
-    BaseLiftTransformer,
     DeltaMethodLiftTransformer,
     LiftRegressionTransformer,
     RegressionResultsProtocol,
@@ -51,11 +50,7 @@ class ConfidenceInterval:
         print(ci.summary())
         ```
         """
-        return (
-            f"Confidence interval (1 - alpha = {1 - self.alpha:.2%})\n"
-            f"  Lower: {self.lower:.6g}\n"
-            f"  Upper: {self.upper:.6g}"
-        )
+        return f"Confidence interval (1 - alpha = {1 - self.alpha:.2%})\n  Lower: {self.lower:.6g}\n  Upper: {self.upper:.6g}"
 
 
 @dataclass
@@ -99,10 +94,7 @@ class InferenceResults:
         print(results)
         ```
         """
-        return (
-            f"ATE={self.ate:.4f}, p_value={self.p_value:.4f}, "
-            f"std_error={self.std_error:.4f}, CI={self.conf_int}"
-        )
+        return f"ATE={self.ate:.4f}, p_value={self.p_value:.4f}, std_error={self.std_error:.4f}, CI={self.conf_int}"
 
     def model_summary(self) -> Optional[str]:
         """
@@ -284,10 +276,7 @@ class ExperimentAnalysis(ABC):
         print(a)
         ```
         """
-        return (
-            f"{type(self).__name__}: cluster_cols={self.cluster_cols}, "
-            f"target={self.target_col}, treatment={self.treatment}"
-        )
+        return f"{type(self).__name__}: cluster_cols={self.cluster_cols}, target={self.target_col}, treatment={self.treatment}"
 
     def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
         """Paste all strings of cluster_cols in one single column"""
@@ -1048,16 +1037,7 @@ class OLSAnalysis(ExperimentAnalysis):
         """
         if not self.relative_effect:
             return super().analysis_standard_error_curve(df)
-
-        # fit_ols is annotated with the results protocol it shares with
-        # statsmodels, which has no notion of a standard error curve. It returns
-        # the transformer exactly when relative_effect is set, which is the branch
-        # we are in; assert it so the invariant is checked rather than assumed.
-        results = self.fit_ols(df=df)
-        assert isinstance(
-            results, BaseLiftTransformer
-        ), f"relative_effect is set but fit_ols returned {type(results).__name__}"
-        return results.standard_error_curve()
+        return self.fit_ols(df=df).standard_error_curve()
 
     def analysis_confidence_interval(
         self, df: pd.DataFrame, alpha: float, verbose: bool = False
