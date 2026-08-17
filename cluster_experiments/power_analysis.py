@@ -862,64 +862,37 @@ class NormalPowerAnalysis:
             split_df = self._split(df)
             yield self.analysis.get_standard_error_curve(split_df)
 
-    @staticmethod
-    def _standardized_threshold(
-        curve: StandardErrorCurve, z_alpha: float, average_effect: float
-    ) -> float:
-        """
-        Distance from the rejection threshold to the true effect, in units of the
-        standard error at that effect: ``(z_alpha * SE(0) - effect) / SE(effect)``.
-
-        The critical value is set under the null, so it uses ``SE(0)``, while the
-        estimate is distributed around the true effect, so the scale is
-        ``SE(effect)``. The two coincide unless the effect is relative.
-
-        Arguments:
-            curve: standard error of the analysis as a function of the effect
-            z_alpha: critical value in z units
-            average_effect: effect size of the analysis
-        """
-        if not curve.is_effect_dependent:
-            # Algebraically the same as the general expression below, written this
-            # way so absolute-effect power is unchanged to the last bit.
-            return z_alpha - average_effect / curve.std_error
-        return (z_alpha * curve.std_error - average_effect) / curve.se_at(
-            average_effect
-        )
-
     def _normal_power_calculation(
         self, alpha: float, se_curve: StandardErrorCurve, average_effect: float
     ) -> float:
         """Returns the power of the analysis using the normal distribution.
+
+        The standard error is evaluated at the effect being tested. For an
+        absolute effect it does not vary with the effect, so this is the usual
+        expression; for a relative effect it does, because the estimated standard
+        error the test divides by is itself computed at the observed lift.
+
         Arguments:
             alpha: significance level
             se_curve: standard error of the analysis as a function of the effect
             average_effect: effect size of the analysis
         """
+        # Flat curves return their constant standard error here, so absolute
+        # effects go through exactly the arithmetic they always did.
+        std_error = se_curve.se_at(average_effect)
+
         if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.LESS:
             z_alpha = norm.ppf(alpha)
-            return float(
-                norm.cdf(
-                    self._standardized_threshold(se_curve, z_alpha, average_effect)
-                )
-            )
+            return float(norm.cdf(z_alpha - average_effect / std_error))
 
         if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.GREATER:
             z_alpha = norm.ppf(1 - alpha)
-            return 1 - float(
-                norm.cdf(
-                    self._standardized_threshold(se_curve, z_alpha, average_effect)
-                )
-            )
+            return 1 - float(norm.cdf(z_alpha - average_effect / std_error))
 
         if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.TWO_SIDED:
             z_alpha = norm.ppf(1 - alpha / 2)
-            norm_cdf_right = norm.cdf(
-                self._standardized_threshold(se_curve, z_alpha, average_effect)
-            )
-            norm_cdf_left = norm.cdf(
-                self._standardized_threshold(se_curve, -z_alpha, average_effect)
-            )
+            norm_cdf_right = norm.cdf(z_alpha - average_effect / std_error)
+            norm_cdf_left = norm.cdf(-z_alpha - average_effect / std_error)
             return float(norm_cdf_left + (1 - norm_cdf_right))
 
         raise ValueError(f"{self.analysis.hypothesis} is not a valid HypothesisEntries")
@@ -966,43 +939,42 @@ class NormalPowerAnalysis:
 
             SE(m)**2 = A + B * m**2 - 2 * C * m
 
-        For a Wald test at level ``alpha`` the power condition is::
+        The test divides the estimate by its estimated standard error, which is
+        computed at the observed effect. Under an alternative ``m`` that standard
+        error is ``SE(m)``, so the power condition is the usual one with the
+        standard error evaluated there rather than held constant::
 
-            |m| - z_alpha * SE(0) = z_beta * SE(m)
+            m = (z_alpha + z_beta) * SE(m)
 
-        the alpha term using the standard error under the null and the beta term
-        the standard error at the true effect. Unlike the linear normal
-        approximation this accounts for the standard error growing with the
-        effect size, which happens whenever the effect is relative: the baseline
-        in the denominator of the lift is itself estimated.
+        For an absolute effect ``SE`` does not vary and this is exactly the linear
+        formula in :meth:`_normal_mde_calculation`. For a relative effect it does
+        vary, because the baseline in the denominator of the lift is itself
+        estimated, and the equation becomes quadratic.
 
-        Squaring gives a quadratic in the effect magnitude ``x = |m|``::
+        Writing ``k = z_alpha + z_beta`` and squaring::
 
-            (1 - z_beta**2 * B) x**2
-                + (-2c + 2s * z_beta**2 * C) x
-                + (c**2 - z_beta**2 * A)  =  0
+            (1 - k**2 * B) * m**2  +  2 * k**2 * C * m  -  k**2 * A  =  0
 
-        with ``c = z_alpha * sqrt(A)`` and ``s = -1`` for a ``less`` hypothesis
-        (where the true effect is negative, so ``SE(-x)`` flips the sign of the
-        ``C`` term) and ``+1`` otherwise. One- versus two-sided tests only change
-        the critical value ``z_alpha``.
+        The hypothesis enters only through ``k``, using the same critical values as
+        :meth:`_normal_mde_calculation`: ``k`` is negative for ``less``, so the
+        minimum detectable effect comes out negative there.
 
-        Achievable power runs from ``alpha`` at ``x = 0`` up to a **ceiling** of
-        ``Phi(1 / sqrt(B))`` as ``x`` grows: ``SE(m)`` grows linearly in ``m``, so
-        the z-statistic saturates and no effect, however large, can be detected in
-        the correct direction beyond that. Requesting power at or above the
-        ceiling therefore has no solution. Note this only binds above 50% power;
-        below it the target is under the ceiling by definition, even where the
-        leading coefficient ``a`` turns negative.
+        Two properties make the root unique:
 
-        Squaring also dropped the sign of ``|m| - c = z_beta * SE(m)``, so a root
-        is only valid on the side of ``c`` that the sign of ``z_beta`` implies.
-        Power is increasing in ``x``, so where both roots qualify the smaller one
-        is the minimum detectable effect.
+        1. The constant term ``-k**2 * A`` is negative, so the two roots have
+           opposite signs and the discriminant is always positive. Squaring dropped
+           the sign of ``m = k * SE(m)``, which requires ``m`` to share the sign of
+           ``k``, so exactly one root qualifies.
+        2. ``1 - k**2 * B > 0`` is required for a solution to exist at all. As
+           ``m`` grows, ``SE(m)`` grows like ``sqrt(B) * m``, so the right-hand side
+           of ``m = k * SE(m)`` eventually outruns the left unless
+           ``|k| * sqrt(B) < 1``. This caps ``z_alpha + z_beta``, and therefore
+           caps the power attainable at a given ``alpha``, however large the effect.
 
-        Reference: Deng, A. & Shi, X. (2016). "Data-Driven Metric Development for
-        Online Controlled Experiments." KDD 2016. The variance formula follows
-        standard delta-method theory (van der Vaart, 1998, section 3).
+        Reference: the quadratic and the non-existence condition follow
+        ``slides/relative_lift_ols.tex`` (section "MDE for relative lift"). The
+        variance formula follows standard delta-method theory (van der Vaart, 1998,
+        section 3).
 
         Args:
             alpha: Significance level.
@@ -1010,56 +982,35 @@ class NormalPowerAnalysis:
             se_curve: Standard error of the analysis as a function of the effect.
         """
         hypothesis = HypothesisEntries(self.analysis.hypothesis)
-        if hypothesis == HypothesisEntries.TWO_SIDED:
-            # we are neglecting the opposite tail, as in _normal_mde_calculation
-            z_alpha = norm.ppf(1 - alpha / 2)
+        if hypothesis == HypothesisEntries.LESS:
+            z_alpha, z_beta = norm.ppf(alpha), norm.ppf(1 - power)
+        elif hypothesis == HypothesisEntries.GREATER:
+            z_alpha, z_beta = norm.ppf(1 - alpha), norm.ppf(power)
         else:
-            z_alpha = norm.ppf(1 - alpha)
-        z_beta = norm.ppf(power)
-        negative = hypothesis == HypothesisEntries.LESS
-        sign = -1.0 if negative else 1.0
+            # we are neglecting norm_cdf_left, as in _normal_mde_calculation
+            z_alpha, z_beta = norm.ppf(1 - alpha / 2), norm.ppf(power)
+        k = float(z_alpha + z_beta)
 
-        variance_null = se_curve.std_error**2
         effect_var = se_curve.effect_var
-        effect_cov = se_curve.effect_cov
+        if k**2 * effect_var >= 1:
+            max_k = 1 / np.sqrt(effect_var)
+            raise ValueError(
+                f"No finite minimum detectable effect exists: the baseline is too "
+                f"noisy (relative standard error {np.sqrt(effect_var):.4g}) for "
+                f"alpha={alpha:.4g} and power={power:.4g}. The standard error grows "
+                f"with the effect faster than the effect itself, which caps "
+                f"z_alpha + z_beta at {max_k:.4g}; this design needs {abs(k):.4g}. "
+                f"Increase the sample size, or relax alpha or the target power."
+            )
 
-        no_solution_message = (
-            f"No finite minimum detectable effect exists: the baseline is too noisy "
-            f"(relative standard error {np.sqrt(effect_var):.4g}) to reach power "
-            f"{power:.4g} in the correct direction. The maximum achievable power is "
-            f"{norm.cdf(1 / np.sqrt(effect_var)):.6g} if effect_var > 0. Increase the "
-            f"sample size or lower the target power."
-        )
-        if z_beta > 0 and z_beta**2 * effect_var >= 1:
-            raise ValueError(no_solution_message)
+        a = 1 - k**2 * effect_var
+        b = 2 * k**2 * se_curve.effect_cov
+        c = -(k**2) * se_curve.std_error**2
 
-        critical_value = z_alpha * se_curve.std_error
-        a = 1 - z_beta**2 * effect_var
-        b = -2 * critical_value + 2 * sign * z_beta**2 * effect_cov
-        c = critical_value**2 - z_beta**2 * variance_null
-
+        # c <= 0 and a > 0, so the roots straddle zero and the discriminant is
+        # non-negative. The valid root is the one whose sign matches k.
         discriminant = b**2 - 4 * a * c
-        if discriminant < 0:
-            raise ValueError(no_solution_message)
-
-        sqrt_discriminant = np.sqrt(discriminant)
-        roots = ((-b + sqrt_discriminant) / (2 * a), (-b - sqrt_discriminant) / (2 * a))
-        if z_beta >= 0:
-            candidates = [root for root in roots if root >= critical_value]
-        else:
-            candidates = [root for root in roots if root <= critical_value]
-
-        if not candidates:
-            raise ValueError(no_solution_message)
-
-        # Power increases with the magnitude, so the smallest positive root is the
-        # minimum detectable effect. No positive root means the requested power is
-        # already reached under the null, where the answer is zero - which is also
-        # how the rounding at power == alpha lands here, since norm.ppf is not
-        # perfectly antisymmetric and the exact zero comes out as -1e-17.
-        positive_candidates = [root for root in candidates if root > 0]
-        magnitude = min(positive_candidates) if positive_candidates else 0.0
-        return float(-magnitude if negative else magnitude)
+        return float((-b + np.copysign(np.sqrt(discriminant), k)) / (2 * a))
 
     def _mde_from_curve(
         self, se_curve: StandardErrorCurve, alpha: float, power: float

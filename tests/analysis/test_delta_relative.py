@@ -225,22 +225,29 @@ def test_relative_mde_above_power_ceiling_raises():
     """
     No finite MDE exists once the baseline is too noisy.
 
-    SE(m) grows linearly in m, so the z-statistic saturates at
-    1 / sqrt(effect_var) and power can never exceed Phi(1 / sqrt(effect_var)) in
-    the correct direction, whatever the effect size.
+    Solving m = (z_alpha + z_beta) * SE(m) needs the right-hand side to grow more
+    slowly than the left. SE(m) grows like sqrt(effect_var) * m, so a solution
+    exists only while |z_alpha + z_beta| < 1 / sqrt(effect_var), whatever the
+    effect size.
     """
-    pw = _make_relative_delta_power()
+    pw = _make_relative_delta_power("greater")
 
-    # effect_var = ctrl_var / ctrl_mean**2 = 2, so the ceiling is Phi(1/sqrt(2))
-    # = 0.760, below the requested 0.8.
-    ceiling = norm.cdf(1 / np.sqrt(2.0))
-    assert ceiling < 0.8
+    # effect_var = ctrl_var / ctrl_mean**2 = 2, so z_alpha + z_beta must stay
+    # below 1 / sqrt(2) = 0.707.
+    effect_var = 2.0
+    max_k = 1 / np.sqrt(effect_var)
+    curve = _delta_curve(1.0, effect_var, effect_var)
 
+    z_alpha = norm.ppf(1 - 0.05)
+    assert z_alpha + norm.ppf(0.8) > max_k  # the usual design is unreachable
     with pytest.raises(ValueError, match="No finite minimum detectable effect"):
-        pw._mde_from_curve(_delta_curve(1.0, 2.0, 2.0), 0.05, 0.8)
+        pw._mde_from_curve(curve, 0.05, 0.8)
 
-    # Just below the ceiling a finite MDE does exist.
-    mde = pw._mde_from_curve(_delta_curve(1.0, 2.0, 2.0), 0.05, ceiling - 0.01)
+    # Relaxing alpha and power until z_alpha + z_beta drops below the cap makes a
+    # finite MDE reappear.
+    alpha, power = 0.4, 0.5
+    assert norm.ppf(1 - alpha) + norm.ppf(power) < max_k
+    mde = pw._mde_from_curve(curve, alpha, power)
     assert np.isfinite(mde) and mde > 0
 
 
@@ -529,20 +536,24 @@ def _achieved_power(
     """
     Independent reference: the power actually achieved at relative effect ``m``.
 
-    Derived directly from the Wald-test definition (not from the solver's
-    internals), so it catches wrong-root selection and wrong one-sided handling:
-    ``power = Phi((|m| - z_alpha * SE_rel(0)) / SE_rel(m))``.
+    Derived directly from the Wald-test definition rather than from the solver's
+    internals, so it catches wrong-root selection and wrong one-sided handling.
+    The test divides by the standard error estimated at the observed effect, so
+    under an alternative ``m`` the scale is ``SE_rel(m)`` throughout::
+
+        power = Phi(|m| / SE_rel(m) - z_alpha)
+
+    Only the correct-direction rejection is counted, matching the MDE.
     """
     from scipy.stats import norm
 
     se2_c = ctrl_var / ctrl_mean**2
     se2_t = treat_var / ctrl_mean**2
-    se_rel_0 = np.sqrt(se2_t + se2_c)
     se_rel_m = np.sqrt(se2_t + se2_c * (1 + m) ** 2)
     z_alpha = (
         norm.ppf(1 - alpha / 2) if hypothesis == "two-sided" else norm.ppf(1 - alpha)
     )
-    return float(norm.cdf((abs(m) - z_alpha * se_rel_0) / se_rel_m))
+    return float(norm.cdf(abs(m) / se_rel_m - z_alpha))
 
 
 @pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
@@ -614,26 +625,27 @@ def test_relative_mde_allows_zero_at_null_power(hypothesis):
     assert achieved == pytest.approx(power, abs=1e-6)
 
 
-def test_relative_mde_power_half_returns_critical_boundary():
-    """At 50% power, the valid quadratic root is exactly c."""
+def test_relative_mde_power_half_is_the_rejection_boundary():
+    """
+    At 50% power the MDE is the rejection threshold itself.
+
+    With z_beta = 0 the equation reduces to m = z_alpha * SE(m), whose solution is
+    the effect at which the estimate sits exactly on the critical value. Because
+    SE grows with the effect, that is strictly above the naive z_alpha * SE(0).
+    """
     from scipy.stats import norm
 
     alpha = 0.05
-    power = 0.5
-    ctrl_mean = 1.0
-    ctrl_var = 0.01
-    treat_var = 0.01
+    ctrl_mean, ctrl_var, treat_var = 1.0, 0.01, 0.01
+    curve = _delta_curve(ctrl_mean, ctrl_var, treat_var)
 
-    mde = _make_relative_delta_power("greater")._mde_from_curve(
-        _delta_curve(ctrl_mean, ctrl_var, treat_var),
-        alpha,
-        power,
-    )
+    mde = _make_relative_delta_power("greater")._mde_from_curve(curve, alpha, 0.5)
 
-    expected_boundary = norm.ppf(1 - alpha) * np.sqrt(ctrl_var + treat_var)
-    assert mde == pytest.approx(expected_boundary)
+    z_alpha = norm.ppf(1 - alpha)
+    assert mde == pytest.approx(z_alpha * curve.se_at(mde))  # fixed point
+    assert mde > z_alpha * curve.std_error  # strictly above the naive boundary
     achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, "greater")
-    assert achieved == pytest.approx(power, abs=1e-6)
+    assert achieved == pytest.approx(0.5, abs=1e-6)
 
 
 def test_relative_mde_allows_zero_variance():
@@ -667,10 +679,11 @@ def test_relative_mde_high_cv_regime():
     alpha = 0.05
     power = 0.8
     ctrl_mean = 1.0
-    # ctrl_var / ctrl_mean**2 = 0.8: below the 1/z_beta**2 no-solution threshold
-    # but large enough that the naive quadratic picked the wrong root.
-    ctrl_var = 0.8
-    treat_var = 0.8
+    # effect_var = ctrl_var / ctrl_mean**2 = 0.1, so (z_alpha + z_beta) = 2.80 is
+    # just under the 1 / sqrt(0.1) = 3.16 cap: a solution exists, but the effect
+    # dependence of the standard error dominates the answer.
+    ctrl_var = 0.1
+    treat_var = 0.1
 
     mde = _make_relative_delta_power()._mde_from_curve(
         _delta_curve(ctrl_mean, ctrl_var, treat_var),
@@ -683,24 +696,31 @@ def test_relative_mde_high_cv_regime():
     assert achieved == pytest.approx(power, abs=1e-6)
 
 
-def test_relative_mde_negative_leading_coefficient_recovers_power():
-    """A valid 'less' MDE is retained even when the quadratic A coefficient is negative."""
+@pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
+@pytest.mark.parametrize("power", [0.3, 0.5, 0.8, 0.95])
+@pytest.mark.parametrize("ctrl_var", [0.0, 0.0001, 0.01, 0.05])
+def test_relative_mde_satisfies_the_power_equation(hypothesis, power, ctrl_var):
+    """
+    The returned MDE solves m = (z_alpha + z_beta) * SE(m) directly.
+
+    Squaring that equation to get the quadratic introduces a second root of the
+    opposite sign, so this checks the residual of the *unsquared* equation rather
+    than trusting the root selection. Covers powers either side of 50%, where the
+    sign of z_beta flips, and a deterministic baseline where the curve is flat.
+    """
     alpha = 0.05
-    power = 0.3
-    ctrl_mean = 1.0
-    ctrl_var = 5.0
-    treat_var = 0.0
+    curve = _delta_curve(ctrl_mean=1.0, ctrl_var=ctrl_var, treat_var=0.01)
+    mde = _make_relative_delta_power(hypothesis)._mde_from_curve(curve, alpha, power)
 
-    mde = _make_relative_delta_power("less")._mde_from_curve(
-        _delta_curve(ctrl_mean, ctrl_var, treat_var),
-        alpha,
-        power,
-    )
+    if hypothesis == "less":
+        z_alpha, z_beta = norm.ppf(alpha), norm.ppf(1 - power)
+    elif hypothesis == "greater":
+        z_alpha, z_beta = norm.ppf(1 - alpha), norm.ppf(power)
+    else:
+        z_alpha, z_beta = norm.ppf(1 - alpha / 2), norm.ppf(power)
 
-    assert 1 - norm.ppf(power) ** 2 * ctrl_var < 0
-    assert mde < 0
-    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, "less")
-    assert achieved == pytest.approx(power, abs=1e-6)
+    assert mde == pytest.approx((z_alpha + z_beta) * curve.se_at(mde), abs=1e-12)
+    assert np.sign(mde) == np.sign(z_alpha + z_beta) or mde == 0.0
 
 
 def _wrong_direction_tail(
@@ -717,8 +737,7 @@ def _wrong_direction_tail(
     """
     if hypothesis != "two-sided":
         return 0.0
-    threshold = -norm.ppf(1 - alpha / 2) * curve.std_error
-    return float(norm.cdf((threshold - mde) / curve.se_at(mde)))
+    return float(norm.cdf(-norm.ppf(1 - alpha / 2) - mde / curve.se_at(mde)))
 
 
 def test_flat_curve_mde_matches_linear_formula():
