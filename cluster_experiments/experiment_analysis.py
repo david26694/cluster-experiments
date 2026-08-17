@@ -11,6 +11,7 @@ from pandas.api.types import is_numeric_dtype
 from scipy.stats import norm, ttest_ind, ttest_rel
 
 from cluster_experiments.relative_lift_transformer import (
+    BaseLiftTransformer,
     DeltaMethodLiftTransformer,
     LiftRegressionTransformer,
     RegressionResultsProtocol,
@@ -155,7 +156,7 @@ class StandardErrorCurve:
         SE(m)**2 = std_error**2 + effect_var * m**2 - 2 * effect_cov * m
 
     For an **absolute** effect the standard error does not depend on the effect
-    size, so ``effect_var = effect_cov = 0`` and ``se_at`` is constant.
+    size, so ``effect_var = effect_cov = 0`` and ``standard_error_at`` is constant.
 
     For a **relative** effect it does depend on the effect size, because the
     denominator of the lift is itself estimated. Writing the lift as a function
@@ -199,7 +200,7 @@ class StandardErrorCurve:
         """True when the standard error varies with the effect size."""
         return bool(self.effect_var) or bool(self.effect_cov)
 
-    def se_at(self, effect: float) -> float:
+    def standard_error_at(self, effect: float) -> float:
         """
         Standard error of the estimate when the true effect is ``effect``.
 
@@ -1047,7 +1048,16 @@ class OLSAnalysis(ExperimentAnalysis):
         """
         if not self.relative_effect:
             return super().analysis_standard_error_curve(df)
-        return self.fit_ols(df=df).standard_error_curve()
+
+        # fit_ols is annotated with the results protocol it shares with
+        # statsmodels, which has no notion of a standard error curve. It returns
+        # the transformer exactly when relative_effect is set, which is the branch
+        # we are in; assert it so the invariant is checked rather than assumed.
+        results = self.fit_ols(df=df)
+        assert isinstance(
+            results, BaseLiftTransformer
+        ), f"relative_effect is set but fit_ols returned {type(results).__name__}"
+        return results.standard_error_curve()
 
     def analysis_confidence_interval(
         self, df: pd.DataFrame, alpha: float, verbose: bool = False

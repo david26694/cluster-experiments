@@ -8,7 +8,7 @@ equations are in circulation in this repo, and they disagree:
 | | power equation | where it appears |
 |---|---|---|
 | **(a)** | `power = Φ( (m − z_α·SE(0)) / SE(m) )` | `MDE-new-ratio-metrics`, `_effect_dependent_mde_calculation` |
-| **(b)** | `power = Φ( m/SE(m) − z_α )` | `slides/relative_lift_ols.tex`, `test_relative_mde_quadratic.py` |
+| **(b)** | `power = Φ( m/SE(m) − z_α )` | the project slides on relative lift for OLS |
 | **(c)** | `power = Φ( (m − x\*) / SE(m) )` | derived below |
 
 They differ only in the **rejection threshold** they assume. This note derives

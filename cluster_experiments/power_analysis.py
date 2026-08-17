@@ -879,7 +879,7 @@ class NormalPowerAnalysis:
         """
         # Flat curves return their constant standard error here, so absolute
         # effects go through exactly the arithmetic they always did.
-        std_error = se_curve.se_at(average_effect)
+        std_error = se_curve.standard_error_at(average_effect)
 
         if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.LESS:
             z_alpha = norm.ppf(alpha)
@@ -971,10 +971,8 @@ class NormalPowerAnalysis:
            ``|k| * sqrt(B) < 1``. This caps ``z_alpha + z_beta``, and therefore
            caps the power attainable at a given ``alpha``, however large the effect.
 
-        Reference: the quadratic and the non-existence condition follow
-        ``slides/relative_lift_ols.tex`` (section "MDE for relative lift"). The
-        variance formula follows standard delta-method theory (van der Vaart, 1998,
-        section 3).
+        Reference: the variance formula follows standard delta-method theory
+        (van der Vaart, 1998, section 3).
 
         Args:
             alpha: Significance level.

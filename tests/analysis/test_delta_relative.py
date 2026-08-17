@@ -642,7 +642,7 @@ def test_relative_mde_power_half_is_the_rejection_boundary():
     mde = _make_relative_delta_power("greater")._mde_from_curve(curve, alpha, 0.5)
 
     z_alpha = norm.ppf(1 - alpha)
-    assert mde == pytest.approx(z_alpha * curve.se_at(mde))  # fixed point
+    assert mde == pytest.approx(z_alpha * curve.standard_error_at(mde))  # fixed point
     assert mde > z_alpha * curve.std_error  # strictly above the naive boundary
     achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, "greater")
     assert achieved == pytest.approx(0.5, abs=1e-6)
@@ -719,7 +719,9 @@ def test_relative_mde_satisfies_the_power_equation(hypothesis, power, ctrl_var):
     else:
         z_alpha, z_beta = norm.ppf(1 - alpha / 2), norm.ppf(power)
 
-    assert mde == pytest.approx((z_alpha + z_beta) * curve.se_at(mde), abs=1e-12)
+    assert mde == pytest.approx(
+        (z_alpha + z_beta) * curve.standard_error_at(mde), abs=1e-12
+    )
     assert np.sign(mde) == np.sign(z_alpha + z_beta) or mde == 0.0
 
 
@@ -737,7 +739,9 @@ def _wrong_direction_tail(
     """
     if hypothesis != "two-sided":
         return 0.0
-    return float(norm.cdf(-norm.ppf(1 - alpha / 2) - mde / curve.se_at(mde)))
+    return float(
+        norm.cdf(-norm.ppf(1 - alpha / 2) - mde / curve.standard_error_at(mde))
+    )
 
 
 def test_flat_curve_mde_matches_linear_formula():
@@ -1146,11 +1150,15 @@ def test_standard_error_curve_is_flat_without_effect_dependence():
     flat = StandardErrorCurve(std_error=0.3)
     assert not flat.is_effect_dependent
     for effect in [-10.0, -0.1, 0.0, 0.1, 10.0]:
-        assert flat.se_at(effect) == 0.3
+        assert flat.standard_error_at(effect) == 0.3
 
     curved = StandardErrorCurve(std_error=0.3, effect_var=0.01, effect_cov=-0.01)
     assert curved.is_effect_dependent
-    assert curved.se_at(0.0) == 0.3
+    assert curved.standard_error_at(0.0) == 0.3
     # effect_cov == -effect_var collapses to se2_t + se2_c * (1 + m)**2, which is
     # increasing in m on both sides of zero for m > -1.
-    assert curved.se_at(0.5) > curved.se_at(0.0) > curved.se_at(-0.5)
+    assert (
+        curved.standard_error_at(0.5)
+        > curved.standard_error_at(0.0)
+        > curved.standard_error_at(-0.5)
+    )
