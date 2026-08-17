@@ -1,0 +1,19 @@
+cluster_experiments/standard_error_curve.py
+  s_a9674489bc846c::t_1547a02c42383d 61-73,89-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "4e79074f7576a1e4b4f6c2a186866ff02ea85546",
+  "prompts": {},
+  "sessions": {
+    "s_a9674489bc846c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd4f34e4-4826-4cfa-8afa-2877399ade13",
+        "model": "claude-opus-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
