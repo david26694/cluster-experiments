@@ -58,8 +58,19 @@ class StandardErrorCurve:
 
     @property
     def is_effect_dependent(self) -> bool:
-        """True when the standard error varies with the effect size."""
-        return bool(self.effect_var) or bool(self.effect_cov)
+        """
+        True when the standard error varies with the effect size.
+
+        Derived rather than stored: this is a restatement of the coefficients, not
+        extra information about them, so there is nothing for a separate flag to
+        record and nothing to fall out of sync.
+
+        Callers use it only to take a cheaper arithmetic path. It is never a
+        semantic branch: with both coefficients zero the effect-dependent formulas
+        reduce exactly to the constant-standard-error ones, so a relative curve
+        whose baseline happens to be noiseless is still handled correctly.
+        """
+        return self.effect_var != 0.0 or self.effect_cov != 0.0
 
     def standard_error_at(self, effect: float) -> float:
         """
@@ -75,4 +86,6 @@ class StandardErrorCurve:
             + self.effect_var * effect**2
             - 2 * self.effect_cov * effect
         )
+        # A variance this far from the null is outside the range the delta-method
+        # expansion describes; clamp rather than return a nan.
         return float(np.sqrt(max(variance, 0.0)))
