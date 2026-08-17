@@ -1,0 +1,19 @@
+cluster_experiments/experiment_analysis.py
+  s_a9674489bc846c::t_83fac36b69ffa4 192-204,220-221
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "01b6d6d4ebce9bb8d22e7307b3dfee248e88f7b0",
+  "prompts": {},
+  "sessions": {
+    "s_a9674489bc846c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd4f34e4-4826-4cfa-8afa-2877399ade13",
+        "model": "claude-opus-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
