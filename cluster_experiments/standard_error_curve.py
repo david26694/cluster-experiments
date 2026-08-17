@@ -58,19 +58,8 @@ class StandardErrorCurve:
 
     @property
     def is_effect_dependent(self) -> bool:
-        """
-        True when the standard error varies with the effect size.
-
-        Derived rather than stored: this is a restatement of the coefficients, not
-        extra information about them, so there is nothing for a separate flag to
-        record and nothing to fall out of sync.
-
-        Callers use it only to take a cheaper arithmetic path. It is never a
-        semantic branch: with both coefficients zero the effect-dependent formulas
-        reduce exactly to the constant-standard-error ones, so a relative curve
-        whose baseline happens to be noiseless is still handled correctly.
-        """
-        return self.effect_var != 0.0 or self.effect_cov != 0.0
+        """True when the standard error varies with the effect size."""
+        return bool(self.effect_var) or bool(self.effect_cov)
 
     def standard_error_at(self, effect: float) -> float:
         """
@@ -86,38 +75,4 @@ class StandardErrorCurve:
             + self.effect_var * effect**2
             - 2 * self.effect_cov * effect
         )
-        # A variance this far from the null is outside the range the delta-method
-        # expansion describes; clamp rather than return a nan.
         return float(np.sqrt(max(variance, 0.0)))
-
-    @classmethod
-    def constant(cls, std_error: float) -> "StandardErrorCurve":
-        """
-        A standard error that does not vary with the effect size.
-
-        This is the case for any absolute effect. Preferred over the bare
-        constructor at call sites, so "constant" is stated rather than implied by
-        the omission of two defaults.
-
-        Arguments:
-            std_error: the standard error, at every effect size.
-        """
-        return cls(std_error=std_error)
-
-    @classmethod
-    def from_independent_arms(
-        cls, std_error: float, effect_var: float
-    ) -> "StandardErrorCurve":
-        """
-        Curve for a relative effect estimated from two independent arms.
-
-        Independence makes ``Cov(numerator, baseline) = -Var(baseline)``, so the
-        covariance coefficient is fixed by the variance one and
-        ``SE(m)**2`` collapses to ``se2_t + se2_c * (1 + m)**2``. Encoded here so
-        callers cannot get that sign wrong.
-
-        Arguments:
-            std_error: the standard error under the null, ``SE(0)``.
-            effect_var: variance of the baseline, over the squared baseline.
-        """
-        return cls(std_error=std_error, effect_var=effect_var, effect_cov=-effect_var)

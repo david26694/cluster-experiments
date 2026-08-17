@@ -262,19 +262,17 @@ class DeltaMethodLiftTransformer(BaseLiftTransformer):
         relative_lift, se = self.lift_and_se(
             mean_diff, std_error**2, ctrl_mean, ctrl_var
         )
-        # The arms are independent, so Cov(mean_diff, ctrl_mean) = -ctrl_var;
-        # from_independent_arms encodes that the covariance coefficient is minus
-        # the variance one.
-        curve = StandardErrorCurve.from_independent_arms(
-            std_error=float(std_error / abs(ctrl_mean)),
-            effect_var=float(ctrl_var / ctrl_mean**2),
-        )
+        # The arms are independent, so Cov(mean_diff, ctrl_mean) = -ctrl_var and
+        # the covariance coefficient is minus the variance coefficient. That is
+        # the special case for which SE(m)**2 collapses to
+        # se2_t + se2_c * (1 + m)**2.
+        effect_var = ctrl_var / ctrl_mean**2
         self._set_results(
             relative_lift=relative_lift,
             se_relative_lift=se,
-            se_null=curve.std_error,
-            effect_var=curve.effect_var,
-            effect_cov=curve.effect_cov,
+            se_null=float(std_error / abs(ctrl_mean)),
+            effect_var=float(effect_var),
+            effect_cov=float(-effect_var),
         )
 
     @staticmethod

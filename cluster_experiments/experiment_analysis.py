@@ -322,7 +322,7 @@ class ExperimentAnalysis(ABC):
         Arguments:
             df: dataframe containing the data to analyze
         """
-        return StandardErrorCurve.constant(self.analysis_standard_error(df))
+        return StandardErrorCurve(std_error=self.analysis_standard_error(df))
 
     def analysis_confidence_interval(
         self,
