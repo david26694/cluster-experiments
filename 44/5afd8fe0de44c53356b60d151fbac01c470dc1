@@ -1,0 +1,35 @@
+cluster_experiments/experiment_analysis.py
+  s_a9674489bc846c::t_c1f49ab50eb317 14
+  s_a9674489bc846c::t_e968c3c7bd31ac 1051-1056,1060
+  s_a9674489bc846c::t_b255363667b85d 1057-1059
+  s_a9674489bc846c::t_e7a319db874ab7 159,203
+docs/relative_delta.ipynb
+  s_a9674489bc846c::t_b9c3b2a48a9e1f 606-613
+  s_a9674489bc846c::t_e7a319db874ab7 482-483,486
+  s_a9674489bc846c::t_641378515d6981 349
+  s_a9674489bc846c::t_c2aa03ad0177ae 33-36,76-79,163-166,254-257,358-361,439-442,506-509,517-524,595-598
+tests/analysis/test_delta_relative.py
+  s_a9674489bc846c::t_e7a319db874ab7 645,1153,1157
+  s_a9674489bc846c::t_cbe1170d1f9095 722-724,742-744,1160-1164
+mde_threshold_derivation.md
+  s_a9674489bc846c::t_641378515d6981 11
+cluster_experiments/power_analysis.py
+  s_a9674489bc846c::t_e7a319db874ab7 882
+  s_a9674489bc846c::t_becbda8716dddf 974-975
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "445afd8fe0de44c53356b60d151fbac01c470dc1",
+  "prompts": {},
+  "sessions": {
+    "s_a9674489bc846c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd4f34e4-4826-4cfa-8afa-2877399ade13",
+        "model": "claude-opus-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
