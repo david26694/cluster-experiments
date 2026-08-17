@@ -12,7 +12,6 @@ from cluster_experiments.cupac import build_ml_handler
 from cluster_experiments.experiment_analysis import (
     DeltaMethodAnalysis,
     ExperimentAnalysis,
-    StandardErrorCurve,
 )
 from cluster_experiments.perturbator import Perturbator
 from cluster_experiments.power_config import (
@@ -23,6 +22,7 @@ from cluster_experiments.power_config import (
     splitter_mapping,
 )
 from cluster_experiments.random_splitter import RandomSplitter, RepeatedSampler
+from cluster_experiments.standard_error_curve import StandardErrorCurve
 from cluster_experiments.utils import HypothesisEntries, _get_mapping_key
 
 
@@ -590,10 +590,9 @@ class PowerAnalysis:
                 self.ml_handler, "is_cupac", bool(outcome_name)
             )
             if outcome_name and is_ml_handler_active:
-                assert outcome_name in self.analysis.covariates, (
-                    f"covariates in analysis must contain '{outcome_name}' when a handler is set. "
-                    f"Add covariates=['{outcome_name}'] to your analysis config."
-                )
+                assert (
+                    outcome_name in self.analysis.covariates
+                ), f"covariates in analysis must contain '{outcome_name}' when a handler is set. Add covariates=['{outcome_name}'] to your analysis config."
             if hasattr(self.splitter, "cluster_cols"):
                 if set(self.analysis.covariates).intersection(
                     set(self.splitter.cluster_cols)
@@ -866,11 +865,6 @@ class NormalPowerAnalysis:
         self, alpha: float, se_curve: StandardErrorCurve, average_effect: float
     ) -> float:
         """Returns the power of the analysis using the normal distribution.
-
-        The standard error is evaluated at the effect being tested. For an
-        absolute effect it does not vary with the effect, so this is the usual
-        expression; for a relative effect it does, because the estimated standard
-        error the test divides by is itself computed at the observed lift.
 
         Arguments:
             alpha: significance level
@@ -1220,12 +1214,15 @@ class NormalPowerAnalysis:
             df_time = df_time.loc[
                 df_time[time_col] < experiment_start + pd.Timedelta(days=n_days)
             ]
-            yield self._get_average_standard_error_curve(
-                df=df_time,
-                pre_experiment_df=pre_experiment_df,
-                verbose=verbose,
-                n_simulations=n_simulations,
-            ), n_days
+            yield (
+                self._get_average_standard_error_curve(
+                    df=df_time,
+                    pre_experiment_df=pre_experiment_df,
+                    verbose=verbose,
+                    n_simulations=n_simulations,
+                ),
+                n_days,
+            )
 
     def power_time_line(
         self,
@@ -1408,8 +1405,7 @@ class NormalPowerAnalysis:
 
         if agg_func not in self.VALID_AGG_FUNCS:
             raise ValueError(
-                f"Invalid aggregation function `{agg_func}`. "
-                f"Choose one of: {', '.join(self.VALID_AGG_FUNCS)}."
+                f"Invalid aggregation function `{agg_func}`. Choose one of: {', '.join(self.VALID_AGG_FUNCS)}."
             )
 
         alpha = self.alpha if alpha is None else alpha
@@ -1588,10 +1584,9 @@ class NormalPowerAnalysis:
                 self.ml_handler, "is_cupac", bool(outcome_name)
             )
             if outcome_name and is_ml_handler_active:
-                assert outcome_name in self.analysis.covariates, (
-                    f"covariates in analysis must contain '{outcome_name}' when a handler is set. "
-                    f"Add covariates=['{outcome_name}'] to your analysis config."
-                )
+                assert (
+                    outcome_name in self.analysis.covariates
+                ), f"covariates in analysis must contain '{outcome_name}' when a handler is set. Add covariates=['{outcome_name}'] to your analysis config."
 
             if hasattr(self.splitter, "cluster_cols"):
                 if set(self.analysis.covariates).intersection(

@@ -15,7 +15,6 @@ from cluster_experiments.experiment_analysis import (
     MLMExperimentAnalysis,
     OLSAnalysis,
     PairedTTestClusteredAnalysis,
-    StandardErrorCurve,
     SyntheticControlAnalysis,
     TTestClusteredAnalysis,
 )
@@ -54,6 +53,7 @@ from cluster_experiments.relative_lift_transformer import (
     DeltaMethodLiftTransformer,
     LiftRegressionTransformer,
 )
+from cluster_experiments.standard_error_curve import StandardErrorCurve
 from cluster_experiments.washover import ConstantWashover, EmptyWashover, Washover
 
 __all__ = [

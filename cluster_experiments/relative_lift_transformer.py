@@ -5,6 +5,8 @@ import pandas as pd
 import scipy.stats as stats
 from statsmodels.regression.linear_model import RegressionResultsWrapper
 
+from cluster_experiments.standard_error_curve import StandardErrorCurve
+
 
 class RegressionResultsProtocol(Protocol):
     @property
@@ -32,7 +34,7 @@ class BaseLiftTransformer:
 
     Alongside the point estimate and its standard error, subclasses record the two
     coefficients describing how that standard error varies with the effect size
-    (see :class:`~cluster_experiments.experiment_analysis.StandardErrorCurve`).
+    (see :class:`~cluster_experiments.standard_error_curve.StandardErrorCurve`).
     Power analysis reads them via :meth:`standard_error_curve`.
 
     Note there is deliberately no ``fit`` on the base class: the subclasses take
@@ -64,7 +66,7 @@ class BaseLiftTransformer:
         self._effect_var = effect_var
         self._effect_cov = effect_cov
 
-    def standard_error_curve(self):
+    def standard_error_curve(self) -> StandardErrorCurve:
         """
         Returns the relative-lift standard error as a function of the true effect.
 
@@ -72,9 +74,6 @@ class BaseLiftTransformer:
         null, which differs from ``bse`` — the latter is evaluated at the observed
         lift, which is what inference needs.
         """
-        # Imported here to avoid a circular import at module load time.
-        from cluster_experiments.experiment_analysis import StandardErrorCurve
-
         if self._se_null is None:
             raise ValueError("fit must be called before standard_error_curve")
         return StandardErrorCurve(
@@ -263,17 +262,19 @@ class DeltaMethodLiftTransformer(BaseLiftTransformer):
         relative_lift, se = self.lift_and_se(
             mean_diff, std_error**2, ctrl_mean, ctrl_var
         )
-        # The arms are independent, so Cov(mean_diff, ctrl_mean) = -ctrl_var and
-        # the covariance coefficient is minus the variance coefficient. That is
-        # the special case for which SE(m)**2 collapses to
-        # se2_t + se2_c * (1 + m)**2.
-        effect_var = ctrl_var / ctrl_mean**2
+        # The arms are independent, so Cov(mean_diff, ctrl_mean) = -ctrl_var;
+        # from_independent_arms encodes that the covariance coefficient is minus
+        # the variance one.
+        curve = StandardErrorCurve.from_independent_arms(
+            std_error=float(std_error / abs(ctrl_mean)),
+            effect_var=float(ctrl_var / ctrl_mean**2),
+        )
         self._set_results(
             relative_lift=relative_lift,
             se_relative_lift=se,
-            se_null=float(std_error / abs(ctrl_mean)),
-            effect_var=float(effect_var),
-            effect_cov=float(-effect_var),
+            se_null=curve.std_error,
+            effect_var=curve.effect_var,
+            effect_cov=curve.effect_cov,
         )
 
     @staticmethod
