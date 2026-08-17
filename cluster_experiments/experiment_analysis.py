@@ -189,8 +189,19 @@ class StandardErrorCurve:
 
     @property
     def is_effect_dependent(self) -> bool:
-        """True when the standard error varies with the effect size."""
-        return bool(self.effect_var) or bool(self.effect_cov)
+        """
+        True when the standard error varies with the effect size.
+
+        Derived rather than stored: this is a restatement of the coefficients, not
+        extra information about them, so there is nothing for a separate flag to
+        record and nothing to fall out of sync.
+
+        Callers use it only to take a cheaper arithmetic path. It is never a
+        semantic branch: with both coefficients zero the effect-dependent formulas
+        reduce exactly to the constant-standard-error ones, so a relative curve
+        whose baseline happens to be noiseless is still handled correctly.
+        """
+        return self.effect_var != 0.0 or self.effect_cov != 0.0
 
     def standard_error_at(self, effect: float) -> float:
         """
@@ -206,6 +217,8 @@ class StandardErrorCurve:
             + self.effect_var * effect**2
             - 2 * self.effect_cov * effect
         )
+        # A variance this far from the null is outside the range the delta-method
+        # expansion describes; clamp rather than return a nan.
         return float(np.sqrt(max(variance, 0.0)))
 
 
@@ -225,10 +238,7 @@ class ExperimentAnalysis(ABC):
         treatment: name of the treatment to use as the treated group
         covariates: list of columns to use as covariates
         hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
-        relative_effect: if True, the analysis reports the treatment effect in
-            relative (percent) terms instead of absolute terms. Only supported by
-            a subset of analyses (e.g. OLSAnalysis, ClusteredOLSAnalysis,
-            DeltaMethodAnalysis); other analyses keep the default of False.
+        relative_effect: if True, the analysis reports the treatment effect in relative terms instead of absolute terms.
 
     """
 
@@ -384,10 +394,8 @@ class ExperimentAnalysis(ABC):
         Returns the standard error of the analysis as a
         :class:`StandardErrorCurve`. Expects treatment to be a 0-1 variable.
 
-        The base implementation returns a flat curve, which is correct for any
-        analysis reporting an absolute effect: the standard error does not depend
-        on the effect size. Analyses reporting relative effects override this to
-        supply the effect-dependent coefficients.
+        Depending on is_relative, returns a flat curve (std error does not depend on effect size)
+        or a curve that depends on the effect size.
 
         Arguments:
             df: dataframe containing the data to analyze
@@ -474,10 +482,6 @@ class ExperimentAnalysis(ABC):
     def get_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
         """Returns the standard error of the analysis as a function of the
         effect size, as a :class:`StandardErrorCurve`.
-
-        The curve is flat for analyses reporting absolute effects, and
-        effect-dependent for those reporting relative ones. Power analysis
-        derives both power and the MDE from it.
 
         Arguments:
             df: dataframe containing the data to analyze
@@ -1025,12 +1029,7 @@ class OLSAnalysis(ExperimentAnalysis):
         return results_ols.bse[self.treatment_col]
 
     def analysis_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
-        """Returns the standard error of the analysis as a function of the effect size
-
-        For a relative effect the standard error grows with the effect, because
-        the control mean in the denominator of the lift is itself estimated. The
-        coefficients come straight from the delta-method expansion in
-        :class:`LiftRegressionTransformer`.
+        """Returns the standard error of the analysis as a function of the effect size.
 
         Arguments:
             df: dataframe containing the data to analyze
