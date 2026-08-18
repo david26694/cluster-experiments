@@ -1,0 +1,23 @@
+ruff.toml
+  s_a9674489bc846c::t_6829090592f28c 3,5
+.pre-commit-config.yaml
+  s_a9674489bc846c::t_6829090592f28c 4,7-12,16-20
+uv.lock
+  s_a9674489bc846c::t_b1de11670101b0 2,312,863-873,889-899,911
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "9d441456e6965e36ebef3832163cc88d8e4c90de",
+  "prompts": {},
+  "sessions": {
+    "s_a9674489bc846c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd4f34e4-4826-4cfa-8afa-2877399ade13",
+        "model": "claude-opus-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
