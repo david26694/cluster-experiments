@@ -1798,8 +1798,16 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         is_treatment = df[self.treatment_col] == 1
 
         thetas_dict = self._compute_thetas(df) if self.covariates else None
+        # Scale-weighted mean of each covariate. _correct_target subtracts
+        # theta * (covariate - mean) * scale, so `mean` has to be on the same
+        # scale as the covariate itself. Dividing the covariate sum by the scale
+        # sum instead would be smaller by a factor of the mean scale, leaving a
+        # constant offset in every corrected target. That offset cancels out of
+        # the treatment-control difference, so it does not affect an absolute
+        # effect, but it does not cancel out of a ratio, so it corrupts the
+        # denominator of a relative effect.
         covariates_means = [
-            df[covariate].sum() / df[self.scale_col].sum()
+            (df[covariate] * df[self.scale_col]).sum() / df[self.scale_col].sum()
             for covariate in self.covariates
         ]
 
