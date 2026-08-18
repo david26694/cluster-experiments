@@ -1,5 +1,5 @@
 line-length = 160
 
-extend-select = ["I001"]
+lint.extend-select = ["I001"]
 
-ignore = ["E501"]
+lint.ignore = ["E501", "LOG015", ]
