@@ -1162,3 +1162,103 @@ def test_standard_error_curve_is_flat_without_effect_dependence():
         > curved.standard_error_at(0.0)
         > curved.standard_error_at(-0.5)
     )
+
+
+def test_relative_delta_with_covariates_recovers_planted_lift():
+    """
+    A relative effect with CUPED covariates must recover the planted lift, and
+    agree with the same analysis run without covariates.
+
+    The covariate mean used to centre the CUPED correction has to be on the same
+    scale as the covariate. Dividing the covariate sum by the scale sum instead
+    leaves a constant offset in every corrected target. That offset cancels out
+    of the treatment-control difference, so an absolute effect is unharmed, but it
+    does not cancel out of a ratio: it lands in the denominator of the relative
+    lift and inflated it by a factor of the mean scale (~19x here).
+    """
+    n_users, true_relative_lift = 20_000, 0.10
+    rng = np.random.default_rng(3)
+    scale = rng.integers(5, 20, size=n_users).astype(float)
+    base_rate = np.clip(0.30 + rng.normal(0, 0.06, size=n_users), 0.05, 0.95)
+    treatment_flag = rng.integers(0, 2, size=n_users)
+    df = pd.DataFrame(
+        {
+            "user": np.arange(n_users),
+            "scale": scale,
+            "target": rng.binomial(
+                scale.astype(int),
+                np.clip(base_rate * (1 + true_relative_lift * treatment_flag), 0, 1),
+            ).astype(float),
+            "treatment": np.where(treatment_flag == 0, "A", "B"),
+            # covariate on the ratio scale, as the delta-method CUPED expects
+            "pre_rate": base_rate + rng.normal(0, 0.01, size=n_users),
+        }
+    )
+
+    def relative_analysis(covariates):
+        return DeltaMethodAnalysis(
+            cluster_cols=["user"],
+            scale_col="scale",
+            target_col="target",
+            covariates=covariates,
+            relative_effect=True,
+        )
+
+    without = relative_analysis([])
+    with_cuped = relative_analysis(["pre_rate"])
+
+    lift_without = without.get_point_estimate(df)
+    lift_with = with_cuped.get_point_estimate(df)
+
+    # Both must land near the planted lift, and near each other.
+    assert lift_without == pytest.approx(true_relative_lift, rel=0.20)
+    assert lift_with == pytest.approx(true_relative_lift, rel=0.20)
+    assert lift_with == pytest.approx(lift_without, rel=0.05)
+
+    # CUPED must also tighten the relative standard error, not loosen it.
+    assert with_cuped.get_standard_error(df) < without.get_standard_error(df)
+
+
+def test_standard_error_curve_with_covariates():
+    """
+    The standard error curve is well formed for a relative delta analysis with
+    covariates, and mde/power still invert each other exactly.
+    """
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
+    df = _make_ratio_df(
+        n_users=4_000, treatment_effect=0.0, seed=21, with_covariate=True
+    )
+    covariates = ["pre_rate"]
+
+    curve = DeltaMethodAnalysis(
+        cluster_cols=["user"],
+        scale_col="scale",
+        target_col="target",
+        covariates=covariates,
+        relative_effect=True,
+    ).get_standard_error_curve(df)
+
+    assert curve.is_effect_dependent
+    assert curve.std_error > 0
+    # The arms stay independent under CUPED, so the covariance coefficient is
+    # still exactly minus the variance one.
+    assert curve.effect_cov == pytest.approx(-curve.effect_var, rel=1e-12)
+
+    for hypothesis in ["greater", "less"]:
+        pw = NormalPowerAnalysis(
+            analysis=DeltaMethodAnalysis(
+                cluster_cols=["user"],
+                scale_col="scale",
+                target_col="target",
+                covariates=covariates,
+                relative_effect=True,
+                hypothesis=hypothesis,
+            ),
+            splitter=ClusteredSplitter(cluster_cols=["user"]),
+        )
+        mde = pw._mde_from_curve(curve, 0.05, 0.8)
+        achieved = pw._normal_power_calculation(
+            alpha=0.05, se_curve=curve, average_effect=mde
+        )
+        assert achieved == pytest.approx(0.8, abs=1e-12)

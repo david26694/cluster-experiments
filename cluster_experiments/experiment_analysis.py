@@ -205,10 +205,7 @@ class ExperimentAnalysis(ABC):
         print(a)
         ```
         """
-        return (
-            f"{type(self).__name__}: cluster_cols={self.cluster_cols}, "
-            f"target={self.target_col}, treatment={self.treatment}"
-        )
+        return f"{type(self).__name__}: cluster_cols={self.cluster_cols}, target={self.target_col}, treatment={self.treatment}"
 
     def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
         """Paste all strings of cluster_cols in one single column"""
@@ -1798,8 +1795,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         is_treatment = df[self.treatment_col] == 1
 
         thetas_dict = self._compute_thetas(df) if self.covariates else None
+        # Scale-weighted mean of each covariate. _correct_target subtracts
+        # theta * (covariate - mean) * scale, so `mean` has to be on the same
+        # scale as the covariate itself
         covariates_means = [
-            df[covariate].sum() / df[self.scale_col].sum()
+            (df[covariate] * df[self.scale_col]).sum() / df[self.scale_col].sum()
             for covariate in self.covariates
         ]
 
