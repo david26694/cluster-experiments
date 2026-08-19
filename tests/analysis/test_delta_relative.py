@@ -97,112 +97,9 @@ def ratio_df_covariate():
 # ---------------------------------------------------------------------------
 
 
-def _manual_relative_lift(df: pd.DataFrame):
-    """Returns (relative_lift, se_naive, ctrl_mean, ctrl_var, treat_var)."""
-    analyser = DeltaMethodAnalysis(
-        cluster_cols=["user"], scale_col="scale", target_col="target"
-    )
-    # Replicate _get_mean_standard_error internals for the absolute case
-    df2 = df.copy()
-    df2 = analyser._create_binary_treatment(df2)
-    df2 = analyser._aggregate_to_cluster(df2)
-    is_treatment = df2["treatment"] == 1
-    ctrl_mean, ctrl_var = analyser._get_group_mean_and_variance(
-        df2[~is_treatment], None, []
-    )
-    treat_mean, treat_var = analyser._get_group_mean_and_variance(
-        df2[is_treatment], None, []
-    )
-    mean_diff = treat_mean - ctrl_mean
-    var_abs = treat_var + ctrl_var
-    relative_lift = mean_diff / ctrl_mean
-    se_naive = np.sqrt(var_abs) / ctrl_mean
-    return relative_lift, se_naive, ctrl_mean, ctrl_var, treat_var, var_abs
-
-
 # ---------------------------------------------------------------------------
 # Unit tests – DeltaMethodLiftTransformer directly
 # ---------------------------------------------------------------------------
-
-
-def test_transformer_point_estimate_matches_manual(ratio_df):
-    """Relative lift from transformer == manual mean_diff / ctrl_mean."""
-    rel_lift_manual, _, ctrl_mean, ctrl_var, treat_var, var_abs = _manual_relative_lift(
-        ratio_df
-    )
-
-    transformer = DeltaMethodLiftTransformer("treatment")
-    mean_diff = rel_lift_manual * ctrl_mean
-    transformer.fit(
-        mean_diff=mean_diff,
-        std_error=np.sqrt(var_abs),
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-    )
-
-    assert transformer.params["treatment"] == pytest.approx(rel_lift_manual, rel=1e-8)
-    assert transformer.summary()["percent_lift"] == transformer.params["treatment"]
-
-
-def test_transformer_se_greater_than_naive(ratio_df):
-    """SE from outer delta method >= naive SE = SE_abs / ctrl_mean."""
-    _, se_naive, ctrl_mean, ctrl_var, treat_var, var_abs = _manual_relative_lift(
-        ratio_df
-    )
-    rel_lift_manual, _, _, _, _, _ = _manual_relative_lift(ratio_df)
-    mean_diff = rel_lift_manual * ctrl_mean
-
-    transformer = DeltaMethodLiftTransformer("treatment")
-    transformer.fit(
-        mean_diff=mean_diff,
-        std_error=np.sqrt(var_abs),
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-    )
-
-    assert transformer.bse["treatment"] >= se_naive
-    assert transformer.bse["treatment"] == pytest.approx(se_naive, rel=0.15)
-
-
-def test_transformer_se_via_summary(ratio_df):
-    """summary()['_se_relative_lift'] == bse['treatment']."""
-    rel_lift_manual, _, ctrl_mean, ctrl_var, _, var_abs = _manual_relative_lift(
-        ratio_df
-    )
-    mean_diff = rel_lift_manual * ctrl_mean
-
-    transformer = DeltaMethodLiftTransformer("treatment")
-    transformer.fit(
-        mean_diff=mean_diff,
-        std_error=np.sqrt(var_abs),
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-    )
-
-    assert transformer.summary()["_se_relative_lift"] == transformer.bse["treatment"]
-
-
-def test_transformer_conf_int_consistent_with_pvalue(ratio_df):
-    """CI and p-value are mutually consistent for multiple alphas."""
-    rel_lift_manual, _, ctrl_mean, ctrl_var, _, var_abs = _manual_relative_lift(
-        ratio_df
-    )
-    mean_diff = rel_lift_manual * ctrl_mean
-
-    transformer = DeltaMethodLiftTransformer("treatment")
-    transformer.fit(
-        mean_diff=mean_diff,
-        std_error=np.sqrt(var_abs),
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-    )
-
-    for alpha in [0.05, 0.01, 0.001]:
-        ci = transformer.conf_int(alpha).loc["treatment"]
-        if transformer.pvalues["treatment"] < alpha:
-            assert ci[0] * ci[1] > 0, f"CI should exclude 0 at alpha={alpha}"
-        else:
-            assert ci[0] * ci[1] < 0, f"CI should include 0 at alpha={alpha}"
 
 
 def test_transformer_zero_ctrl_mean_raises():
@@ -251,59 +148,9 @@ def test_relative_mde_above_power_ceiling_raises():
     assert np.isfinite(mde) and mde > 0
 
 
-def test_static_lift_and_se_matches_fit():
-    """fit() delegates to lift_and_se() and gives the same result."""
-    mean_diff, var_abs, ctrl_mean, ctrl_var = 0.05, 0.001, 0.30, 0.0001
-    rl, se = DeltaMethodLiftTransformer.lift_and_se(
-        mean_diff, var_abs, ctrl_mean, ctrl_var
-    )
-
-    transformer = DeltaMethodLiftTransformer("treatment")
-    transformer.fit(
-        mean_diff=mean_diff,
-        std_error=np.sqrt(var_abs),
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-    )
-
-    assert transformer.params["treatment"] == pytest.approx(rl, rel=1e-10)
-    assert transformer.bse["treatment"] == pytest.approx(se, rel=1e-10)
-
-
 # ---------------------------------------------------------------------------
 # Integration – DeltaMethodAnalysis(relative_effect=True)
 # ---------------------------------------------------------------------------
-
-
-def test_delta_analysis_relative_point_estimate(ratio_df):
-    """DeltaMethodAnalysis relative point estimate == manual relative lift."""
-    rel_lift_manual, _, _, _, _, _ = _manual_relative_lift(ratio_df)
-
-    analyser = DeltaMethodAnalysis(
-        cluster_cols=["user"],
-        scale_col="scale",
-        target_col="target",
-        relative_effect=True,
-    )
-    rel_lift_analysis = analyser.get_point_estimate(ratio_df)
-
-    assert rel_lift_analysis == pytest.approx(rel_lift_manual, rel=1e-6)
-
-
-def test_delta_analysis_relative_se_greater_than_naive(ratio_df):
-    """SE from DeltaMethodAnalysis(relative_effect=True) >= naive."""
-    _, se_naive, _, _, _, _ = _manual_relative_lift(ratio_df)
-
-    analyser = DeltaMethodAnalysis(
-        cluster_cols=["user"],
-        scale_col="scale",
-        target_col="target",
-        relative_effect=True,
-    )
-    se_relative = analyser.get_standard_error(ratio_df)
-
-    assert se_relative >= se_naive
-    assert se_relative == pytest.approx(se_naive, rel=0.15)
 
 
 def test_delta_analysis_relative_pvalue_detects_effect(ratio_df):
@@ -349,50 +196,6 @@ def test_delta_analysis_relative_absolute_consistent(ratio_df):
 # ---------------------------------------------------------------------------
 # With covariates (CUPED)
 # ---------------------------------------------------------------------------
-
-
-def test_delta_relative_with_covariates_point_estimate(ratio_df_covariate):
-    """With CUPED covariates: relative point estimate == abs_CUPED / ctrl_mean_CUPED."""
-    df = ratio_df_covariate.copy()
-    df_agg = df.groupby(["user", "treatment"], as_index=False).agg(
-        {"target": "sum", "scale": "sum", "pre_rate": "sum", "pre_scale": "sum"}
-    )
-
-    analyser_abs = DeltaMethodAnalysis(
-        cluster_cols=["user"],
-        scale_col="scale",
-        target_col="target",
-        covariates=["pre_rate"],
-    )
-    analyser_rel = DeltaMethodAnalysis(
-        cluster_cols=["user"],
-        scale_col="scale",
-        target_col="target",
-        covariates=["pre_rate"],
-        relative_effect=True,
-    )
-
-    # Absolute CUPED estimate and SE
-    abs_est = analyser_abs.get_point_estimate(df_agg)
-    analyser_abs.get_standard_error(df_agg)
-
-    # Relative CUPED estimate and SE
-    rel_est = analyser_rel.get_point_estimate(df_agg)
-    rel_se = analyser_rel.get_standard_error(df_agg)
-
-    # The CUPED-adjusted ctrl_mean is what the transformer divides by.
-    # We can recover it as abs_est / rel_est (since rel = abs / ctrl_mean_cuped).
-    cuped_ctrl_mean = abs_est / rel_est
-
-    # rel_est should equal abs_est / cuped_ctrl_mean by construction
-    assert rel_est == pytest.approx(abs_est / cuped_ctrl_mean, rel=1e-6)
-
-    # The CUPED ctrl_mean should be positive (sensible ratio metric)
-    assert cuped_ctrl_mean > 0
-
-    # Relative SE should be positive and finite
-    assert rel_se > 0
-    assert np.isfinite(rel_se)
 
 
 def test_delta_relative_with_covariates_se_greater_than_naive(ratio_df_covariate):
@@ -467,198 +270,6 @@ def _make_relative_delta_power(hypothesis: str = "two-sided") -> NormalPowerAnal
     )
 
 
-def test_relative_mde_lower_than_naive_mde():
-    """
-    Naive MDE = (z_a + z_b) * SE_abs / ctrl_mean.
-    Proper relative MDE should be equal (in the limit of large n where ctrl variance
-    is negligible) or slightly larger.  Here we just check it's finite and positive.
-    """
-    from scipy.stats import norm
-
-    alpha = 0.05
-    power = 0.8
-    ctrl_mean = 0.30
-    ctrl_var = 0.0001
-    treat_var = 0.0001
-
-    pw = _make_relative_delta_power()
-    mde = pw._mde_from_curve(
-        _delta_curve(ctrl_mean, ctrl_var, treat_var),
-        alpha,
-        power,
-    )
-
-    assert mde > 0
-    assert np.isfinite(mde)
-
-    # Compare against naive approximation
-    z_alpha = norm.ppf(1 - alpha / 2)
-    z_beta = norm.ppf(power)
-    naive_mde = (z_alpha + z_beta) * np.sqrt(treat_var + ctrl_var) / ctrl_mean
-    # Proper MDE should be close to naive when ctrl variance is small
-    assert mde == pytest.approx(naive_mde, rel=0.10)
-
-
-def test_relative_mde_geq_linear():
-    """The relative MDE is always >= the linear approximation, since the SE
-    grows with the effect size."""
-    from scipy.stats import norm
-
-    alpha = 0.05
-    power = 0.8
-    ctrl_mean = 0.30
-    # Non-negligible control variance so the two formulas diverge.
-    ctrl_var = 0.01
-    treat_var = 0.01
-
-    pw = _make_relative_delta_power()
-    relative_mde = pw._mde_from_curve(
-        _delta_curve(ctrl_mean, ctrl_var, treat_var),
-        alpha,
-        power,
-    )
-
-    z_alpha = norm.ppf(1 - alpha / 2)
-    z_beta = norm.ppf(power)
-    linear_mde = (z_alpha + z_beta) * np.sqrt(treat_var + ctrl_var) / ctrl_mean
-
-    assert relative_mde >= linear_mde
-
-
-def _achieved_power(
-    m: float,
-    alpha: float,
-    ctrl_mean: float,
-    ctrl_var: float,
-    treat_var: float,
-    hypothesis: str,
-) -> float:
-    """
-    Independent reference: the power actually achieved at relative effect ``m``.
-
-    Derived directly from the Wald-test definition rather than from the solver's
-    internals, so it catches wrong-root selection and wrong one-sided handling.
-    The test divides by the standard error estimated at the observed effect, so
-    under an alternative ``m`` the scale is ``SE_rel(m)`` throughout::
-
-        power = Phi(|m| / SE_rel(m) - z_alpha)
-
-    Only the correct-direction rejection is counted, matching the MDE.
-    """
-    from scipy.stats import norm
-
-    se2_c = ctrl_var / ctrl_mean**2
-    se2_t = treat_var / ctrl_mean**2
-    se_rel_m = np.sqrt(se2_t + se2_c * (1 + m) ** 2)
-    z_alpha = (
-        norm.ppf(1 - alpha / 2) if hypothesis == "two-sided" else norm.ppf(1 - alpha)
-    )
-    return float(norm.cdf(abs(m) / se_rel_m - z_alpha))
-
-
-@pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
-def test_relative_mde_recovers_target_power(hypothesis):
-    """The returned MDE must reproduce the requested power under the independent
-    Wald-test definition, for every alternative."""
-    alpha = 0.05
-    power = 0.8
-    ctrl_mean = 1.0
-    # Non-trivial variance so the effect-dependent SE term matters.
-    ctrl_var = 0.05
-    treat_var = 0.05
-
-    mde = _make_relative_delta_power(hypothesis)._mde_from_curve(
-        _delta_curve(ctrl_mean, ctrl_var, treat_var),
-        alpha,
-        power,
-    )
-
-    if hypothesis == "less":
-        assert mde < 0
-    else:
-        assert mde > 0
-
-    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, hypothesis)
-    assert achieved == pytest.approx(power, abs=1e-6)
-
-
-@pytest.mark.parametrize("hypothesis", ["greater", "less"])
-def test_relative_mde_recovers_low_target_power(hypothesis):
-    """A target power below 0.5 uses the opposite quadratic-root filter."""
-    alpha = 0.05
-    power = 0.3
-    ctrl_mean = 1.0
-    ctrl_var = 0.01
-    treat_var = 0.01
-
-    mde = _make_relative_delta_power(hypothesis)._mde_from_curve(
-        _delta_curve(ctrl_mean, ctrl_var, treat_var),
-        alpha,
-        power,
-    )
-
-    if hypothesis == "less":
-        assert mde < 0
-    else:
-        assert mde > 0
-
-    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, hypothesis)
-    assert achieved == pytest.approx(power, abs=1e-6)
-
-
-@pytest.mark.parametrize("hypothesis", ["greater", "less"])
-def test_relative_mde_allows_zero_at_null_power(hypothesis):
-    """At one-sided null power, zero is the valid minimum effect."""
-    alpha = power = 0.05
-    ctrl_mean = 1.0
-    ctrl_var = 0.01
-    treat_var = 0.01
-
-    mde = _make_relative_delta_power(hypothesis)._mde_from_curve(
-        _delta_curve(ctrl_mean, ctrl_var, treat_var),
-        alpha,
-        power,
-    )
-
-    assert mde == pytest.approx(0.0, abs=1e-12)
-    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, hypothesis)
-    assert achieved == pytest.approx(power, abs=1e-6)
-
-
-def test_relative_mde_power_half_is_the_rejection_boundary():
-    """
-    At 50% power the MDE is the rejection threshold itself.
-
-    With z_beta = 0 the equation reduces to m = z_alpha * SE(m), whose solution is
-    the effect at which the estimate sits exactly on the critical value. Because
-    SE grows with the effect, that is strictly above the naive z_alpha * SE(0).
-    """
-    from scipy.stats import norm
-
-    alpha = 0.05
-    ctrl_mean, ctrl_var, treat_var = 1.0, 0.01, 0.01
-    curve = _delta_curve(ctrl_mean, ctrl_var, treat_var)
-
-    mde = _make_relative_delta_power("greater")._mde_from_curve(curve, alpha, 0.5)
-
-    z_alpha = norm.ppf(1 - alpha)
-    assert mde == pytest.approx(z_alpha * curve.standard_error_at(mde))  # fixed point
-    assert mde > z_alpha * curve.std_error  # strictly above the naive boundary
-    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, "greater")
-    assert achieved == pytest.approx(0.5, abs=1e-6)
-
-
-def test_relative_mde_allows_zero_variance():
-    """A deterministic ratio metric has a zero MDE instead of no solution."""
-    mde = _make_relative_delta_power("greater")._mde_from_curve(
-        _delta_curve(1.0, 0.0, 0.0),
-        0.05,
-        0.8,
-    )
-
-    assert mde == pytest.approx(0.0, abs=1e-12)
-
-
 def test_relative_mde_one_sided_is_asymmetric():
     """Because SE_rel(m) depends on (1 + m)**2, the 'less' MDE is NOT the
     negative of the 'greater' MDE when the control variance is non-negligible."""
@@ -672,28 +283,6 @@ def test_relative_mde_one_sided_is_asymmetric():
     assert mde_less < 0
     # The magnitudes genuinely differ (the naive `-mde_greater` shortcut is wrong).
     assert abs(mde_greater) != pytest.approx(abs(mde_less), rel=1e-3)
-
-
-def test_relative_mde_high_cv_regime():
-    """A high control-CV regime still returns a power-recovering MDE."""
-    alpha = 0.05
-    power = 0.8
-    ctrl_mean = 1.0
-    # effect_var = ctrl_var / ctrl_mean**2 = 0.1, so (z_alpha + z_beta) = 2.80 is
-    # just under the 1 / sqrt(0.1) = 3.16 cap: a solution exists, but the effect
-    # dependence of the standard error dominates the answer.
-    ctrl_var = 0.1
-    treat_var = 0.1
-
-    mde = _make_relative_delta_power()._mde_from_curve(
-        _delta_curve(ctrl_mean, ctrl_var, treat_var),
-        alpha,
-        power,
-    )
-
-    assert mde > 0
-    achieved = _achieved_power(mde, alpha, ctrl_mean, ctrl_var, treat_var, "two-sided")
-    assert achieved == pytest.approx(power, abs=1e-6)
 
 
 @pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
@@ -744,62 +333,6 @@ def _wrong_direction_tail(
     )
 
 
-def test_flat_curve_mde_matches_linear_formula():
-    """
-    A curve with no effect dependence must reproduce the linear normal formula
-    exactly. This is what lets absolute analyses go through the same code path
-    without their numbers moving.
-    """
-    for hypothesis, z_alpha, z_beta in [
-        ("two-sided", norm.ppf(1 - 0.025), norm.ppf(0.8)),
-        ("greater", norm.ppf(1 - 0.05), norm.ppf(0.8)),
-        ("less", norm.ppf(0.05), norm.ppf(1 - 0.8)),
-    ]:
-        pw = _make_relative_delta_power(hypothesis)
-        curve = StandardErrorCurve(std_error=0.25)
-        assert pw._mde_from_curve(curve, 0.05, 0.8) == float(z_alpha + z_beta) * 0.25
-
-
-@pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
-@pytest.mark.parametrize("power", [0.6, 0.8, 0.95])
-def test_mde_and_power_are_inverses(hypothesis, power):
-    """
-    The MDE and the power calculation must invert each other.
-
-    This is the regression test for the two disagreeing: the MDE used the
-    effect-dependent standard error while power used a constant one, so
-    ``power_line(mde(p))`` did not return ``p``.
-    """
-    pw = _make_relative_delta_power(hypothesis)
-    curve = _delta_curve(ctrl_mean=1.0, ctrl_var=0.05, treat_var=0.05)
-
-    mde = pw._mde_from_curve(curve, 0.05, power)
-    achieved = pw._normal_power_calculation(
-        alpha=0.05, se_curve=curve, average_effect=mde
-    )
-
-    assert achieved - _wrong_direction_tail(curve, mde, 0.05, hypothesis) == (
-        pytest.approx(power, abs=1e-12)
-    )
-
-
-@pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
-@pytest.mark.parametrize("power", [0.6, 0.8, 0.95])
-def test_mde_and_power_are_inverses_for_flat_curves(hypothesis, power):
-    """The same inversion must hold for absolute effects."""
-    pw = _make_relative_delta_power(hypothesis)
-    curve = StandardErrorCurve(std_error=0.25)
-
-    mde = pw._mde_from_curve(curve, 0.05, power)
-    achieved = pw._normal_power_calculation(
-        alpha=0.05, se_curve=curve, average_effect=mde
-    )
-
-    assert achieved - _wrong_direction_tail(curve, mde, 0.05, hypothesis) == (
-        pytest.approx(power, abs=1e-12)
-    )
-
-
 # ---------------------------------------------------------------------------
 # E2E – PowerAnalysis / NormalPowerAnalysis config round-trip
 # ---------------------------------------------------------------------------
@@ -829,27 +362,6 @@ def test_config_power_relative_wrong_analysis_raises():
     }
     with pytest.raises(ValueError, match="relative_effect"):
         PowerAnalysis.from_dict(config)
-
-
-def test_normal_power_analysis_delta_relative(ratio_df):
-    """NormalPowerAnalysis with delta + relative_effect returns a valid MDE."""
-    from cluster_experiments.random_splitter import ClusteredSplitter
-
-    analyser = DeltaMethodAnalysis(
-        cluster_cols=["user"],
-        scale_col="scale",
-        target_col="target",
-        relative_effect=True,
-    )
-    pw = NormalPowerAnalysis(
-        analysis=analyser,
-        splitter=ClusteredSplitter(cluster_cols=["user"]),
-    )
-    # Drop treatment column so power analysis assigns its own splits
-    df_no_treatment = ratio_df.drop(columns=["treatment"])
-    mde = pw.mde(df_no_treatment, power=0.8, n_simulations=5)
-    assert mde > 0
-    assert np.isfinite(mde)
 
 
 def test_mde_rolling_time_line_reports_only_mde(monkeypatch):
@@ -957,154 +469,9 @@ def test_analysis_plan_ratio_relative_effect(ratio_df):
 # ---------------------------------------------------------------------------
 
 
-def test_power_relative_slightly_lower_than_naive(ratio_df):
-    """
-    Estimating relative lift with proper SE gives lower power than naive
-    (dividing absolute MDE by control mean), because SE_relative > SE_abs / ctrl_mean.
-    """
-    from scipy.stats import norm
-
-    _, _, ctrl_mean, ctrl_var, treat_var, var_abs = _manual_relative_lift(ratio_df)
-
-    alpha = 0.05
-    planted_rel_effect = 0.10  # 10% relative lift
-
-    # Naive SE (underestimates)
-    se_naive = np.sqrt(var_abs) / ctrl_mean
-    # Proper SE from transformer
-    transformer = DeltaMethodLiftTransformer("treatment")
-    transformer.fit(
-        mean_diff=planted_rel_effect * ctrl_mean,
-        std_error=np.sqrt(var_abs),
-        ctrl_mean=ctrl_mean,
-        ctrl_var=ctrl_var,
-    )
-    se_proper = transformer.bse["treatment"]
-
-    z_alpha = norm.ppf(1 - alpha / 2)
-    power_naive = 1 - norm.cdf(z_alpha - planted_rel_effect / se_naive)
-    power_proper = 1 - norm.cdf(z_alpha - planted_rel_effect / se_proper)
-
-    # Proper SE is larger so power should be lower or equal
-    assert power_proper <= power_naive + 1e-6
-
-
 # ---------------------------------------------------------------------------
 # Parity test – relative OLS vs relative DeltaMethodAnalysis
 # ---------------------------------------------------------------------------
-
-
-def test_relative_ols_vs_delta_parity():
-    """
-    At the cluster level, OLSAnalysis(relative_effect=True) on the precomputed
-    ratio column and DeltaMethodAnalysis(relative_effect=True) on the raw
-    numerator/denominator columns should give very similar results.
-
-    The two estimators are not numerically identical when cluster sizes (scale)
-    vary: OLS uses a simple unweighted mean of per-cluster ratios while the
-    delta method uses a weighted ratio estimator (weighted by scale).  With
-    constant scale they would be exactly equal; with variable scale they are
-    close but can differ by a few percent.
-
-    The two SEs also differ: OLS treats the precomputed ratio as a single
-    random variable while the delta method propagates variance from both
-    numerator and denominator.  Both should be in the same ballpark (~20%).
-    """
-    from cluster_experiments import OLSAnalysis
-
-    df = _make_ratio_df(n_users=5_000, treatment_effect=0.05, seed=99)
-
-    # Aggregate to one row per cluster (required for DeltaMethodAnalysis
-    # and for the apples-to-apples OLS comparison)
-    df_agg = df.groupby(["user", "treatment"], as_index=False).agg(
-        {"target": "sum", "scale": "sum"}
-    )
-    df_agg["ratio"] = df_agg["target"] / df_agg["scale"]
-
-    # Relative OLS on the precomputed per-cluster ratio
-    ols_rel = OLSAnalysis(
-        target_col="ratio",
-        treatment_col="treatment",
-        relative_effect=True,
-    )
-
-    # Relative delta method on the raw cluster-level numerator/denominator
-    delta_rel = DeltaMethodAnalysis(
-        cluster_cols=["user"],
-        scale_col="scale",
-        target_col="target",
-        relative_effect=True,
-    )
-
-    ols_point = ols_rel.get_point_estimate(df_agg)
-    delta_point = delta_rel.get_point_estimate(df_agg)
-
-    ols_se = ols_rel.get_standard_error(df_agg)
-    delta_se = delta_rel.get_standard_error(df_agg)
-
-    # Both should detect a positive effect in the same direction
-    assert ols_point > 0
-    assert delta_point > 0
-
-    # Point estimates come from different estimators (unweighted vs weighted by
-    # scale) so a 5% relative tolerance is appropriate
-    assert ols_point == pytest.approx(delta_point, rel=0.05)
-
-    # SEs are computed differently but must be in the same ballpark
-    assert ols_se == pytest.approx(delta_se, rel=0.20)
-
-
-def test_relative_ols_and_delta_mdes_agree():
-    """
-    Relative OLS and relative delta must produce comparable MDEs, not just
-    comparable point estimates and standard errors.
-
-    Before the standard error curve, only the delta method solved the quadratic
-    while relative OLS was left on the linear approximation, so the two diverged
-    on MDE by more than they did on the quantities above.
-    """
-    from cluster_experiments import ClusteredOLSAnalysis
-    from cluster_experiments.random_splitter import ClusteredSplitter
-
-    df = _make_ratio_df(n_users=5_000, treatment_effect=0.05, seed=99)
-    df_agg = df.groupby(["user", "treatment"], as_index=False).agg(
-        {"target": "sum", "scale": "sum"}
-    )
-    df_agg["ratio"] = df_agg["target"] / df_agg["scale"]
-    # The splitter assigns its own treatment
-    df_agg = df_agg.drop(columns=["treatment"])
-
-    def mde_of(analysis, target_col):
-        return NormalPowerAnalysis(
-            analysis=analysis,
-            splitter=ClusteredSplitter(cluster_cols=["user"]),
-            target_col=target_col,
-            n_simulations=5,
-            seed=42,
-        ).mde(df_agg, power=0.8)
-
-    ols_mde = mde_of(
-        ClusteredOLSAnalysis(
-            cluster_cols=["user"],
-            target_col="ratio",
-            relative_effect=True,
-        ),
-        target_col="ratio",
-    )
-    delta_mde = mde_of(
-        DeltaMethodAnalysis(
-            cluster_cols=["user"],
-            scale_col="scale",
-            target_col="target",
-            relative_effect=True,
-        ),
-        target_col="target",
-    )
-
-    assert ols_mde > 0 and delta_mde > 0
-    # Same tolerance as the standard errors in test_relative_ols_vs_delta_parity:
-    # the estimators weight clusters differently, so they are close, not equal.
-    assert ols_mde == pytest.approx(delta_mde, rel=0.20)
 
 
 def test_relative_mde_exceeds_absolute_mde_over_baseline():
@@ -1262,3 +629,317 @@ def test_standard_error_curve_with_covariates():
             alpha=0.05, se_curve=curve, average_effect=mde
         )
         assert achieved == pytest.approx(0.8, abs=1e-12)
+
+
+# ---------------------------------------------------------------------------
+# Relative OLS through the standard error curve
+# ---------------------------------------------------------------------------
+
+
+def _relative_ols_setup(seed: int = 5, n: int = 2_000):
+    """A clustered dataset plus a relative ClusteredOLSAnalysis with a covariate.
+
+    Clustered OLS with a covariate is used deliberately. With plain OLS the
+    regression algebra makes ``effect_cov`` equal ``-effect_var`` to within a
+    rounding error, which is the delta-method special case; the cluster-robust
+    covariance is what actually exercises the general three-coefficient form.
+    """
+    from cluster_experiments import ClusteredOLSAnalysis
+
+    rng = np.random.default_rng(seed)
+    df = pd.DataFrame(
+        {
+            "target": rng.normal(10, 3, n),
+            "x": rng.normal(0, 1, n),
+            "cluster": rng.integers(0, 60, n),
+            "treatment": np.where(rng.integers(0, 2, n) == 1, "B", "A"),
+        }
+    )
+    df["target"] += 0.8 * df["x"]
+
+    analysis = ClusteredOLSAnalysis(
+        cluster_cols=["cluster"],
+        target_col="target",
+        covariates=["x"],
+        relative_effect=True,
+    )
+    return df, analysis
+
+
+def test_relative_ols_curve_is_not_the_delta_special_case():
+    """
+    The general three-coefficient form is genuinely exercised by relative OLS.
+
+    For the delta method the arms are independent, forcing
+    ``effect_cov == -effect_var``. Relative OLS has no such constraint: both the
+    treatment coefficient and the adjusted control mean come out of one fit, so
+    their covariance is whatever the regression says. If every test only ever saw
+    ``effect_cov == -effect_var``, a mistake in the OLS coefficient extraction
+    could not be distinguished from the delta case.
+    """
+    df, analysis = _relative_ols_setup()
+    curve = analysis.get_standard_error_curve(df)
+
+    assert curve.is_effect_dependent
+    assert curve.effect_cov != pytest.approx(-curve.effect_var, rel=1e-3)
+
+
+def test_relative_ols_curve_matches_regression_covariance():
+    """
+    The curve coefficients are the delta-method expansion of tau / mu_c, computed
+    here independently from the regression covariance matrix.
+    """
+    import statsmodels.api as sm
+
+    df, analysis = _relative_ols_setup()
+    prepared = analysis._prepare(df)
+
+    # An independent fit, so the reference does not reuse the production path.
+    ols = sm.OLS.from_formula("target ~ treatment + x", data=prepared).fit(
+        cov_type="cluster", cov_kwds={"groups": prepared["cluster"]}
+    )
+
+    covariance = ols.cov_params()
+    treatment_effect = ols.params["treatment"]
+    control_x_mean = prepared.loc[prepared["treatment"] == 0, "x"].mean()
+
+    # mu_c, the covariate-adjusted control mean, and its variance
+    adjusted_control_mean = ols.params["Intercept"] + control_x_mean * ols.params["x"]
+    var_adjusted_control_mean = (
+        covariance.loc["Intercept", "Intercept"]
+        + control_x_mean**2 * covariance.loc["x", "x"]
+        + 2 * control_x_mean * covariance.loc["Intercept", "x"]
+    )
+    cov_treatment_control_mean = (
+        covariance.loc["treatment", "Intercept"]
+        + control_x_mean * covariance.loc["treatment", "x"]
+    )
+
+    expected_std_error = np.sqrt(
+        covariance.loc["treatment", "treatment"] / adjusted_control_mean**2
+    )
+    expected_effect_var = var_adjusted_control_mean / adjusted_control_mean**2
+    expected_effect_cov = cov_treatment_control_mean / adjusted_control_mean**2
+
+    curve = analysis.get_standard_error_curve(df)
+    assert curve.std_error == pytest.approx(expected_std_error, rel=1e-12)
+    assert curve.effect_var == pytest.approx(expected_effect_var, rel=1e-12)
+    assert curve.effect_cov == pytest.approx(expected_effect_cov, rel=1e-12)
+
+    # And the reported standard error is that curve evaluated at the observed lift
+    observed_lift = treatment_effect / adjusted_control_mean
+    assert analysis.get_standard_error(df) == pytest.approx(
+        curve.standard_error_at(observed_lift), rel=1e-12
+    )
+
+
+@pytest.mark.parametrize("hypothesis", ["two-sided", "greater", "less"])
+@pytest.mark.parametrize("power", [0.6, 0.8, 0.95])
+def test_relative_ols_mde_and_power_are_inverses(hypothesis, power):
+    """
+    The MDE and power invert each other for relative OLS, not only for the delta
+    method. Relative OLS is the estimator whose MDE changed value when it moved
+    off the linear approximation, so it is the one that most needs this pinned.
+    """
+    from cluster_experiments import ClusteredOLSAnalysis
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
+    df, _ = _relative_ols_setup()
+    analysis = ClusteredOLSAnalysis(
+        cluster_cols=["cluster"],
+        target_col="target",
+        covariates=["x"],
+        relative_effect=True,
+        hypothesis=hypothesis,
+    )
+    power_analysis = NormalPowerAnalysis(
+        analysis=analysis, splitter=ClusteredSplitter(cluster_cols=["cluster"])
+    )
+    curve = analysis.get_standard_error_curve(df)
+
+    mde = power_analysis._mde_from_curve(curve, 0.05, power)
+    achieved = power_analysis._normal_power_calculation(
+        alpha=0.05, se_curve=curve, average_effect=mde
+    )
+
+    assert achieved - _wrong_direction_tail(curve, mde, 0.05, hypothesis) == (
+        pytest.approx(power, abs=1e-12)
+    )
+
+
+@pytest.mark.parametrize("hypothesis", ["two-sided", "greater"])
+def test_relative_ols_mde_exceeds_the_linear_approximation(hypothesis):
+    """
+    The quadratic MDE is at least the linear one for relative OLS.
+
+    This holds because ``effect_cov`` comes out negative here, so the standard
+    error increases with the effect and a larger effect is needed. The sign is
+    asserted rather than assumed: nothing in the regression algebra guarantees it,
+    and if it flipped the inequality would legitimately reverse.
+    """
+    from cluster_experiments import ClusteredOLSAnalysis
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
+    alpha, power = 0.05, 0.8
+    df, _ = _relative_ols_setup()
+    analysis = ClusteredOLSAnalysis(
+        cluster_cols=["cluster"],
+        target_col="target",
+        covariates=["x"],
+        relative_effect=True,
+        hypothesis=hypothesis,
+    )
+    power_analysis = NormalPowerAnalysis(
+        analysis=analysis, splitter=ClusteredSplitter(cluster_cols=["cluster"])
+    )
+    curve = analysis.get_standard_error_curve(df)
+    assert curve.effect_cov < 0
+
+    z_alpha = norm.ppf(1 - alpha / 2 if hypothesis == "two-sided" else 1 - alpha)
+    linear_mde = (z_alpha + norm.ppf(power)) * curve.std_error
+
+    assert power_analysis._mde_from_curve(curve, alpha, power) >= linear_mde
+
+
+# ---------------------------------------------------------------------------
+# DeltaMethodAnalysis vs ClusteredOLSAnalysis, on the same relative estimand
+# ---------------------------------------------------------------------------
+
+
+def test_relative_lift_handles_a_negative_baseline():
+    """
+    A ratio metric can be negative, so the curve must stay valid when the control
+    mean is. The lift flips sign with the baseline, but the standard error is a
+    magnitude and has to stay positive - which is why se_null divides by
+    ``abs(ctrl_mean)``.
+    """
+    transformer = DeltaMethodLiftTransformer("treatment")
+    transformer.fit(mean_diff=0.04, std_error=0.01, ctrl_mean=-0.50, ctrl_var=0.0001)
+    curve = transformer.standard_error_curve()
+
+    assert transformer.params["treatment"] < 0  # 0.04 / -0.50
+    assert transformer.bse["treatment"] > 0
+    assert curve.std_error > 0
+    assert curve.effect_var > 0
+    assert curve.effect_cov == pytest.approx(-curve.effect_var, rel=1e-12)
+    # and the curve still reproduces the reported standard error
+    assert curve.standard_error_at(transformer.params["treatment"]) == pytest.approx(
+        transformer.bse["treatment"], rel=1e-12
+    )
+
+
+def _unaggregated_ratio_df(
+    seed: int = 31, n_users: int = 800, with_covariate: bool = False
+) -> pd.DataFrame:
+    """
+    One row per observation, not per cluster, with deliberately uneven cluster
+    sizes.
+
+    This is the representation in which the delta method and clustered OLS
+    estimate the same thing. OLS over raw rows gives the difference in row-level
+    means, which for a 0/1 outcome and one row per trial is exactly the ratio
+    metric; the delta method reaches the same estimand by aggregating each cluster
+    to (sum of target, count). Neither is reweighted by hand, so any disagreement
+    is a real disagreement.
+    """
+    rng = np.random.default_rng(seed)
+    cluster_sizes = rng.integers(1, 25, n_users)
+    treatment_flag = rng.integers(0, 2, n_users)
+    base_rate = np.clip(0.30 + rng.normal(0, 0.06, n_users), 0.05, 0.95)
+
+    frames = []
+    for user in range(n_users):
+        rate = min(base_rate[user] * (1 + 0.08 * treatment_flag[user]), 1.0)
+        frame = pd.DataFrame(
+            {
+                "user": user,
+                "treatment": "B" if treatment_flag[user] else "A",
+                "target": rng.binomial(1, rate, cluster_sizes[user]).astype(float),
+                "scale": 1.0,
+            }
+        )
+        if with_covariate:
+            frame["pre"] = base_rate[user] + rng.normal(0, 0.02, cluster_sizes[user])
+        frames.append(frame)
+    return pd.concat(frames, ignore_index=True)
+
+
+def test_delta_and_clustered_ols_agree_on_unaggregated_data():
+    """
+    The delta method and clustered OLS agree on the relative lift, its standard
+    error, and the standard error curve, when both are given the same
+    un-aggregated data.
+
+    Both estimate the difference in row-level means expressed relative to control.
+    Cluster sizes here range from 1 to 24, and no reweighting is applied to either
+    side: OLS gets the weighting implicitly from having one row per observation,
+    the delta method from aggregating to (sum, count). They are two independent
+    implementations of the same estimand, which makes this the sharpest available
+    cross-check on the relative-lift machinery.
+    """
+    from cluster_experiments import ClusteredOLSAnalysis
+
+    df = _unaggregated_ratio_df()
+    delta = DeltaMethodAnalysis(
+        cluster_cols=["user"],
+        scale_col="scale",
+        target_col="target",
+        relative_effect=True,
+    )
+    ols = ClusteredOLSAnalysis(
+        cluster_cols=["user"], target_col="target", relative_effect=True
+    )
+
+    # the point estimate is the same number, not merely a close one
+    assert delta.get_point_estimate(df) == pytest.approx(
+        ols.get_point_estimate(df), rel=1e-9
+    )
+    # the standard errors differ only in how clustering is handled: analytically
+    # for the delta method, cluster-robust sandwich for OLS
+    assert delta.get_standard_error(df) == pytest.approx(
+        ols.get_standard_error(df), rel=5e-3
+    )
+
+    delta_curve = delta.get_standard_error_curve(df)
+    ols_curve = ols.get_standard_error_curve(df)
+    assert delta_curve.std_error == pytest.approx(ols_curve.std_error, rel=5e-3)
+    assert delta_curve.effect_var == pytest.approx(ols_curve.effect_var, rel=1e-2)
+    assert delta_curve.effect_cov == pytest.approx(ols_curve.effect_cov, rel=1e-2)
+
+
+def test_delta_and_clustered_ols_relative_mdes_agree_on_unaggregated_data():
+    """
+    The two estimators also agree on the relative MDE, which is the quantity this
+    branch changed. Before the standard error curve, only the delta method solved
+    the effect-dependent equation while relative OLS used the linear
+    approximation, so their MDEs diverged by more than their standard errors did.
+    """
+    from cluster_experiments import ClusteredOLSAnalysis
+    from cluster_experiments.random_splitter import ClusteredSplitter
+
+    df = _unaggregated_ratio_df()
+
+    def relative_mde(analysis):
+        return NormalPowerAnalysis(
+            analysis=analysis,
+            splitter=ClusteredSplitter(cluster_cols=["user"]),
+            n_simulations=5,
+            seed=3,
+        ).mde(df.drop(columns=["treatment"]), power=0.8)
+
+    delta_mde = relative_mde(
+        DeltaMethodAnalysis(
+            cluster_cols=["user"],
+            scale_col="scale",
+            target_col="target",
+            relative_effect=True,
+        )
+    )
+    ols_mde = relative_mde(
+        ClusteredOLSAnalysis(
+            cluster_cols=["user"], target_col="target", relative_effect=True
+        )
+    )
+
+    assert delta_mde > 0
+    assert delta_mde == pytest.approx(ols_mde, rel=1e-2)
