@@ -1,0 +1,28 @@
+cluster_experiments/standard_error_curve.py
+  s_a9674489bc846c::t_3f0fda7cdac3b7 53-69
+  s_a9674489bc846c::t_29acf752f31d5e 89-99
+mkdocs.yml
+  s_a9674489bc846c::t_8806c0dad05659 31
+tests/test_docs.py
+  s_a9674489bc846c::t_677a5c3fc40163 17,62
+  s_a9674489bc846c::t_4802ad87663ad3 44,95-96
+cluster_experiments/relative_lift_transformer.py
+  s_a9674489bc846c::t_00c5e42a2e0507 276-295
+  s_a9674489bc846c::t_60361aa666920e 123-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "7a50096176e66487e7aa1794c4948e6dc8959ff7",
+  "prompts": {},
+  "sessions": {
+    "s_a9674489bc846c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd4f34e4-4826-4cfa-8afa-2877399ade13",
+        "model": "claude-opus-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
