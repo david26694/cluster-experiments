@@ -272,7 +272,7 @@ def test_normal_power_analysis_mlrate_runs(power_df):
         features_cupac_model=["x"],
         n_simulations=5,
     )
-    se = pw._get_average_standard_error(power_df, n_simulations=5)
+    se = pw._get_average_standard_error_curve(power_df, n_simulations=5).std_error
     assert se > 0
 
 
@@ -414,8 +414,8 @@ def test_mlrate_reduces_variance():
         features_cupac_model=["x"],
         n_simulations=20,
     )
-    se_plain = plain._get_average_standard_error(df, n_simulations=20)
-    se_mlrate = mlrate._get_average_standard_error(df, n_simulations=20)
+    se_plain = plain._get_average_standard_error_curve(df, n_simulations=20).std_error
+    se_mlrate = mlrate._get_average_standard_error_curve(df, n_simulations=20).std_error
     assert (
         se_mlrate < se_plain
     ), f"Expected MLRATE SE {se_mlrate:.4f} < plain SE {se_plain:.4f}"

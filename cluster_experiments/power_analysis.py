@@ -1143,9 +1143,8 @@ class NormalPowerAnalysis:
         experiment_length: Iterable[int] = (),
     ) -> Generator[Tuple[StandardErrorCurve, int], None, None]:
         """
-        Same as :meth:`run_average_standard_error`, but yielding the full standard
-        error curve rather than only its value under the null. Power and MDE need
-        the curve; the public method keeps returning a float.
+        Yields the average standard error curve for each experiment length, which
+        is what the time-line power and MDE methods iterate over.
 
         Args:
             df: Dataframe with outcome and treatment variables.
