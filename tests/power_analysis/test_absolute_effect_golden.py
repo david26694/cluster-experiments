@@ -11,10 +11,6 @@ The expected values below were captured by running this file against the code on
 ``main``, before that rework. A failure here means an absolute-effect number moved,
 which is a regression unless it was deliberate.
 
-To recapture after an intentional change, run this file directly:
-
-    python tests/power_analysis/test_absolute_effect_golden.py
-
 Only closed-form estimators are covered. GEE and MLM fit iteratively, so their
 output shifts with the linear-algebra backend and would make this brittle rather
 than informative.
@@ -354,16 +350,3 @@ def test_absolute_effect_numbers_are_unchanged(case, hypothesis):
         assert values == pytest.approx(
             expected[method], rel=TOLERANCE
         ), f"{key}.{method} moved"
-
-
-if __name__ == "__main__":
-    import json
-
-    captured = {
-        f"{case}|{hypothesis}": _measure(case, hypothesis)
-        for case in sorted(CASES)
-        for hypothesis in HYPOTHESES
-    }
-    print(
-        "EXPECTED: dict = " + json.dumps(captured, indent=4).replace(": null", ": None")
-    )

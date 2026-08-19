@@ -965,9 +965,6 @@ class NormalPowerAnalysis:
            ``|k| * sqrt(B) < 1``. This caps ``z_alpha + z_beta``, and therefore
            caps the power attainable at a given ``alpha``, however large the effect.
 
-        Reference: the variance formula follows standard delta-method theory
-        (van der Vaart, 1998, section 3).
-
         Args:
             alpha: Significance level.
             power: Desired statistical power.
