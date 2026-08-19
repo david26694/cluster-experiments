@@ -119,6 +119,108 @@ class BaseLiftTransformer:
         }
 
 
+class DeltaMethodLiftTransformer(BaseLiftTransformer):
+    """
+    Delta-method relative lift for ratio metrics (cluster-level target/scale).
+
+    Mirrors the ``LiftRegressionTransformer`` instance API: call :meth:`fit` with
+    the statistics produced by ``DeltaMethodAnalysis._get_group_statistics``, then
+    read `params`, `bse`, `pvalues`, and `conf_int` just like any
+    ``RegressionResultsProtocol``-compatible object, or
+    :meth:`standard_error_curve` for power analysis.
+
+    The static helper :meth:`lift_and_se` remains available for direct use.
+
+    Usage:
+    ```python
+    from cluster_experiments import DeltaMethodLiftTransformer
+
+    transformer = DeltaMethodLiftTransformer(treatment_col="treatment")
+    transformer.fit(
+        mean_diff=0.03,
+        std_error=0.01,
+        ctrl_mean=0.30,
+        ctrl_var=0.00005,
+    )
+
+    # 0.03 / 0.30 = a 10% relative lift
+    print(round(transformer.params["treatment"], 4))
+    print(round(transformer.bse["treatment"], 6))
+
+    # the standard error under the null, for power analysis
+    print(round(transformer.standard_error_curve().std_error, 6))
+    ```
+    """
+
+    def fit(
+        self,
+        mean_diff: float,
+        std_error: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+    ) -> None:
+        """
+        Compute and store the relative lift and its SE via the outer delta method.
+
+        Parameters
+        ----------
+        mean_diff
+            Absolute treatment effect on the ratio metric (treat_mean - ctrl_mean).
+        std_error
+            Standard error of mean_diff = sqrt(treat_var + ctrl_var).
+        ctrl_mean
+            Control arm ratio mean.
+        ctrl_var
+            Variance of the control arm ratio mean.
+        """
+        relative_lift, se = self.lift_and_se(
+            mean_diff, std_error**2, ctrl_mean, ctrl_var
+        )
+        # The arms are independent, so Cov(mean_diff, ctrl_mean) = -ctrl_var and
+        # the covariance coefficient is minus the variance coefficient. That is
+        # the special case for which SE(m)**2 collapses to
+        # se2_t + se2_c * (1 + m)**2.
+        effect_var = ctrl_var / ctrl_mean**2
+        self._set_results(
+            relative_lift=relative_lift,
+            se_relative_lift=se,
+            se_null=float(std_error / abs(ctrl_mean)),
+            effect_var=float(effect_var),
+            effect_cov=float(-effect_var),
+        )
+
+    @staticmethod
+    def lift_and_se(
+        mean_diff: float,
+        var_abs: float,
+        ctrl_mean: float,
+        ctrl_var: float,
+    ) -> Tuple[float, float]:
+        """
+        Relative lift (mean_diff / ctrl_mean) and SE via the outer delta method.
+
+        Parameters
+        ----------
+        mean_diff
+            Absolute treatment effect on the ratio metric.
+        var_abs
+            Var(mean_diff) = treat_var + ctrl_var.
+        ctrl_mean
+            Control arm ratio mean.
+        ctrl_var
+            Variance of control arm ratio mean.
+        """
+        if ctrl_mean == 0:
+            raise ValueError("ctrl_mean must be non-zero for relative lift.")
+        relative_lift = mean_diff / ctrl_mean
+        var_relative = (
+            var_abs / (ctrl_mean**2)
+            + (mean_diff**2) * ctrl_var / (ctrl_mean**4)
+            + 2 * mean_diff * ctrl_var / (ctrl_mean**3)
+        )
+        return relative_lift, float(np.sqrt(var_relative))
+
+
 class LiftRegressionTransformer(BaseLiftTransformer):
     """
     Relative lift for a regression estimate, via the delta method.
@@ -260,105 +362,3 @@ class LiftRegressionTransformer(BaseLiftTransformer):
             effect_var=float(effect_var),
             effect_cov=float(effect_cov),
         )
-
-
-class DeltaMethodLiftTransformer(BaseLiftTransformer):
-    """
-    Delta-method relative lift for ratio metrics (cluster-level target/scale).
-
-    Mirrors the ``LiftRegressionTransformer`` instance API: call :meth:`fit` with
-    the statistics produced by ``DeltaMethodAnalysis._get_group_statistics``, then
-    read `params`, `bse`, `pvalues`, and `conf_int` just like any
-    ``RegressionResultsProtocol``-compatible object, or
-    :meth:`standard_error_curve` for power analysis.
-
-    The static helper :meth:`lift_and_se` remains available for direct use.
-
-    Usage:
-    ```python
-    from cluster_experiments import DeltaMethodLiftTransformer
-
-    transformer = DeltaMethodLiftTransformer(treatment_col="treatment")
-    transformer.fit(
-        mean_diff=0.03,
-        std_error=0.01,
-        ctrl_mean=0.30,
-        ctrl_var=0.00005,
-    )
-
-    # 0.03 / 0.30 = a 10% relative lift
-    print(round(transformer.params["treatment"], 4))
-    print(round(transformer.bse["treatment"], 6))
-
-    # the standard error under the null, for power analysis
-    print(round(transformer.standard_error_curve().std_error, 6))
-    ```
-    """
-
-    def fit(
-        self,
-        mean_diff: float,
-        std_error: float,
-        ctrl_mean: float,
-        ctrl_var: float,
-    ) -> None:
-        """
-        Compute and store the relative lift and its SE via the outer delta method.
-
-        Parameters
-        ----------
-        mean_diff
-            Absolute treatment effect on the ratio metric (treat_mean - ctrl_mean).
-        std_error
-            Standard error of mean_diff = sqrt(treat_var + ctrl_var).
-        ctrl_mean
-            Control arm ratio mean.
-        ctrl_var
-            Variance of the control arm ratio mean.
-        """
-        relative_lift, se = self.lift_and_se(
-            mean_diff, std_error**2, ctrl_mean, ctrl_var
-        )
-        # The arms are independent, so Cov(mean_diff, ctrl_mean) = -ctrl_var and
-        # the covariance coefficient is minus the variance coefficient. That is
-        # the special case for which SE(m)**2 collapses to
-        # se2_t + se2_c * (1 + m)**2.
-        effect_var = ctrl_var / ctrl_mean**2
-        self._set_results(
-            relative_lift=relative_lift,
-            se_relative_lift=se,
-            se_null=float(std_error / abs(ctrl_mean)),
-            effect_var=float(effect_var),
-            effect_cov=float(-effect_var),
-        )
-
-    @staticmethod
-    def lift_and_se(
-        mean_diff: float,
-        var_abs: float,
-        ctrl_mean: float,
-        ctrl_var: float,
-    ) -> Tuple[float, float]:
-        """
-        Relative lift (mean_diff / ctrl_mean) and SE via the outer delta method.
-
-        Parameters
-        ----------
-        mean_diff
-            Absolute treatment effect on the ratio metric.
-        var_abs
-            Var(mean_diff) = treat_var + ctrl_var.
-        ctrl_mean
-            Control arm ratio mean.
-        ctrl_var
-            Variance of control arm ratio mean.
-        """
-        if ctrl_mean == 0:
-            raise ValueError("ctrl_mean must be non-zero for relative lift.")
-        relative_lift = mean_diff / ctrl_mean
-        var_relative = (
-            var_abs / (ctrl_mean**2)
-            + (mean_diff**2) * ctrl_var / (ctrl_mean**4)
-            + 2 * mean_diff * ctrl_var / (ctrl_mean**3)
-        )
-        return relative_lift, float(np.sqrt(var_relative))
