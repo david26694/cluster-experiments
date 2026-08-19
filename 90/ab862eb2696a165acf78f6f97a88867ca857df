@@ -1,0 +1,21 @@
+tests/analysis/test_delta_relative.py
+  s_a9674489bc846c::t_f4cbcb8d8af4f5 632-801
+  s_a9674489bc846c::t_30370cab3c3e92 829-945
+  s_a9674489bc846c::t_a2984ebe4fdeba 802-828
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "90ab862eb2696a165acf78f6f97a88867ca857df",
+  "prompts": {},
+  "sessions": {
+    "s_a9674489bc846c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd4f34e4-4826-4cfa-8afa-2877399ade13",
+        "model": "claude-opus-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
