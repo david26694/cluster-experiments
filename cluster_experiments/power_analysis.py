@@ -1109,30 +1109,6 @@ class NormalPowerAnalysis:
             alpha=alpha,
         )[power]
 
-    def _get_average_standard_error(
-        self,
-        df: pd.DataFrame,
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        verbose: bool = False,
-        n_simulations: Optional[int] = None,
-    ) -> float:
-        """
-        Gets the average standard error (float) to be used in normal power
-        calculation.
-
-        Args:
-            df: Dataframe with outcome and treatment variables.
-            pre_experiment_df: Dataframe with pre-experiment data.
-            verbose: Whether to show progress bar.
-            n_simulations: Number of simulations to run.
-        """
-        return self._get_average_standard_error_curve(
-            df=df,
-            pre_experiment_df=pre_experiment_df,
-            verbose=verbose,
-            n_simulations=n_simulations,
-        ).std_error
-
     def _get_average_standard_error_curve(
         self,
         df: pd.DataFrame,
@@ -1157,33 +1133,6 @@ class NormalPowerAnalysis:
 
         curves = list(self._get_standard_error(df, n_simulations, verbose))
         return self._average_standard_error_curves(curves)
-
-    def run_average_standard_error(
-        self,
-        df: pd.DataFrame,
-        pre_experiment_df: Optional[pd.DataFrame] = None,
-        verbose: bool = False,
-        n_simulations: Optional[int] = None,
-        experiment_length: Iterable[int] = (),
-    ) -> Generator[Tuple[float, int], None, None]:
-        """
-        Run power analysis by simulation, using standard errors from the analysis.
-
-        Args:
-            df: Dataframe with outcome and treatment variables.
-            pre_experiment_df: Dataframe with pre-experiment data.
-            verbose: Whether to show progress bar.
-            n_simulations: Number of simulations to run.
-            experiment_length: Length of the experiment in days.
-        """
-        for se_curve, n_days in self._run_average_standard_error_curve(
-            df=df,
-            pre_experiment_df=pre_experiment_df,
-            verbose=verbose,
-            n_simulations=n_simulations,
-            experiment_length=experiment_length,
-        ):
-            yield se_curve.std_error, n_days
 
     def _run_average_standard_error_curve(
         self,

@@ -120,6 +120,43 @@ class BaseLiftTransformer:
 
 
 class LiftRegressionTransformer(BaseLiftTransformer):
+    """
+    Relative lift for a regression estimate, via the delta method.
+
+    Wraps a fitted OLS model and re-expresses its treatment coefficient as a
+    percentage of the (covariate-adjusted) control mean, propagating the
+    uncertainty of both. ``OLSAnalysis`` and ``ClusteredOLSAnalysis`` return one of
+    these from ``fit_ols`` when ``relative_effect=True``, so the rest of the
+    analysis code can treat it like any statsmodels results object.
+
+    Usage:
+    ```python
+    import numpy as np
+    import pandas as pd
+    import statsmodels.api as sm
+
+    from cluster_experiments import LiftRegressionTransformer
+
+    rng = np.random.default_rng(42)
+    df = pd.DataFrame(
+        {
+            "target": rng.normal(10, 2, 500),
+            "treatment": rng.integers(0, 2, 500),
+        }
+    )
+    df["target"] += 0.5 * df["treatment"]
+
+    ols = sm.OLS.from_formula("target ~ treatment", data=df).fit()
+
+    transformer = LiftRegressionTransformer(treatment_col="treatment")
+    transformer.fit(ols=ols, df=df, covariate_cols=[])
+
+    # the treatment coefficient, as a fraction of the control mean
+    print(f"{transformer.params['treatment']:.2%}")
+    print(f"{transformer.bse['treatment']:.2%}")
+    ```
+    """
+
     def fit(
         self, ols: RegressionResultsWrapper, df: pd.DataFrame, covariate_cols: List[str]
     ) -> None:
@@ -236,6 +273,26 @@ class DeltaMethodLiftTransformer(BaseLiftTransformer):
     :meth:`standard_error_curve` for power analysis.
 
     The static helper :meth:`lift_and_se` remains available for direct use.
+
+    Usage:
+    ```python
+    from cluster_experiments import DeltaMethodLiftTransformer
+
+    transformer = DeltaMethodLiftTransformer(treatment_col="treatment")
+    transformer.fit(
+        mean_diff=0.03,
+        std_error=0.01,
+        ctrl_mean=0.30,
+        ctrl_var=0.00005,
+    )
+
+    # 0.03 / 0.30 = a 10% relative lift
+    print(round(transformer.params["treatment"], 4))
+    print(round(transformer.bse["treatment"], 6))
+
+    # the standard error under the null, for power analysis
+    print(round(transformer.standard_error_curve().std_error, 6))
+    ```
     """
 
     def fit(

@@ -50,6 +50,23 @@ class StandardErrorCurve:
             Zero for absolute effects.
         effect_cov: Covariance between the numerator and the baseline, normalised
             by the squared baseline. Zero for absolute effects.
+
+    Usage:
+    ```python
+    from cluster_experiments import StandardErrorCurve
+
+    # An absolute effect: the standard error does not vary with the effect size.
+    absolute = StandardErrorCurve(std_error=0.05)
+    print(absolute.is_effect_dependent)
+    print(absolute.standard_error_at(0.0) == absolute.standard_error_at(0.5))
+
+    # A relative effect on a ratio metric, where the two arms are independent so
+    # effect_cov is minus effect_var.
+    relative = StandardErrorCurve(std_error=0.05, effect_var=0.01, effect_cov=-0.01)
+    print(relative.is_effect_dependent)
+    print(relative.standard_error_at(0.0))
+    print(relative.standard_error_at(0.5) > relative.standard_error_at(0.0))
+    ```
     """
 
     std_error: float
@@ -60,15 +77,6 @@ class StandardErrorCurve:
     def is_effect_dependent(self) -> bool:
         """
         True when the standard error varies with the effect size.
-
-        Derived rather than stored: this is a restatement of the coefficients, not
-        extra information about them, so there is nothing for a separate flag to
-        record and nothing to fall out of sync.
-
-        Callers use it only to take a cheaper arithmetic path. It is never a
-        semantic branch: with both coefficients zero the effect-dependent formulas
-        reduce exactly to the constant-standard-error ones, so a relative curve
-        whose baseline happens to be noiseless is still handled correctly.
         """
         return self.effect_var != 0.0 or self.effect_cov != 0.0
 
@@ -78,6 +86,17 @@ class StandardErrorCurve:
 
         Arguments:
             effect: the true effect size, on the same scale as the estimate.
+
+        Usage:
+        ```python
+        from cluster_experiments import StandardErrorCurve
+
+        curve = StandardErrorCurve(std_error=0.05, effect_var=0.01, effect_cov=-0.01)
+        # SE(0) is the standard error under the null
+        print(round(curve.standard_error_at(0.0), 6))
+        # and it grows with the effect, because the baseline is itself estimated
+        print(round(curve.standard_error_at(0.2), 6))
+        ```
         """
         if not self.is_effect_dependent:
             return self.std_error
