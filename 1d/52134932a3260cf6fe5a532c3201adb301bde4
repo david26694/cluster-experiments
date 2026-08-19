@@ -1,0 +1,19 @@
+docs/relative_delta.ipynb
+  s_d114455ae5cb25::t_6cd57481ac2816 29,72,82-94,159,169-192,244,254-266,348,358-370,429,439-452,496,506-522,578,588-602
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "1d52134932a3260cf6fe5a532c3201adb301bde4",
+  "prompts": {},
+  "sessions": {
+    "s_d114455ae5cb25": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_d114455ae5cb25",
+        "model": "unknown"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
