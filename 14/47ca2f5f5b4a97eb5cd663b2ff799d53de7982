@@ -1,0 +1,21 @@
+cluster_experiments/power_analysis.py
+  s_a9674489bc846c::t_a3d34adadb8266 1146-1147
+tests/test_mlrate.py
+  s_a9674489bc846c::t_f28bbda8866ea4 275,417-418
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "1447ca2f5f5b4a97eb5cd663b2ff799d53de7982",
+  "prompts": {},
+  "sessions": {
+    "s_a9674489bc846c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd4f34e4-4826-4cfa-8afa-2877399ade13",
+        "model": "claude-opus-5"
+      },
+      "human_author": "david26694 <david26694@gmail.com>"
+    }
+  }
+}
