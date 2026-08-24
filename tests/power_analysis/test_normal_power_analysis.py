@@ -1,7 +1,11 @@
 import pandas as pd
 import pytest
 
-from cluster_experiments.experiment_analysis import ClusteredOLSAnalysis, OLSAnalysis
+from cluster_experiments.experiment_analysis import (
+    ClusteredOLSAnalysis,
+    OLSAnalysis,
+    StandardErrorCurve,
+)
 from cluster_experiments.perturbator import ConstantPerturbator
 from cluster_experiments.power_analysis import NormalPowerAnalysis, PowerAnalysis
 from cluster_experiments.random_splitter import ClusteredSplitter, NonClusteredSplitter
@@ -247,7 +251,7 @@ def test_get_standard_error_hypothesis_wrong_input():
             seed=20240922,
         )._normal_power_calculation(
             alpha=0.05,
-            std_error=0.1,
+            se_curve=StandardErrorCurve(std_error=0.1),
             average_effect=0.1,
         )
     # Check if the error message is as expected

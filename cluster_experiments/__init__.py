@@ -49,7 +49,11 @@ from cluster_experiments.random_splitter import (
     StratifiedSwitchbackSplitter,
     SwitchbackSplitter,
 )
-from cluster_experiments.relative_lift_transformer import LiftRegressionTransformer
+from cluster_experiments.relative_lift_transformer import (
+    DeltaMethodLiftTransformer,
+    LiftRegressionTransformer,
+)
+from cluster_experiments.standard_error_curve import StandardErrorCurve
 from cluster_experiments.washover import ConstantWashover, EmptyWashover, Washover
 
 __all__ = [
@@ -101,6 +105,8 @@ __all__ = [
     "HypothesisTest",
     "RelativeMixedPerturbator",
     "LiftRegressionTransformer",
+    "DeltaMethodLiftTransformer",
     "ConfidenceInterval",
     "InferenceResults",
+    "StandardErrorCurve",
 ]

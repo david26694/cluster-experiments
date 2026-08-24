@@ -28,6 +28,7 @@ nav:
           - Different Hypothesis Tests: analysis_with_different_hypotheses.ipynb
           - Paired T-Test: paired_ttest.ipynb
           - Delta Method Analysis: delta_method.ipynb
+          - Relative Effects on Ratio Metrics: relative_delta.ipynb
       - Variance Reduction:
           - CUPAC Example: cupac_example.ipynb
           - No Covariates vs Raw vs CUPAC vs MLRATE: variance_reduction_comparison.ipynb

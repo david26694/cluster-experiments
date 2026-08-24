@@ -22,6 +22,7 @@ from cluster_experiments.power_config import (
     splitter_mapping,
 )
 from cluster_experiments.random_splitter import RandomSplitter, RepeatedSampler
+from cluster_experiments.standard_error_curve import StandardErrorCurve
 from cluster_experiments.utils import HypothesisEntries, _get_mapping_key
 
 
@@ -589,10 +590,9 @@ class PowerAnalysis:
                 self.ml_handler, "is_cupac", bool(outcome_name)
             )
             if outcome_name and is_ml_handler_active:
-                assert outcome_name in self.analysis.covariates, (
-                    f"covariates in analysis must contain '{outcome_name}' when a handler is set. "
-                    f"Add covariates=['{outcome_name}'] to your analysis config."
-                )
+                assert (
+                    outcome_name in self.analysis.covariates
+                ), f"covariates in analysis must contain '{outcome_name}' when a handler is set. Add covariates=['{outcome_name}'] to your analysis config."
             if hasattr(self.splitter, "cluster_cols"):
                 if set(self.analysis.covariates).intersection(
                     set(self.splitter.cluster_cols)
@@ -856,20 +856,25 @@ class NormalPowerAnalysis:
         df: pd.DataFrame,
         n_simulations: int,
         verbose: bool,
-    ) -> Generator[float, None, None]:
+    ) -> Generator[StandardErrorCurve, None, None]:
         for _ in tqdm(range(n_simulations), disable=not verbose):
             split_df = self._split(df)
-            yield self.analysis.get_standard_error(split_df)
+            yield self.analysis.get_standard_error_curve(split_df)
 
     def _normal_power_calculation(
-        self, alpha: float, std_error: float, average_effect: float
+        self, alpha: float, se_curve: StandardErrorCurve, average_effect: float
     ) -> float:
         """Returns the power of the analysis using the normal distribution.
+
         Arguments:
             alpha: significance level
-            std_error: standard error of the analysis
+            se_curve: standard error of the analysis as a function of the effect
             average_effect: effect size of the analysis
         """
+        # Flat curves return their constant standard error here, so absolute
+        # effects go through exactly the arithmetic they always did.
+        std_error = se_curve.standard_error_at(average_effect)
+
         if HypothesisEntries(self.analysis.hypothesis) == HypothesisEntries.LESS:
             z_alpha = norm.ppf(alpha)
             return float(norm.cdf(z_alpha - average_effect / std_error))
@@ -913,6 +918,146 @@ class NormalPowerAnalysis:
 
         return float(z_alpha + z_beta) * std_error
 
+    def _effect_dependent_mde_calculation(
+        self, alpha: float, power: float, se_curve: StandardErrorCurve
+    ) -> float:
+        """
+        Minimum detectable effect when the standard error depends on the effect
+        size, solving the closed-form quadratic power equation.
+
+        **Derivation**
+
+        Write the standard error of the estimate as a function of the true effect
+        ``m`` (see :class:`StandardErrorCurve`), with ``A = SE(0)**2``,
+        ``B = effect_var`` and ``C = effect_cov``::
+
+            SE(m)**2 = A + B * m**2 - 2 * C * m
+
+        The test divides the estimate by its estimated standard error, which is
+        computed at the observed effect. Under an alternative ``m`` that standard
+        error is ``SE(m)``, so the power condition is the usual one with the
+        standard error evaluated there rather than held constant::
+
+            m = (z_alpha + z_beta) * SE(m)
+
+        For an absolute effect ``SE`` does not vary and this is exactly the linear
+        formula in :meth:`_normal_mde_calculation`. For a relative effect it does
+        vary, because the baseline in the denominator of the lift is itself
+        estimated, and the equation becomes quadratic.
+
+        Writing ``k = z_alpha + z_beta`` and squaring::
+
+            (1 - k**2 * B) * m**2  +  2 * k**2 * C * m  -  k**2 * A  =  0
+
+        The hypothesis enters only through ``k``, using the same critical values as
+        :meth:`_normal_mde_calculation`: ``k`` is negative for ``less``, so the
+        minimum detectable effect comes out negative there.
+
+        Two properties make the root unique:
+
+        1. The constant term ``-k**2 * A`` is negative, so the two roots have
+           opposite signs and the discriminant is always positive. Squaring dropped
+           the sign of ``m = k * SE(m)``, which requires ``m`` to share the sign of
+           ``k``, so exactly one root qualifies.
+        2. ``1 - k**2 * B > 0`` is required for a solution to exist at all. As
+           ``m`` grows, ``SE(m)`` grows like ``sqrt(B) * m``, so the right-hand side
+           of ``m = k * SE(m)`` eventually outruns the left unless
+           ``|k| * sqrt(B) < 1``. This caps ``z_alpha + z_beta``, and therefore
+           caps the power attainable at a given ``alpha``, however large the effect.
+
+        Args:
+            alpha: Significance level.
+            power: Desired statistical power.
+            se_curve: Standard error of the analysis as a function of the effect.
+        """
+        hypothesis = HypothesisEntries(self.analysis.hypothesis)
+        if hypothesis == HypothesisEntries.LESS:
+            z_alpha, z_beta = norm.ppf(alpha), norm.ppf(1 - power)
+        elif hypothesis == HypothesisEntries.GREATER:
+            z_alpha, z_beta = norm.ppf(1 - alpha), norm.ppf(power)
+        else:
+            # we are neglecting norm_cdf_left, as in _normal_mde_calculation
+            z_alpha, z_beta = norm.ppf(1 - alpha / 2), norm.ppf(power)
+        k = float(z_alpha + z_beta)
+
+        effect_var = se_curve.effect_var
+        a = 1 - k**2 * effect_var
+        b = 2 * k**2 * se_curve.effect_cov
+        c = -(k**2) * se_curve.std_error**2
+
+        no_solution_message = (
+            f"No finite minimum detectable effect exists: the baseline is too noisy "
+            f"(relative standard error {np.sqrt(effect_var):.4g}) for alpha="
+            f"{alpha:.4g} and power={power:.4g}. The standard error grows with the "
+            f"effect at least as fast as the effect itself, so no effect satisfies "
+            f"the power condition at any size. Increase the sample size, or relax "
+            f"alpha or the target power."
+        )
+
+        # No real root means no MDE
+        discriminant = b**2 - 4 * a * c
+        if discriminant < 0:
+            raise ValueError(no_solution_message)
+
+        # Solve quadratic equation
+        if a == 0:
+            candidates = [-c / b] if b != 0 else []
+        else:
+            candidates = [
+                (-b + np.sqrt(discriminant)) / (2 * a),
+                (-b - np.sqrt(discriminant)) / (2 * a),
+            ]
+
+        # Squaring also admits solutions of m = -k * SE(m), but we only want m = k * SE(m).
+        # If k and m don't share sign, no solution exists
+        solutions = [m for m in candidates if m * k >= 0]
+        if len(solutions) == 0:
+            raise ValueError(no_solution_message)
+
+        # Both roots satisfy |m| / SE(m) == |k|, so both hit the target power
+        # exactly; the minimum detectable effect is the smaller magnitude.
+        return float(min(solutions, key=abs))
+
+    def _mde_from_curve(
+        self, se_curve: StandardErrorCurve, alpha: float, power: float
+    ) -> float:
+        """
+        Computes the minimum detectable effect from a standard error curve.
+
+        A flat curve (any absolute effect) is handled by the linear normal
+        formula, which is the exact solution in that case. An effect-dependent
+        curve (any relative effect) needs the quadratic solver.
+
+        Args:
+            se_curve: Standard error of the analysis as a function of the effect.
+            alpha: Significance level.
+            power: Desired statistical power.
+        """
+        if not se_curve.is_effect_dependent:
+            return self._normal_mde_calculation(
+                alpha=alpha, std_error=se_curve.std_error, power=power
+            )
+        return self._effect_dependent_mde_calculation(
+            alpha=alpha, power=power, se_curve=se_curve
+        )
+
+    @staticmethod
+    def _average_standard_error_curves(
+        curves: List[StandardErrorCurve],
+    ) -> StandardErrorCurve:
+        """
+        Averages a list of per-simulation :class:`StandardErrorCurve` objects.
+
+        The standard error is averaged directly rather than through its variance,
+        matching what power analysis has always done for absolute effects; the
+        two effect-dependence coefficients are averaged as they are.
+        """
+        return StandardErrorCurve(
+            std_error=float(np.mean([c.std_error for c in curves])),
+            effect_var=float(np.mean([c.effect_var for c in curves])),
+            effect_cov=float(np.mean([c.effect_cov for c in curves])),
+        )
+
     def _get_time_col(self) -> str:
         if self.time_col is None:
             raise ValueError(
@@ -941,18 +1086,13 @@ class NormalPowerAnalysis:
             alpha: Significance level.
         """
         alpha = self.alpha if alpha is None else alpha
-        std_error = self._get_average_standard_error(
+        se_curve = self._get_average_standard_error_curve(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
             n_simulations=n_simulations,
         )
-        return {
-            power: self._normal_mde_calculation(
-                alpha=alpha, std_error=std_error, power=power
-            )
-            for power in powers
-        }
+        return {power: self._mde_from_curve(se_curve, alpha, power) for power in powers}
 
     def mde(
         self,
@@ -983,44 +1123,42 @@ class NormalPowerAnalysis:
             alpha=alpha,
         )[power]
 
-    def _get_average_standard_error(
+    def _get_average_standard_error_curve(
         self,
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
         verbose: bool = False,
         n_simulations: Optional[int] = None,
-    ) -> float:
+    ) -> StandardErrorCurve:
         """
-        Gets standard error to be used in normal power calculation.
+        Gets the average standard error, as a function of the effect size, to be
+        used in normal power calculation.
 
         Args:
             df: Dataframe with outcome and treatment variables.
             pre_experiment_df: Dataframe with pre-experiment data.
             verbose: Whether to show progress bar.
-            average_effects: Average effects to test.
             n_simulations: Number of simulations to run.
-            alpha: Significance level.
         """
         n_simulations = self.n_simulations if n_simulations is None else n_simulations
 
         df = df.copy()
         df = self.ml_handler.add_covariates(df, pre_experiment_df)
 
-        std_errors = list(self._get_standard_error(df, n_simulations, verbose))
-        std_error_mean = float(np.mean(std_errors))
+        curves = list(self._get_standard_error(df, n_simulations, verbose))
+        return self._average_standard_error_curves(curves)
 
-        return std_error_mean
-
-    def run_average_standard_error(
+    def _run_average_standard_error_curve(
         self,
         df: pd.DataFrame,
         pre_experiment_df: Optional[pd.DataFrame] = None,
         verbose: bool = False,
         n_simulations: Optional[int] = None,
         experiment_length: Iterable[int] = (),
-    ) -> Generator[Tuple[float, int], None, None]:
+    ) -> Generator[Tuple[StandardErrorCurve, int], None, None]:
         """
-        Run power analysis by simulation, using standard errors from the analysis.
+        Yields the average standard error curve for each experiment length, which
+        is what the time-line power and MDE methods iterate over.
 
         Args:
             df: Dataframe with outcome and treatment variables.
@@ -1038,13 +1176,15 @@ class NormalPowerAnalysis:
             df_time = df_time.loc[
                 df_time[time_col] < experiment_start + pd.Timedelta(days=n_days)
             ]
-            std_error_mean = self._get_average_standard_error(
-                df=df_time,
-                pre_experiment_df=pre_experiment_df,
-                verbose=verbose,
-                n_simulations=n_simulations,
+            yield (
+                self._get_average_standard_error_curve(
+                    df=df_time,
+                    pre_experiment_df=pre_experiment_df,
+                    verbose=verbose,
+                    n_simulations=n_simulations,
+                ),
+                n_days,
             )
-            yield std_error_mean, n_days
 
     def power_time_line(
         self,
@@ -1071,7 +1211,7 @@ class NormalPowerAnalysis:
         alpha = self.alpha if alpha is None else alpha
 
         results = []
-        for std_error_mean, n_days in self.run_average_standard_error(
+        for se_curve, n_days in self._run_average_standard_error_curve(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
@@ -1080,7 +1220,9 @@ class NormalPowerAnalysis:
         ):
             for effect in average_effects:
                 power = self._normal_power_calculation(
-                    alpha=alpha, std_error=std_error_mean, average_effect=effect
+                    alpha=alpha,
+                    se_curve=se_curve,
+                    average_effect=effect,
                 )
                 results.append(
                     {"effect": effect, "power": power, "experiment_length": n_days}
@@ -1101,7 +1243,7 @@ class NormalPowerAnalysis:
         alpha = self.alpha if alpha is None else alpha
 
         results = []
-        for std_error_mean, n_days in self.run_average_standard_error(
+        for se_curve, n_days in self._run_average_standard_error_curve(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
@@ -1109,9 +1251,7 @@ class NormalPowerAnalysis:
             experiment_length=experiment_length,
         ):
             for power in powers:
-                mde = self._normal_mde_calculation(
-                    alpha=alpha, std_error=std_error_mean, power=power
-                )
+                mde = self._mde_from_curve(se_curve, alpha, power)
                 results.append(
                     {"power": power, "mde": mde, "experiment_length": n_days}
                 )
@@ -1227,8 +1367,7 @@ class NormalPowerAnalysis:
 
         if agg_func not in self.VALID_AGG_FUNCS:
             raise ValueError(
-                f"Invalid aggregation function `{agg_func}`. "
-                f"Choose one of: {', '.join(self.VALID_AGG_FUNCS)}."
+                f"Invalid aggregation function `{agg_func}`. Choose one of: {', '.join(self.VALID_AGG_FUNCS)}."
             )
 
         alpha = self.alpha if alpha is None else alpha
@@ -1252,25 +1391,18 @@ class NormalPowerAnalysis:
                     post_process_func
                 )
 
-            std_error_mean = self._get_average_standard_error(
+            se_curve = self._get_average_standard_error_curve(
                 df=df_grouped,
                 pre_experiment_df=pre_experiment_df,
                 n_simulations=n_simulations,
             )
 
             for power in powers:
-                mde_value = self._normal_mde_calculation(
-                    alpha=alpha, std_error=std_error_mean, power=power
-                )
-
-                relative_mde = mde_value / abs(df_grouped[self.target_col].mean())
-
                 results.append(
                     {
                         "power": power,
-                        "mde": mde_value,
+                        "mde": self._mde_from_curve(se_curve, alpha, power),
                         "experiment_length": n_days,
-                        "relative_mde": relative_mde,
                     }
                 )
 
@@ -1297,7 +1429,7 @@ class NormalPowerAnalysis:
         """
         alpha = self.alpha if alpha is None else alpha
 
-        std_error_mean = self._get_average_standard_error(
+        se_curve = self._get_average_standard_error_curve(
             df=df,
             pre_experiment_df=pre_experiment_df,
             verbose=verbose,
@@ -1306,7 +1438,7 @@ class NormalPowerAnalysis:
 
         return {
             effect: self._normal_power_calculation(
-                alpha=alpha, std_error=std_error_mean, average_effect=effect
+                alpha=alpha, se_curve=se_curve, average_effect=effect
             )
             for effect in average_effects
         }
@@ -1414,10 +1546,9 @@ class NormalPowerAnalysis:
                 self.ml_handler, "is_cupac", bool(outcome_name)
             )
             if outcome_name and is_ml_handler_active:
-                assert outcome_name in self.analysis.covariates, (
-                    f"covariates in analysis must contain '{outcome_name}' when a handler is set. "
-                    f"Add covariates=['{outcome_name}'] to your analysis config."
-                )
+                assert (
+                    outcome_name in self.analysis.covariates
+                ), f"covariates in analysis must contain '{outcome_name}' when a handler is set. Add covariates=['{outcome_name}'] to your analysis config."
 
             if hasattr(self.splitter, "cluster_cols"):
                 if set(self.analysis.covariates).intersection(

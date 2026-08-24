@@ -11,9 +11,11 @@ from pandas.api.types import is_numeric_dtype
 from scipy.stats import norm, ttest_ind, ttest_rel
 
 from cluster_experiments.relative_lift_transformer import (
+    DeltaMethodLiftTransformer,
     LiftRegressionTransformer,
     RegressionResultsProtocol,
 )
+from cluster_experiments.standard_error_curve import StandardErrorCurve
 from cluster_experiments.synthetic_control_utils import get_w
 from cluster_experiments.utils import HypothesisEntries, ModelResults
 
@@ -49,11 +51,7 @@ class ConfidenceInterval:
         print(ci.summary())
         ```
         """
-        return (
-            f"Confidence interval (1 - alpha = {1 - self.alpha:.2%})\n"
-            f"  Lower: {self.lower:.6g}\n"
-            f"  Upper: {self.upper:.6g}"
-        )
+        return f"Confidence interval (1 - alpha = {1 - self.alpha:.2%})\n  Lower: {self.lower:.6g}\n  Upper: {self.upper:.6g}"
 
 
 @dataclass
@@ -97,10 +95,7 @@ class InferenceResults:
         print(results)
         ```
         """
-        return (
-            f"ATE={self.ate:.4f}, p_value={self.p_value:.4f}, "
-            f"std_error={self.std_error:.4f}, CI={self.conf_int}"
-        )
+        return f"ATE={self.ate:.4f}, p_value={self.p_value:.4f}, std_error={self.std_error:.4f}, CI={self.conf_int}"
 
     def model_summary(self) -> Optional[str]:
         """
@@ -162,6 +157,7 @@ class ExperimentAnalysis(ABC):
         treatment: name of the treatment to use as the treated group
         covariates: list of columns to use as covariates
         hypothesis: one of "two-sided", "less", "greater" indicating the alternative hypothesis
+        relative_effect: if True, the analysis reports the treatment effect in relative terms instead of absolute terms.
 
     """
 
@@ -174,6 +170,7 @@ class ExperimentAnalysis(ABC):
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
         add_covariate_interaction: bool = False,
+        relative_effect: bool = False,
     ):
         self.target_col = target_col
         self.treatment = treatment
@@ -182,6 +179,7 @@ class ExperimentAnalysis(ABC):
         self.covariates = covariates or []
         self.hypothesis = hypothesis
         self.add_covariate_interaction = add_covariate_interaction
+        self.relative_effect = relative_effect
 
     def __repr__(self) -> str:
         """
@@ -207,10 +205,7 @@ class ExperimentAnalysis(ABC):
         print(a)
         ```
         """
-        return (
-            f"{type(self).__name__}: cluster_cols={self.cluster_cols}, "
-            f"target={self.target_col}, treatment={self.treatment}"
-        )
+        return f"{type(self).__name__}: cluster_cols={self.cluster_cols}, target={self.target_col}, treatment={self.treatment}"
 
     def _get_cluster_column(self, df: pd.DataFrame) -> pd.Series:
         """Paste all strings of cluster_cols in one single column"""
@@ -313,6 +308,19 @@ class ExperimentAnalysis(ABC):
         """
         raise NotImplementedError("Standard error not implemented for this analysis")
 
+    def analysis_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
+        """
+        Returns the standard error of the analysis as a
+        :class:`StandardErrorCurve`. Expects treatment to be a 0-1 variable.
+
+        Depending on is_relative, returns a flat curve (std error does not depend on effect size)
+        or a curve that depends on the effect size.
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        return StandardErrorCurve(std_error=self.analysis_standard_error(df))
+
     def analysis_confidence_interval(
         self,
         df: pd.DataFrame,
@@ -359,16 +367,20 @@ class ExperimentAnalysis(ABC):
                 f"Outcome column {self.target_col} should be numeric and not {df[self.target_col].dtype}"
             )
 
+    def _prepare(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Copies the data, binarises the treatment column and validates it"""
+        df = df.copy()
+        df = self._create_binary_treatment(df)
+        self._data_checks(df=df)
+        return df
+
     def get_pvalue(self, df: pd.DataFrame) -> float:
         """Returns the p-value of the analysis
 
         Arguments:
             df: dataframe containing the data to analyze
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_pvalue(df)
+        return self.analysis_pvalue(self._prepare(df))
 
     def get_point_estimate(self, df: pd.DataFrame) -> float:
         """Returns the point estimate of the analysis
@@ -376,10 +388,7 @@ class ExperimentAnalysis(ABC):
         Arguments:
             df: dataframe containing the data to analyze
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_point_estimate(df)
+        return self.analysis_point_estimate(self._prepare(df))
 
     def get_standard_error(self, df: pd.DataFrame) -> float:
         """Returns the standard error of the analysis
@@ -387,10 +396,16 @@ class ExperimentAnalysis(ABC):
         Arguments:
             df: dataframe containing the data to analyze
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_standard_error(df)
+        return self.analysis_standard_error(self._prepare(df))
+
+    def get_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
+        """Returns the standard error of the analysis as a function of the
+        effect size, as a :class:`StandardErrorCurve`.
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        return self.analysis_standard_error_curve(self._prepare(df))
 
     def get_confidence_interval(
         self, df: pd.DataFrame, alpha: float
@@ -401,10 +416,7 @@ class ExperimentAnalysis(ABC):
             df: dataframe containing the data to analyze
             alpha: significance level
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_confidence_interval(df, alpha)
+        return self.analysis_confidence_interval(self._prepare(df), alpha)
 
     def get_inference_results(self, df: pd.DataFrame, alpha: float) -> InferenceResults:
         """Returns the inference results of the analysis for a single dataset.
@@ -423,10 +435,7 @@ class ExperimentAnalysis(ABC):
             InferenceResults with ate, p_value, std_error, conf_int, and
             fitted_model when the analysis attaches one (GEE, OLS, Delta).
         """
-        df = df.copy()
-        df = self._create_binary_treatment(df)
-        self._data_checks(df=df)
-        return self.analysis_inference_results(df, alpha)
+        return self.analysis_inference_results(self._prepare(df), alpha)
 
     def pvalue_based_on_hypothesis(
         self, model_result: RegressionResultsProtocol
@@ -937,6 +946,16 @@ class OLSAnalysis(ExperimentAnalysis):
         """
         results_ols = self.fit_ols(df=df)
         return results_ols.bse[self.treatment_col]
+
+    def analysis_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
+        """Returns the standard error of the analysis as a function of the effect size.
+
+        Arguments:
+            df: dataframe containing the data to analyze
+        """
+        if not self.relative_effect:
+            return super().analysis_standard_error_curve(df)
+        return self.fit_ols(df=df).standard_error_curve()
 
     def analysis_confidence_interval(
         self, df: pd.DataFrame, alpha: float, verbose: bool = False
@@ -1480,6 +1499,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         treatment: str = "B",
         covariates: Optional[List[str]] = None,
         hypothesis: str = "two-sided",
+        relative_effect: bool = False,
     ):
         """
         Class to run the Delta Method approximation for estimating the treatment effect on a ratio metric (target/scale) under a clustered design.
@@ -1523,6 +1543,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             treatment=treatment,
             covariates=covariates,
             hypothesis=hypothesis,
+            relative_effect=relative_effect,
         )
         self.scale_col = scale_col
         self.cluster_cols = cluster_cols or []
@@ -1752,12 +1773,17 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         # Return the mean and variance of the ratio metric
         return group_mean, group_variance
 
-    def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
+    def _get_group_statistics(
+        self, df: pd.DataFrame
+    ) -> tuple[float, float, float, float]:
         """
-        Returns mean and variance of the ratio metric (target/scale) for a given cluster (i.e. user) computed using the Delta Method.
-        Variance reduction is used if covariates are given.
-        """
+        Returns the control and treatment ratio-metric means and variances
+        estimated with the Delta Method: ``(ctrl_mean, ctrl_var, treat_mean,
+        treat_var)``. Variance reduction is used if covariates are given.
 
+        Arguments:
+            df: dataframe containing the data to analyze.
+        """
         if (self._get_num_clusters(df) < self.n_clusters_warning_limit).any():
             self.__warn_small_group_size()
 
@@ -1769,8 +1795,11 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
         is_treatment = df[self.treatment_col] == 1
 
         thetas_dict = self._compute_thetas(df) if self.covariates else None
+        # Scale-weighted mean of each covariate. _correct_target subtracts
+        # theta * (covariate - mean) * scale, so `mean` has to be on the same
+        # scale as the covariate itself
         covariates_means = [
-            df[covariate].sum() / df[self.scale_col].sum()
+            (df[covariate] * df[self.scale_col]).sum() / df[self.scale_col].sum()
             for covariate in self.covariates
         ]
 
@@ -1781,10 +1810,56 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             df[~is_treatment], thetas_dict, covariates_means
         )
 
-        mean_diff = treat_mean - ctrl_mean
-        standard_error = np.sqrt(treat_var + ctrl_var)
+        return ctrl_mean, ctrl_var, treat_mean, treat_var
 
-        return mean_diff, standard_error
+    def _fit_relative_lift(self, df: pd.DataFrame) -> DeltaMethodLiftTransformer:
+        """
+        Returns the delta-method relative lift results for the ratio metric.
+
+        Only meaningful when ``relative_effect`` is True.
+        """
+        ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_statistics(df)
+        transformer = DeltaMethodLiftTransformer(self.treatment_col)
+        transformer.fit(
+            mean_diff=treat_mean - ctrl_mean,
+            std_error=np.sqrt(treat_var + ctrl_var),
+            ctrl_mean=ctrl_mean,
+            ctrl_var=ctrl_var,
+        )
+        return transformer
+
+    def _get_mean_standard_error(self, df: pd.DataFrame) -> tuple[float, float]:
+        """
+        Returns the point estimate of the treatment effect on the ratio metric
+        (target/scale) and its standard error, computed using the Delta Method.
+        Variance reduction is used if covariates are given.
+
+        When ``relative_effect`` is True both are on the relative (percent-lift)
+        scale; otherwise both are absolute.
+        """
+        if self.relative_effect:
+            transformer = self._fit_relative_lift(df)
+            return (
+                transformer.params[self.treatment_col],
+                transformer.bse[self.treatment_col],
+            )
+
+        ctrl_mean, ctrl_var, treat_mean, treat_var = self._get_group_statistics(df)
+        return treat_mean - ctrl_mean, np.sqrt(treat_var + ctrl_var)
+
+    def analysis_standard_error_curve(self, df: pd.DataFrame) -> StandardErrorCurve:
+        """
+        Returns the standard error of the analysis as a function of the effect size.
+
+        For a relative effect the standard error grows with the effect, because
+        the control ratio mean in the denominator of the lift is itself estimated.
+
+        Arguments:
+            df: dataframe containing the data to analyze.
+        """
+        if not self.relative_effect:
+            return super().analysis_standard_error_curve(df)
+        return self._fit_relative_lift(df).standard_error_curve()
 
     def analysis_pvalue(self, df: pd.DataFrame) -> float:
         """
@@ -1900,6 +1975,7 @@ class DeltaMethodAnalysis(ExperimentAnalysis):
             treatment=config.treatment,
             hypothesis=config.hypothesis,
             covariates=config.covariates,
+            relative_effect=config.relative_effect,
         )
 
     def __check_data_is_aggregated(self, df):
