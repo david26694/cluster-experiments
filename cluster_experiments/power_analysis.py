@@ -981,25 +981,42 @@ class NormalPowerAnalysis:
         k = float(z_alpha + z_beta)
 
         effect_var = se_curve.effect_var
-        if k**2 * effect_var >= 1:
-            max_k = 1 / np.sqrt(effect_var)
-            raise ValueError(
-                f"No finite minimum detectable effect exists: the baseline is too "
-                f"noisy (relative standard error {np.sqrt(effect_var):.4g}) for "
-                f"alpha={alpha:.4g} and power={power:.4g}. The standard error grows "
-                f"with the effect faster than the effect itself, which caps "
-                f"z_alpha + z_beta at {max_k:.4g}; this design needs {abs(k):.4g}. "
-                f"Increase the sample size, or relax alpha or the target power."
-            )
-
         a = 1 - k**2 * effect_var
         b = 2 * k**2 * se_curve.effect_cov
         c = -(k**2) * se_curve.std_error**2
 
-        # c <= 0 and a > 0, so the roots straddle zero and the discriminant is
-        # non-negative. The valid root is the one whose sign matches k.
+        no_solution_message = (
+            f"No finite minimum detectable effect exists: the baseline is too noisy "
+            f"(relative standard error {np.sqrt(effect_var):.4g}) for alpha="
+            f"{alpha:.4g} and power={power:.4g}. The standard error grows with the "
+            f"effect at least as fast as the effect itself, so no effect satisfies "
+            f"the power condition at any size. Increase the sample size, or relax "
+            f"alpha or the target power."
+        )
+
+        # No real root means no MDE
         discriminant = b**2 - 4 * a * c
-        return float((-b + np.copysign(np.sqrt(discriminant), k)) / (2 * a))
+        if discriminant < 0:
+            raise ValueError(no_solution_message)
+
+        # Solve quadratic equation
+        if a == 0:
+            candidates = [-c / b] if b != 0 else []
+        else:
+            candidates = [
+                (-b + np.sqrt(discriminant)) / (2 * a),
+                (-b - np.sqrt(discriminant)) / (2 * a),
+            ]
+
+        # Squaring also admits solutions of m = -k * SE(m), but we only want m = k * SE(m).
+        # If k and m don't share sign, no solution exists
+        solutions = [m for m in candidates if m * k >= 0]
+        if len(solutions) == 0:
+            raise ValueError(no_solution_message)
+
+        # Both roots satisfy |m| / SE(m) == |k|, so both hit the target power
+        # exactly; the minimum detectable effect is the smaller magnitude.
+        return float(min(solutions, key=abs))
 
     def _mde_from_curve(
         self, se_curve: StandardErrorCurve, alpha: float, power: float

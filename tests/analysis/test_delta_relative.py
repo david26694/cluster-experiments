@@ -148,6 +148,37 @@ def test_relative_mde_above_power_ceiling_raises():
     assert np.isfinite(mde) and mde > 0
 
 
+def test_relative_mde_raises_where_the_discriminant_is_still_positive():
+    """
+    The no-solution guard tests the leading coefficient, not the discriminant.
+
+    Those are not the same condition. Cauchy-Schwarz bounds effect_cov**2 by
+    std_error**2 * effect_var, so the discriminant stays non-negative for a while
+    after the leading coefficient turns negative. In that window the quadratic
+    still has two real roots, but neither solves m = k * SE(m): they solve
+    m = -k * SE(m) instead. A discriminant test would let that through and return
+    a large negative number for what is a perfectly ordinary alpha and power.
+
+    The window needs a noisy baseline rather than an exotic design: at alpha=0.05
+    and power=0.9 a relative standard error of 32% on the baseline lands in it.
+    """
+    ctrl_mean, ctrl_var, treat_var = 1.0, 0.10, 0.10
+    alpha, power = 0.05, 0.9
+    curve = _delta_curve(ctrl_mean, ctrl_var, treat_var)
+
+    # confirm the fixture really is inside the window, not merely past the ceiling
+    k = norm.ppf(1 - alpha / 2) + norm.ppf(power)
+    leading_coefficient = 1 - k**2 * curve.effect_var
+    discriminant = (2 * k**2 * curve.effect_cov) ** 2 - 4 * leading_coefficient * (
+        -(k**2) * curve.std_error**2
+    )
+    assert leading_coefficient < 0, "fixture should have no solution"
+    assert discriminant > 0, "fixture should still have real roots"
+
+    with pytest.raises(ValueError, match="No finite minimum detectable effect"):
+        _make_relative_delta_power()._mde_from_curve(curve, alpha, power)
+
+
 # ---------------------------------------------------------------------------
 # Integration – DeltaMethodAnalysis(relative_effect=True)
 # ---------------------------------------------------------------------------
